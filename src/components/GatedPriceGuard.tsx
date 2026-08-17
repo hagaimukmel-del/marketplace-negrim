@@ -19,7 +19,7 @@ export default function GatedPriceGuard({
 }: GatedPriceGuardProps) {
   if (!isAuthenticated) {
     return (
-      <div className="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 rounded text-sm">
+      <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium border border-blue-200">
         🔐 {fallbackText}
       </div>
     )
@@ -28,7 +28,6 @@ export default function GatedPriceGuard({
   return <>{children}</>
 }
 
-// עזר לתצוגת מחיר עם VAT
 interface PriceDisplayProps {
   priceExclVat: number
   isAuthenticated: boolean
@@ -45,20 +44,20 @@ export function PriceDisplay({
 
   if (!isAuthenticated) {
     return (
-      <div className="text-sm text-gray-500">
+      <div className="inline-flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium border border-blue-200">
         🔐 התחבר לצפייה במחירים
       </div>
     )
   }
 
   return (
-    <div className="space-y-1">
-      <div className="text-lg font-bold text-blue-600">
+    <div className="space-y-1.5">
+      <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
         ₪{priceInclVat.toFixed(2)}
       </div>
       {showVat && (
-        <div className="text-xs text-gray-600">
-          (₪{priceExclVat.toFixed(2)} לפני מע"מ 18%)
+        <div className="text-xs text-gray-500 font-medium">
+          כולל מע"מ 18% • ₪{priceExclVat.toFixed(2)} ללא מע"מ
         </div>
       )}
     </div>

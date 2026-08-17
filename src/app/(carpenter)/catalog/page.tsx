@@ -91,37 +91,43 @@ export default function CatalogPage() {
       />
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
-        <div className="space-y-4">
-          <h1 className="text-4xl font-bold">📦 קטלוג מוצרים</h1>
-          <p className="text-gray-600">
-            {filteredProducts.length} מוצרים זמינים
+        <div className="mb-12">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-4xl">📦</span>
+            <h1 className="text-4xl font-bold text-gray-900">קטלוג מוצרים</h1>
+          </div>
+          <p className="text-lg text-gray-600">
+            {filteredProducts.length} מוצרים זמינים לבחירתך
           </p>
         </div>
 
         {/* Search Bar */}
-        <div className="my-6">
-          <input
-            type="text"
-            placeholder="🔍 חיפוש מוצר, שם ספק, או קוד..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+        <div className="mb-8">
+          <div className="relative">
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl">🔍</span>
+            <input
+              type="text"
+              placeholder="חיפוש מוצר, שם ספק, או קוד..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-5 py-3.5 pl-4 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 shadow-sm"
+            />
+          </div>
         </div>
 
         {/* Categories */}
-        <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
+        <div className="flex gap-3 mb-10 overflow-x-auto pb-3 scrollbar-hide">
           {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
               className={`
-                px-4 py-2 rounded whitespace-nowrap font-semibold transition
+                px-5 py-2.5 rounded-full whitespace-nowrap font-semibold transition-all duration-200 text-sm
                 ${selectedCategory === cat.id
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-700 border border-gray-300 hover:border-blue-400'
+                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md hover:shadow-lg'
+                  : 'bg-white text-gray-700 border border-gray-200 hover:border-blue-400 hover:bg-blue-50'
                 }
               `}
             >
@@ -132,7 +138,7 @@ export default function CatalogPage() {
 
         {/* Products Grid */}
         {filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
             {filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}
@@ -143,21 +149,26 @@ export default function CatalogPage() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">❌ לא נמצאו מוצרים</p>
-            <p className="text-gray-400">נסה חיפוש אחר</p>
+          <div className="text-center py-16">
+            <div className="text-6xl mb-4">🔍</div>
+            <p className="text-gray-500 text-xl font-semibold mb-2">לא נמצאו מוצרים</p>
+            <p className="text-gray-400">נסה חיפוש אחר או שנה את הסינון</p>
           </div>
         )}
 
         {/* Authentication Notice */}
         {!isAuthenticated && (
-          <div className="mt-12 bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-            <p className="text-yellow-800 mb-4">
-              🔐 התחבר כדי לראות מחירים ולהוסיף לעגלה
-            </p>
-            <button className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">
-              התחברות
-            </button>
+          <div className="fixed bottom-6 right-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-2xl p-6 shadow-lg max-w-sm">
+            <div className="flex items-start gap-4">
+              <span className="text-2xl">🔐</span>
+              <div className="flex-1">
+                <p className="font-semibold mb-2">התחבר כדי להמשיך</p>
+                <p className="text-sm text-blue-100 mb-4">ראה מחירים, הוסף לעגלה וטמן הזמנות</p>
+                <a href="/login" className="inline-block bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold hover:bg-blue-50 transition-colors duration-200">
+                  התחברות
+                </a>
+              </div>
+            </div>
           </div>
         )}
       </div>
