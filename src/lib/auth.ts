@@ -138,22 +138,32 @@ export interface AuthUser {
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
-  // TODO: Replace with actual Supabase auth
-  const stored = typeof window !== 'undefined'
-    ? localStorage.getItem('auth_user')
-    : null
+  // Check if we're in browser
+  if (typeof window === 'undefined') {
+    return null
+  }
 
+  // Get from localStorage
+  const stored = localStorage.getItem('auth_user')
   if (!stored) return null
 
   try {
-    return JSON.parse(stored)
+    const user = JSON.parse(stored) as AuthUser
+    return user
   } catch {
     return null
+  }
+}
+
+export function setCurrentUser(user: AuthUser): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('auth_user', JSON.stringify(user))
   }
 }
 
 export async function logout(): Promise<void> {
   if (typeof window !== 'undefined') {
     localStorage.removeItem('auth_user')
+    localStorage.removeItem('user_role')
   }
 }

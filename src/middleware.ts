@@ -10,8 +10,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Get user from cookies/headers (mock for now)
-  const userRole = request.cookies.get('user_role')?.value as UserRole | undefined
+  // Get user from cookies or headers
+  let userRole = request.cookies.get('user_role')?.value as UserRole | undefined
+
+  // For development: check localStorage via cookie that was set by login page
+  if (!userRole && request.cookies.get('user_role_dev')?.value) {
+    userRole = request.cookies.get('user_role_dev')?.value as UserRole
+  }
 
   // If not authenticated, redirect to login
   if (!userRole) {

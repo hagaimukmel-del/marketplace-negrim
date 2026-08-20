@@ -2,12 +2,22 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { setCurrentUser } from '@/lib/auth'
+
+// Mock users for demo
+const MOCK_USERS = [
+  { email: 'admin@example.com', password: '123456', role: 'admin', name: 'מנהל' },
+  { email: 'supplier@example.com', password: '123456', role: 'supplier', name: 'דבקי איתמיר' },
+  { email: 'carpenter@example.com', password: '123456', role: 'carpenter', name: 'דב & בנו' },
+]
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
   const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
 
   const validateForm = () => {
     const newErrors: typeof errors = {}
@@ -36,13 +46,38 @@ export default function LoginPage() {
     }
 
     setIsLoading(true)
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    setIsLoading(false)
 
-    // בעתיד: התחברות לSupabase
-    alert('התחברת בהצלחה!')
-    // window.location.href = '/catalog'
+    // Mock authentication
+    const user = MOCK_USERS.find(u => u.email === email && u.password === password)
+
+    if (user) {
+      // Save to localStorage
+      const authUser = {
+        id: Math.random().toString(36).substring(7),
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      }
+
+      localStorage.setItem('auth_user', JSON.stringify(authUser))
+      localStorage.setItem('user_role', user.role)
+
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      setIsLoading(false)
+
+      // Redirect based on role
+      const redirects: Record<string, string> = {
+        admin: '/admin/dashboard',
+        supplier: '/supplier/dashboard',
+        carpenter: '/catalog',
+      }
+
+      router.push(redirects[user.role] || '/catalog')
+    } else {
+      setIsLoading(false)
+      setErrors({ email: 'משתמש או סיסמה לא נכונים' })
+    }
   }
 
   return (
@@ -151,13 +186,29 @@ export default function LoginPage() {
         </div>
 
         {/* Demo Credentials */}
-        <div className="mt-6 bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-5 text-sm text-blue-900">
-          <p className="font-bold mb-3 flex items-center gap-2">
-            <span>🧪</span> נתוני דוגמה:
+        <div className="mt-6 bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-5 text-sm text-blue-900 space-y-3">
+          <p className="font-bold flex items-center gap-2">
+            <span>🧪</span> נתוני דוגמה (demo):
           </p>
-          <div className="space-y-1 text-blue-800 text-xs font-mono">
-            <p>📧 <span className="font-medium">dov@example.com</span></p>
-            <p>🔑 <span className="font-medium">123456</span></p>
+
+          <div className="space-y-2 text-xs">
+            <div className="bg-white p-2 rounded border border-blue-200">
+              <p className="font-semibold text-blue-900 mb-1">👨‍💼 Admin</p>
+              <p>📧 admin@example.com</p>
+              <p>🔑 123456</p>
+            </div>
+
+            <div className="bg-white p-2 rounded border border-blue-200">
+              <p className="font-semibold text-blue-900 mb-1">🏭 Supplier</p>
+              <p>📧 supplier@example.com</p>
+              <p>🔑 123456</p>
+            </div>
+
+            <div className="bg-white p-2 rounded border border-blue-200">
+              <p className="font-semibold text-blue-900 mb-1">🪵 Carpenter</p>
+              <p>📧 carpenter@example.com</p>
+              <p>🔑 123456</p>
+            </div>
           </div>
         </div>
       </div>
