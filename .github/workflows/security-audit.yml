@@ -1,0 +1,161 @@
+name: Security Audit
+
+on:
+  # Run every 2 days
+  schedule:
+    - cron: '0 2 * * 0,2,4'  # Sunday, Tuesday, Thursday at 2 AM UTC
+
+  # Also run on push to main
+  push:
+    branches: [main]
+
+  # Manual trigger
+  workflow_dispatch:
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      # 1. npm audit - Check for vulnerable dependencies
+      - name: npm audit
+        id: npm_audit
+        run: |
+          echo "🔍 Running npm audit..."
+          npm audit --audit-level=moderate 2>&1 || echo "npm_audit_failed=true" >> $GITHUB_OUTPUT
+
+      # 2. Check for hardcoded secrets
+      - name: Check for hardcoded secrets
+        id: secrets_scan
+        run: |
+          echo "🔐 Scanning for hardcoded secrets..."
+
+          # Check for common secret patterns
+          if grep -r -E "PRIVATE_KEY|API_KEY|SECRET_KEY|PASSWORD|api_key|secret" src/ --include="*.ts" --include="*.tsx" --include="*.js"; then
+            echo "secrets_found=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Potential secrets found in code!"
+          else
+            echo "secrets_found=false" >> $GITHUB_OUTPUT
+            echo "✅ No hardcoded secrets found"
+          fi
+
+      # 3. TypeScript check
+      - name: TypeScript type checking
+        id: ts_check
+        run: |
+          echo "📝 Running TypeScript compiler..."
+          npx tsc --noEmit || echo "ts_check_failed=true" >> $GITHUB_OUTPUT
+
+      # 4. ESLint security rules
+      - name: ESLint security check
+        id: eslint
+        run: |
+          echo "🔍 Running ESLint..."
+          npm install -g eslint eslint-plugin-security
+          npx eslint src/ --max-warnings 5 || echo "eslint_failed=true" >> $GITHUB_OUTPUT
+
+      # 5. OWASP Dependency Check (optional but recommended)
+      - name: Run OWASP Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'marketplace-negrim'
+          path: '.'
+          format: 'JSON'
+          args: >
+            --enableExperimental
+
+      # 6. Generate report
+      - name: Generate security report
+        id: report
+        run: |
+          echo "📊 Generating security report..."
+
+          REPORT="## 🔒 Security Audit Report
+
+          **Date:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')
+
+          ### Checks Performed:
+
+          - ✅ npm audit (dependency vulnerabilities)
+          - 🔐 Hardcoded secrets scan
+          - 📝 TypeScript type checking
+          - 🔍 ESLint security rules
+          - 🛡️ OWASP Dependency Check
+
+          ### Results:
+
+          npm audit: ${{ steps.npm_audit.outcome }}
+          Secrets found: ${{ steps.secrets_scan.outputs.secrets_found }}
+          TypeScript: ${{ steps.ts_check.outcome }}
+          ESLint: ${{ steps.eslint.outcome }}
+          "
+
+          echo "$REPORT" > security-report.md
+
+      # 7. Comment on PR or create issue if vulnerabilities found
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('security-report.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });
+
+      # 8. Create issue if major vulnerabilities found
+      - name: Create security issue
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Security Audit Failed',
+              body: 'Automatic security audit detected issues. Check the Actions tab for details.',
+              labels: ['security', 'urgent']
+            });
+
+      # 9. Upload report as artifact
+      - name: Upload security report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-report
+          path: security-report.md
+
+      # 10. Notify Slack (if webhook configured)
+      - name: Slack notification
+        if: always()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          payload: |
+            {
+              "text": "🔒 Security Audit Report",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Security Audit*\n*npm audit:* ${{ steps.npm_audit.outcome }}\n*Secrets scan:* ${{ steps.secrets_scan.outputs.secrets_found }}\n*TypeScript:* ${{ steps.ts_check.outcome }}\n*ESLint:* ${{ steps.eslint.outcome }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "audit:security": "node scripts/security-audit.js",
+    "audit:dependencies": "npm audit --audit-level=moderate",
+    "type-check": "tsc --noEmit",
+    "test": "echo 'No tests yet'",
+    "verify": "npm run type-check && npm run lint && npm run audit:dependencies"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
