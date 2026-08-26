@@ -3,7 +3,7 @@
 // Admin Dashboard - No protection needed for now, just show the dashboard
 export default function AdminDashboard() {
   const stats = [
-    { label: 'סה"כ ספקים', value: 156, icon: '🏢', color: 'bg-blue-100 text-blue-600' },
+    { label: 'סה&quot;כ ספקים', value: 156, icon: '🏢', color: 'bg-blue-100 text-blue-600' },
     { label: 'ספקים פעילים', value: 142, icon: '✅', color: 'bg-green-100 text-green-600' },
     { label: 'הזמנות חודש זה', value: 1243, icon: '📦', color: 'bg-purple-100 text-purple-600' },
     { label: 'הכנסה חודש זה', value: '₪185K', icon: '💰', color: 'bg-yellow-100 text-yellow-600' },

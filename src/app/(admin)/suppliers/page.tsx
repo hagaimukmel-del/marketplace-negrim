@@ -1,11 +1,21 @@
-// @ts-nocheck
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 
-// Mock data
-const mockSuppliers = [
+interface Supplier {
+  id: string
+  name: string
+  email: string
+  phone: string
+  status: 'active' | 'pending' | 'suspended'
+  verified: boolean
+  products: number
+  orders: number
+  rating: number
+  createdAt: string
+}
+
+const mockSuppliers: Supplier[] = [
   {
     id: '1',
     name: 'דבקי איתמיר',
@@ -48,17 +58,24 @@ type SupplierStatus = 'active' | 'pending' | 'suspended'
 
 interface ModalState {
   type: 'add' | 'edit' | 'delete' | null
-  supplier?: (typeof mockSuppliers)[0]
+  supplier?: Supplier
+}
+
+interface FormData {
+  name: string
+  email: string
+  phone: string
+  status: SupplierStatus
 }
 
 export default function SuppliersPage() {
-  const [suppliers, setSuppliers] = useState(mockSuppliers)
+  const [suppliers, setSuppliers] = useState<Supplier[]>(mockSuppliers)
   const [modal, setModal] = useState<ModalState>({ type: null })
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
     phone: '',
-    status: 'pending' as SupplierStatus,
+    status: 'pending',
   })
   const [filter, setFilter] = useState<SupplierStatus | 'all'>('all')
 
@@ -87,23 +104,24 @@ export default function SuppliersPage() {
 
   const handleSave = () => {
     if (modal.type === 'add') {
-      const newSupplier = {
+      const newSupplier: Supplier = {
         id: String(suppliers.length + 1),
-        ...formData,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        status: formData.status,
         verified: formData.status === 'active',
         products: 0,
         orders: 0,
         rating: 0,
         createdAt: new Date().toISOString().split('T')[0],
       }
-      // @ts-ignore
       setSuppliers([...suppliers, newSupplier])
     } else if (modal.type === 'edit' && modal.supplier) {
-      // @ts-ignore
       setSuppliers(
-        suppliers.map(s =>
+        suppliers.map((s: Supplier) =>
           s.id === modal.supplier!.id
-            ? { ...s, ...formData }
+            ? { ...s, name: formData.name, email: formData.email, phone: formData.phone, status: formData.status }
             : s
         )
       )
@@ -186,7 +204,7 @@ export default function SuppliersPage() {
                     }`}>
                       {supplier.status === 'active' && '✅ פעיל'}
                       {supplier.status === 'pending' && '⏳ בהמתנה'}
-                      {(supplier.status as any) === 'suspended' && '🚫 הקפוא'}
+                      {supplier.status === 'suspended' && '🚫 הקפוא'}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900 font-semibold">{supplier.products}</td>

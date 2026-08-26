@@ -57,7 +57,7 @@ export function PriceDisplay({
       </div>
       {showVat && (
         <div className="text-xs text-gray-500 font-medium">
-          כולל מע"מ 18% • ₪{priceExclVat.toFixed(2)} ללא מע"מ
+          כולל מע&quot;מ 18% • ₪{priceExclVat.toFixed(2)} ללא מע&quot;מ
         </div>
       )}
     </div>

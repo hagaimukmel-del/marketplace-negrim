@@ -149,7 +149,7 @@ export default function OrdersPage() {
                         <p className="font-semibold">{order.items} יח'</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-gray-600">סה"כ</p>
+                        <p className="text-gray-600">סה&quot;כ</p>
                         <p className="font-bold text-blue-600">₪{order.totalInclVat.toFixed(2)}</p>
                       </div>
                     </div>
@@ -209,7 +209,7 @@ export default function OrdersPage() {
 
                 <div className="border-t pt-4">
                   <div className="flex justify-between text-lg font-bold">
-                    <span>סה"כ:</span>
+                    <span>סה&quot;כ:</span>
                     <span className="text-blue-600">₪{selectedOrderData.totalInclVat.toFixed(2)}</span>
                   </div>
                 </div>

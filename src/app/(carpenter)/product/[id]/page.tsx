@@ -151,7 +151,7 @@ export default function ProductPage() {
               {/* Total */}
               {isAuthenticated && (
                 <div className="bg-gray-50 p-3 rounded">
-                  <p className="text-sm text-gray-600">סה"כ:</p>
+                  <p className="text-sm text-gray-600">סה&quot;כ:</p>
                   <p className="text-2xl font-bold text-blue-600">₪{totalInclVat.toFixed(2)}</p>
                 </div>
               )}

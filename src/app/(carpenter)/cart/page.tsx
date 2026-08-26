@@ -46,13 +46,13 @@ export default function CartPage() {
   const [cart, setCart] = useState(mockCartData)
   const [isAuthenticated] = useState(true)
 
-  // חשב סה"כ לספק
+  // חשב סה&quot;כ לספק
   const calculateSupplierTotal = (supplier: typeof mockCartData[0]) => {
     const exclVat = supplier.items.reduce((sum, item) => sum + item.priceExclVat * item.quantity, 0)
     return { exclVat, inclVat: exclVat * 1.18 }
   }
 
-  // חשב סה"כ כללי
+  // חשב סה&quot;כ כללי
   const grandTotal = cart.reduce((sum, supplier) => {
     const { inclVat } = calculateSupplierTotal(supplier)
     return sum + inclVat
@@ -207,11 +207,11 @@ export default function CartPage() {
                         <span>₪{supplier.minOrder}</span>
                       </div>
                       <div className="flex justify-between font-semibold text-lg">
-                        <span>סה"כ ללא מע"מ:</span>
+                        <span>סה&quot;כ ללא מע&quot;מ:</span>
                         <span>₪{exclVat.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between font-semibold text-lg text-blue-600">
-                        <span>סה"כ עם מע"מ 18%:</span>
+                        <span>סה&quot;כ עם מע&quot;מ 18%:</span>
                         <span>₪{inclVat.toFixed(2)}</span>
                       </div>
                     </div>
@@ -236,7 +236,7 @@ export default function CartPage() {
                     <span>{cart.length}</span>
                   </div>
                   <div className="border-t pt-3 flex justify-between font-semibold">
-                    <span>סה"כ כללי:</span>
+                    <span>סה&quot;כ כללי:</span>
                     <span className="text-lg text-blue-600">₪{grandTotal.toFixed(2)}</span>
                   </div>
                 </div>

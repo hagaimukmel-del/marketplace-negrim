@@ -49,9 +49,9 @@ export default function VolumePricingTable({
           <thead>
             <tr className="bg-gray-100">
               <th className="border p-2 text-right">כמות</th>
-              <th className="border p-2 text-right">מחיר ליח'</th>
+              <th className="border p-2 text-right">מחיר ליח&apos;</th>
               <th className="border p-2 text-right">הנחה</th>
-              <th className="border p-2 text-right">סה"כ</th>
+              <th className="border p-2 text-right">סה&quot;כ</th>
             </tr>
           </thead>
           <tbody>
@@ -104,7 +104,7 @@ export default function VolumePricingTable({
         <div className="bg-blue-50 border border-blue-200 rounded p-3">
           <p className="text-sm">
             ✅ <strong>מחיר פעיל לכמות {selectedQuantity}:</strong>{' '}
-            <span className="font-semibold">₪{activeTier.priceExclVat.toFixed(2)} ליח'</span>
+            <span className="font-semibold">₪{activeTier.priceExclVat.toFixed(2)} ליח&apos;</span>
           </p>
         </div>
       )}

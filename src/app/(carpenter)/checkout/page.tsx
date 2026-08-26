@@ -55,7 +55,7 @@ export default function CheckoutPage() {
 
   const isAuthenticated = true
 
-  // חשב סה"כ
+  // חשב סה&quot;כ
   const totalExclVat = mockCheckoutData.subOrders.reduce((sum, so) => sum + so.exclVat, 0)
   const vat = totalExclVat * 0.18
   const totalInclVat = totalExclVat + vat
@@ -253,15 +253,15 @@ export default function CheckoutPage() {
 
               <div className="border-t pt-4 space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">סכום בלי מע"מ:</span>
+                  <span className="text-gray-600">סכום בלי מע&quot;מ:</span>
                   <span>₪{totalExclVat.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">מע"מ 18%:</span>
+                  <span className="text-gray-600">מע&quot;מ 18%:</span>
                   <span className="text-green-600 font-semibold">₪{vat.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold border-t pt-3">
-                  <span>סה"כ לתשלום:</span>
+                  <span>סה&quot;כ לתשלום:</span>
                   <span className="text-blue-600">₪{totalInclVat.toFixed(2)}</span>
                 </div>
               </div>
