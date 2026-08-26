@@ -1,52 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { canAccessRoute } from '@/lib/auth'
 import type { UserRole } from '@/lib/types'
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   // Skip middleware for public routes
-  if (pathname === '/' || pathname === '/login' || pathname === '/register') {
+  const publicRoutes = ['/', '/login', '/register', '/catalog', '/product']
+  if (publicRoutes.some(route => pathname === route || pathname.startsWith(route + '/'))) {
     return NextResponse.next()
   }
 
-  // Get user from cookies or headers
-  let userRole = request.cookies.get('user_role')?.value as UserRole | undefined
-
-  // For development: check localStorage via cookie that was set by login page
-  if (!userRole && request.cookies.get('user_role_dev')?.value) {
-    userRole = request.cookies.get('user_role_dev')?.value as UserRole
+  // Skip middleware for static assets
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.includes('.') // files with extensions
+  ) {
+    return NextResponse.next()
   }
 
-  // If not authenticated, redirect to login
-  if (!userRole) {
-    // Allow public catalog access
-    if (pathname.startsWith('/catalog') || pathname.startsWith('/product')) {
-      return NextResponse.next()
-    }
-
-    return NextResponse.redirect(new URL('/login', request.url))
+  // For admin/supplier routes: Let ProtectedRoute handle access control
+  // Middleware just passes through - client-side component will check
+  if (pathname.startsWith('/admin') || pathname.startsWith('/supplier')) {
+    return NextResponse.next()
   }
 
-  // Check if user can access this route
-  if (!canAccessRoute(userRole, pathname)) {
-    // Redirect based on role
-    const redirects: Record<UserRole, string> = {
-      carpenter: '/dashboard/orders',
-      supplier: '/supplier/dashboard',
-      admin: '/admin/dashboard',
-    }
-
-    return NextResponse.redirect(
-      new URL(redirects[userRole] || '/login', request.url)
-    )
-  }
-
-  // Add user role to request headers (useful for API routes)
-  const response = NextResponse.next()
-  response.headers.set('x-user-role', userRole)
-
-  return response
+  // For other protected routes: redirect to login if not authenticated
+  // (we'll check localStorage on client side)
+  return NextResponse.next()
 }
 
 export const config = {

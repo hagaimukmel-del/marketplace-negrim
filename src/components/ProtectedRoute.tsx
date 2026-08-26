@@ -1,65 +1,24 @@
 'use client'
 
-import { ReactNode, useEffect, useState } from 'react'
+import { ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import { getCurrentUser, hasPermission, canAccessRoute } from '@/lib/auth'
-import type { AuthUser } from '@/lib/auth'
+import { useAuth } from '@/lib/auth-context'
 
 interface ProtectedRouteProps {
   children: ReactNode
   requiredRole?: ('carpenter' | 'supplier' | 'admin')[]
-  requiredPermission?: string
   fallback?: ReactNode
 }
 
 export default function ProtectedRoute({
   children,
   requiredRole,
-  requiredPermission,
   fallback,
 }: ProtectedRouteProps) {
   const router = useRouter()
-  const [user, setUser] = useState<AuthUser | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [hasAccess, setHasAccess] = useState(false)
+  const { user, userRole, loading } = useAuth()
 
-  useEffect(() => {
-    async function checkAccess() {
-      const currentUser = await getCurrentUser()
-
-      if (!currentUser) {
-        router.push('/login')
-        return
-      }
-
-      setUser(currentUser)
-
-      // Check role
-      if (requiredRole && !requiredRole.includes(currentUser.role)) {
-        setHasAccess(false)
-        return
-      }
-
-      // Check permission
-      if (requiredPermission && !hasPermission(currentUser.role, requiredPermission)) {
-        setHasAccess(false)
-        return
-      }
-
-      // Check route access
-      if (!canAccessRoute(currentUser.role, window.location.pathname)) {
-        setHasAccess(false)
-        return
-      }
-
-      setHasAccess(true)
-      setIsLoading(false)
-    }
-
-    checkAccess()
-  }, [router, requiredRole, requiredPermission])
-
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -70,7 +29,12 @@ export default function ProtectedRoute({
     )
   }
 
-  if (!hasAccess) {
+  if (!user) {
+    router.push('/auth/login')
+    return null
+  }
+
+  if (requiredRole && !requiredRole.includes(userRole!)) {
     return (
       fallback || (
         <div className="flex items-center justify-center min-h-screen">

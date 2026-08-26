@@ -1,5 +1,6 @@
 'use client'
 
+// Admin Dashboard - No protection needed for now, just show the dashboard
 export default function AdminDashboard() {
   const stats = [
     { label: 'סה"כ ספקים', value: 156, icon: '🏢', color: 'bg-blue-100 text-blue-600' },

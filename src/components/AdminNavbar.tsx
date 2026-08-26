@@ -2,9 +2,13 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import { useAuth } from '@/lib/auth-context'
+import { useRouter } from 'next/navigation'
 
 export default function AdminNavbar() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const { signOut } = useAuth()
+  const router = useRouter()
 
   const navItems = [
     { label: '📊 דוחות', href: '/admin/dashboard' },
@@ -64,7 +68,17 @@ export default function AdminNavbar() {
                 >
                   ⚙️ הגדרות פרופיל
                 </Link>
-                <button className="w-full text-left px-4 py-2.5 hover:bg-red-50 text-red-600 text-sm font-medium transition-colors border-t border-gray-200">
+                <button
+                  onClick={async () => {
+                    try {
+                      await signOut()
+                      router.push('/auth/login')
+                    } catch (error) {
+                      console.error('Sign out error:', error)
+                    }
+                  }}
+                  className="w-full text-left px-4 py-2.5 hover:bg-red-50 text-red-600 text-sm font-medium transition-colors border-t border-gray-200"
+                >
                   🚪 התנתקות
                 </button>
               </div>

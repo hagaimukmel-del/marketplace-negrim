@@ -31,10 +31,10 @@ export default function VolumePricingTable({
     (t) => selectedQuantity >= t.minQty && selectedQuantity <= t.maxQty
   )
 
-  const getSavings = (tier: PricingTier, baseTier: PricingTier) => {
+  const getSavings = (tier: PricingTier, baseTier: PricingTier): number => {
     if (baseTier.priceExclVat <= tier.priceExclVat) return 0
     const savings = ((baseTier.priceExclVat - tier.priceExclVat) / baseTier.priceExclVat) * 100
-    return savings.toFixed(1)
+    return parseFloat(savings.toFixed(1))
   }
 
   const baseTier = sortedTiers[0]
