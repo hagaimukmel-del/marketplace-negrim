@@ -15,12 +15,12 @@ export default function CheckoutPage() {
   if (cart.items.length === 0) {
     return (
       <div className="space-y-8">
-        <h1 className="text-4xl font-bold text-gray-900">📋 Checkout</h1>
+        <h1 className="text-4xl font-bold text-gray-900">📋 סיום הזמנה</h1>
         <div className="text-center py-12">
           <p className="text-2xl text-gray-600 mb-6">העגלה שלך ריקה</p>
           <Link
             href="/carpenter/catalog"
-            className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="inline-block px-6 py-3 bg-amber-700 text-white rounded-lg hover:bg-amber-800"
           >
             ← חזור לקטלוג
           </Link>
@@ -57,7 +57,7 @@ export default function CheckoutPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-2xl p-8 border border-green-200">
+      <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-2xl p-8 border border-emerald-200">
         <h1 className="text-4xl font-bold text-gray-900">📋 סיום הזמנה</h1>
         <p className="text-gray-700 mt-2">שלב {step === 'form' ? '1' : '2'}: {step === 'form' ? 'פרטים אישיים' : 'סקירה'}</p>
       </div>
@@ -79,7 +79,7 @@ export default function CheckoutPage() {
                       required
                       value={checkout.formData.name || ''}
                       onChange={(e) => checkout.updateForm({ name: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-700"
                       placeholder="דב כהן"
                     />
                   </div>
@@ -170,7 +170,7 @@ export default function CheckoutPage() {
 
                 <div className="space-y-3">
                   {(['credit_card', 'bank_transfer', 'cash'] as const).map((method) => (
-                    <label key={method} className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-blue-50">
+                    <label key={method} className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-amber-50">
                       <input
                         type="radio"
                         name="payment"
@@ -198,7 +198,7 @@ export default function CheckoutPage() {
               <button
                 type="submit"
                 disabled={checkout.isSubmitting}
-                className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold disabled:opacity-50"
+                className="w-full px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-semibold disabled:opacity-50"
               >
                 {checkout.isSubmitting ? '⏳ שולח...' : '✅ אישור ושליחה'}
               </button>
@@ -237,7 +237,7 @@ export default function CheckoutPage() {
 
           <Link
             href="/carpenter/cart"
-            className="block text-center px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold"
+            className="block text-center px-6 py-2 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 font-semibold"
           >
             ← חזור לעגלה
           </Link>

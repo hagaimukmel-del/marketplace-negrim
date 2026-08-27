@@ -2,18 +2,23 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f9fafb;
-  --foreground: #1f2937;
-  --primary: #2563eb;
-  --primary-light: #dbeafe;
-  --primary-dark: #1e40af;
-  --accent: #10b981;
-  --muted: #6b7280;
-  --border: #e5e7eb;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  /* Light mode - Modern wood/craftsmanship theme */
+  --background: #fafaf7;
+  --foreground: #1a1a18;
+  --primary: #8b6f47;           /* Warm wood brown */
+  --primary-light: #e8dcc8;     /* Light warm beige */
+  --primary-dark: #5d4a2f;      /* Deep wood brown */
+  --secondary: #d4af37;         /* Gold accent */
+  --accent: #2d9d78;            /* Forest green */
+  --success: #22c55e;           /* Green */
+  --warning: #f59e0b;           /* Amber */
+  --error: #ef4444;             /* Red */
+  --muted: #78716b;             /* Warm gray */
+  --border: #e1d7cb;            /* Light warm border */
+  --shadow-sm: 0 1px 2px 0 rgba(91, 74, 47, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(91, 74, 47, 0.1), 0 2px 4px -1px rgba(91, 74, 47, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(91, 74, 47, 0.1), 0 4px 6px -2px rgba(91, 74, 47, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(91, 74, 47, 0.1), 0 10px 10px -5px rgba(91, 74, 47, 0.04);
 }
 
 @theme inline {
@@ -25,14 +30,18 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0f172a;
-    --foreground: #e2e8f0;
-    --primary: #3b82f6;
-    --primary-light: #1e3a8a;
-    --primary-dark: #60a5fa;
-    --accent: #34d399;
-    --muted: #94a3b8;
-    --border: #334155;
+    --background: #1a1714;
+    --foreground: #f5f1e8;
+    --primary: #a89068;           /* Light wood brown */
+    --primary-light: #5d4a2f;     /* Dark wood brown */
+    --primary-dark: #d4af37;      /* Gold */
+    --secondary: #d4af37;         /* Gold */
+    --accent: #4ade80;            /* Light green */
+    --success: #34d399;           /* Green */
+    --warning: #fbbf24;           /* Light amber */
+    --error: #f87171;             /* Light red */
+    --muted: #a39e94;             /* Warm light gray */
+    --border: #332a1f;            /* Dark warm border */
   }
 }
 

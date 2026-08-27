@@ -9,7 +9,7 @@ export default function CartPage() {
   if (cart.items.length === 0) {
     return (
       <div className="space-y-8">
-        <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl p-8 border border-blue-200">
+        <div className="bg-gradient-to-r from-amber-50 to-amber-100 rounded-2xl p-8 border border-amber-200">
           <h1 className="text-4xl font-bold text-gray-900">🛒 עגלת קניות</h1>
         </div>
 
@@ -17,7 +17,7 @@ export default function CartPage() {
           <p className="text-2xl text-gray-600 mb-6">העגלה שלך ריקה</p>
           <Link
             href="/carpenter/catalog"
-            className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+            className="inline-block px-6 py-3 bg-amber-700 text-white rounded-lg hover:bg-amber-800 font-semibold"
           >
             ← חזור לקטלוג
           </Link>
@@ -29,7 +29,7 @@ export default function CartPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl p-8 border border-blue-200">
+      <div className="bg-gradient-to-r from-amber-50 to-amber-100 rounded-2xl p-8 border border-amber-200">
         <h1 className="text-4xl font-bold text-gray-900">🛒 עגלת קניות</h1>
         <p className="text-gray-700 mt-2">{cart.totalItems} פריטים</p>
       </div>
@@ -110,7 +110,7 @@ export default function CartPage() {
 
             <Link
               href="/carpenter/checkout"
-              className="block text-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition mb-3"
+              className="block text-center px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-semibold transition mb-3"
             >
               ✅ המשך לתשלום
             </Link>
@@ -126,7 +126,7 @@ export default function CartPage() {
           {/* Back to Catalog */}
           <Link
             href="/carpenter/catalog"
-            className="block text-center px-6 py-3 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 font-semibold transition"
+            className="block text-center px-6 py-3 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 font-semibold transition"
           >
             ← המשך קניות
           </Link>
