@@ -8,11 +8,9 @@ interface Product {
   id: string
   name_he: string
   name_en: string
-  category: string
-  price_excl_vat: number
-  price_incl_vat: number
   description_he: string
-  stock_quantity: number
+  base_price_excl_vat: number
+  stock_qty: number
   rating: number
   return_rate: number
 }
@@ -108,11 +106,8 @@ export default function CatalogPage() {
                     <p className="text-sm text-gray-500 mt-1">{product.name_en}</p>
                   </div>
 
-                  {/* Category & Rating */}
-                  <div className="flex items-center justify-between">
-                    <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full">
-                      {product.category}
-                    </span>
+                  {/* Rating */}
+                  <div className="flex items-center justify-end">
                     <span className="text-sm font-semibold text-amber-600">
                       ⭐ {autoRating.toFixed(2)}
                     </span>
@@ -126,10 +121,10 @@ export default function CatalogPage() {
                     <span className="text-sm text-gray-600">במלאי:</span>
                     <span
                       className={`font-semibold ${
-                        product.stock_quantity > 0 ? 'text-green-600' : 'text-red-600'
+                        product.stock_qty > 0 ? 'text-green-600' : 'text-red-600'
                       }`}
                     >
-                      {product.stock_quantity} יח&apos;
+                      {product.stock_qty} יח&apos;
                     </span>
                   </div>
 
@@ -137,12 +132,12 @@ export default function CatalogPage() {
                   <div className="border-t border-gray-200 pt-4">
                     <div className="flex items-baseline gap-2">
                       <span className="text-2xl font-bold text-gray-900">
-                        ₪{product.price_incl_vat.toFixed(2)}
+                        ₪{(product.base_price_excl_vat * 1.18).toFixed(2)}
                       </span>
                       <span className="text-sm text-gray-500">עם מע״מ</span>
                     </div>
                     <p className="text-xs text-gray-600 mt-1">
-                      {product.price_excl_vat.toFixed(2)} ₪ בלי מע״מ
+                      {product.base_price_excl_vat.toFixed(2)} ₪ בלי מע״מ
                     </p>
                   </div>
 
