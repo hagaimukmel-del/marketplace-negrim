@@ -53,22 +53,27 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
         payment_method: formData.paymentMethod || 'credit_card',
         total_amount: total,
         items_json: JSON.stringify(items),
-        status: 'pending',
-        created_at: new Date().toISOString(),
       }
 
-      // TODO: Submit to Supabase orders table
-      console.log('📝 Order ready to submit:', order)
+      // Submit to API endpoint
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(order),
+      })
 
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create order')
+      }
 
-      // For now, return a demo order ID
-      const orderId = `ORD-${Date.now()}`
+      const result = await response.json()
 
-      console.log('✅ Order submitted:', orderId)
+      console.log('✅ Order submitted:', result.orderNumber)
 
-      return { orderId }
+      return { orderId: result.orderId }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'שגיאה בשליחת ההזמנה'
       setError(errorMsg)

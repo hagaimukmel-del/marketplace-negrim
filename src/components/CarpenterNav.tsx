@@ -23,13 +23,13 @@ export default function CarpenterNav() {
           <div className="flex gap-4 items-center">
             <Link
               href="/carpenter/catalog"
-              className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg font-medium transition"
+              className="px-4 py-2 text-gray-700 hover:text-amber-700 hover:bg-amber-50 rounded-lg font-medium transition"
             >
               📚 קטלוג
             </Link>
             <Link
               href="/carpenter/orders"
-              className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg font-medium transition"
+              className="px-4 py-2 text-gray-700 hover:text-amber-700 hover:bg-amber-50 rounded-lg font-medium transition"
             >
               📋 הזמנות
             </Link>
@@ -37,7 +37,7 @@ export default function CarpenterNav() {
             {/* Cart Button */}
             <Link
               href="/carpenter/cart"
-              className="relative px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition flex items-center gap-2"
+              className="relative px-4 py-2 bg-amber-700 text-white rounded-lg hover:bg-amber-800 font-semibold transition flex items-center gap-2"
             >
               🛒 עגלה
               {cart.totalItems > 0 && (
