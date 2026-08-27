@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useCart } from '@/lib/cart-context'
 import Link from 'next/link'
 
 interface Product {
@@ -16,9 +17,11 @@ interface Product {
 }
 
 export default function CatalogPage() {
+  const cart = useCart()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [quantities, setQuantities] = useState<Record<string, number>>({})
 
   useEffect(() => {
     fetchProducts()
@@ -141,10 +144,62 @@ export default function CatalogPage() {
                     </p>
                   </div>
 
-                  {/* Action Button */}
-                  <button className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition">
-                    🛒 הוסף לסל
-                  </button>
+                  {/* Quantity & Action */}
+                  <div className="flex gap-2 mt-4">
+                    <div className="flex items-center border border-gray-300 rounded-lg">
+                      <button
+                        onClick={() =>
+                          setQuantities((p) => ({
+                            ...p,
+                            [product.id]: Math.max(1, (p[product.id] || 1) - 1),
+                          }))
+                        }
+                        className="px-2 py-1 text-gray-600 hover:bg-gray-100"
+                      >
+                        −
+                      </button>
+                      <input
+                        type="number"
+                        min="1"
+                        value={quantities[product.id] || 1}
+                        onChange={(e) =>
+                          setQuantities((p) => ({
+                            ...p,
+                            [product.id]: Math.max(1, parseInt(e.target.value) || 1),
+                          }))
+                        }
+                        className="w-12 text-center border-l border-r border-gray-300 py-1 outline-none"
+                      />
+                      <button
+                        onClick={() =>
+                          setQuantities((p) => ({
+                            ...p,
+                            [product.id]: (p[product.id] || 1) + 1,
+                          }))
+                        }
+                        className="px-2 py-1 text-gray-600 hover:bg-gray-100"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => {
+                        cart.addItem(
+                          {
+                            id: product.id,
+                            name_he: product.name_he,
+                            name_en: product.name_en,
+                            base_price_excl_vat: product.base_price_excl_vat,
+                          },
+                          quantities[product.id] || 1
+                        )
+                        setQuantities((p) => ({ ...p, [product.id]: 1 }))
+                      }}
+                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition"
+                    >
+                      🛒 הוסף לסל
+                    </button>
+                  </div>
                 </div>
               </div>
             )
