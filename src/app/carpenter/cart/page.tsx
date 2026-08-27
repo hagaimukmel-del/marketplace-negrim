@@ -108,9 +108,12 @@ export default function CartPage() {
               <span>₪{cart.totalPrice.toFixed(2)}</span>
             </div>
 
-            <button className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition mb-3">
+            <Link
+              href="/carpenter/checkout"
+              className="block text-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition mb-3"
+            >
               ✅ המשך לתשלום
-            </button>
+            </Link>
 
             <button
               onClick={() => cart.clearCart()}
