@@ -1,6 +1,16 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+
+interface Supplier {
+  id: string
+  company_name: string
+  contact_name: string
+  phone: string
+  email: string
+}
 
 interface DashboardCard {
   title: string
@@ -11,6 +21,28 @@ interface DashboardCard {
 }
 
 export default function SupplierDashboard() {
+  const router = useRouter()
+  const [supplier, setSupplier] = useState<Supplier | null>(null)
+
+  useEffect(() => {
+    const session = localStorage.getItem('supplier_session')
+    if (!session) {
+      router.push('/supplier/login')
+      return
+    }
+    setSupplier(JSON.parse(session))
+  }, [router])
+
+  const handleLogout = () => {
+    localStorage.removeItem('supplier_session')
+    localStorage.removeItem('supplier_token')
+    router.push('/supplier/login')
+  }
+
+  if (!supplier) {
+    return null
+  }
+
   // Demo data - in production this would come from Supabase
   const dashboardCards: DashboardCard[] = [
     {
@@ -55,10 +87,18 @@ export default function SupplierDashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-amber-50 to-amber-100 rounded-2xl p-8 border border-amber-200">
-        <h1 className="text-4xl font-bold text-gray-900">📊 לוח בקרה</h1>
-        <p className="text-gray-700 mt-2">ברוך הבא לדashboard ספק Marketplace Negrim</p>
+      {/* Header with Logout */}
+      <div className="flex justify-between items-start">
+        <div className="bg-gradient-to-r from-amber-50 to-amber-100 rounded-2xl p-8 border border-amber-200 flex-1">
+          <h1 className="text-4xl font-bold text-gray-900">🏢 {supplier.company_name}</h1>
+          <p className="text-gray-700 mt-2">ברוך הבא, {supplier.contact_name}!</p>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="ml-4 px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 font-semibold transition-all h-fit"
+        >
+          🚪 התנתק
+        </button>
       </div>
 
       {/* Quick Stats */}
