@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 
 const SHEET_ID = '1pSde0xYLViLEy9Nxp-qSGrBuqcZPd4o5dDlJntoSS6c'
 const SHEET_NAME = 'דבקים' // השם של ה-tab
+const ITAMIR_SUPPLIER_ID = '6048c39d-e5c1-497d-91cd-04e6bdf6e27a' // איתמיר בע"מ
 
 // פונקציה לקרוא מ-Google Sheets
 async function getProductsFromSheet() {
@@ -69,6 +70,7 @@ async function getProductsFromSheet() {
         is_active: true,
         image_url: imageUrl || undefined,
         stock_qty: 100,
+        supplier_id: ITAMIR_SUPPLIER_ID,
       }
 
       if (product.name_he && product.base_price_excl_vat > 0) {
