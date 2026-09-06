@@ -2,26 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import type { ProductRow } from '@/lib/database.types'
 import { useCart } from '@/lib/cart-context'
 
-interface Product {
-  id: string
-  name_he: string
-  name_en: string
-  name_ar?: string
-  description_he?: string
-  description_en?: string
-  category?: string
-  base_price_excl_vat: number
-  stock_qty: number
-  rating?: number
-  return_rate?: number
-  image_url?: string
-  package_type?: string
-  breaks_json?: string
-  tds_url?: string
-  is_active?: boolean
-}
+type Product = ProductRow
 
 export default function CatalogPage() {
   const cart = useCart()
@@ -121,16 +105,6 @@ export default function CatalogPage() {
               const priceWithVat = product.base_price_excl_vat * 1.18
               const hasImage = product.image_url && product.image_url.trim() !== ''
 
-              // Parse breaks_json if available
-              let quantityBreaks = []
-              if (product.breaks_json) {
-                try {
-                  quantityBreaks = JSON.parse(product.breaks_json)
-                } catch (e) {
-                  quantityBreaks = []
-                }
-              }
-
               return (
                 <div
                   key={product.id}
@@ -143,7 +117,7 @@ export default function CatalogPage() {
                   <div className="relative w-full h-56 md:h-64 bg-gradient-to-br from-gray-100 to-gray-50 overflow-hidden border-b border-white/30">
                     {hasImage ? (
                       <img
-                        src={product.image_url}
+                        src={product.image_url ?? undefined}
                         alt={product.name_he}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         onError={(e) => {
@@ -165,21 +139,14 @@ export default function CatalogPage() {
                     <div className="absolute bottom-4 left-4">
                       <div
                         className={`px-4 py-2 rounded-full font-bold text-sm backdrop-blur-md border border-white/30 shadow-lg ${
-                          product.stock_qty > 0
+                          (product.stock_qty ?? 0) > 0
                             ? 'bg-emerald-500/90 text-white'
                             : 'bg-red-500/90 text-white'
                         }`}
                       >
-                        {product.stock_qty > 0 ? `${product.stock_qty} יח׳ במלאי` : '❌ אזל'}
+                        {(product.stock_qty ?? 0) > 0 ? `${product.stock_qty ?? 0} יח׳ במלאי` : '❌ אזל'}
                       </div>
                     </div>
-
-                    {/* Category Tag */}
-                    {product.category && (
-                      <div className="absolute top-4 left-4 px-3 py-1 bg-amber-600/90 text-white text-xs font-bold rounded-full backdrop-blur-md border border-white/20">
-                        {product.category}
-                      </div>
-                    )}
                   </div>
 
                   {/* Content Section */}
@@ -204,28 +171,6 @@ export default function CatalogPage() {
                       </p>
                     )}
 
-                    {/* Package Info */}
-                    {product.package_type && (
-                      <div className="flex items-center gap-2 text-sm bg-blue-50/60 border border-blue-100/30 rounded-lg p-2 backdrop-blur-sm">
-                        <span className="font-semibold text-blue-900">📦</span>
-                        <span className="text-blue-900">{product.package_type}</span>
-                      </div>
-                    )}
-
-                    {/* Quantity Breaks Display */}
-                    {quantityBreaks.length > 0 && (
-                      <div className="bg-amber-50/60 border border-amber-100/30 rounded-lg p-3 backdrop-blur-sm">
-                        <p className="text-xs font-bold text-amber-900 mb-2">🎁 הנחות כמות:</p>
-                        <div className="space-y-1">
-                          {quantityBreaks.map((brk: any, idx: number) => (
-                            <div key={idx} className="text-xs text-amber-900">
-                              {brk.min_qty}{brk.max_qty ? `-${brk.max_qty}` : '+'} יח׳: {brk.discount_percent}% הנחה
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
                     {/* Price Section */}
                     <div className="bg-gradient-to-r from-amber-50/70 to-green-50/70 rounded-xl p-4 border border-white/40 backdrop-blur-sm">
                       <div className="flex items-baseline justify-between gap-3 mb-2">
@@ -241,18 +186,6 @@ export default function CatalogPage() {
                         </div>
                       </div>
                     </div>
-
-                    {/* TDS/Technical Sheet Link */}
-                    {product.tds_url && (
-                      <a
-                        href={product.tds_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-50/70 border border-blue-200/50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium backdrop-blur-sm"
-                      >
-                        📄 הורד דף TDS
-                      </a>
-                    )}
 
                     {/* Quantity Selector */}
                     <div className="flex items-center gap-2 bg-white/50 backdrop-blur-sm rounded-lg border border-gray-200/50 p-2">
@@ -301,17 +234,17 @@ export default function CatalogPage() {
                           {
                             id: product.id,
                             name_he: product.name_he,
-                            name_en: product.name_en,
+                            name_en: product.name_en ?? product.name_he,
                             base_price_excl_vat: product.base_price_excl_vat,
                           },
                           quantities[product.id] || 1
                         )
                         setQuantities((p) => ({ ...p, [product.id]: 1 }))
                       }}
-                      disabled={product.stock_qty <= 0}
+                      disabled={(product.stock_qty ?? 0) <= 0}
                       className="w-full py-3 px-4 bg-gradient-to-r from-amber-600 to-green-600 text-white font-bold rounded-xl hover:from-amber-700 hover:to-green-700 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:from-gray-400 disabled:to-gray-400 transition-all duration-300 hover:scale-105 active:scale-95"
                     >
-                      {product.stock_qty > 0 ? '🛒 הוסף לסל' : 'אזל מהמלאי'}
+                      {(product.stock_qty ?? 0) > 0 ? '🛒 הוסף לסל' : 'אזל מהמלאי'}
                     </button>
                   </div>
                 </div>

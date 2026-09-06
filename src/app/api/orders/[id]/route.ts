@@ -1,5 +1,8 @@
 import { supabase } from '@/lib/supabase'
+import type { Database } from '@/lib/database.types'
 import { NextRequest, NextResponse } from 'next/server'
+
+type OrderUpdate = Database['public']['Tables']['orders']['Update']
 
 export async function GET(
   request: NextRequest,
@@ -40,10 +43,9 @@ export async function PATCH(
     const body = await request.json()
 
     // Update only allowed fields
-    const allowedFields = ['status', 'notes']
-    const updateData = Object.fromEntries(
-      Object.entries(body).filter(([key]) => allowedFields.includes(key))
-    )
+    const updateData: OrderUpdate = {}
+    if (typeof body.status === 'string') updateData.status = body.status
+    if (typeof body.notes === 'string') updateData.notes = body.notes
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
