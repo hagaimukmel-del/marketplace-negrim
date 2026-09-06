@@ -1,0 +1,35 @@
+{
+  "_note": "Backup taken 2026-09-06 before migration 0001. products.json and suppliers.json hold the full rows for those tables; the tables below were RLS-blocked to the public key and were exported via the SQL editor. All other public tables were empty.",
+  "supplier_products": {
+    "row_count": 32,
+    "constant_supplier_id": "6048c39d-e5c1-497d-91cd-04e6bdf6e27a",
+    "constant_is_active": true,
+    "constant_created_at": "2026-08-30T13:08:06.501643+00:00",
+    "product_ids": [
+      "9432000c-d758-4f3c-9567-a5bdef1b3c74","3af281bf-bdc6-4e62-8613-6c3582ae2782",
+      "1be299ed-08ec-422a-b161-788c02345ddc","e8327622-5c8e-4332-8cda-4dac99e36982",
+      "365d387d-125d-4ac4-aa44-5ad26447b0fb","62f3c2ea-be00-4c57-ad63-06eb37aff768",
+      "850ff26e-c30e-4fe9-ad4e-992e68df9518","a8874e63-94c2-4074-b987-e465df5cde73",
+      "2ceb2f6e-eb6d-4948-b856-d687f5317903","2bb6b0bc-5f56-43dc-a4cb-4ad3ae3e789e",
+      "1748fa03-17c9-429f-aacd-c3d39c1c7c13","96ae5b2a-9088-48f0-8891-881c26702090",
+      "051eefc0-619c-476b-836a-90762ad21eb4","766226e0-a524-4b7b-8aa6-41af2536d975",
+      "cc87de69-57f8-4040-baab-86d502996902","8eec08f1-4365-434a-b5b6-a308ca53dfa7",
+      "e5f04034-388b-43ad-8739-a48cc273aebc","88fb80d8-19ca-4708-bb20-cc608d8425a7",
+      "5583e2c7-283a-4206-b7f9-5e62794bb7ab","ecd7a28b-913f-4e42-8940-3d61a43eff10",
+      "397840f7-c1c5-443b-8555-ebe24ce8d5f0","f2438030-eb98-478d-a801-f5b83d8aed6a",
+      "9f252052-103d-41c7-8f57-2633cddbe37b","ad547e57-fdc5-4e1c-8e3d-befa38ff3e0a",
+      "bbef587d-5978-4f48-9b4f-c6b4430027dc","88c8891f-f10f-49b4-84d3-79199eb2fc48",
+      "856fb3ff-7fa4-4661-8bb3-eebdf1781cac","05db7c7c-2660-47a1-a788-095f2b751f29",
+      "bbabf508-04ad-41be-aa83-d0ede14a6363","cbbf2b3a-df07-4263-bdf3-5f603362e5a9",
+      "4bde2772-db85-4d92-af29-b4a711ce816b","054793f3-4e5b-400d-b1cd-dcee0163a64f"
+    ]
+  },
+  "profiles": [
+    {"id":"e1680742-b2c0-4aeb-bd13-eb6914a06f20","email":"demo@carpenter.com","full_name":"Demo Carpente","company_name":"CARPE","phone":null,"role":"carpenter","is_approved":false,"lang":"he","created_at":"2026-08-26T13:11:20.9166","updated_at":"2026-08-26T13:11:20.9166"}
+  ],
+  "user_profiles": [
+    {"id":"c28e0850-ca31-40c4-b64e-748c1de85b13","user_id":"bdac6826-b484-4223-88aa-e707abfd63f2","email":"demo@example.com","role":"carpenter","created_at":"2026-08-26T12:49:43.190712","updated_at":"2026-08-26T12:49:43.190712"},
+    {"id":"cb28389b-0631-4894-8844-2a340cf7da57","user_id":"47b542e6-f016-4e7e-990b-b77431a65ec3","email":"demo@carpenter.com","role":"carpenter","created_at":"2026-08-26T12:58:32.138048","updated_at":"2026-08-26T12:58:32.138048"}
+  ],
+  "empty_tables": ["categories","order_items","orders","returns","reviews","sub_orders","volume_pricing"]
+}
