@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import type { Database } from '@/lib/database.types'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -11,7 +11,7 @@ export async function GET(
   try {
     const { id } = await params
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabaseAdmin()
       .from('orders')
       .select('*')
       .eq('id', id)
@@ -54,7 +54,7 @@ export async function PATCH(
       )
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabaseAdmin()
       .from('orders')
       .update(updateData)
       .eq('id', id)

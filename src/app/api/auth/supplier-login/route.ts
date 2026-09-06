@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
 
 // Demo suppliers (in production, query from database)
 const DEMO_SUPPLIERS = [

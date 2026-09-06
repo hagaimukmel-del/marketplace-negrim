@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     const orderNumber = `ORD-${Date.now()}`
 
     // Insert order into Supabase
-    const { data, error } = await supabase
+    const { data, error } = await getSupabaseAdmin()
       .from('orders')
       .insert([
         {
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0')
 
     // Fetch orders
-    const { data, error, count } = await supabase
+    const { data, error, count } = await getSupabaseAdmin()
       .from('orders')
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
