@@ -1,0 +1,820 @@
+<title>מפת דרכים — נגרים</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Assistant:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --ground:      #F6F8F4;
+    --surface:     #FFFFFF;
+    --surface-alt: #EDF1EA;
+    --ink:         #1B211C;
+    --ink-soft:    #5A6459;
+    --ink-faint:   #8A9287;
+    --rule:        #D8DFD3;
+    --accent:      #2E6B4A;
+    --accent-soft: #DCEAE0;
+    --gate:        #A55E24;
+    --gate-soft:   #F6E7D8;
+    --stop:        #9B3131;
+
+    --display: "Frank Ruhl Libre", "Times New Roman", serif;
+    --body:    "Assistant", "Segoe UI", system-ui, sans-serif;
+    --mono:    "IBM Plex Mono", ui-monospace, "Courier New", monospace;
+
+    --measure: 68ch;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #141815;
+      --surface:     #1C211D;
+      --surface-alt: #232923;
+      --ink:         #E7EBE4;
+      --ink-soft:    #A3AC9F;
+      --ink-faint:   #767E73;
+      --rule:        #313830;
+      --accent:      #6FBF8F;
+      --accent-soft: #22352A;
+      --gate:        #D69A5E;
+      --gate-soft:   #35281B;
+      --stop:        #E0776F;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:      #141815;
+    --surface:     #1C211D;
+    --surface-alt: #232923;
+    --ink:         #E7EBE4;
+    --ink-soft:    #A3AC9F;
+    --ink-faint:   #767E73;
+    --rule:        #313830;
+    --accent:      #6FBF8F;
+    --accent-soft: #22352A;
+    --gate:        #D69A5E;
+    --gate-soft:   #35281B;
+    --stop:        #E0776F;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .doc {
+    direction: rtl;
+    text-align: right;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 56px 28px 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 56px;
+  }
+
+  h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; font-weight: 700; }
+  h1 { font-size: clamp(2rem, 4.4vw, 3rem); line-height: 1.12; font-weight: 900; letter-spacing: -0.01em; }
+  h2 { font-size: 1.6rem; line-height: 1.2; }
+  h3 { font-size: 1.12rem; line-height: 1.3; font-family: var(--body); font-weight: 700; }
+  p  { margin: 0; max-width: var(--measure); }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    direction: ltr;
+    text-align: right;
+  }
+
+  .masthead { display: flex; flex-direction: column; gap: 18px; }
+  .masthead .lede { font-size: 1.12rem; color: var(--ink-soft); max-width: 62ch; }
+  .stamp {
+    display: flex; flex-wrap: wrap; gap: 8px 22px;
+    padding-top: 16px; border-top: 2px solid var(--ink);
+    font-family: var(--mono); font-size: 0.74rem; color: var(--ink-soft);
+    direction: ltr; justify-content: flex-end;
+  }
+
+  .rule-card {
+    background: var(--accent-soft);
+    border-inline-start: 4px solid var(--accent);
+    padding: 22px 26px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .rule-card .txt { font-family: var(--display); font-size: 1.24rem; font-weight: 700; line-height: 1.4; }
+  .rule-card .why { font-size: 0.94rem; color: var(--ink-soft); max-width: var(--measure); }
+
+  section { display: flex; flex-direction: column; gap: 22px; }
+  .sec-head { display: flex; flex-direction: column; gap: 6px; border-bottom: 1px solid var(--rule); padding-bottom: 12px; }
+  .sec-head .meta { font-family: var(--mono); font-size: 0.74rem; color: var(--accent); direction: ltr; text-align: right; letter-spacing: 0.04em; }
+
+  /* ---------- evidence ---------- */
+  .evidence { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .ev {
+    background: var(--surface); border: 1px solid var(--rule); padding: 20px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .ev.win { border-inline-start: 4px solid var(--accent); }
+  .ev.lose { border-inline-start: 4px solid var(--ink-faint); }
+  .ev .kind { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); direction: ltr; text-align: right; }
+  .ev .name { font-weight: 700; font-size: 1.05rem; }
+  .ev .big {
+    font-family: var(--mono); font-size: 1.9rem; font-weight: 600; line-height: 1;
+    direction: ltr; text-align: right; font-variant-numeric: tabular-nums;
+  }
+  .ev.win .big { color: var(--accent); }
+  .ev.lose .big { color: var(--ink-soft); }
+  .ev .rows { display: flex; flex-direction: column; gap: 3px; font-size: 0.88rem; color: var(--ink-soft); }
+  .ev .rows div { display: flex; justify-content: space-between; gap: 12px; }
+  .ev .rows b { font-family: var(--mono); font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  .verdict {
+    font-family: var(--display); font-size: 1.3rem; font-weight: 700; line-height: 1.45;
+    padding: 18px 0; border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink);
+    max-width: 64ch;
+  }
+
+  /* ---------- timeline ---------- */
+  .tl-wrap { overflow-x: auto; padding-bottom: 6px; }
+  .tl {
+    min-width: 680px;
+    display: grid;
+    grid-template-columns: 138px repeat(10, 1fr);
+    gap: 5px;
+    align-items: stretch;
+  }
+  .tl .wk { font-family: var(--mono); font-size: 0.66rem; color: var(--ink-faint); text-align: center; padding-bottom: 6px; direction: ltr; }
+  .tl .row-label { font-size: 0.84rem; font-weight: 600; color: var(--ink-soft); display: flex; align-items: center; padding-inline-end: 10px; }
+  .bar {
+    height: 30px; border-radius: 3px; display: flex; align-items: center; justify-content: center;
+    font-size: 0.74rem; font-weight: 600; color: var(--surface);
+    background: var(--accent); white-space: nowrap; overflow: hidden;
+  }
+  .bar.design { background: var(--ink-soft); }
+  .bar.market { background: var(--gate); }
+  .tl .spacer { height: 30px; }
+  .tl .gate-mark {
+    height: 30px; display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 0.66rem; font-weight: 600;
+    color: var(--gate); background: var(--gate-soft); border-radius: 3px;
+  }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 0.8rem; color: var(--ink-soft); }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .legend i { width: 13px; height: 13px; border-radius: 2px; display: inline-block; }
+
+  /* ---------- tasks ---------- */
+  .tasks { display: flex; flex-direction: column; gap: 2px; }
+  .task { display: grid; grid-template-columns: 58px 1fr; gap: 18px; padding: 14px 0; border-bottom: 1px solid var(--rule); align-items: start; }
+  .task:last-child { border-bottom: none; }
+  .task .id { font-family: var(--mono); font-size: 0.78rem; font-weight: 600; color: var(--accent); direction: ltr; text-align: right; padding-top: 2px; }
+  .task .body { display: flex; flex-direction: column; gap: 5px; }
+  .task .t { font-weight: 700; font-size: 1rem; }
+  .task .d { font-size: 0.93rem; color: var(--ink-soft); max-width: var(--measure); }
+  .task .d code { font-family: var(--mono); font-size: 0.85em; background: var(--surface-alt); padding: 1px 5px; border-radius: 3px; direction: ltr; display: inline-block; }
+
+  /* ---------- gates ---------- */
+  .gates { display: flex; flex-direction: column; gap: 12px; }
+  .gate {
+    background: var(--surface); border: 1px solid var(--rule); border-inline-start: 4px solid var(--gate);
+    padding: 16px 20px; display: grid; grid-template-columns: auto 1fr; gap: 4px 18px; align-items: baseline;
+  }
+  .gate .g-id { font-family: var(--mono); font-size: 0.82rem; font-weight: 600; color: var(--gate); direction: ltr; }
+  .gate .g-when { font-family: var(--mono); font-size: 0.72rem; color: var(--ink-faint); direction: ltr; grid-column: 1; }
+  .gate .g-txt { font-size: 0.96rem; grid-column: 2; }
+  .gate .g-fail { grid-column: 2; font-size: 0.9rem; color: var(--ink-soft); }
+  .gate .g-fail b { color: var(--stop); font-weight: 700; }
+
+  /* ---------- metrics ---------- */
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+  .metric { background: var(--surface); border: 1px solid var(--rule); padding: 16px 18px; display: flex; flex-direction: column; gap: 5px; }
+  .metric .m-n { font-weight: 700; font-size: 0.98rem; }
+  .metric .m-d { font-size: 0.88rem; color: var(--ink-soft); }
+  .metric .m-now { font-family: var(--mono); font-size: 0.74rem; color: var(--gate); direction: ltr; text-align: right; }
+
+  /* ---------- not building ---------- */
+  .nots { display: flex; flex-wrap: wrap; gap: 8px; }
+  .not { font-size: 0.88rem; color: var(--ink-soft); background: var(--surface-alt); border: 1px solid var(--rule); padding: 6px 13px; border-radius: 999px; }
+  .not s { color: var(--ink-faint); text-decoration-thickness: 1px; }
+
+  .risks { display: flex; flex-direction: column; }
+  .risk { display: flex; flex-direction: column; gap: 4px; padding: 15px 0; border-bottom: 1px solid var(--rule); }
+  .risk:last-child { border-bottom: none; }
+  .risk .r-t { font-weight: 700; }
+  .risk .r-d { font-size: 0.93rem; color: var(--ink-soft); max-width: var(--measure); }
+
+  .openq {
+    background: var(--gate-soft); border-inline-start: 4px solid var(--gate);
+    padding: 18px 22px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .openq .q { font-weight: 700; font-size: 1.02rem; }
+  .openq .d { font-size: 0.93rem; color: var(--ink-soft); max-width: var(--measure); }
+
+  .closer { border-top: 2px solid var(--ink); padding-top: 20px; font-family: var(--display); font-size: 1.16rem; line-height: 1.5; max-width: 60ch; }
+
+  @media (max-width: 620px) {
+    .doc { padding: 36px 18px 72px; gap: 44px; }
+    .task { grid-template-columns: 46px 1fr; gap: 12px; }
+  }
+</style>
+
+<div class="doc">
+
+  <header class="masthead">
+    <div class="eyebrow">Marketplace Negrim · Work Plan · Rev 2</div>
+    <h1>מפת דרכים ל‑10 שבועות</h1>
+    <p class="lede">
+      גרסה ראשונה של המסמך נבנתה סביב השאלה ״האם נגר מגיב להצעה״. שתי הרצות אמיתיות מול 400 נגריות
+      ענו עליה, וגם שינו את התשובה למה שחשבנו. התוכנית נכתבה מחדש סביב מה שהנתונים באמת אומרים.
+    </p>
+    <div class="stamp">
+      <span>רשימה: ~400 נגריות</span>
+      <span>קטלוג: 62 שורות · ~45 אמיתיות</span>
+      <span>ספק: איתמיר</span>
+      <span>Rev 2 · 06.09.2026</span>
+    </div>
+  </header>
+
+  <!-- ============ EVIDENCE ============ -->
+  <section>
+    <div class="sec-head">
+      <div class="meta">EVIDENCE · שתי הרצות, אותה רשימה, אותו ערוץ</div>
+      <h2>מה כבר נבדק בשטח</h2>
+    </div>
+
+    <div class="evidence">
+      <div class="ev lose">
+        <div class="kind">Discount · 22%−</div>
+        <div class="name">מרק אקרילי</div>
+        <div class="big">665 ₪</div>
+        <div class="rows">
+          <div><span>מחיר ליחידה</span><b>3.80 ₪</b></div>
+          <div><span>יחידות</span><b>175</b></div>
+          <div><span>לקוחות</span><b>4 · 1.0%</b></div>
+          <div><span>ממוצע להזמנה</span><b>166 ₪</b></div>
+          <div><span>מרווח שנשחק</span><b>−193 ₪</b></div>
+        </div>
+      </div>
+
+      <div class="ev win">
+        <div class="kind">Introduction · no discount</div>
+        <div class="name">MOC</div>
+        <div class="big">3,600 ₪</div>
+        <div class="rows">
+          <div><span>מחיר ליחידה</span><b>150 ₪</b></div>
+          <div><span>יחידות</span><b>24</b></div>
+          <div><span>לקוחות</span><b>7 · 1.75%</b></div>
+          <div><span>ממוצע להזמנה</span><b>514 ₪</b></div>
+          <div><span>מרווח שנשחק</span><b>0 ₪</b></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="verdict">
+      הודעת ההיכרות ניצחה את המבצע בשלושת המדדים בבת אחת: יותר קונים (7 מול 4),
+      הזמנה גדולה פי 3.1 (514 ₪ מול 166 ₪), ובמחיר מלא. ההנחה לא הייתה המנוע — היא הייתה עלות.
+    </div>
+
+    <div class="tasks">
+      <div class="task">
+        <div class="id">→</div>
+        <div class="body">
+          <div class="t">הנחה על מתכלה ללקוח קיים היא קניבליזציה, לא גיוס</div>
+          <div class="d">
+            ארבעת מי שקנו מרק אקרילי הם לקוחות שממילא היו קונים אותו תוך שבועיים — זה מתכלה שהם
+            משתמשים בו כל הזמן, ואתה הספק. 193 ₪ מרווח שולמו כדי להקדים רכישה שכבר הייתה שלך.
+          </div>
+        </div>
+      </div>
+      <div class="task">
+        <div class="id">→</div>
+        <div class="body">
+          <div class="t">היכרות שוברת את תקרת ההמרה; הנחה לא</div>
+          <div class="d">
+            הנחה לא יוצרת צורך — היא רק מקדימה אותו, ולכן חסומה ב‑1–3% בשבוע נתון. למוצר שהנגר
+            <em>לא מכיר</em> אין מחזור רכישה קיים להקדים, ולכן אין לו תקרה כזו.
+          </div>
+        </div>
+      </div>
+      <div class="task">
+        <div class="id">→</div>
+        <div class="body">
+          <div class="t">שני המשתנים שקובעים הם ערך היחידה והאם המוצר חדש להם</div>
+          <div class="d">
+            150 ₪ מול 3.80 ₪ — פי 39. גם המרה מצוינת על פריט של 3.80 ₪ לא מייצרת כלום.
+            ״מבצע״ אינו אחד משני המשתנים.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="openq">
+      <div class="q">7 לקוחות × 3.4 יחידות — לא רכישת התנסות, אלא הזמנת מלאי</div>
+      <div class="d">
+        מי שקנה MOC לא קנה יחידה אחת לנסות; הוא קנה שלוש או ארבע. כלומר ההודעה לא רק חשפה מוצר —
+        היא סגרה החלטת רכש. וזה גם אומר ש‑393 נגריות עדיין לא מכירות אותו, כלומר התקרה של המוצר
+        הזה עצמו רחוקה מלהיות ממוצה: הרצה שנייה של אותה הודעה, בניסוח אחר, כנראה עוד תמכור.
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ REFRAME ============ -->
+  <section>
+    <div class="sec-head">
+      <div class="meta">REFRAME · מה זה משנה בתוכנית</div>
+      <h2>הפלטפורמה לא נועדה להביא לקוחות</h2>
+    </div>
+    <p>
+      אתה מחזיק גם את ההיצע וגם את ההפצה: 400 נגריות ברשימה, ואתה הספק שקובע את המחיר.
+      זה לא מיזם לפני ולידציה — זו מערכת שכבר מוכרת. ולכן הפלטפורמה צריכה להצדיק את עצמה במשהו אחר.
+    </p>
+
+    <div class="tasks">
+      <div class="task">
+        <div class="id">✕</div>
+        <div class="body">
+          <div class="t">לא הגעה — יש לך 400</div>
+          <div class="d">אין שום פיצ׳ר שמגדיל את הרשימה. הרשימה היא נכס קיים.</div>
+        </div>
+      </div>
+      <div class="task">
+        <div class="id">✕</div>
+        <div class="body">
+          <div class="t">לא השוואת מחירים — אתה הספק</div>
+          <div class="d">
+            השוואה בין ספקים הייתה הנחת היסוד של המסמך האב. בהרכב הנוכחי היא פועלת נגדך:
+            היא מזמינה לחץ על המחיר בדיוק במקום שבו הנתונים מראים שהנחה שורפת מרווח.
+          </div>
+        </div>
+      </div>
+      <div class="task">
+        <div class="id">✓</div>
+        <div class="body">
+          <div class="t">כן — גילוי קטלוג</div>
+          <div class="d">
+            הודעת ה‑MOC הוכיחה את זה. יש לך ~45 מוצרים אמיתיים, וכמעט אף אחד מ‑400 לא מכיר את כולם.
+            כל מוצר כזה הוא הודעת ״מי שלא מכיר עדיין״ שממתינה. זה מנוע חוזר, לא קמפיין חד־פעמי.
+          </div>
+        </div>
+      </div>
+      <div class="task">
+        <div class="id">✓</div>
+        <div class="body">
+          <div class="t">כן — גודל סל</div>
+          <div class="d">
+            ארבעה אנשים קנו פריט אחד, בהזמנה ממוצעת של 166 ₪. אותה הודעה עם דף שמציג גם
+            ״מה הזמנת בפעם שעברה״ שווה פי כמה, בלי אף לקוח נוסף.
+          </div>
+        </div>
+      </div>
+      <div class="task">
+        <div class="id">✓</div>
+        <div class="body">
+          <div class="t">כן — מדידה</div>
+          <div class="d">
+            היום אתה עיוור: לא יודע מי קיבל, מי פתח, מי כמעט הזמין. רשימת תפוצה בוואטסאפ מגיעה
+            <b>רק</b> למי ששמור אצלו המספר שלך, והיא מוגבלת ל‑256 נמענים — כלומר 400 מפוצלים
+            לפחות לשתי רשימות. אתה מקבל החלטות על מכנה שאינך מכיר.
+          </div>
+        </div>
+      </div>
+      <div class="task">
+        <div class="id">✓</div>
+        <div class="body">
+          <div class="t">כן — לחסוך את קליטת ההזמנות הידנית</div>
+          <div class="d">בכל קמפיין אתה קולט הזמנות בעצמך. זה נשבר הרבה לפני 400.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TIMELINE ============ -->
+  <section>
+    <div class="sec-head">
+      <div class="meta">SCHEDULE · 10 שבועות</div>
+      <h2>ציר זמן</h2>
+    </div>
+    <p>
+      התוכנית התקצרה מ‑14 ל‑10 שבועות: שער ההוכחה כבר עבר, ומודל רב‑ספקי נדחה.
+      מנוע ההצעות (A) רץ שבוע אחר שבוע ולא מחכה לקוד.
+    </p>
+
+    <div class="tl-wrap">
+      <div class="tl">
+        <div></div>
+        <div class="wk">W1</div><div class="wk">W2</div><div class="wk">W3</div><div class="wk">W4</div><div class="wk">W5</div>
+        <div class="wk">W6</div><div class="wk">W7</div><div class="wk">W8</div><div class="wk">W9</div><div class="wk">W10</div>
+
+        <div class="row-label">A · מנוע ההצעות</div>
+        <div class="bar market" style="grid-column: 2 / 12;">קמפיין שבועי, כל שבוע</div>
+
+        <div class="row-label">B · דף ההצעה</div>
+        <div class="bar" style="grid-column: 2 / 5;">קטלוג · סל · הזמנה חוזרת</div>
+        <div class="spacer" style="grid-column: 5 / 12;"></div>
+
+        <div class="row-label">C · יסודות</div>
+        <div class="spacer"></div>
+        <div class="bar" style="grid-column: 3 / 8;">סכימה · אימות · RLS · ניקוי</div>
+        <div class="spacer" style="grid-column: 8 / 12;"></div>
+
+        <div class="row-label">D · עיצוב</div>
+        <div class="spacer" style="grid-column: 2 / 4;"></div>
+        <div class="bar design" style="grid-column: 4 / 9;">רכיבים · צפיפות · נייד</div>
+        <div class="spacer" style="grid-column: 9 / 12;"></div>
+
+        <div class="row-label">E · תפעול הזמנות</div>
+        <div class="spacer" style="grid-column: 2 / 8;"></div>
+        <div class="bar" style="grid-column: 8 / 12;">קליטה · אישור · מייל</div>
+
+        <div class="row-label" style="color:var(--gate)">שערים</div>
+        <div class="spacer" style="grid-column: 2 / 5;"></div>
+        <div class="gate-mark">G1</div>
+        <div class="spacer" style="grid-column: 6 / 8;"></div>
+        <div class="gate-mark">G2</div>
+        <div class="spacer" style="grid-column: 9 / 11;"></div>
+        <div class="gate-mark">G3</div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <span><i style="background:var(--gate)"></i> מכירה ושטח</span>
+      <span><i style="background:var(--accent)"></i> פיתוח</span>
+      <span><i style="background:var(--ink-soft)"></i> עיצוב</span>
+      <span><i style="background:var(--gate-soft); border:1px solid var(--gate)"></i> שער החלטה</span>
+    </div>
+  </section>
+
+  <!-- ============ TRACK A ============ -->
+  <section>
+    <div class="sec-head">
+      <div class="meta">TRACK A · כל שבוע · בלי תלות בקוד</div>
+      <h2>מנוע ההצעות</h2>
+    </div>
+    <p>
+      זה לא ניסוי יותר — זו פעילות שוטפת שכבר מייצרת הכנסה. המטרה עכשיו היא להפוך אותה לשיטתית
+      ולמדוד אותה נכון.
+    </p>
+
+    <div class="tasks">
+      <div class="task">
+        <div class="id">A1</div>
+        <div class="body">
+          <div class="t">הודעת היכרות אחת בשבוע, לא מבצע</div>
+          <div class="d">
+            מוצר אחד מהקטלוג שרוב הרשימה לא מכירה, במחיר מלא, בפורמט שעבד: ״מי שלא מכיר עדיין…״.
+            להעדיף מוצרים בערך יחידה גבוה — הם היחידים שיכולים להזיז מספרים.
+          </div>
+        </div>
+      </div>
+      <div class="task">
+        <div class="id">A2</div>
+        <div class="body">
+          <div class="t">לתעדף את הקטלוג לפי ערך × חדשנות</div>
+          <div class="d">
+            לדרג את 45 המוצרים לפי מחיר ליחידה ולפי כמה מהרשימה כבר קנו אותם. זה יוצר תור קמפיינים
+            לחודשים קדימה, במקום להחליט כל שבוע מחדש.
+          </div>
+        </div>
+      </div>
+      <div class="task">
+        <div class="id">A3</div>
+        <div class="body">
+          <div class="t">לסגור את המכנה</div>
+          <div class="d">
+            לברר כמה מ‑400 באמת מקבלים. אפשרות זולה: הודעה קצרה עם קריאה לתגובה, או מעבר
+            מרשימת תפוצה לקבוצה שקטה שבה נראית מסירה. בלי מכנה ידוע כל אחוז המרה חסר משמעות.
+          </div>
+        </div>
+      </div>
+      <div class="task">
+        <div class="id">A4</div>
+        <div class="body">
+          <div class="t">להפסיק הנחות על מתכלים ללקוחות קיימים</div>
+          <div class="d">
+            אם בכל זאת הנחה — שתהיה <b>מדרגת כמות</b> ולא הורדת מחיר רוחבית: ״מ‑3 קרטונים, 3.50 ₪״.
+            זה מגדיל את ההזמנה במקום לשחוק את המרווח על מי שממילא קונה.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3>המדדים שמחליפים את ״אחוז המרה״</h3>
+    <div class="metrics">
+      <div class="metric">
+        <div class="m-n">₪ להזמנה</div>
+        <div class="m-d">המספר שהכי פתוח לשיפור, ושהקוד באמת משפיע עליו.</div>
+        <div class="m-now">מרק 166 ₪ · MOC 514 ₪</div>
+      </div>
+      <div class="metric">
+        <div class="m-n">פריטים שונים להזמנה</div>
+        <div class="m-d">היעד הישיר של דף ההצעה וההזמנה החוזרת. שתי ההרצות מכרו SKU אחד בלבד.</div>
+        <div class="m-now">היום: 1</div>
+      </div>
+      <div class="metric">
+        <div class="m-n">מרווח לקמפיין</div>
+        <div class="m-d">לא מכירות. קמפיין המרק הכניס 665 ₪ ושחק 193 ₪.</div>
+        <div class="m-now">היום: לא נמדד</div>
+      </div>
+      <div class="metric">
+        <div class="m-n">לקוחות ייחודיים ברבעון</div>
+        <div class="m-d">כמה מ‑400 קנו לפחות פעם אחת. זה גודל העסק האמיתי.</div>
+        <div class="m-now">היום: לא ידוע</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TRACK B ============ -->
+  <section>
+    <div class="sec-head">
+      <div class="meta">TRACK B · W1–W4 · הפיצ׳ר היחיד שמחזיר כסף מיד</div>
+      <h2>דף ההצעה</h2>
+    </div>
+    <p>
+      מסך אחד. ההודעה בוואטסאפ מפסיקה להיות טקסט ומקבלת לינק, והלינק נוחת על דף שמוכר יותר מפריט אחד.
+      זה הדבר היחיד שאפשר לבנות בשבועיים והוא ישנה את המספרים של הקמפיין הבא.
+    </p>
+
+    <div class="tasks">
+      <div class="task">
+        <div class="id">B1</div>
+        <div class="body">
+          <div class="t">הדף: המוצר המוצע + מה שהוא הזמין בעבר</div>
+          <div class="d">
+            חצי עליון — המוצר מהקמפיין, מחיר, כמות, הוסף. חצי תחתון — ״מה שהזמנת בפעם שעברה״,
+            כל אחד עם כפתור הוספה אחד. זה המנגנון שהופך הזמנה של 166 ₪ להזמנה של 400 ₪.
+          </div>
+        </div>
+      </div>
+      <div class="task">
+        <div class="id">B2</div>
+        <div class="body">
+          <div class="t">זיהוי בלינק, בלי מסך התחברות</div>
+          <div class="d">
+            לינק אישי לכל נגר. נגר לא ייצור סיסמה בשביל להזמין קרטון מרק. הזיהוי גם נותן לך את
+            המדידה שחסרה — מי פתח, מי הוסיף, מי נטש.
+          </div>
+        </div>
+      </div>
+      <div class="task">
+        <div class="id">B3</div>
+        <div class="body">
+          <div class="t">שליחת הזמנה, בלי סליקה</div>
+          <div class="d">
+            ״שלח הזמנה״ → נקלטת אצלך → אתה מאשר. מחירים ללא מע״מ, מע״מ כאינדיקציה,
+            והמסמך הוא הזמנת רכש ולא חשבונית. חשבונית ממשיכה לצאת מאיתמיר כרגיל.
+          </div>
+        </div>
+      </div>
+      <div class="task">
+        <div class="id">B4</div>
+        <div class="body">
+          <div class="t">מדרגת כמות מוצגת בדף</div>
+          <div class="d">
+            <code>volume_pricing</code> כבר קיימת ב‑DB ו‑<code>VolumePricingTable</code> כבר קיים ברכיבים.
+            להציג ״עוד קרטון אחד ואתה במדרגה הבאה״ ליד הכמות — זו הדרך המהירה ביותר להעלות סל.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TRACK C ============ -->
+  <section>
+    <div class="sec-head">
+      <div class="meta">TRACK C · W2–W7 · רץ בכל מקרה</div>
+      <h2>יסודות</h2>
+    </div>
+    <p>נדרש בכל תרחיש. מה שירד מהגרסה הקודמת: פיצול מוצר קנוני מהצעת ספק, וממשק ניהול ארגונים.</p>
+
+    <div class="tasks">
+      <div class="task">
+        <div class="id">C1</div>
+        <div class="body">
+          <div class="t">מיגרציית baseline + CLI + typegen</div>
+          <div class="d">
+            אין היום <code>supabase/</code>, והסכימה החיה סטתה מ‑<code>docs/*.sql</code> — הקובץ יוצר
+            עמודות <code>bank_*</code> שלא קיימות בפרודקשן, וה‑VIEW שבסופו אינו תקין תחבירית.
+            עד שיש מיגרציות אי אפשר לאמת שום שינוי סכימה.
+          </div>
+        </div>
+      </div>
+      <div class="task">
+        <div class="id">C2</div>
+        <div class="body">
+          <div class="t">ניקוי הקטלוג — תנאי מקדים ל‑A2</div>
+          <div class="d">
+            62 שורות: 6 כותרות סקשן מהגיליון (״מוצרים משלימים״ ×13, ״דבקים למכונות קנטים״ ×8),
+            13 במחיר 1 ₪, 41 בלי <code>supplier_id</code>, כל התמונות שבורות, <code>categories</code> ריקה.
+            אי אפשר לתעדף קטלוג לקמפיינים לפני שהוא נקי.
+          </div>
+        </div>
+      </div>
+      <div class="task">
+        <div class="id">C3</div>
+        <div class="body">
+          <div class="t">חיסול האוטנטיקציה הפיקטיבית</div>
+          <div class="d">
+            <code>DEMO_SUPPLIERS</code> עם <code>demo123</code> בקוד וסשן ב‑<code>localStorage</code> —
+            כל מבקר יכול להיכנס ל‑<code>/supplier</code>. להעביר ל‑Supabase Auth ולאחד את
+            <code>profiles</code> עם <code>user_profiles</code>.
+          </div>
+        </div>
+      </div>
+      <div class="task">
+        <div class="id">C4</div>
+        <div class="body">
+          <div class="t">הזמנות: לחסל את items_json</div>
+          <div class="d">
+            <code>orders</code> → <code>order_items</code>, עם <code>unit_price</code> כצילום בזמן ההזמנה.
+            אין צורך ב‑<code>supplier_orders</code> כל עוד יש ספק אחד — אבל <code>items_json</code>
+            חוסם גם דוחות, גם מלאי וגם כל בידוד עתידי.
+          </div>
+        </div>
+      </div>
+      <div class="task">
+        <div class="id">C5</div>
+        <div class="body">
+          <div class="t">RLS + טסטי בידוד</div>
+          <div class="d">
+            RLS דלוק על 12 טבלאות אבל רק ל‑4 יש policies — שמונה מחזירות ריק לאפליקציה, ובמקביל
+            <code>products</code> פתוחה ב‑<code>ALL / public / using(true)</code>, כלומר כל אחד עם המפתח
+            הציבורי יכול למחוק את הקטלוג. זו הפרצה הדחופה ביותר בקוד היום.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TRACK D ============ -->
+  <section>
+    <div class="sec-head">
+      <div class="meta">TRACK D · W4–W8</div>
+      <h2>עיצוב</h2>
+    </div>
+    <p>המראה הנוכחי — גרדיאנטים, זכוכית מטושטשת, אימוג׳י כאייקונים — נקרא כחובבני ב‑B2B, והוא דליל במידע.</p>
+
+    <div class="tasks">
+      <div class="task">
+        <div class="id">D1</div>
+        <div class="body">
+          <div class="t">דף ההצעה נפתח בנייד, ביד אחת</div>
+          <div class="d">
+            נגר קורא את ההודעה במסגרייה, בעמידה, לפעמים בכפפות. יעדי מגע גדולים, מעט טקסט,
+            והמסלול מפתיחה עד ״נשלח״ בשלוש הקשות. זה מסך המכירה — כל השאר משני לו.
+          </div>
+        </div>
+      </div>
+      <div class="task">
+        <div class="id">D2</div>
+        <div class="body">
+          <div class="t">קטלוג הוא לא מסך הבית</div>
+          <div class="d">
+            נגר יודע מה הוא רוצה. המסך הראשי הוא הזמנה חוזרת + חיפוש; גלישה בקטלוג היא לאנשים
+            שלא יודעים מה הם צריכים.
+          </div>
+        </div>
+      </div>
+      <div class="task">
+        <div class="id">D3</div>
+        <div class="body">
+          <div class="t">מערכת רכיבים אמיתית</div>
+          <div class="d">
+            shadcn/ui + Radix + Lucide במקום אימוג׳י. היום אין אף אחד מהם ואין <code>components.json</code>.
+            זה גם מה שמאפשר RTL עם תכונות לוגיות במקום כיוונים קשיחים.
+          </div>
+        </div>
+      </div>
+      <div class="task">
+        <div class="id">D4</div>
+        <div class="body">
+          <div class="t">מחיר לפני ואחרי מע״מ — תמיד שניהם</div>
+          <div class="d">
+            נגר חושב ללא מע״מ, ההזמנה מוצגת עם. זוג תגיות קבוע, ומע״מ שנשמר על ההזמנה במקום
+            <code>* 1.18</code> קשיח בתוך <code>cart-context.tsx</code>.
+          </div>
+        </div>
+      </div>
+      <div class="task">
+        <div class="id">D5</div>
+        <div class="body">
+          <div class="t">תמונות מוצר או מצב ריק מעוצב</div>
+          <div class="d">
+            62 קישורי Google Drive שבורים גרועים מאפס תמונות. לארח ב‑Supabase Storage, או לעצב
+            מצב ריק מכוון עם שם המוצר והמק״ט כטיפוגרפיה.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ GATES ============ -->
+  <section>
+    <div class="sec-head">
+      <div class="meta">GATES</div>
+      <h2>שערי החלטה</h2>
+    </div>
+    <p>
+      שער ההוכחה המקורי — ״האם נגר מגיב״ — עבר בשטח. השערים החדשים בודקים כלכלה, לא היענות.
+    </p>
+
+    <div class="gates">
+      <div class="gate">
+        <div class="g-id">G1</div>
+        <div class="g-txt">קמפיין ראשון דרך הדף מגיע ל‑<b>2 פריטים שונים</b> להזמנה, ולממוצע גבוה מ‑<b>514 ₪</b>.</div>
+        <div class="g-when">סוף W4</div>
+        <div class="g-fail">הרף הוא מה שכבר השגת ידנית ב‑MOC. אם הדף לא עובר אותו הוא לא מוסיף כלום, והבעיה בתצוגה ולא בתשתית — <b>לא להמשיך ל‑E</b> לפני שזה נפתר.</div>
+      </div>
+      <div class="gate">
+        <div class="g-id">G2</div>
+        <div class="g-txt">ארבעה קמפיינים רצו, ולפחות <b>שניים</b> עברו את המרווח של קמפיין ה‑MOC.</div>
+        <div class="g-when">סוף W7</div>
+        <div class="g-fail">אם ה‑MOC היה חד־פעמי ולא דפוס — הבעיה בעומק הקטלוג, וצריך מוצרים חדשים לפני עוד קוד.</div>
+      </div>
+      <div class="gate">
+        <div class="g-id">G3</div>
+        <div class="g-txt"><b>40 נגריות</b> הזמינו לפחות פעם אחת דרך המערכת, ו‑<b>15</b> מהן פעמיים.</div>
+        <div class="g-when">סוף W10</div>
+        <div class="g-fail">הזמנה שנייה היא המדד היחיד שנחשב. ראשונה אפשר לקנות בהנחה או ביחסים אישיים.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ NOT BUILDING ============ -->
+  <section>
+    <div class="sec-head">
+      <div class="meta">OUT OF SCOPE</div>
+      <h2>מה לא בונים</h2>
+    </div>
+    <p>ארבעת הראשונים ירדו מהגרסה הקודמת של התוכנית בעקבות הנתונים.</p>
+    <div class="nots">
+      <span class="not"><s>פיצול מוצר קנוני / הצעות ספק</s></span>
+      <span class="not"><s>השוואת מחירים בין ספקים</s></span>
+      <span class="not"><s>supplier_orders ופיצול רב‑ספקי</s></span>
+      <span class="not"><s>ממשק ניהול ארגונים ומשתמשים</s></span>
+      <span class="not"><s>סליקה, Stripe, PayPal</s></span>
+      <span class="not"><s>Push / SMS / WhatsApp API</s></span>
+      <span class="not"><s>צינור אירועים מלא</s></span>
+      <span class="not"><s>Analytics ו‑BI</s></span>
+      <span class="not"><s>דשבורד אדמין רחב</s></span>
+      <span class="not"><s>המלצות ו‑AI</s></span>
+    </div>
+    <p style="font-size:0.95rem; color:var(--ink-soft)">
+      שני חריגים נרשמים מהיום הראשון, בצד שרת: <b>חיפוש ללא תוצאות</b> (מה חסר בקטלוג)
+      ו<b>פתיחת דף הצעה</b> (המכנה שאין לך היום). שניהם זולים ושניהם עונים על שאלה פתוחה.
+    </p>
+  </section>
+
+  <!-- ============ RISKS ============ -->
+  <section>
+    <div class="sec-head">
+      <div class="meta">RISKS</div>
+      <h2>סיכונים</h2>
+    </div>
+    <div class="risks">
+      <div class="risk">
+        <div class="r-t">MOC היה מקרה ולא דפוס</div>
+        <div class="r-d">
+          נקודת נתונים אחת. ייתכן שהמוצר הזה במיוחד ענה על צורך קיים, ושאין עוד 44 כמוהו בקטלוג.
+          שער G2 קיים בדיוק כדי לבדוק את זה לפני שנשען על ההנחה.
+        </div>
+      </div>
+      <div class="risk">
+        <div class="r-t">״מרקטפלייס״ מול ״חנות של איתמיר״</div>
+        <div class="r-d">
+          התוכנית הזאת בונה במודע את השני. זו ההחלטה הנכונה לעשרת השבועות הקרובים, אבל כדאי לדעת
+          שהיא נדחית ולא מבוטלת — וספק שני יחזיר את מסלול הפיצול לשולחן.
+        </div>
+      </div>
+      <div class="risk">
+        <div class="r-t">התלות ברשימה</div>
+        <div class="r-d">
+          כל העסק תלוי ברשימת תפוצה בוואטסאפ שאתה לא באמת שולט בה: לא יודע כמה מקבלים, ואם החשבון
+          ייחסם בגלל דיוור — אין נכס. לינק אישי ומייל שנאסף בדף ההצעה הם ביטוח זול על זה.
+        </div>
+      </div>
+      <div class="risk">
+        <div class="r-t">קיבולת של אדם אחד</div>
+        <div class="r-d">
+          עשרה שבועות בקצב רציני. מנוע ההצעות דורש ממך שעות בכל שבוע במקביל לפיתוח — ואם משהו
+          נופל, שיפול הפיתוח ולא הקמפיין. הקמפיין הוא זה שמכניס כסף.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="closer">
+    שתי הודעות מול אותה רשימה ייצרו הפרש של פי 5.4. ההפרש לא היה בערוץ, לא בעיתוי ולא בהנחה —
+    אלא במה שנמכר ולמי זה היה חדש. עשרת השבועות האלה בנויים לשרת את זה, ולא את מה שנראה כמו מרקטפלייס.
+  </div>
+
+</div>
