@@ -11,16 +11,17 @@
     "audit:dependencies": "npm audit --audit-level=moderate",
     "type-check": "tsc --noEmit",
     "test": "echo 'No tests yet'",
-    "verify": "npm run type-check && npm run lint && npm run audit:dependencies"
+    "verify": "npm run type-check && npm run lint && npm run audit:dependencies",
+    "db:link": "supabase link --project-ref ihburmhtcfhwlairyfyf",
+    "db:push": "supabase db push",
+    "db:diff": "supabase db diff",
+    "db:types": "supabase gen types typescript --project-id ihburmhtcfhwlairyfyf > src/lib/database.types.ts"
   },
   "dependencies": {
-    "@stripe/react-stripe-js": "^6.8.2",
-    "@stripe/stripe-js": "^9.14.0",
     "@supabase/supabase-js": "^2.112.3",
     "next": "16.3.1",
     "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "stripe": "^22.6.0"
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -29,6 +30,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.1",
+    "supabase": "^2.116.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
