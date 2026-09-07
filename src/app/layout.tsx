@@ -1,33 +1,24 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/lib/auth-context";
 import { CartProvider } from "@/lib/cart-context";
 import { CheckoutProvider } from "@/lib/checkout-context";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "Marketplace Negrim - שוק הנגרים",
-  description: "B2B Marketplace for woodworking suppliers - שוק קניות לנגרים ומפעלי נגרות",
+  title: "שוק הנגרים",
+  description: "הזמנת דבקים, קנטים וחומרי עזר לנגריות — ישירות מהספק.",
 };
 
-export default function RootLayout({ children }: any) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  // lang="he" matters: it drives font selection, hyphenation and how a screen
+  // reader pronounces the page. It said "en" while every string was Hebrew.
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-      dir="rtl"
-    >
-      <body className="min-h-full flex flex-col">
+    <html lang="he" dir="rtl" className="h-full">
+      <body className="min-h-full flex flex-col bg-stone-50 text-stone-900 antialiased">
         <AuthProvider>
           <CartProvider>
             <CheckoutProvider>{children}</CheckoutProvider>

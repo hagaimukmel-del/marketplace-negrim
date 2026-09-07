@@ -1,12 +1,141 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { Search, ShoppingCart, Minus, Plus, PackageX } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { ProductRow } from '@/lib/db'
 import { useCart } from '@/lib/cart-context'
-import { withVat } from '@/lib/vat'
+import { formatIls, withVat } from '@/lib/vat'
 
 type Product = ProductRow
+
+/**
+ * Product image with a designed fallback.
+ *
+ * Every image_url in the catalogue is a Google Drive share link, which does not
+ * render when hot-linked — the request hangs, then fails. The old page rendered
+ * the <img> anyway, so each card carried a 350px empty grey box where a photo
+ * should be. Skip the request and show the product's initials instead.
+ */
+function Thumb({ product }: { product: Product }) {
+  const [failed, setFailed] = useState(false)
+  const unusable = product.image_url?.includes('drive.google.com') ?? false
+  const initials = product.name_he.replace(/[^\p{L}\p{N}]/gu, ' ').trim().slice(0, 3)
+
+  if (!product.image_url || unusable || failed) {
+    return (
+      <div
+        aria-hidden
+        className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-stone-200 text-sm font-bold text-stone-500"
+      >
+        {initials}
+      </div>
+    )
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={product.image_url}
+      alt=""
+      onError={() => setFailed(true)}
+      className="h-16 w-16 shrink-0 rounded-lg bg-stone-100 object-cover"
+    />
+  )
+}
+
+function ProductRowItem({
+  product,
+  qty,
+  onChange,
+  onAdd,
+}: {
+  product: Product
+  qty: number
+  onChange: (id: string, qty: number) => void
+  onAdd: (product: Product) => void
+}) {
+  const price = Number(product.base_price_excl_vat)
+  const outOfStock = (product.stock_qty ?? 0) <= 0
+
+  // On a phone the controls cannot share a row with the text: at 375px it
+  // squeezed the product name into three lines and broke "ליח׳ ללא מע״מ"
+  // across two. Stack below 640px, single row above it.
+  return (
+    <div className="border-b border-stone-200 p-3 last:border-b-0 sm:flex sm:items-center sm:gap-3">
+      <div className="flex gap-3 sm:min-w-0 sm:flex-1">
+        <Thumb product={product} />
+
+        <div className="min-w-0 flex-1">
+          <p className="font-bold leading-tight text-stone-900">{product.name_he}</p>
+          {product.name_en && (
+            <p className="truncate text-sm text-stone-500">{product.name_en}</p>
+          )}
+          {product.description_he && (
+            <p className="mt-0.5 line-clamp-1 text-sm text-stone-600">
+              {product.description_he}
+            </p>
+          )}
+
+          {/* A carpenter quotes and buys excluding VAT, so that is the number
+              that gets the size. The old page had this the other way round. */}
+          <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2">
+            <span className="tnum text-lg font-bold text-stone-900">{formatIls(price)}</span>
+            <span className="whitespace-nowrap text-xs text-stone-500">ליח׳ ללא מע״מ</span>
+            <span className="tnum whitespace-nowrap text-xs text-stone-400">
+              {formatIls(withVat(price))} כולל
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 flex shrink-0 items-center gap-2 sm:mt-0">
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => onChange(product.id, qty - 1)}
+            disabled={qty <= 1}
+            aria-label={`הפחת כמות עבור ${product.name_he}`}
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-stone-300 text-stone-700 disabled:opacity-30"
+          >
+            <Minus size={16} />
+          </button>
+          <input
+            inputMode="numeric"
+            value={qty}
+            onChange={(e) => onChange(product.id, parseInt(e.target.value, 10) || 1)}
+            aria-label={`כמות עבור ${product.name_he}`}
+            className="h-10 w-14 rounded-lg border border-stone-300 text-center font-semibold"
+          />
+          <button
+            type="button"
+            onClick={() => onChange(product.id, qty + 1)}
+            aria-label={`הוסף כמות עבור ${product.name_he}`}
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-stone-300 text-stone-700"
+          >
+            <Plus size={16} />
+          </button>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onAdd(product)}
+          disabled={outOfStock}
+          className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800 disabled:bg-stone-300 disabled:text-stone-500 sm:flex-none"
+        >
+          {outOfStock ? (
+            <>
+              <PackageX size={15} /> אזל
+            </>
+          ) : (
+            <>
+              <ShoppingCart size={15} /> הוסף
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  )
+}
 
 export default function CatalogPage() {
   const cart = useCart()
@@ -14,37 +143,65 @@ export default function CatalogPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [quantities, setQuantities] = useState<Record<string, number>>({})
+  const [query, setQuery] = useState('')
 
   useEffect(() => {
-    fetchProducts()
+    const load = async () => {
+      try {
+        setLoading(true)
+        const { data, error: queryError } = await supabase
+          .from('products')
+          .select('*')
+          .eq('is_active', true)
+          .order('base_price_excl_vat', { ascending: false })
+
+        if (queryError) throw queryError
+        setProducts(data ?? [])
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'טעינת הקטלוג נכשלה')
+      } finally {
+        setLoading(false)
+      }
+    }
+    void load()
   }, [])
 
-  const fetchProducts = async () => {
-    try {
-      setLoading(true)
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('is_active', true)
+  // A carpenter arrives knowing what he wants. Search is the primary way in;
+  // the grid is the fallback, not the other way round.
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return products
+    return products.filter((p) =>
+      [p.name_he, p.name_en, p.description_he].some((field) =>
+        field?.toLowerCase().includes(q)
+      )
+    )
+  }, [products, query])
 
-      if (error) throw error
-      setProducts(data || [])
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load products')
-      console.error('Error fetching products:', err)
-    } finally {
-      setLoading(false)
-    }
+  const setQty = (id: string, qty: number) =>
+    setQuantities((prev) => ({ ...prev, [id]: Math.max(1, qty) }))
+
+  const add = (product: Product) => {
+    cart.addItem(
+      {
+        id: product.id,
+        name_he: product.name_he,
+        name_en: product.name_en ?? product.name_he,
+        base_price_excl_vat: Number(product.base_price_excl_vat),
+      },
+      quantities[product.id] ?? 1
+    )
+    setQuantities((prev) => ({ ...prev, [product.id]: 1 }))
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-amber-50 via-white to-green-50">
-        <div className="text-center">
-          <div className="animate-spin mb-4">
-            <div className="w-12 h-12 border-4 border-amber-200 border-t-amber-700 rounded-full"></div>
-          </div>
-          <p className="text-lg text-gray-700 font-medium">טוען קטלוג...</p>
+      <div className="mx-auto max-w-3xl px-4 py-10">
+        <div className="h-10 w-48 animate-pulse rounded-lg bg-stone-200" />
+        <div className="mt-6 space-y-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-24 animate-pulse rounded-xl bg-stone-200" />
+          ))}
         </div>
       </div>
     )
@@ -52,208 +209,66 @@ export default function CatalogPage() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-amber-50 via-white to-green-50">
-        <div className="text-center bg-white/80 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/20">
-          <p className="text-lg text-red-600 font-medium mb-4">שגיאה: {error}</p>
-          <button
-            onClick={fetchProducts}
-            className="px-6 py-2 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-lg hover:shadow-lg hover:scale-105 transition-all font-medium"
-          >
-            נסה שוב
-          </button>
-        </div>
+      <div className="mx-auto max-w-md px-4 py-16 text-center">
+        <p className="text-stone-900">לא הצלחנו לטעון את הקטלוג.</p>
+        <p className="mt-1 text-sm text-stone-500">{error}</p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="mt-4 h-11 rounded-lg bg-stone-900 px-5 font-semibold text-white"
+        >
+          נסה שוב
+        </button>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-green-50 py-12 px-4 md:px-8">
-      <div className="max-w-7xl mx-auto space-y-12">
-        {/* Modern Futuristic Header */}
-        <div className="space-y-6">
-          <div className="relative overflow-hidden rounded-3xl p-8 md:p-12 backdrop-blur-xl bg-gradient-to-r from-amber-900/20 via-amber-800/20 to-green-800/20 border border-white/30 shadow-2xl">
-            <div className="absolute inset-0 bg-gradient-to-r from-amber-600/10 via-transparent to-green-600/10 opacity-50"></div>
-            <div className="relative z-10">
-              <h1 className="text-5xl md:text-6xl font-black bg-gradient-to-r from-amber-900 via-amber-800 to-green-700 bg-clip-text text-transparent mb-3">
-                📦 קטלוג דבקים מקצועי
-              </h1>
-              <p className="text-gray-700 text-lg md:text-xl font-medium">
-                בחר מוצרים איכותיים מהטובים בעולם לנגרותך • מחיר תחרותי • משלוח מהיר
-              </p>
-            </div>
-          </div>
-
-          {/* Stats Bar */}
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-full font-bold shadow-lg">
-              {products.length} מוצרים זמינים
-            </div>
-            <div className="px-6 py-3 bg-white/60 backdrop-blur-lg border border-white/40 text-gray-700 rounded-full font-medium shadow-lg">
-              בחר וקבע כמות
-            </div>
-          </div>
-        </div>
-
-        {/* Products Grid */}
-        {products.length === 0 ? (
-          <div className="text-center py-24 bg-white/50 backdrop-blur-lg rounded-3xl border border-white/30">
-            <p className="text-gray-600 text-xl font-medium">אין מוצרים זמינים כרגע</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6 md:gap-8">
-            {products.map((product) => {
-              const autoRating = product.rating ?? (5.0 - ((product.return_rate ?? 0) * 0.2))
-              const priceWithVat = withVat(product.base_price_excl_vat)
-              const hasImage = product.image_url && product.image_url.trim() !== ''
-
-              return (
-                <div
-                  key={product.id}
-                  className="group relative overflow-hidden rounded-2xl bg-white/40 backdrop-blur-xl border border-white/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-white/80 hover:-translate-y-2"
-                >
-                  {/* Gradient Overlay Effect */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-amber-50/50 via-white/20 to-green-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-                  {/* Image Container */}
-                  <div className="relative w-full h-56 md:h-64 bg-gradient-to-br from-gray-100 to-gray-50 overflow-hidden border-b border-white/30">
-                    {hasImage ? (
-                      <img
-                        src={product.image_url ?? undefined}
-                        alt={product.name_he}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none'
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-amber-100 via-amber-50 to-green-100">
-                        <span className="text-6xl opacity-30">🛢️</span>
-                      </div>
-                    )}
-
-                    {/* Top Right Badge - Rating */}
-                    <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-md px-4 py-2 rounded-full shadow-lg border border-white/30 font-bold text-amber-900">
-                      ⭐ {autoRating.toFixed(2)}
-                    </div>
-
-                    {/* Bottom Left Badge - Stock */}
-                    <div className="absolute bottom-4 left-4">
-                      <div
-                        className={`px-4 py-2 rounded-full font-bold text-sm backdrop-blur-md border border-white/30 shadow-lg ${
-                          (product.stock_qty ?? 0) > 0
-                            ? 'bg-emerald-500/90 text-white'
-                            : 'bg-red-500/90 text-white'
-                        }`}
-                      >
-                        {(product.stock_qty ?? 0) > 0 ? `${product.stock_qty ?? 0} יח׳ במלאי` : '❌ אזל'}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Content Section */}
-                  <div className="relative z-10 p-5 md:p-6 space-y-4">
-                    {/* Product Name */}
-                    <div className="space-y-1">
-                      <h3 className="text-lg md:text-xl font-bold text-gray-900 line-clamp-2 group-hover:text-amber-900 transition-colors">
-                        {product.name_he}
-                      </h3>
-                      <p className="text-xs md:text-sm text-gray-600 font-medium">
-                        {product.name_en}
-                      </p>
-                      {product.name_ar && (
-                        <p className="text-xs text-gray-500">{product.name_ar}</p>
-                      )}
-                    </div>
-
-                    {/* Description */}
-                    {product.description_he && (
-                      <p className="text-sm text-gray-700 line-clamp-2 leading-relaxed">
-                        {product.description_he}
-                      </p>
-                    )}
-
-                    {/* Price Section */}
-                    <div className="bg-gradient-to-r from-amber-50/70 to-green-50/70 rounded-xl p-4 border border-white/40 backdrop-blur-sm">
-                      <div className="flex items-baseline justify-between gap-3 mb-2">
-                        <div>
-                          <p className="text-xs text-gray-600 mb-1">💰 מחיר ליחידה:</p>
-                          <span className="text-3xl md:text-4xl font-black bg-gradient-to-r from-amber-900 to-green-700 bg-clip-text text-transparent">
-                            ₪{priceWithVat.toFixed(2)}
-                          </span>
-                        </div>
-                        <div className="text-right text-xs text-gray-700">
-                          <p className="mb-1 font-semibold">כולל מע״מ</p>
-                          <p className="text-gray-600">ללא: ₪{product.base_price_excl_vat.toFixed(2)}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Quantity Selector */}
-                    <div className="flex items-center gap-2 bg-white/50 backdrop-blur-sm rounded-lg border border-gray-200/50 p-2">
-                      <button
-                        onClick={() =>
-                          setQuantities((p) => ({
-                            ...p,
-                            [product.id]: Math.max(1, (p[product.id] || 1) - 1),
-                          }))
-                        }
-                        className="flex-1 py-2 text-gray-700 font-bold hover:bg-gray-200 rounded transition-colors"
-                        title="הקטן כמות"
-                      >
-                        −
-                      </button>
-                      <input
-                        type="number"
-                        min="1"
-                        value={quantities[product.id] || 1}
-                        onChange={(e) =>
-                          setQuantities((p) => ({
-                            ...p,
-                            [product.id]: Math.max(1, parseInt(e.target.value) || 1),
-                          }))
-                        }
-                        className="w-16 text-center font-bold text-lg outline-none bg-transparent"
-                      />
-                      <button
-                        onClick={() =>
-                          setQuantities((p) => ({
-                            ...p,
-                            [product.id]: (p[product.id] || 1) + 1,
-                          }))
-                        }
-                        className="flex-1 py-2 text-gray-700 font-bold hover:bg-gray-200 rounded transition-colors"
-                        title="הגדל כמות"
-                      >
-                        +
-                      </button>
-                    </div>
-
-                    {/* Add to Cart Button */}
-                    <button
-                      onClick={() => {
-                        cart.addItem(
-                          {
-                            id: product.id,
-                            name_he: product.name_he,
-                            name_en: product.name_en ?? product.name_he,
-                            base_price_excl_vat: product.base_price_excl_vat,
-                          },
-                          quantities[product.id] || 1
-                        )
-                        setQuantities((p) => ({ ...p, [product.id]: 1 }))
-                      }}
-                      disabled={(product.stock_qty ?? 0) <= 0}
-                      className="w-full py-3 px-4 bg-gradient-to-r from-amber-600 to-green-600 text-white font-bold rounded-xl hover:from-amber-700 hover:to-green-700 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:from-gray-400 disabled:to-gray-400 transition-all duration-300 hover:scale-105 active:scale-95"
-                    >
-                      {(product.stock_qty ?? 0) > 0 ? '🛒 הוסף לסל' : 'אזל מהמלאי'}
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
+    <div className="mx-auto max-w-3xl px-4 py-5">
+      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <h1 className="text-xl font-bold text-stone-900">קטלוג</h1>
+        <p className="text-sm text-stone-500">
+          {shown.length === products.length
+            ? `${products.length} מוצרים`
+            : `${shown.length} מתוך ${products.length}`}
+        </p>
       </div>
+
+      <div className="relative mb-4">
+        <Search
+          size={18}
+          className="pointer-events-none absolute inset-inline-start-3 top-1/2 -translate-y-1/2 text-stone-400"
+          style={{ insetInlineStart: '0.75rem' }}
+        />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="חפש מוצר, מק״ט או תיאור"
+          aria-label="חיפוש בקטלוג"
+          className="h-12 w-full rounded-xl border border-stone-300 bg-white ps-10 pe-3 text-base"
+        />
+      </div>
+
+      {shown.length === 0 ? (
+        <div className="rounded-xl border border-stone-200 bg-white p-10 text-center">
+          <p className="font-semibold text-stone-900">לא נמצא מוצר בשם הזה</p>
+          <p className="mt-1 text-sm text-stone-600">
+            אם אתה צריך משהו שאינו בקטלוג — כתוב לנו ונשיג אותו.
+          </p>
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+          {shown.map((product) => (
+            <ProductRowItem
+              key={product.id}
+              product={product}
+              qty={quantities[product.id] ?? 1}
+              onChange={setQty}
+              onAdd={add}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

@@ -1,110 +1,78 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=DM+Sans:wght@400;500;700&display=swap');
+/* Assistant is a Hebrew typeface. The app previously loaded Poppins, DM Sans
+   and Geist — all Latin-only — so every Hebrew character on the site fell back
+   to whatever the operating system happened to pick. That alone was most of
+   why it read as unfinished. */
+@import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+   Palette
+
+   The previous theme was a warm wood-and-gold set with four shadow sizes: a
+   consumer craft-shop look. This is a trade counter. A carpenter comparing
+   PUR adhesive at 1,250 ILS wants to read a number, not admire a gradient, so
+   the surface recedes to near-neutral and colour is spent only where it means
+   something: one action colour, and semantic colours for stock and warnings.
+   --------------------------------------------------------------------------- */
 :root {
-  /* Light mode - Modern wood/craftsmanship theme */
-  --background: #fafaf7;
-  --foreground: #1a1a18;
-  --primary: #8b6f47;           /* Warm wood brown */
-  --primary-light: #e8dcc8;     /* Light warm beige */
-  --primary-dark: #5d4a2f;      /* Deep wood brown */
-  --secondary: #d4af37;         /* Gold accent */
-  --accent: #2d9d78;            /* Forest green */
-  --success: #22c55e;           /* Green */
-  --warning: #f59e0b;           /* Amber */
-  --error: #ef4444;             /* Red */
-  --muted: #78716b;             /* Warm gray */
-  --border: #e1d7cb;            /* Light warm border */
-  --shadow-sm: 0 1px 2px 0 rgba(91, 74, 47, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(91, 74, 47, 0.1), 0 2px 4px -1px rgba(91, 74, 47, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(91, 74, 47, 0.1), 0 4px 6px -2px rgba(91, 74, 47, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(91, 74, 47, 0.1), 0 10px 10px -5px rgba(91, 74, 47, 0.04);
+  --ground: #fafaf9;   /* stone-50  — page */
+  --surface: #ffffff;  /* cards, rows */
+  --surface-2: #f5f5f4;/* stone-100 — table headers, wells */
+  --ink: #1c1917;      /* stone-900 — headings, prices */
+  --ink-soft: #57534e; /* stone-600 — body */
+  --ink-faint: #a8a29e;/* stone-400 — captions */
+  --line: #e7e5e4;     /* stone-200 — borders */
+  --line-strong: #d6d3d1;
+
+  --action: #047857;   /* emerald-700 — the only "do it" colour */
+  --action-hover: #065f46;
+  --action-soft: #ecfdf5;
+
+  --warn: #b45309;     /* amber-700 */
+  --warn-soft: #fffbeb;
+  --danger: #b91c1c;   /* red-700 */
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: 'DM Sans', var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #1a1714;
-    --foreground: #f5f1e8;
-    --primary: #a89068;           /* Light wood brown */
-    --primary-light: #5d4a2f;     /* Dark wood brown */
-    --primary-dark: #d4af37;      /* Gold */
-    --secondary: #d4af37;         /* Gold */
-    --accent: #4ade80;            /* Light green */
-    --success: #34d399;           /* Green */
-    --warning: #fbbf24;           /* Light amber */
-    --error: #f87171;             /* Light red */
-    --muted: #a39e94;             /* Warm light gray */
-    --border: #332a1f;            /* Dark warm border */
-  }
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+  --color-background: var(--ground);
+  --color-foreground: var(--ink);
+  --font-sans: 'Assistant', ui-sans-serif, system-ui, sans-serif;
 }
 
 html {
-  scroll-behavior: smooth;
-  direction: rtl;
-  text-align: right;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: 'DM Sans', sans-serif;
-  font-weight: 400;
-  line-height: 1.6;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: 'Assistant', ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Typography */
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Poppins', sans-serif;
-  font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: -0.01em;
+/* Prices, quantities and totals sit in columns and must not jitter as digits
+   change. Applied globally rather than remembered per component. */
+.tnum,
+input[inputmode='numeric'],
+input[inputmode='decimal'] {
+  font-variant-numeric: tabular-nums;
 }
 
-h1 {
-  font-size: 2.5rem;
-  font-weight: 800;
+/* Keyboard focus has to stay visible: this is used one-handed in a workshop,
+   and on desktop by a supplier working through a list quickly. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--action);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
-h2 {
-  font-size: 2rem;
-  font-weight: 700;
-}
-
-h3 {
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-/* Smooth transitions */
-a, button, input, textarea, select {
-  transition: all 0.2s ease;
-}
-
-/* Remove default input focus outline */
-input:focus,
-textarea:focus,
-select:focus {
-  outline: none;
-}
-
-/* Better selection */
-::selection {
-  background-color: var(--primary);
-  color: white;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -1,53 +1,57 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { LayoutGrid, ClipboardList, ShoppingCart } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
+import { formatIls } from '@/lib/vat'
+
+const LINKS = [
+  { href: '/carpenter/catalog', label: 'קטלוג', Icon: LayoutGrid },
+  { href: '/carpenter/orders', label: 'הזמנות', Icon: ClipboardList },
+]
 
 export default function CarpenterNav() {
   const cart = useCart()
+  const pathname = usePathname()
 
   return (
-    <nav className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link href="/carpenter" className="flex items-center gap-2 hover:opacity-80 transition">
-            <span className="text-2xl">📦</span>
-            <div>
-              <p className="font-bold text-gray-900">שוק הנגרים</p>
-              <p className="text-xs text-gray-500">Marketplace Negrim</p>
-            </div>
-          </Link>
+    <nav className="sticky top-0 z-40 border-b border-stone-200 bg-white">
+      <div className="mx-auto flex h-14 max-w-3xl items-center gap-2 px-4">
+        <Link href="/carpenter/catalog" className="me-auto font-bold text-stone-900">
+          שוק הנגרים
+        </Link>
 
-          {/* Navigation */}
-          <div className="flex gap-4 items-center">
+        {LINKS.map(({ href, label, Icon }) => {
+          const active = pathname?.startsWith(href)
+          return (
             <Link
-              href="/carpenter/catalog"
-              className="px-4 py-2 text-gray-700 hover:text-amber-700 hover:bg-amber-50 rounded-lg font-medium transition"
+              key={href}
+              href={href}
+              aria-current={active ? 'page' : undefined}
+              className={`flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium ${
+                active ? 'bg-stone-100 text-stone-900' : 'text-stone-600 hover:bg-stone-50'
+              }`}
             >
-              📚 קטלוג
+              <Icon size={17} />
+              <span className="hidden sm:inline">{label}</span>
             </Link>
-            <Link
-              href="/carpenter/orders"
-              className="px-4 py-2 text-gray-700 hover:text-amber-700 hover:bg-amber-50 rounded-lg font-medium transition"
-            >
-              📋 הזמנות
-            </Link>
+          )
+        })}
 
-            {/* Cart Button */}
-            <Link
-              href="/carpenter/cart"
-              className="relative px-4 py-2 bg-amber-700 text-white rounded-lg hover:bg-amber-800 font-semibold transition flex items-center gap-2"
-            >
-              🛒 עגלה
-              {cart.totalItems > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
-                  {cart.totalItems}
-                </span>
-              )}
-            </Link>
-          </div>
-        </div>
+        {/* The cart shows its running total, not just a count: the number a
+            carpenter is deciding on is the money, and it is excl VAT. */}
+        <Link
+          href="/carpenter/cart"
+          className="flex h-10 items-center gap-2 rounded-lg bg-emerald-700 px-3 text-sm font-semibold text-white hover:bg-emerald-800"
+        >
+          <ShoppingCart size={17} />
+          {cart.totalItems > 0 ? (
+            <span className="tnum">{formatIls(cart.subtotalExclVat)}</span>
+          ) : (
+            <span className="hidden sm:inline">עגלה</span>
+          )}
+        </Link>
       </div>
     </nav>
   )
