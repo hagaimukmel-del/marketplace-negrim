@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState } from 'react'
+import type { CartItem } from './cart-context'
 
 export interface OrderForm {
   name: string
@@ -16,7 +17,7 @@ export interface OrderForm {
 interface CheckoutContextType {
   formData: Partial<OrderForm>
   updateForm: (data: Partial<OrderForm>) => void
-  submitOrder: (items: any[], total: number) => Promise<{ orderId: string }>
+  submitOrder: (items: CartItem[]) => Promise<{ orderId: string }>
   isSubmitting: boolean
   error: string | null
 }
@@ -32,7 +33,7 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
     setFormData((prev) => ({ ...prev, ...data }))
   }
 
-  const submitOrder = async (items: any[], total: number) => {
+  const submitOrder = async (items: CartItem[]) => {
     setIsSubmitting(true)
     setError(null)
 
@@ -41,18 +42,29 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
         throw new Error('חסרים פרטים נדרשים')
       }
 
-      // Create order object
+      if (items.length === 0) {
+        throw new Error('הסל ריק')
+      }
+
+      // Only ids and quantities are sent. The server reads the current price
+      // from the database and snapshots it onto the order, so the browser
+      // cannot name its own price, and no total is trusted from here.
       const order = {
         customer_name: formData.name,
         customer_email: formData.email,
         customer_phone: formData.phone,
-        business_name: formData.businessName || '',
-        address: formData.address || '',
-        city: formData.city || '',
-        zip_code: formData.zipCode || '',
-        payment_method: formData.paymentMethod || 'credit_card',
-        total_amount: total,
-        items_json: JSON.stringify(items),
+        business_name: formData.businessName || null,
+        address: formData.address || null,
+        city: formData.city || null,
+        zip_code: formData.zipCode || null,
+        payment_method: formData.paymentMethod || null,
+        items: items.map((item) => ({
+          id: item.id,
+          name_he: item.name_he,
+          name_en: item.name_en,
+          base_price_excl_vat: item.base_price_excl_vat,
+          quantity: item.quantity,
+        })),
       }
 
       // Submit to API endpoint

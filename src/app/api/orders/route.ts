@@ -1,50 +1,145 @@
-import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { NextRequest, NextResponse } from 'next/server'
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import type { OrderItemInsert } from '@/lib/db'
+
+/** One line as the checkout posts it. */
+interface IncomingItem {
+  id: string
+  name_he: string
+  name_en?: string | null
+  base_price_excl_vat: number
+  quantity: number
+}
+
+const VAT_RATE = 0.18
+
+function parseItems(raw: unknown): IncomingItem[] | null {
+  if (!Array.isArray(raw) || raw.length === 0) return null
+
+  const items: IncomingItem[] = []
+  for (const entry of raw) {
+    if (typeof entry !== 'object' || entry === null) return null
+    const item = entry as Record<string, unknown>
+
+    const id = typeof item.id === 'string' ? item.id : null
+    const nameHe = typeof item.name_he === 'string' ? item.name_he.trim() : ''
+    const price = Number(item.base_price_excl_vat)
+    const quantity = Number(item.quantity)
+
+    if (!id || !nameHe) return null
+    if (!Number.isFinite(price) || price < 0) return null
+    if (!Number.isInteger(quantity) || quantity <= 0) return null
+
+    items.push({
+      id,
+      name_he: nameHe,
+      name_en: typeof item.name_en === 'string' ? item.name_en : null,
+      base_price_excl_vat: price,
+      quantity,
+    })
+  }
+  return items
+}
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-
-    // Validate required fields
-    const { customer_name, customer_email, customer_phone, payment_method, total_amount, items_json } = body
+    const { customer_name, customer_email, customer_phone } = body
 
     if (!customer_name || !customer_email || !customer_phone) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    const items = parseItems(body.items)
+    if (!items) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'items must be a non-empty array of { id, name_he, base_price_excl_vat, quantity }' },
         { status: 400 }
       )
     }
 
-    // Generate order number
-    const orderNumber = `ORD-${Date.now()}`
+    // Prices come from the database, never from the request: the client could
+    // otherwise name its own price. Only the quantities are taken on trust.
+    const supabase = getSupabaseAdmin()
+    const { data: products, error: productError } = await supabase
+      .from('products')
+      .select('id, name_he, name_en, base_price_excl_vat')
+      .in('id', items.map((item) => item.id))
+      .eq('is_active', true)
 
-    // Insert order into Supabase
-    const { data, error } = await getSupabaseAdmin()
+    if (productError) {
+      return NextResponse.json({ error: productError.message }, { status: 500 })
+    }
+
+    const byId = new Map((products ?? []).map((product) => [product.id, product]))
+    const missing = items.filter((item) => !byId.has(item.id))
+    if (missing.length > 0) {
+      return NextResponse.json(
+        { error: `Unavailable products: ${missing.map((m) => m.name_he).join(', ')}` },
+        { status: 409 }
+      )
+    }
+
+    // Amounts are snapshots. They are stored as calculated here and never
+    // recomputed from the product row afterwards.
+    const lines = items.map((item) => {
+      const product = byId.get(item.id)!
+      const unitPrice = Number(product.base_price_excl_vat)
+      return {
+        product_id: product.id,
+        product_name_he: product.name_he,
+        product_name_en: product.name_en,
+        unit_price_excl_vat: unitPrice,
+        quantity: item.quantity,
+        line_total_excl_vat: Number((unitPrice * item.quantity).toFixed(2)),
+      }
+    })
+
+    const subtotalExclVat = Number(
+      lines.reduce((sum, line) => sum + line.line_total_excl_vat, 0).toFixed(2)
+    )
+    const totalInclVat = Number((subtotalExclVat * (1 + VAT_RATE)).toFixed(2))
+
+    const { data: order, error: orderError } = await supabase
       .from('orders')
-      .insert([
-        {
-          order_number: orderNumber,
-          customer_name,
-          customer_email,
-          customer_phone,
-          business_name: body.business_name || null,
-          address: body.address || null,
-          city: body.city || null,
-          zip_code: body.zip_code || null,
-          payment_method: payment_method || 'credit_card',
-          total_amount,
-          items_json,
-          status: 'pending',
-          created_at: new Date().toISOString(),
-        },
-      ])
-      .select()
+      .insert({
+        order_number: `ORD-${Date.now()}`,
+        customer_name,
+        customer_email,
+        customer_phone,
+        business_name: body.business_name || null,
+        address: body.address || null,
+        city: body.city || null,
+        zip_code: body.zip_code || null,
+        payment_method: body.payment_method || null,
+        subtotal_excl_vat: subtotalExclVat,
+        vat_rate: VAT_RATE,
+        total_amount: totalInclVat,
+        status: 'pending',
+      })
+      .select('id, order_number')
       .single()
 
-    if (error) {
-      console.error('Supabase insert error:', error)
+    if (orderError || !order) {
       return NextResponse.json(
-        { error: error.message || 'Failed to create order' },
+        { error: orderError?.message ?? 'Failed to create order' },
+        { status: 500 }
+      )
+    }
+
+    const orderItems: OrderItemInsert[] = lines.map((line) => ({
+      ...line,
+      order_id: order.id,
+    }))
+
+    const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
+
+    if (itemsError) {
+      // Postgres has no transaction across two PostgREST calls, so an order
+      // without lines has to be cleaned up by hand rather than left orphaned.
+      await supabase.from('orders').delete().eq('id', order.id)
+      return NextResponse.json(
+        { error: `Failed to save order lines: ${itemsError.message}` },
         { status: 500 }
       )
     }
@@ -52,8 +147,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        orderId: data.id,
-        orderNumber: data.order_number,
+        orderId: order.id,
+        orderNumber: order.order_number,
+        subtotalExclVat,
+        totalInclVat,
       },
       { status: 201 }
     )
@@ -69,34 +166,25 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
-    const limit = parseInt(searchParams.get('limit') || '10')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '10', 10), 100)
+    const offset = parseInt(searchParams.get('offset') || '0', 10)
 
-    // Fetch orders
+    // TODO: this still returns every order to any caller. It needs the
+    // per-carpenter identity the offer page introduces before it can be
+    // reachable by anyone but the operator.
     const { data, error, count } = await getSupabaseAdmin()
       .from('orders')
-      .select('*', { count: 'exact' })
+      .select('*, order_items(*)', { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
     if (error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({
-      orders: data,
-      total: count,
-      limit,
-      offset,
-    })
+    return NextResponse.json({ orders: data, total: count, limit, offset })
   } catch (err) {
     console.error('Orders fetch error:', err)
-    return NextResponse.json(
-      { error: 'Failed to fetch orders' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 })
   }
 }

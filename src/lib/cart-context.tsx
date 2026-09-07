@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { VAT_RATE, round2, vatAmount, withVat } from './vat'
 
 export interface CartItem {
   id: string
@@ -18,7 +19,12 @@ interface CartContextType {
   updateQuantity: (id: string, quantity: number) => void
   clearCart: () => void
   totalItems: number
-  totalPrice: number
+  /** Sum of the lines, excluding VAT. The figure the order stores. */
+  subtotalExclVat: number
+  /** Indicative only; the supplier issues the invoice. */
+  vatRate: number
+  vatAmount: number
+  totalInclVat: number
   logEvent: (action: string, data?: any) => void
 }
 
@@ -45,12 +51,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (mounted) {
       localStorage.setItem('cart-items', JSON.stringify(items))
-      logEvent('cart_updated', { itemCount: items.length, total: calculateTotal() })
+      logEvent('cart_updated', {
+        itemCount: items.length,
+        subtotalExclVat: calculateSubtotalExclVat(),
+      })
     }
   }, [items, mounted])
 
-  const calculateTotal = () => {
-    return items.reduce((sum, item) => sum + item.base_price_excl_vat * item.quantity * 1.18, 0)
+  const calculateSubtotalExclVat = () => {
+    return round2(
+      items.reduce((sum, item) => sum + item.base_price_excl_vat * item.quantity, 0)
+    )
   }
 
   const addItem = (item: Omit<CartItem, 'addedAt' | 'quantity'>, quantity: number) => {
@@ -136,7 +147,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     updateQuantity,
     clearCart,
     totalItems: items.reduce((sum, item) => sum + item.quantity, 0),
-    totalPrice: calculateTotal(),
+    subtotalExclVat: calculateSubtotalExclVat(),
+    vatRate: VAT_RATE,
+    vatAmount: vatAmount(calculateSubtotalExclVat()),
+    totalInclVat: withVat(calculateSubtotalExclVat()),
     logEvent,
   }
 

@@ -5,6 +5,7 @@ import { useCart } from '@/lib/cart-context'
 import { useCheckout } from '@/lib/checkout-context'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { formatIls, withVat } from '@/lib/vat'
 
 export default function CheckoutPage() {
   const cart = useCart()
@@ -32,7 +33,7 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     try {
-      const { orderId } = await checkout.submitOrder(cart.items, cart.totalPrice)
+      const { orderId } = await checkout.submitOrder(cart.items)
       setStep('success')
       // Clear cart after successful order
       setTimeout(() => {
@@ -214,7 +215,7 @@ export default function CheckoutPage() {
             {cart.items.map((item) => (
               <div key={item.id} className="flex justify-between text-sm">
                 <span>{item.name_he} ×{item.quantity}</span>
-                <span className="font-semibold">₪{(item.base_price_excl_vat * 1.18 * item.quantity).toFixed(2)}</span>
+                <span className="font-semibold">{formatIls(withVat(item.base_price_excl_vat * item.quantity))}</span>
               </div>
             ))}
           </div>
@@ -222,17 +223,17 @@ export default function CheckoutPage() {
           <div className="space-y-2 text-sm mb-4">
             <div className="flex justify-between text-gray-600">
               <span>ללא מע״מ:</span>
-              <span>₪{(cart.totalPrice / 1.18).toFixed(2)}</span>
+              <span>{formatIls(cart.subtotalExclVat)}</span>
             </div>
             <div className="flex justify-between text-gray-600">
-              <span>מע״מ 18%:</span>
-              <span>₪{(cart.totalPrice - cart.totalPrice / 1.18).toFixed(2)}</span>
+              <span>מע״מ {(cart.vatRate * 100).toFixed(0)}%:</span>
+              <span>{formatIls(cart.vatAmount)}</span>
             </div>
           </div>
 
           <div className="flex justify-between text-2xl font-bold text-gray-900 my-4">
             <span>סה״כ:</span>
-            <span>₪{cart.totalPrice.toFixed(2)}</span>
+            <span>{formatIls(cart.totalInclVat)}</span>
           </div>
 
           <Link

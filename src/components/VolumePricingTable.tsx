@@ -1,6 +1,7 @@
 'use client'
 
 import { PriceDisplay } from './GatedPriceGuard'
+import { withVat } from '@/lib/vat'
 
 interface PricingTier {
   minQty: number
@@ -59,7 +60,7 @@ export default function VolumePricingTable({
               const isActive = activeTier?.minQty === tier.minQty
               const savings = idx > 0 ? getSavings(tier, baseTier) : 0
               const totalExclVat = tier.priceExclVat * selectedQuantity
-              const totalInclVat = totalExclVat * 1.18
+              const totalInclVat = withVat(totalExclVat)
 
               return (
                 <tr

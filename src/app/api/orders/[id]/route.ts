@@ -1,8 +1,6 @@
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
-import type { Database } from '@/lib/database.types'
+import type { OrderUpdate } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
-
-type OrderUpdate = Database['public']['Tables']['orders']['Update']
 
 export async function GET(
   request: NextRequest,
@@ -13,7 +11,7 @@ export async function GET(
 
     const { data, error } = await getSupabaseAdmin()
       .from('orders')
-      .select('*')
+      .select('*, order_items(*)')
       .eq('id', id)
       .single()
 

@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import type { ProductRow } from '@/lib/database.types'
+import type { ProductRow } from '@/lib/db'
 import { useCart } from '@/lib/cart-context'
+import { withVat } from '@/lib/vat'
 
 type Product = ProductRow
 
@@ -102,7 +103,7 @@ export default function CatalogPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6 md:gap-8">
             {products.map((product) => {
               const autoRating = product.rating ?? (5.0 - ((product.return_rate ?? 0) * 0.2))
-              const priceWithVat = product.base_price_excl_vat * 1.18
+              const priceWithVat = withVat(product.base_price_excl_vat)
               const hasImage = product.image_url && product.image_url.trim() !== ''
 
               return (

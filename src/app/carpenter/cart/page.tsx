@@ -2,6 +2,7 @@
 
 import { useCart } from '@/lib/cart-context'
 import Link from 'next/link'
+import { formatIls, withVat } from '@/lib/vat'
 
 export default function CartPage() {
   const cart = useCart()
@@ -38,7 +39,7 @@ export default function CartPage() {
         {/* Items List */}
         <div className="lg:col-span-2 space-y-4">
           {cart.items.map((item) => {
-            const priceWithVat = item.base_price_excl_vat * 1.18
+            const priceWithVat = withVat(item.base_price_excl_vat)
             const itemTotal = priceWithVat * item.quantity
 
             return (
@@ -92,20 +93,20 @@ export default function CartPage() {
               <div className="flex justify-between">
                 <span className="text-gray-600">סכום ללא מע״מ:</span>
                 <span className="font-semibold">
-                  ₪{(cart.totalPrice / 1.18).toFixed(2)}
+                  {formatIls(cart.subtotalExclVat)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">מע״מ (18%):</span>
-                <span className="font-semibold">
-                  ₪{(cart.totalPrice - cart.totalPrice / 1.18).toFixed(2)}
+                <span className="text-gray-600">
+                  מע״מ ({(cart.vatRate * 100).toFixed(0)}%):
                 </span>
+                <span className="font-semibold">{formatIls(cart.vatAmount)}</span>
               </div>
             </div>
 
             <div className="flex justify-between text-2xl font-bold text-gray-900 my-4">
               <span>סה״כ:</span>
-              <span>₪{cart.totalPrice.toFixed(2)}</span>
+              <span>{formatIls(cart.totalInclVat)}</span>
             </div>
 
             <Link

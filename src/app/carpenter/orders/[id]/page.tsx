@@ -3,32 +3,11 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
+import type { OrderItemRow, OrderWithItems } from '@/lib/db'
+import { formatIls, vatAmount } from '@/lib/vat'
 
-interface Order {
-  id: string
-  order_number: string
-  customer_name: string
-  customer_email: string
-  customer_phone: string
-  business_name: string | null
-  address: string | null
-  city: string | null
-  zip_code: string | null
-  payment_method: string
-  total_amount: number
-  status: string
-  items_json: string
-  notes: string | null
-  created_at: string
-}
-
-interface OrderItem {
-  id: string
-  name_he: string
-  name_en: string
-  base_price_excl_vat: number
-  quantity: number
-}
+type Order = OrderWithItems
+type OrderItem = OrderItemRow
 
 export default function OrderDetailPage() {
   const params = useParams()
@@ -52,14 +31,7 @@ export default function OrderDetailPage() {
       const data = await response.json()
 
       setOrder(data.order)
-
-      // Parse items from JSON
-      try {
-        const parsedItems = JSON.parse(data.order.items_json)
-        setItems(parsedItems)
-      } catch {
-        setItems([])
-      }
+      setItems(data.order.order_items ?? [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load order')
     } finally {
@@ -112,7 +84,7 @@ export default function OrderDetailPage() {
     )
   }
 
-  const totalVat = order.total_amount - order.total_amount / 1.18
+  const totalVat = vatAmount(order.subtotal_excl_vat, order.vat_rate)
 
   return (
     <div className="space-y-8">
@@ -123,7 +95,7 @@ export default function OrderDetailPage() {
             <h1 className="text-4xl font-bold text-gray-900">📋 פרטי הזמנה</h1>
             <p className="text-gray-700 mt-2 font-mono">{order.order_number}</p>
           </div>
-          <div>{getStatusBadge(order.status)}</div>
+          <div>{getStatusBadge(order.status ?? 'pending')}</div>
         </div>
       </div>
 
@@ -174,15 +146,18 @@ export default function OrderDetailPage() {
                 items.map((item, idx) => (
                   <div key={idx} className="flex justify-between items-start pb-3 border-b border-gray-200 last:border-b-0">
                     <div>
-                      <p className="font-semibold text-gray-900">{item.name_he}</p>
-                      <p className="text-sm text-gray-600">{item.name_en}</p>
+                      <p className="font-semibold text-gray-900">{item.product_name_he}</p>
+                      <p className="text-sm text-gray-600">{item.product_name_en}</p>
                       <p className="text-sm text-gray-600 mt-1">כמות: {item.quantity}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-gray-600 text-sm">₪{item.base_price_excl_vat.toFixed(2)}</p>
-                      <p className="font-semibold text-gray-900">
-                        ₪{(item.base_price_excl_vat * 1.18 * item.quantity).toFixed(2)}
+                      <p className="text-gray-600 text-sm">
+                        {formatIls(item.unit_price_excl_vat)} ליח׳
                       </p>
+                      <p className="font-semibold text-gray-900">
+                        {formatIls(item.line_total_excl_vat)}
+                      </p>
+                      <p className="text-xs text-gray-500">ללא מע״מ</p>
                     </div>
                   </div>
                 ))
@@ -202,26 +177,27 @@ export default function OrderDetailPage() {
             <div className="space-y-3 border-b border-gray-200 pb-4 mb-4">
               <div className="flex justify-between text-sm text-gray-600">
                 <span>ללא מע״מ:</span>
-                <span>₪{(order.total_amount / 1.18).toFixed(2)}</span>
+                <span>{formatIls(order.subtotal_excl_vat)}</span>
               </div>
               <div className="flex justify-between text-sm text-gray-600">
-                <span>מע״מ 18%:</span>
-                <span>₪{totalVat.toFixed(2)}</span>
+                <span>מע״מ {(order.vat_rate * 100).toFixed(0)}%:</span>
+                <span>{formatIls(totalVat)}</span>
               </div>
             </div>
 
             <div className="flex justify-between text-2xl font-bold text-gray-900 mb-6">
               <span>סה״כ:</span>
-              <span>₪{order.total_amount.toFixed(2)}</span>
+              <span>{formatIls(order.total_amount)}</span>
             </div>
 
             {/* Payment Info */}
             <div className="bg-amber-50 rounded-lg p-4 mb-4">
-              <p className="text-sm text-gray-600">שיטת תשלום</p>
+              <p className="text-sm text-gray-600">תנאי תשלום</p>
               <p className="font-semibold text-gray-900 mt-1">
-                {order.payment_method === 'credit_card' && '💳 כרטיס אשראי'}
-                {order.payment_method === 'bank_transfer' && '🏦 העברה בנקאית'}
-                {order.payment_method === 'cash' && '💰 בתשלום'}
+                {order.payment_method ?? 'ייקבעו מול הספק'}
+              </p>
+              <p className="text-xs text-gray-600 mt-2">
+                הספק מספק את ההזמנה ומוציא חשבונית ישירות. זו הזמנת רכש, לא חשבונית.
               </p>
             </div>
 
@@ -229,8 +205,8 @@ export default function OrderDetailPage() {
             <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-600">
               <p>תאריך הזמנה</p>
               <p className="font-semibold text-gray-900 mt-1">
-                {new Date(order.created_at).toLocaleDateString('he-IL')} בשעה{' '}
-                {new Date(order.created_at).toLocaleTimeString('he-IL', {
+                {new Date(order.created_at ?? Date.now()).toLocaleDateString('he-IL')} בשעה{' '}
+                {new Date(order.created_at ?? Date.now()).toLocaleTimeString('he-IL', {
                   hour: '2-digit',
                   minute: '2-digit',
                 })}

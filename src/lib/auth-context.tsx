@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { Session, User } from '@supabase/supabase-js'
 import { supabase } from './supabase'
-import type { UserRole } from './database.types'
+import { asUserRole, type UserRole } from './db'
 
 interface AuthContextType {
   user: User | null
@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single()
 
       if (!error && data) {
-        setUserRole(data.role)
+        setUserRole(asUserRole(data.role))
       }
     } catch (err) {
       console.error('Error fetching user role:', err)
