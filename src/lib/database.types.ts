@@ -39,6 +39,104 @@ export type Database = {
   }
   public: {
     Tables: {
+      campaigns: {
+        Row: {
+          body_he: string | null
+          created_at: string
+          ends_at: string | null
+          headline_he: string | null
+          id: string
+          is_active: boolean
+          kind: string
+          name: string
+          offer_price_excl_vat: number | null
+          product_id: string
+          starts_at: string
+        }
+        Insert: {
+          body_he?: string | null
+          created_at?: string
+          ends_at?: string | null
+          headline_he?: string | null
+          id?: string
+          is_active?: boolean
+          kind?: string
+          name: string
+          offer_price_excl_vat?: number | null
+          product_id: string
+          starts_at?: string
+        }
+        Update: {
+          body_he?: string | null
+          created_at?: string
+          ends_at?: string | null
+          headline_he?: string | null
+          id?: string
+          is_active?: boolean
+          kind?: string
+          name?: string
+          offer_price_excl_vat?: number | null
+          product_id?: string
+          starts_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaigns_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      carpenters: {
+        Row: {
+          business_name: string
+          city: string | null
+          contact_name: string | null
+          created_at: string
+          email: string | null
+          first_seen_at: string | null
+          id: string
+          is_active: boolean
+          last_seen_at: string | null
+          notes: string | null
+          phone: string | null
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          business_name: string
+          city?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          first_seen_at?: string | null
+          id?: string
+          is_active?: boolean
+          last_seen_at?: string | null
+          notes?: string | null
+          phone?: string | null
+          token?: string
+          updated_at?: string
+        }
+        Update: {
+          business_name?: string
+          city?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          first_seen_at?: string | null
+          id?: string
+          is_active?: boolean
+          last_seen_at?: string | null
+          notes?: string | null
+          phone?: string | null
+          token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string | null
@@ -73,6 +171,116 @@ export type Database = {
             columns: ["parent_category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      offer_events: {
+        Row: {
+          campaign_id: string | null
+          carpenter_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          product_id: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          carpenter_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          product_id?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          carpenter_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          product_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offer_events_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_events_carpenter_id_fkey"
+            columns: ["carpenter_id"]
+            isOneToOne: false
+            referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_events_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_intents: {
+        Row: {
+          campaign_id: string | null
+          carpenter_id: string
+          created_at: string
+          id: string
+          note: string | null
+          product_id: string
+          quantity: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          carpenter_id: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          product_id: string
+          quantity: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string | null
+          carpenter_id?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          product_id?: string
+          quantity?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_intents_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_intents_carpenter_id_fkey"
+            columns: ["carpenter_id"]
+            isOneToOne: false
+            referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_intents_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -132,6 +340,8 @@ export type Database = {
         Row: {
           address: string | null
           business_name: string | null
+          campaign_id: string | null
+          carpenter_id: string | null
           city: string | null
           created_at: string | null
           customer_email: string
@@ -151,6 +361,8 @@ export type Database = {
         Insert: {
           address?: string | null
           business_name?: string | null
+          campaign_id?: string | null
+          carpenter_id?: string | null
           city?: string | null
           created_at?: string | null
           customer_email: string
@@ -170,6 +382,8 @@ export type Database = {
         Update: {
           address?: string | null
           business_name?: string | null
+          campaign_id?: string | null
+          carpenter_id?: string | null
           city?: string | null
           created_at?: string | null
           customer_email?: string
@@ -186,7 +400,22 @@ export type Database = {
           vat_rate?: number
           zip_code?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_carpenter_id_fkey"
+            columns: ["carpenter_id"]
+            isOneToOne: false
+            referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import type { OrderItemInsert } from '@/lib/db'
+import { logEvent, resolveCarpenter } from '@/lib/offer'
 
 /** One line as the checkout posts it. */
 interface IncomingItem {
@@ -48,6 +49,14 @@ export async function POST(request: NextRequest) {
 
     if (!customer_name || !customer_email || !customer_phone) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    // An order coming from an offer link carries the token, never a
+    // carpenter id: the token is the only thing the browser holds that is
+    // worth believing.
+    const carpenter = body.token ? await resolveCarpenter(body.token) : null
+    if (body.token && !carpenter) {
+      return NextResponse.json({ error: 'Unknown link' }, { status: 404 })
     }
 
     const items = parseItems(body.items)
@@ -112,6 +121,8 @@ export async function POST(request: NextRequest) {
         city: body.city || null,
         zip_code: body.zip_code || null,
         payment_method: body.payment_method || null,
+        carpenter_id: carpenter?.id ?? null,
+        campaign_id: typeof body.campaign_id === 'string' ? body.campaign_id : null,
         subtotal_excl_vat: subtotalExclVat,
         vat_rate: VAT_RATE,
         total_amount: totalInclVat,
@@ -142,6 +153,15 @@ export async function POST(request: NextRequest) {
         { error: `Failed to save order lines: ${itemsError.message}` },
         { status: 500 }
       )
+    }
+
+    if (carpenter) {
+      await logEvent('order_sent', {
+        carpenter_id: carpenter.id,
+        campaign_id: typeof body.campaign_id === 'string' ? body.campaign_id : null,
+        product_id: lines[0]?.product_id ?? null,
+        metadata: { lines: lines.length, subtotal_excl_vat: subtotalExclVat },
+      })
     }
 
     return NextResponse.json(
