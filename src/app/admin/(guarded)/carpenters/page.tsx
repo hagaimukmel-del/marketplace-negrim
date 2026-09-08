@@ -8,7 +8,7 @@ export default async function CarpentersPage() {
 
   const { data: carpenters } = await supabase
     .from('carpenters')
-    .select('id, token, business_name, contact_name, phone, city, first_seen_at, is_active')
+    .select('id, token, business_name, contact_name, phone, city, first_seen_at, is_active, source')
     .order('created_at', { ascending: false })
     .limit(1000)
 

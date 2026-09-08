@@ -18,9 +18,23 @@ export default function CarpenterNav() {
   return (
     <nav className="sticky top-0 z-40 border-b border-stone-200 bg-white">
       <div className="mx-auto flex h-14 max-w-3xl items-center gap-2 px-4">
-        <Link href="/carpenter/catalog" className="me-auto font-bold text-stone-900">
-          שוק הנגרים
-        </Link>
+        {/* The spacer lives on this group, not on the join link — that link is
+            narrower on a phone, and hanging the spacing off it collapsed the
+            whole bar at mobile width. */}
+        <div className="me-auto flex min-w-0 items-baseline gap-3">
+          <Link href="/carpenter/catalog" className="font-bold text-stone-900">
+            שוק הנגרים
+          </Link>
+          {/* Someone browsing the public catalogue has no link of their own
+              yet. This is the only way for them to get one. */}
+          <Link
+            href="/join"
+            className="whitespace-nowrap text-sm font-medium text-emerald-800 underline underline-offset-4"
+          >
+            <span className="sm:hidden">קישור אישי</span>
+            <span className="hidden sm:inline">קבל קישור אישי</span>
+          </Link>
+        </div>
 
         {LINKS.map(({ href, label, Icon }) => {
           const active = pathname?.startsWith(href)

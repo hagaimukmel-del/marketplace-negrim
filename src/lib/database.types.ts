@@ -102,6 +102,7 @@ export type Database = {
           last_seen_at: string | null
           notes: string | null
           phone: string | null
+          source: string
           token: string
           updated_at: string
         }
@@ -117,6 +118,7 @@ export type Database = {
           last_seen_at?: string | null
           notes?: string | null
           phone?: string | null
+          source?: string
           token?: string
           updated_at?: string
         }
@@ -132,6 +134,7 @@ export type Database = {
           last_seen_at?: string | null
           notes?: string | null
           phone?: string | null
+          source?: string
           token?: string
           updated_at?: string
         }

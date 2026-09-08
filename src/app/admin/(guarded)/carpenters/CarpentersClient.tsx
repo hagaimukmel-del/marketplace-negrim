@@ -12,6 +12,7 @@ interface Row {
   city: string | null
   first_seen_at: string | null
   is_active: boolean
+  source: string
 }
 
 const SAMPLE = 'נגריית אבו חצירא, יוסי, 0501234567, אשדוד\nרהיטי כהן, , 052-9876543, חיפה'
@@ -134,7 +135,14 @@ export default function CarpentersClient({ rows, opened }: { rows: Row[]; opened
               <tbody>
                 {rows.slice(0, 200).map((row) => (
                   <tr key={row.id} className="border-b border-stone-100 last:border-b-0">
-                    <td className="p-3 font-medium text-stone-900">{row.business_name}</td>
+                    <td className="p-3 font-medium text-stone-900">
+                      {row.business_name}
+                      {row.source === 'self' && (
+                        <span className="ms-2 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                          נרשם לבד
+                        </span>
+                      )}
+                    </td>
                     <td className="p-3 tabular-nums text-stone-600">{row.phone ?? '—'}</td>
                     <td className="p-3 text-stone-600">{row.city ?? '—'}</td>
                     <td className="p-3">
