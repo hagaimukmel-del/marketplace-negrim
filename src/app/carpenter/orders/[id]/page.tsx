@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation'
 import type { OrderItemRow, OrderWithItems } from '@/lib/db'
 import { formatIls, vatAmount } from '@/lib/vat'
 import { statusInfo } from '@/lib/order-status'
+import { getCarpenterToken } from '@/lib/carpenter-session'
 
 type Order = OrderWithItems
 type OrderItem = OrderItemRow
@@ -27,7 +28,10 @@ export default function OrderDetailPage() {
   const fetchOrder = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/orders/${orderId}`)
+      const token = getCarpenterToken()
+      const response = await fetch(
+        `/api/orders/${orderId}${token ? `?token=${encodeURIComponent(token)}` : ''}`
+      )
       if (!response.ok) throw new Error('Failed to fetch order')
       const data = await response.json()
 

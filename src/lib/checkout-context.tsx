@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState } from 'react'
 import type { CartItem } from './cart-context'
+import { getCarpenterToken } from './carpenter-session'
 
 export type PaymentTerms = 'שוטף+30' | 'שוטף+60' | 'מזומן במסירה'
 
@@ -58,6 +59,9 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
       // from the database and snapshots it onto the order, so the browser
       // cannot name its own price, and no total is trusted from here.
       const order = {
+        // Attributes the order when this browser has been through an offer
+        // link. The server re-resolves it; nothing here is taken on trust.
+        token: getCarpenterToken(),
         customer_name: formData.name,
         customer_email: formData.email,
         customer_phone: formData.phone,

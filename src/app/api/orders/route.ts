@@ -189,12 +189,20 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get('limit') || '10', 10), 100)
     const offset = parseInt(searchParams.get('offset') || '0', 10)
 
-    // TODO: this still returns every order to any caller. It needs the
-    // per-carpenter identity the offer page introduces before it can be
-    // reachable by anyone but the operator.
+    // This used to return every order to any caller — one carpenter could read
+    // another's name, phone and prices. A caller must now identify itself with
+    // its token, and sees only its own orders.
+    const token = searchParams.get('token')
+    const carpenter = token ? await resolveCarpenter(token) : null
+
+    if (!carpenter) {
+      return NextResponse.json({ orders: [], total: 0, limit, offset })
+    }
+
     const { data, error, count } = await getSupabaseAdmin()
       .from('orders')
       .select('*, order_items(*)', { count: 'exact' })
+      .eq('carpenter_id', carpenter.id)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 

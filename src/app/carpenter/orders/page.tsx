@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowRight, ChevronLeft } from 'lucide-react'
 import { formatIls } from '@/lib/vat'
 import { statusInfo } from '@/lib/order-status'
+import { getCarpenterToken } from '@/lib/carpenter-session'
 
 interface Order {
   id: string
@@ -21,12 +22,17 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [known, setKnown] = useState(true)
 
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true)
-        const response = await fetch('/api/orders?limit=50')
+        const token = getCarpenterToken()
+        setKnown(Boolean(token))
+        const response = await fetch(
+          `/api/orders?limit=50${token ? `&token=${encodeURIComponent(token)}` : ''}`
+        )
         if (!response.ok) throw new Error('טעינת ההזמנות נכשלה')
         const data = await response.json()
         setOrders(data.orders ?? [])
@@ -62,10 +68,27 @@ export default function OrdersPage() {
   }
 
   if (orders.length === 0) {
+    // Having no orders and not being recognised look identical from here, and
+    // telling someone "you have no orders" when the real problem is that we do
+    // not know who they are sends them looking in the wrong place.
     return (
       <div className="mx-auto max-w-md py-16 text-center">
-        <h1 className="text-xl font-bold text-stone-900">אין הזמנות עדיין</h1>
-        <p className="mt-2 text-stone-600">כשתשלח הזמנה ראשונה היא תופיע כאן.</p>
+        <h1 className="text-xl font-bold text-stone-900">
+          {known ? 'אין הזמנות עדיין' : 'לא זיהינו אותך'}
+        </h1>
+        <p className="mt-2 text-stone-600">
+          {known
+            ? 'כשתשלח הזמנה ראשונה היא תופיע כאן.'
+            : 'ההזמנות שלך מוצגות דרך הקישור האישי שקיבלת. אם אין לך — אפשר לקבל אחד בדקה.'}
+        </p>
+        {!known && (
+          <Link
+            href="/join"
+            className="mt-4 inline-flex h-11 items-center rounded-lg bg-emerald-700 px-5 font-semibold text-white"
+          >
+            קבל קישור אישי
+          </Link>
+        )}
         <Link
           href="/carpenter/catalog"
           className="mt-6 inline-flex h-11 items-center gap-2 rounded-lg bg-stone-900 px-5 font-semibold text-white"

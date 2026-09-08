@@ -1,6 +1,9 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
+import { LayoutGrid, ClipboardList, ArrowRight } from 'lucide-react'
+import { rememberCarpenter } from '@/lib/carpenter-session'
 import type { OfferProduct } from '@/lib/offer'
 import { formatIls, round2, vatAmount, withVat, VAT_RATE } from '@/lib/vat'
 
@@ -188,6 +191,12 @@ export default function OfferClient({
   reorder,
   suggestions,
 }: Props) {
+  // Keep the identity for the rest of the visit, so an order placed from the
+  // catalogue is still attributed to this carpenter.
+  useEffect(() => {
+    rememberCarpenter(token)
+  }, [token])
+
   const [quantities, setQuantities] = useState<Record<string, number>>({})
   const [sending, setSending] = useState(false)
   const [sentOrder, setSentOrder] = useState<string | null>(null)
@@ -302,6 +311,32 @@ export default function OfferClient({
           <p className="mt-4 rounded-lg bg-stone-100 p-3 text-sm text-stone-600">
             זו הזמנת רכש — לא חשבונית. הסכום המחייב הוא זה שיופיע בחשבונית של הספק.
           </p>
+
+          {/* This screen used to end the visit: no links, nothing to do next. */}
+          <div className="mt-6 grid gap-2">
+            <Link
+              href="/carpenter/orders"
+              className="flex h-12 items-center justify-center gap-2 rounded-lg bg-stone-900 font-semibold text-white"
+            >
+              <ClipboardList size={17} />
+              ההזמנות שלי
+            </Link>
+            <Link
+              href="/carpenter/catalog"
+              className="flex h-12 items-center justify-center gap-2 rounded-lg border border-stone-300 font-semibold text-stone-700"
+            >
+              <LayoutGrid size={17} />
+              המשך לקטלוג המלא
+            </Link>
+            <button
+              type="button"
+              onClick={() => setSentOrder(null)}
+              className="flex h-11 items-center justify-center gap-2 text-sm font-medium text-stone-500"
+            >
+              <ArrowRight size={15} />
+              חזרה למבצע
+            </button>
+          </div>
         </div>
       </main>
     )
@@ -395,6 +430,26 @@ export default function OfferClient({
         {error && (
           <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>
         )}
+
+        {/* The campaign product and the reorder list are not the whole shop.
+            Someone who came for one thing and remembered another needs a way
+            through to everything. */}
+        <div className="mt-5 grid gap-2 sm:grid-cols-2">
+          <Link
+            href="/carpenter/catalog"
+            className="flex h-12 items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white font-semibold text-stone-800"
+          >
+            <LayoutGrid size={17} />
+            כל הקטלוג
+          </Link>
+          <Link
+            href="/carpenter/orders"
+            className="flex h-12 items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white font-semibold text-stone-800"
+          >
+            <ClipboardList size={17} />
+            ההזמנות שלי
+          </Link>
+        </div>
       </div>
 
       {/* Sticky basket: the order is never more than one tap away. */}

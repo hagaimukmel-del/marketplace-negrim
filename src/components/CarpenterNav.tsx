@@ -3,7 +3,10 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutGrid, ClipboardList, ShoppingCart } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Home } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
+import { getCarpenterToken } from '@/lib/carpenter-session'
 import { formatIls } from '@/lib/vat'
 
 const LINKS = [
@@ -14,6 +17,11 @@ const LINKS = [
 export default function CarpenterNav() {
   const cart = useCart()
   const pathname = usePathname()
+
+  // Read after mount: localStorage does not exist during the server render,
+  // and reading it in the body would make the markup differ on hydration.
+  const [token, setToken] = useState<string | null>(null)
+  useEffect(() => setToken(getCarpenterToken()), [])
 
   return (
     <nav className="sticky top-0 z-40 border-b border-stone-200 bg-white">
@@ -27,13 +35,23 @@ export default function CarpenterNav() {
           </Link>
           {/* Someone browsing the public catalogue has no link of their own
               yet. This is the only way for them to get one. */}
-          <Link
-            href="/join"
-            className="whitespace-nowrap text-sm font-medium text-emerald-800 underline underline-offset-4"
-          >
-            <span className="sm:hidden">קישור אישי</span>
-            <span className="hidden sm:inline">קבל קישור אישי</span>
-          </Link>
+          {token ? (
+            <Link
+              href={`/o/${token}`}
+              className="flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-emerald-800"
+            >
+              <Home size={15} />
+              <span className="hidden sm:inline">הדף שלי</span>
+            </Link>
+          ) : (
+            <Link
+              href="/join"
+              className="whitespace-nowrap text-sm font-medium text-emerald-800 underline underline-offset-4"
+            >
+              <span className="sm:hidden">קישור אישי</span>
+              <span className="hidden sm:inline">קבל קישור אישי</span>
+            </Link>
+          )}
         </div>
 
         {LINKS.map(({ href, label, Icon }) => {
