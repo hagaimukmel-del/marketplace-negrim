@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { isAdmin } from '@/lib/admin-auth'
+import LogoutButton from './LogoutButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,6 +30,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               </Link>
             ))}
           </nav>
+          <LogoutButton />
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-5 py-6">{children}</main>
