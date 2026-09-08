@@ -343,6 +343,8 @@ export type Database = {
           campaign_id: string | null
           carpenter_id: string | null
           city: string | null
+          confirmed_at: string | null
+          confirmed_subtotal_excl_vat: number | null
           created_at: string | null
           customer_email: string
           customer_name: string
@@ -353,6 +355,7 @@ export type Database = {
           payment_method: string | null
           status: string | null
           subtotal_excl_vat: number
+          supplier_note: string | null
           total_amount: number
           updated_at: string | null
           vat_rate: number
@@ -364,6 +367,8 @@ export type Database = {
           campaign_id?: string | null
           carpenter_id?: string | null
           city?: string | null
+          confirmed_at?: string | null
+          confirmed_subtotal_excl_vat?: number | null
           created_at?: string | null
           customer_email: string
           customer_name: string
@@ -374,6 +379,7 @@ export type Database = {
           payment_method?: string | null
           status?: string | null
           subtotal_excl_vat?: number
+          supplier_note?: string | null
           total_amount: number
           updated_at?: string | null
           vat_rate?: number
@@ -385,6 +391,8 @@ export type Database = {
           campaign_id?: string | null
           carpenter_id?: string | null
           city?: string | null
+          confirmed_at?: string | null
+          confirmed_subtotal_excl_vat?: number | null
           created_at?: string | null
           customer_email?: string
           customer_name?: string
@@ -395,6 +403,7 @@ export type Database = {
           payment_method?: string | null
           status?: string | null
           subtotal_excl_vat?: number
+          supplier_note?: string | null
           total_amount?: number
           updated_at?: string | null
           vat_rate?: number
