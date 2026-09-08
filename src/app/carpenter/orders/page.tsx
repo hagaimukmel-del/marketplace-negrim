@@ -2,16 +2,19 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { ArrowRight, ChevronLeft } from 'lucide-react'
+import { formatIls } from '@/lib/vat'
+import { statusInfo } from '@/lib/order-status'
 
 interface Order {
   id: string
   order_number: string
-  customer_name: string
-  customer_email: string
+  subtotal_excl_vat: number
   total_amount: number
-  status: string
-  created_at: string
-  payment_method: string
+  status: string | null
+  created_at: string | null
+  payment_method: string | null
+  order_items?: { id: string }[]
 }
 
 export default function OrdersPage() {
@@ -20,53 +23,30 @@ export default function OrdersPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchOrders()
+    const load = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/orders?limit=50')
+        if (!response.ok) throw new Error('טעינת ההזמנות נכשלה')
+        const data = await response.json()
+        setOrders(data.orders ?? [])
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'טעינת ההזמנות נכשלה')
+      } finally {
+        setLoading(false)
+      }
+    }
+    void load()
   }, [])
-
-  const fetchOrders = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch('/api/orders?limit=20')
-      if (!response.ok) throw new Error('Failed to fetch orders')
-      const data = await response.json()
-      setOrders(data.orders || [])
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load orders')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { bg: string; text: string; label: string }> = {
-      pending: { bg: 'bg-amber-100', text: 'text-amber-800', label: 'בהמתנה' },
-      confirmed: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'מאושר' },
-      processing: { bg: 'bg-purple-100', text: 'text-purple-800', label: 'בעיבוד' },
-      shipped: { bg: 'bg-cyan-100', text: 'text-cyan-800', label: 'נשלח' },
-      delivered: { bg: 'bg-emerald-100', text: 'text-emerald-800', label: 'הופקד' },
-      cancelled: { bg: 'bg-red-100', text: 'text-red-800', label: 'בוטל' },
-    }
-    const config = statusMap[status] || statusMap.pending
-    return <span className={`px-3 py-1 rounded-full text-sm font-semibold ${config.bg} ${config.text}`}>{config.label}</span>
-  }
-
-  const getPaymentBadge = (method: string) => {
-    const methodMap: Record<string, string> = {
-      credit_card: '💳 כרטיס אשראי',
-      bank_transfer: '🏦 העברה בנקאית',
-      cash: '💰 בתשלום',
-    }
-    return methodMap[method] || method
-  }
 
   if (loading) {
     return (
-      <div className="space-y-8">
-        <div className="bg-gradient-to-r from-amber-50 to-amber-100 rounded-2xl p-8 border border-amber-200">
-          <h1 className="text-4xl font-bold text-gray-900">📦 ההזמנות שלי</h1>
-        </div>
-        <div className="text-center py-12">
-          <p className="text-lg text-gray-600">⏳ טוען הזמנות...</p>
+      <div className="space-y-2">
+        <div className="h-7 w-40 animate-pulse rounded-lg bg-stone-200" />
+        <div className="mt-4 space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-16 animate-pulse rounded-xl bg-stone-200" />
+          ))}
         </div>
       </div>
     )
@@ -74,91 +54,81 @@ export default function OrdersPage() {
 
   if (error) {
     return (
-      <div className="space-y-8">
-        <div className="bg-gradient-to-r from-amber-50 to-amber-100 rounded-2xl p-8 border border-amber-200">
-          <h1 className="text-4xl font-bold text-gray-900">📦 ההזמנות שלי</h1>
-        </div>
-        <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-          <p className="text-red-700 font-semibold">⚠️ {error}</p>
-        </div>
+      <div className="mx-auto max-w-md py-16 text-center">
+        <p className="font-semibold text-stone-900">לא הצלחנו לטעון את ההזמנות</p>
+        <p className="mt-1 text-sm text-stone-500">{error}</p>
       </div>
     )
   }
 
   if (orders.length === 0) {
     return (
-      <div className="space-y-8">
-        <div className="bg-gradient-to-r from-amber-50 to-amber-100 rounded-2xl p-8 border border-amber-200">
-          <h1 className="text-4xl font-bold text-gray-900">📦 ההזמנות שלי</h1>
-        </div>
-
-        <div className="text-center py-12">
-          <p className="text-2xl text-gray-600 mb-6">אין לך הזמנות עדיין</p>
-          <Link
-            href="/carpenter/catalog"
-            className="inline-block px-6 py-3 bg-amber-700 text-white rounded-lg hover:bg-amber-800 font-semibold"
-          >
-            ← חזור לקטלוג
-          </Link>
-        </div>
+      <div className="mx-auto max-w-md py-16 text-center">
+        <h1 className="text-xl font-bold text-stone-900">אין הזמנות עדיין</h1>
+        <p className="mt-2 text-stone-600">כשתשלח הזמנה ראשונה היא תופיע כאן.</p>
+        <Link
+          href="/carpenter/catalog"
+          className="mt-6 inline-flex h-11 items-center gap-2 rounded-lg bg-stone-900 px-5 font-semibold text-white"
+        >
+          <ArrowRight size={17} />
+          לקטלוג
+        </Link>
       </div>
     )
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-amber-50 to-amber-100 rounded-2xl p-8 border border-amber-200">
-        <h1 className="text-4xl font-bold text-gray-900">📦 ההזמנות שלי</h1>
-        <p className="text-gray-700 mt-2">{orders.length} הזמנות</p>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h1 className="text-xl font-bold text-stone-900">ההזמנות שלי</h1>
+        <p className="text-sm text-stone-500">{orders.length} הזמנות</p>
       </div>
 
-      {/* Orders Table */}
-      <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-amber-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-4 text-right font-semibold text-gray-900">מספר הזמנה</th>
-                <th className="px-6 py-4 text-right font-semibold text-gray-900">תאריך</th>
-                <th className="px-6 py-4 text-right font-semibold text-gray-900">סכום</th>
-                <th className="px-6 py-4 text-right font-semibold text-gray-900">שיטת תשלום</th>
-                <th className="px-6 py-4 text-right font-semibold text-gray-900">סטטוס</th>
-                <th className="px-6 py-4 text-right font-semibold text-gray-900">פעולה</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order) => (
-                <tr key={order.id} className="border-b border-gray-200 hover:bg-gray-50 transition">
-                  <td className="px-6 py-4 font-mono text-sm font-semibold">{order.order_number}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {new Date(order.created_at).toLocaleDateString('he-IL')}
-                  </td>
-                  <td className="px-6 py-4 font-semibold text-gray-900">₪{order.total_amount.toFixed(2)}</td>
-                  <td className="px-6 py-4 text-sm">{getPaymentBadge(order.payment_method)}</td>
-                  <td className="px-6 py-4">{getStatusBadge(order.status)}</td>
-                  <td className="px-6 py-4">
-                    <Link
-                      href={`/carpenter/orders/${order.id}`}
-                      className="px-4 py-2 bg-amber-700 text-white rounded-lg hover:bg-amber-800 text-sm font-semibold transition"
-                    >
-                      צפה
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+        {orders.map((order) => {
+          const status = statusInfo(order.status)
+          const lines = order.order_items?.length ?? 0
 
-      {/* Back to Catalog */}
-      <Link
-        href="/carpenter/catalog"
-        className="inline-block px-6 py-3 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 font-semibold transition"
-      >
-        ← חזור לקטלוג
-      </Link>
+          return (
+            <Link
+              key={order.id}
+              href={`/carpenter/orders/${order.id}`}
+              className="flex items-center gap-3 border-b border-stone-200 p-3 last:border-b-0 hover:bg-stone-50"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="font-mono text-sm font-semibold text-stone-900">
+                    {order.order_number}
+                  </span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-semibold ${status.className}`}
+                  >
+                    {status.label}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-sm text-stone-500">
+                  {order.created_at
+                    ? new Date(order.created_at).toLocaleDateString('he-IL')
+                    : '—'}
+                  {lines > 0 && ` · ${lines} פריטים`}
+                  {order.payment_method && ` · ${order.payment_method}`}
+                </p>
+              </div>
+
+              <div className="shrink-0 text-end">
+                {/* Excl VAT is the binding figure and the one that matches the
+                    order record; the incl-VAT total is context, not headline. */}
+                <p className="tnum font-bold text-stone-900">
+                  {formatIls(Number(order.subtotal_excl_vat))}
+                </p>
+                <p className="text-xs text-stone-400">ללא מע״מ</p>
+              </div>
+
+              <ChevronLeft size={18} className="shrink-0 text-stone-400" />
+            </Link>
+          )
+        })}
+      </div>
     </div>
   )
 }

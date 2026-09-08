@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import type { OrderItemRow, OrderWithItems } from '@/lib/db'
 import { formatIls, vatAmount } from '@/lib/vat'
+import { statusInfo } from '@/lib/order-status'
 
 type Order = OrderWithItems
 type OrderItem = OrderItemRow
@@ -39,46 +40,26 @@ export default function OrderDetailPage() {
     }
   }
 
-  const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { bg: string; text: string; label: string }> = {
-      pending: { bg: 'bg-amber-100', text: 'text-amber-800', label: 'בהמתנה' },
-      confirmed: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'מאושר' },
-      processing: { bg: 'bg-purple-100', text: 'text-purple-800', label: 'בעיבוד' },
-      shipped: { bg: 'bg-cyan-100', text: 'text-cyan-800', label: 'נשלח' },
-      delivered: { bg: 'bg-emerald-100', text: 'text-emerald-800', label: 'הופקד' },
-      cancelled: { bg: 'bg-red-100', text: 'text-red-800', label: 'בוטל' },
-    }
-    const config = statusMap[status] || statusMap.pending
-    return <span className={`px-3 py-1 rounded-full text-sm font-semibold ${config.bg} ${config.text}`}>{config.label}</span>
-  }
-
   if (loading) {
     return (
-      <div className="space-y-8">
-        <div className="bg-gradient-to-r from-amber-50 to-amber-100 rounded-2xl p-8 border border-amber-200">
-          <h1 className="text-4xl font-bold text-gray-900">📋 פרטי הזמנה</h1>
-        </div>
-        <div className="text-center py-12">
-          <p className="text-lg text-gray-600">⏳ טוען פרטים...</p>
-        </div>
+      <div className="space-y-3">
+        <div className="h-8 w-52 animate-pulse rounded-lg bg-stone-200" />
+        <div className="h-40 animate-pulse rounded-xl bg-stone-200" />
+        <div className="h-56 animate-pulse rounded-xl bg-stone-200" />
       </div>
     )
   }
 
   if (error || !order) {
     return (
-      <div className="space-y-8">
-        <div className="bg-gradient-to-r from-amber-50 to-amber-100 rounded-2xl p-8 border border-amber-200">
-          <h1 className="text-4xl font-bold text-gray-900">📋 פרטי הזמנה</h1>
-        </div>
-        <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-          <p className="text-red-700 font-semibold">⚠️ {error || 'ההזמנה לא נמצאה'}</p>
-        </div>
+      <div className="mx-auto max-w-md py-16 text-center">
+        <p className="font-semibold text-stone-900">ההזמנה לא נמצאה</p>
+        {error && <p className="mt-1 text-sm text-stone-500">{error}</p>}
         <Link
           href="/carpenter/orders"
-          className="inline-block px-6 py-3 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 font-semibold transition"
+          className="mt-6 inline-flex h-11 items-center rounded-lg bg-stone-900 px-5 font-semibold text-white"
         >
-          ← חזור להזמנות שלי
+          לכל ההזמנות
         </Link>
       </div>
     )
@@ -87,74 +68,82 @@ export default function OrderDetailPage() {
   const totalVat = vatAmount(order.subtotal_excl_vat, order.vat_rate)
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="bg-gradient-to-r from-amber-50 to-amber-100 rounded-2xl p-8 border border-amber-200">
+      <div className="rounded-xl border border-stone-200 bg-white p-5">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900">📋 פרטי הזמנה</h1>
-            <p className="text-gray-700 mt-2 font-mono">{order.order_number}</p>
+            <h1 className="text-xl font-bold text-stone-900">פרטי הזמנה</h1>
+            <p className="text-stone-700 mt-2 font-mono">{order.order_number}</p>
           </div>
-          <div>{getStatusBadge(order.status ?? 'pending')}</div>
+          <div>
+            <span
+              className={`rounded-full px-3 py-1 text-sm font-semibold ${
+                statusInfo(order.status).className
+              }`}
+            >
+              {statusInfo(order.status).label}
+            </span>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid gap-4 lg:grid-cols-3">
         {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="space-y-4 lg:col-span-2">
           {/* Customer Info */}
-          <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">👤 פרטי הלקוח</h2>
+          <div className="rounded-xl border border-stone-200 bg-white p-5">
+            <h2 className="mb-3 font-bold text-stone-900">פרטי הלקוח</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-gray-600">שם</p>
-                <p className="font-semibold text-gray-900">{order.customer_name}</p>
+                <p className="text-sm text-stone-500">שם</p>
+                <p className="font-semibold text-stone-900">{order.customer_name}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">מייל</p>
-                <p className="font-semibold text-gray-900">{order.customer_email}</p>
+                <p className="text-sm text-stone-500">מייל</p>
+                <p className="font-semibold text-stone-900">{order.customer_email}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">טלפון</p>
-                <p className="font-semibold text-gray-900">{order.customer_phone}</p>
+                <p className="text-sm text-stone-500">טלפון</p>
+                <p className="font-semibold text-stone-900">{order.customer_phone}</p>
               </div>
               {order.business_name && (
                 <div>
-                  <p className="text-sm text-gray-600">שם העסק</p>
-                  <p className="font-semibold text-gray-900">{order.business_name}</p>
+                  <p className="text-sm text-stone-500">שם העסק</p>
+                  <p className="font-semibold text-stone-900">{order.business_name}</p>
                 </div>
               )}
             </div>
           </div>
 
           {/* Shipping Address */}
-          <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">🏠 כתובת משלוח</h2>
+          <div className="rounded-xl border border-stone-200 bg-white p-5">
+            <h2 className="mb-3 font-bold text-stone-900">כתובת משלוח</h2>
             <div className="space-y-2">
-              {order.address && <p className="text-gray-900 font-semibold">{order.address}</p>}
-              <p className="text-gray-600">
+              {order.address && <p className="font-semibold text-stone-900">{order.address}</p>}
+              <p className="text-stone-600">
                 {order.city}{order.zip_code ? `, ${order.zip_code}` : ''}
               </p>
             </div>
           </div>
 
           {/* Order Items */}
-          <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">📦 פריטים</h2>
+          <div className="rounded-xl border border-stone-200 bg-white p-5">
+            <h2 className="mb-3 font-bold text-stone-900">פריטים</h2>
             <div className="space-y-3">
               {items.length > 0 ? (
                 items.map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-start pb-3 border-b border-gray-200 last:border-b-0">
+                  <div key={idx} className="flex justify-between items-start pb-3 border-b border-stone-200 last:border-b-0">
                     <div>
-                      <p className="font-semibold text-gray-900">{item.product_name_he}</p>
-                      <p className="text-sm text-gray-600">{item.product_name_en}</p>
-                      <p className="text-sm text-gray-600 mt-1">כמות: {item.quantity}</p>
+                      <p className="font-semibold text-stone-900">{item.product_name_he}</p>
+                      <p className="text-sm text-stone-500">{item.product_name_en}</p>
+                      <p className="text-sm text-stone-500 mt-1">כמות: {item.quantity}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-gray-600 text-sm">
+                      <p className="text-stone-600 text-sm">
                         {formatIls(item.unit_price_excl_vat)} ליח׳
                       </p>
-                      <p className="font-semibold text-gray-900">
+                      <p className="font-semibold text-stone-900">
                         {formatIls(item.line_total_excl_vat)}
                       </p>
                       <p className="text-xs text-gray-500">ללא מע״מ</p>
@@ -162,49 +151,49 @@ export default function OrderDetailPage() {
                   </div>
                 ))
               ) : (
-                <p className="text-gray-600">אין פריטים בהזמנה</p>
+                <p className="text-stone-600">אין פריטים בהזמנה</p>
               )}
             </div>
           </div>
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Order Summary */}
-          <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 sticky top-20">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">סיכום הזמנה</h2>
+          <div className="rounded-xl border border-stone-200 bg-white p-5 sticky top-20">
+            <h2 className="mb-3 font-bold text-stone-900">סיכום הזמנה</h2>
 
-            <div className="space-y-3 border-b border-gray-200 pb-4 mb-4">
-              <div className="flex justify-between text-sm text-gray-600">
+            <div className="space-y-3 border-b border-stone-200 pb-4 mb-4">
+              <div className="flex justify-between text-sm text-stone-500">
                 <span>ללא מע״מ:</span>
                 <span>{formatIls(order.subtotal_excl_vat)}</span>
               </div>
-              <div className="flex justify-between text-sm text-gray-600">
+              <div className="flex justify-between text-sm text-stone-500">
                 <span>מע״מ {(order.vat_rate * 100).toFixed(0)}%:</span>
                 <span>{formatIls(totalVat)}</span>
               </div>
             </div>
 
-            <div className="flex justify-between text-2xl font-bold text-gray-900 mb-6">
+            <div className="flex justify-between mb-3 font-bold text-stone-900">
               <span>סה״כ:</span>
               <span>{formatIls(order.total_amount)}</span>
             </div>
 
             {/* Payment Info */}
-            <div className="bg-amber-50 rounded-lg p-4 mb-4">
-              <p className="text-sm text-gray-600">תנאי תשלום</p>
-              <p className="font-semibold text-gray-900 mt-1">
+            <div className="mb-3 rounded-lg bg-stone-100 p-3">
+              <p className="text-sm text-stone-500">תנאי תשלום</p>
+              <p className="font-semibold text-stone-900 mt-1">
                 {order.payment_method ?? 'ייקבעו מול הספק'}
               </p>
-              <p className="text-xs text-gray-600 mt-2">
+              <p className="text-xs text-stone-600 mt-2">
                 הספק מספק את ההזמנה ומוציא חשבונית ישירות. זו הזמנת רכש, לא חשבונית.
               </p>
             </div>
 
             {/* Order Date */}
-            <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-600">
+            <div className="bg-gray-50 rounded-lg p-4 text-sm text-stone-500">
               <p>תאריך הזמנה</p>
-              <p className="font-semibold text-gray-900 mt-1">
+              <p className="font-semibold text-stone-900 mt-1">
                 {new Date(order.created_at ?? Date.now()).toLocaleDateString('he-IL')} בשעה{' '}
                 {new Date(order.created_at ?? Date.now()).toLocaleTimeString('he-IL', {
                   hour: '2-digit',
@@ -217,9 +206,9 @@ export default function OrderDetailPage() {
           {/* Back Button */}
           <Link
             href="/carpenter/orders"
-            className="block text-center px-6 py-3 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 font-semibold transition"
+            className="block text-center px-6 py-3 rounded-lg border border-stone-300 text-stone-700 hover:bg-stone-50 font-semibold transition"
           >
-            ← חזור להזמנות שלי
+            חזור להזמנות שלי
           </Link>
         </div>
       </div>

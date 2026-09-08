@@ -3,6 +3,8 @@
 import React, { createContext, useContext, useState } from 'react'
 import type { CartItem } from './cart-context'
 
+export type PaymentTerms = 'שוטף+30' | 'שוטף+60' | 'מזומן במסירה'
+
 export interface OrderForm {
   name: string
   email: string
@@ -11,7 +13,13 @@ export interface OrderForm {
   address: string
   city: string
   zipCode: string
-  paymentMethod: 'credit_card' | 'bank_transfer' | 'cash'
+  /**
+   * Requested payment terms, not a payment method. The supplier is the seller
+   * of record: it sets the terms and invoices the carpenter directly, and no
+   * money moves through this platform. The old union — credit_card /
+   * bank_transfer / cash — described a checkout that does not exist.
+   */
+  paymentTerms: PaymentTerms
 }
 
 interface CheckoutContextType {
@@ -57,7 +65,7 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
         address: formData.address || null,
         city: formData.city || null,
         zip_code: formData.zipCode || null,
-        payment_method: formData.paymentMethod || null,
+        payment_method: formData.paymentTerms || null,
         items: items.map((item) => ({
           id: item.id,
           name_he: item.name_he,

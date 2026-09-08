@@ -4,8 +4,10 @@ export default function CarpenterLayout({ children }: { children: React.ReactNod
   return (
     <>
       <CarpenterNav />
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
-        {children}
+      {/* Same max width as the nav. They were 7xl and 3xl, so the header and
+          the content it sits above did not line up. */}
+      <main className="w-full flex-1 px-4 py-5">
+        <div className="mx-auto max-w-3xl">{children}</div>
       </main>
     </>
   )
