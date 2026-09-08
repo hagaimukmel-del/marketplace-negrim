@@ -19,11 +19,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // For admin/supplier routes: Let ProtectedRoute handle access control
-  // Middleware just passes through - client-side component will check
-  if (pathname.startsWith('/admin') || pathname.startsWith('/supplier')) {
-    return NextResponse.next()
-  }
+  // /admin guards itself in a Server Component, which cannot be bypassed from
+  // the browser. There is nothing useful for middleware to add here.
 
   // For other protected routes: redirect to login if not authenticated
   // (we'll check localStorage on client side)
