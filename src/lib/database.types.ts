@@ -445,6 +445,7 @@ export type Database = {
           rating: number | null
           return_rate: number | null
           sku: string | null
+          source: string
           stock_qty: number | null
           supplier_id: string | null
           updated_at: string | null
@@ -464,6 +465,7 @@ export type Database = {
           rating?: number | null
           return_rate?: number | null
           sku?: string | null
+          source?: string
           stock_qty?: number | null
           supplier_id?: string | null
           updated_at?: string | null
@@ -483,6 +485,7 @@ export type Database = {
           rating?: number | null
           return_rate?: number | null
           sku?: string | null
+          source?: string
           stock_qty?: number | null
           supplier_id?: string | null
           updated_at?: string | null

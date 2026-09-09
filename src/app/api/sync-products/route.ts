@@ -115,6 +115,7 @@ async function readSheet(): Promise<{ products: SheetProduct[]; hasSkuColumn: bo
         stock_qty: 100,
         is_active: true,
         supplier_id: ITAMIR_SUPPLIER_ID,
+        source: 'sheet',
         _category: cell(row, COL.category),
       }
     })
@@ -216,8 +217,10 @@ export async function GET() {
       syncedIds.push(...(data ?? []).map((r) => r.id))
     }
 
-    // Anything this supplier still has that the sheet no longer lists is
-    // retired rather than deleted, so order history keeps resolving.
+    // Anything the SHEET no longer lists is retired rather than deleted, so
+    // order history keeps resolving. Products created by hand in the admin are
+    // excluded: the sheet has never heard of them, and switching them off here
+    // would make adding a product in the UI pointless.
     let retiredCount = 0
     if (syncedIds.length > 0) {
       const idList = syncedIds.map((id) => `"${id}"`).join(',')
@@ -226,6 +229,7 @@ export async function GET() {
         .update({ is_active: false, updated_at: new Date().toISOString() })
         .eq('supplier_id', ITAMIR_SUPPLIER_ID)
         .eq('is_active', true)
+        .eq('source', 'sheet')
         .not('id', 'in', `(${idList})`)
         .select('id')
 

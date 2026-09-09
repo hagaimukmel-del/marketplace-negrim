@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ImagePlus, Search, Check, EyeOff, Eye } from 'lucide-react'
+import { ImagePlus, Search, Check, EyeOff, Eye, Plus, X } from 'lucide-react'
 import SyncButton from '../SyncButton'
 
 interface Product {
@@ -15,6 +15,7 @@ interface Product {
   stock_qty: number | null
   is_active: boolean | null
   image_url: string | null
+  source: string
   categories: { name_he: string } | null
 }
 
@@ -77,6 +78,11 @@ function Row({
       <div className="min-w-[12rem] flex-1">
         <p className="font-bold leading-tight text-stone-900">{product.name_he}</p>
         <p className="truncate text-sm text-stone-500">
+          {product.source === 'manual' && (
+            <span className="me-1.5 rounded-full bg-stone-100 px-1.5 py-0.5 text-xs text-stone-600">
+              ידני
+            </span>
+          )}
           {product.name_en}
           {product.categories?.name_he && ` · ${product.categories.name_he}`}
         </p>
@@ -196,7 +202,212 @@ function Chip({
   )
 }
 
-export default function ProductsClient({ products }: { products: Product[] }) {
+interface Category {
+  id: string
+  name_he: string
+}
+
+const EMPTY = {
+  sku: '',
+  name_he: '',
+  name_en: '',
+  description_he: '',
+  price: '',
+  stock: '0',
+  category_id: '',
+}
+
+/**
+ * Products added here are marked source = 'manual', so the sheet sync leaves
+ * them alone. Without that it would retire them on its next run for not being
+ * in the sheet, and a product you can add but not keep is worse than none.
+ */
+function NewProduct({
+  categories,
+  onCreated,
+}: {
+  categories: Category[]
+  onCreated: () => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [form, setForm] = useState(EMPTY)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const set = (key: keyof typeof EMPTY, value: string) =>
+    setForm((prev) => ({ ...prev, [key]: value }))
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    setBusy(true)
+    setError(null)
+    try {
+      const response = await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sku: form.sku,
+          name_he: form.name_he,
+          name_en: form.name_en,
+          description_he: form.description_he,
+          category_id: form.category_id,
+          base_price_excl_vat: form.price,
+          stock_qty: form.stock,
+        }),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'ההוספה נכשלה')
+      setForm(EMPTY)
+      setOpen(false)
+      onCreated()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'ההוספה נכשלה')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex h-10 items-center gap-2 rounded-lg bg-stone-900 px-4 text-sm font-semibold text-white"
+      >
+        <Plus size={16} />
+        מוצר חדש
+      </button>
+    )
+  }
+
+  return (
+    <form onSubmit={submit} className="w-full rounded-xl border border-stone-300 bg-white p-5">
+      <div className="flex items-center justify-between">
+        <h2 className="font-bold text-stone-900">מוצר חדש</h2>
+        <button
+          type="button"
+          onClick={() => {
+            setOpen(false)
+            setError(null)
+          }}
+          aria-label="בטל"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100"
+        >
+          <X size={17} />
+        </button>
+      </div>
+
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <label className="block sm:col-span-2">
+          <span className="text-sm font-medium text-stone-700">
+            שם המוצר <span className="text-red-600">*</span>
+          </span>
+          <input
+            value={form.name_he}
+            onChange={(e) => set('name_he', e.target.value)}
+            required
+            autoFocus
+            placeholder="דבק PUR 270/7 שקוף"
+            className="mt-1 h-11 w-full rounded-lg border border-stone-300 px-3"
+          />
+        </label>
+
+        <label className="block">
+          <span className="text-sm font-medium text-stone-700">שם באנגלית</span>
+          <input
+            value={form.name_en}
+            onChange={(e) => set('name_en', e.target.value)}
+            placeholder="PUR 270/7 Transparent"
+            className="mt-1 h-11 w-full rounded-lg border border-stone-300 px-3"
+          />
+        </label>
+
+        <label className="block">
+          <span className="text-sm font-medium text-stone-700">מק״ט</span>
+          <input
+            value={form.sku}
+            onChange={(e) => set('sku', e.target.value)}
+            placeholder="PUR-270-7"
+            className="tnum mt-1 h-11 w-full rounded-lg border border-stone-300 px-3"
+          />
+        </label>
+
+        <label className="block">
+          <span className="text-sm font-medium text-stone-700">
+            מחיר ליחידה ללא מע״מ <span className="text-red-600">*</span>
+          </span>
+          <input
+            inputMode="decimal"
+            value={form.price}
+            onChange={(e) => set('price', e.target.value)}
+            required
+            placeholder="1250"
+            className="tnum mt-1 h-11 w-full rounded-lg border border-stone-300 px-3"
+          />
+        </label>
+
+        <label className="block">
+          <span className="text-sm font-medium text-stone-700">מלאי</span>
+          <input
+            inputMode="numeric"
+            value={form.stock}
+            onChange={(e) => set('stock', e.target.value)}
+            className="tnum mt-1 h-11 w-full rounded-lg border border-stone-300 px-3"
+          />
+        </label>
+
+        <label className="block sm:col-span-2">
+          <span className="text-sm font-medium text-stone-700">קטגוריה</span>
+          <select
+            value={form.category_id}
+            onChange={(e) => set('category_id', e.target.value)}
+            className="mt-1 h-11 w-full rounded-lg border border-stone-300 px-2"
+          >
+            <option value="">ללא קטגוריה</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name_he}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="block sm:col-span-2">
+          <span className="text-sm font-medium text-stone-700">תיאור</span>
+          <textarea
+            value={form.description_he}
+            onChange={(e) => set('description_he', e.target.value)}
+            rows={2}
+            className="mt-1 w-full rounded-lg border border-stone-300 p-3"
+          />
+        </label>
+      </div>
+
+      {error && <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <button
+          type="submit"
+          disabled={busy || !form.name_he || !form.price}
+          className="h-11 rounded-lg bg-emerald-700 px-5 font-semibold text-white disabled:opacity-50"
+        >
+          {busy ? 'מוסיף…' : 'הוסף מוצר'}
+        </button>
+        <span className="text-xs text-stone-500">
+          את התמונה מעלים אחרי ההוספה, מהשורה של המוצר.
+        </span>
+      </div>
+    </form>
+  )
+}
+
+export default function ProductsClient({
+  products,
+  categories,
+}: {
+  products: Product[]
+  categories: Category[]
+}) {
   const router = useRouter()
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
@@ -257,7 +468,10 @@ export default function ProductsClient({ products }: { products: Product[] }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-bold text-stone-900">מוצרים</h1>
-        <SyncButton />
+        <div className="flex flex-wrap items-center gap-3">
+          <NewProduct categories={categories} onCreated={() => router.refresh()} />
+          <SyncButton />
+        </div>
       </div>
 
       {/* The two counts that decide what to do next: a grey tile on the
