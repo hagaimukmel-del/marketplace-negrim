@@ -164,6 +164,11 @@ export async function PATCH(request: NextRequest) {
       update.description_he = body.description_he.trim() || null
     }
     if (typeof body.is_active === 'boolean') update.is_active = body.is_active
+    if (body.category_id !== undefined) {
+      update.category_id =
+        typeof body.category_id === 'string' && body.category_id ? body.category_id : null
+    }
+    if (typeof body.name_ar === 'string') update.name_ar = body.name_ar.trim() || null
 
     if (body.base_price_excl_vat !== undefined) {
       const price = Number(body.base_price_excl_vat)
@@ -185,7 +190,7 @@ export async function PATCH(request: NextRequest) {
       .from('products')
       .update(update)
       .eq('id', body.id)
-      .select('id, sku, name_he, name_en, base_price_excl_vat, stock_qty, is_active')
+      .select('id')
       .single()
 
     if (error) {
@@ -201,6 +206,58 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ ok: true, product: data })
   } catch (err) {
     console.error('Product update failed:', err)
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Failed' },
+      { status: 500 }
+    )
+  }
+}
+
+/**
+ * Delete a product.
+ *
+ * Only products created here. A sheet-owned row would simply come back on the
+ * next sync, so deleting one would look like a bug; those are switched off
+ * instead, which also keeps them resolvable from old orders.
+ */
+export async function DELETE(request: NextRequest) {
+  if (!(await isAdmin())) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  try {
+    const id = request.nextUrl.searchParams.get('id')
+    if (!id) return NextResponse.json({ error: 'חסר מזהה מוצר' }, { status: 400 })
+
+    const supabase = getSupabaseAdmin()
+    const { data: product } = await supabase
+      .from('products')
+      .select('source')
+      .eq('id', id)
+      .maybeSingle()
+
+    if (!product) {
+      return NextResponse.json({ error: 'המוצר לא נמצא' }, { status: 404 })
+    }
+    if (product.source !== 'manual') {
+      return NextResponse.json(
+        { error: 'מוצר מהגיליון לא נמחק — הוא יחזור בסנכרון הבא. אפשר להשבית אותו.' },
+        { status: 409 }
+      )
+    }
+
+    const { error } = await supabase.from('products').delete().eq('id', id)
+    if (error) {
+      // A product referenced by an order line cannot be removed; that line
+      // keeps its own name and price snapshot, but the link has to survive.
+      return NextResponse.json(
+        { error: 'המוצר מופיע בהזמנה קיימת ולכן אפשר רק להשבית אותו' },
+        { status: 409 }
+      )
+    }
+
+    return NextResponse.json({ ok: true })
+  } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Failed' },
       { status: 500 }

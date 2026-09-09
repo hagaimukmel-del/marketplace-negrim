@@ -1,8 +1,9 @@
 'use client'
 
 import { useMemo, useRef, useState } from 'react'
+import { formatIls } from '@/lib/vat'
 import { useRouter } from 'next/navigation'
-import { ImagePlus, Search, Check, EyeOff, Eye, Plus, X } from 'lucide-react'
+import { ImagePlus, Search, Check, EyeOff, Eye, Plus, X, ChevronDown, Trash2 } from 'lucide-react'
 import SyncButton from '../SyncButton'
 
 interface Product {
@@ -15,6 +16,7 @@ interface Product {
   stock_qty: number | null
   is_active: boolean | null
   image_url: string | null
+  category_id: string | null
   source: string
   categories: { name_he: string } | null
 }
@@ -46,135 +48,6 @@ function Thumb({ product }: { product: Product }) {
   )
 }
 
-function Row({
-  product,
-  busy,
-  onPatch,
-  onUpload,
-}: {
-  product: Product
-  busy: boolean
-  onPatch: (id: string, body: Record<string, unknown>) => void
-  onUpload: (id: string, file: File) => void
-}) {
-  const fileInput = useRef<HTMLInputElement>(null)
-  const [sku, setSku] = useState(product.sku ?? '')
-  const [price, setPrice] = useState(String(product.base_price_excl_vat))
-  const [stock, setStock] = useState(String(product.stock_qty ?? 0))
-
-  const dirty =
-    sku !== (product.sku ?? '') ||
-    price !== String(product.base_price_excl_vat) ||
-    stock !== String(product.stock_qty ?? 0)
-
-  return (
-    <div
-      className={`flex flex-wrap items-center gap-3 border-b border-stone-200 p-3 last:border-b-0 ${
-        product.is_active ? '' : 'bg-stone-50 opacity-60'
-      }`}
-    >
-      <Thumb product={product} />
-
-      <div className="min-w-[12rem] flex-1">
-        <p className="font-bold leading-tight text-stone-900">{product.name_he}</p>
-        <p className="truncate text-sm text-stone-500">
-          {product.source === 'manual' && (
-            <span className="me-1.5 rounded-full bg-stone-100 px-1.5 py-0.5 text-xs text-stone-600">
-              ידני
-            </span>
-          )}
-          {product.name_en}
-          {product.categories?.name_he && ` · ${product.categories.name_he}`}
-        </p>
-      </div>
-
-      <label className="text-xs text-stone-500">
-        מק״ט
-        <input
-          value={sku}
-          onChange={(e) => setSku(e.target.value)}
-          placeholder="—"
-          aria-label={`מק״ט עבור ${product.name_he}`}
-          className={`tnum mt-0.5 block h-10 w-28 rounded-lg border px-2 text-center text-sm ${
-            sku ? 'border-stone-300' : 'border-amber-300 bg-amber-50'
-          }`}
-        />
-      </label>
-
-      <label className="text-xs text-stone-500">
-        מחיר ללא מע״מ
-        <input
-          inputMode="decimal"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          aria-label={`מחיר עבור ${product.name_he}`}
-          className="tnum mt-0.5 block h-10 w-24 rounded-lg border border-stone-300 px-2 text-center text-sm"
-        />
-      </label>
-
-      <label className="text-xs text-stone-500">
-        מלאי
-        <input
-          inputMode="numeric"
-          value={stock}
-          onChange={(e) => setStock(e.target.value)}
-          aria-label={`מלאי עבור ${product.name_he}`}
-          className="tnum mt-0.5 block h-10 w-20 rounded-lg border border-stone-300 px-2 text-center text-sm"
-        />
-      </label>
-
-      <div className="flex items-center gap-1.5">
-        <input
-          ref={fileInput}
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/avif"
-          className="sr-only"
-          onChange={(e) => {
-            const file = e.target.files?.[0]
-            if (file) onUpload(product.id, file)
-            e.target.value = ''
-          }}
-        />
-        <button
-          type="button"
-          onClick={() => fileInput.current?.click()}
-          disabled={busy}
-          aria-label={`העלה תמונה עבור ${product.name_he}`}
-          className={`flex h-10 w-10 items-center justify-center rounded-lg border disabled:opacity-40 ${
-            hasUsableImage(product.image_url)
-              ? 'border-stone-300 text-stone-600'
-              : 'border-amber-400 bg-amber-50 text-amber-800'
-          }`}
-        >
-          <ImagePlus size={17} />
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onPatch(product.id, { is_active: !product.is_active })}
-          disabled={busy}
-          aria-label={product.is_active ? 'השבת מוצר' : 'הפעל מוצר'}
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-stone-300 text-stone-600 disabled:opacity-40"
-        >
-          {product.is_active ? <Eye size={17} /> : <EyeOff size={17} />}
-        </button>
-
-        <button
-          type="button"
-          onClick={() =>
-            onPatch(product.id, { sku, base_price_excl_vat: price, stock_qty: stock })
-          }
-          disabled={busy || !dirty}
-          className="flex h-10 items-center gap-1.5 rounded-lg bg-emerald-700 px-3 text-sm font-semibold text-white disabled:bg-stone-200 disabled:text-stone-400"
-        >
-          <Check size={15} />
-          שמור
-        </button>
-      </div>
-    </div>
-  )
-}
-
 type Filter = 'all' | 'no-image' | 'no-sku'
 
 function Chip({
@@ -199,6 +72,291 @@ function Chip({
     >
       {label}
     </button>
+  )
+}
+
+function ProductRow({
+  product,
+  categories,
+  expanded,
+  busy,
+  onToggle,
+  onSave,
+  onUpload,
+  onDelete,
+}: {
+  product: Product
+  categories: Category[]
+  expanded: boolean
+  busy: boolean
+  onToggle: (id: string) => void
+  onSave: (id: string, body: Record<string, unknown>) => Promise<boolean>
+  onUpload: (id: string, file: File) => void
+  onDelete: (id: string) => void
+}) {
+  const fileInput = useRef<HTMLInputElement>(null)
+  const price = Number(product.base_price_excl_vat)
+
+  return (
+    <div
+      className={`border-b border-stone-200 last:border-b-0 ${
+        product.is_active ? '' : 'bg-stone-50'
+      }`}
+    >
+      {/* Collapsed: what you scan a list for. Everything editable is one tap
+          away rather than crammed into the row, which is what made the old
+          version only able to edit three of the eight fields. */}
+      <div className="flex items-center gap-3 p-3">
+        <button
+          type="button"
+          onClick={() => onToggle(product.id)}
+          aria-expanded={expanded}
+          className="flex min-w-0 flex-1 items-center gap-3 text-start"
+        >
+          <Thumb product={product} />
+          <div className="min-w-0 flex-1">
+            <p
+              className={`truncate font-bold leading-tight ${
+                product.is_active ? 'text-stone-900' : 'text-stone-400'
+              }`}
+            >
+              {product.name_he}
+            </p>
+            <p className="truncate text-sm text-stone-500">
+              {product.sku ? (
+                <span className="tnum font-mono text-xs">{product.sku}</span>
+              ) : (
+                <span className="rounded bg-amber-100 px-1 text-xs text-amber-900">בלי מק״ט</span>
+              )}
+              {product.categories?.name_he && ` · ${product.categories.name_he}`}
+              {product.source === 'manual' && ' · ידני'}
+            </p>
+          </div>
+          <div className="shrink-0 text-end">
+            <p className="tnum font-bold text-stone-900">{formatIls(price)}</p>
+            <p className="text-xs text-stone-400">
+              {product.stock_qty ?? 0} במלאי
+            </p>
+          </div>
+          <ChevronDown
+            size={18}
+            className={`shrink-0 text-stone-400 transition-transform ${
+              expanded ? 'rotate-180' : ''
+            }`}
+          />
+        </button>
+      </div>
+
+      {expanded && (
+        <EditPanel
+          // Remounts on save, so the fields always start from what the server
+          // actually stored rather than from stale local state.
+          key={`${product.id}-${product.name_he}-${product.sku}-${price}-${product.stock_qty}`}
+          product={product}
+          categories={categories}
+          busy={busy}
+          fileInput={fileInput}
+          onSave={onSave}
+          onUpload={onUpload}
+          onDelete={onDelete}
+        />
+      )}
+    </div>
+  )
+}
+
+function EditPanel({
+  product,
+  categories,
+  busy,
+  fileInput,
+  onSave,
+  onUpload,
+  onDelete,
+}: {
+  product: Product
+  categories: Category[]
+  busy: boolean
+  fileInput: React.RefObject<HTMLInputElement | null>
+  onSave: (id: string, body: Record<string, unknown>) => Promise<boolean>
+  onUpload: (id: string, file: File) => void
+  onDelete: (id: string) => void
+}) {
+  const [form, setForm] = useState({
+    name_he: product.name_he,
+    name_en: product.name_en ?? '',
+    sku: product.sku ?? '',
+    price: String(product.base_price_excl_vat),
+    stock: String(product.stock_qty ?? 0),
+    category_id: product.category_id ?? '',
+    description_he: product.description_he ?? '',
+  })
+  const [saved, setSaved] = useState(false)
+
+  const set = (key: keyof typeof form, value: string) => {
+    setForm((prev) => ({ ...prev, [key]: value }))
+    setSaved(false)
+  }
+
+  const save = async () => {
+    const ok = await onSave(product.id, {
+      name_he: form.name_he,
+      name_en: form.name_en,
+      sku: form.sku,
+      base_price_excl_vat: form.price,
+      stock_qty: form.stock,
+      category_id: form.category_id,
+      description_he: form.description_he,
+    })
+    if (ok) setSaved(true)
+  }
+
+  return (
+    <div className="border-t border-stone-200 bg-stone-50 p-4">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block sm:col-span-2">
+          <span className="text-sm font-medium text-stone-700">שם המוצר</span>
+          <input
+            value={form.name_he}
+            onChange={(e) => set('name_he', e.target.value)}
+            className="mt-1 h-11 w-full rounded-lg border border-stone-300 bg-white px-3"
+          />
+        </label>
+
+        <label className="block">
+          <span className="text-sm font-medium text-stone-700">שם באנגלית</span>
+          <input
+            value={form.name_en}
+            onChange={(e) => set('name_en', e.target.value)}
+            className="mt-1 h-11 w-full rounded-lg border border-stone-300 bg-white px-3"
+          />
+        </label>
+
+        <label className="block">
+          <span className="text-sm font-medium text-stone-700">מק״ט</span>
+          <input
+            value={form.sku}
+            onChange={(e) => set('sku', e.target.value)}
+            placeholder="—"
+            className={`tnum mt-1 h-11 w-full rounded-lg border bg-white px-3 ${
+              form.sku ? 'border-stone-300' : 'border-amber-300'
+            }`}
+          />
+        </label>
+
+        <label className="block">
+          <span className="text-sm font-medium text-stone-700">מחיר ליחידה ללא מע״מ</span>
+          <input
+            inputMode="decimal"
+            value={form.price}
+            onChange={(e) => set('price', e.target.value)}
+            className="tnum mt-1 h-11 w-full rounded-lg border border-stone-300 bg-white px-3"
+          />
+        </label>
+
+        <label className="block">
+          <span className="text-sm font-medium text-stone-700">מלאי</span>
+          <input
+            inputMode="numeric"
+            value={form.stock}
+            onChange={(e) => set('stock', e.target.value)}
+            className="tnum mt-1 h-11 w-full rounded-lg border border-stone-300 bg-white px-3"
+          />
+        </label>
+
+        <label className="block sm:col-span-2">
+          <span className="text-sm font-medium text-stone-700">קטגוריה</span>
+          <select
+            value={form.category_id}
+            onChange={(e) => set('category_id', e.target.value)}
+            className="mt-1 h-11 w-full rounded-lg border border-stone-300 bg-white px-2"
+          >
+            <option value="">ללא קטגוריה</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name_he}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="block sm:col-span-2">
+          <span className="text-sm font-medium text-stone-700">תיאור</span>
+          <textarea
+            value={form.description_he}
+            onChange={(e) => set('description_he', e.target.value)}
+            rows={2}
+            className="mt-1 w-full rounded-lg border border-stone-300 bg-white p-3"
+          />
+        </label>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={save}
+          disabled={busy || !form.name_he.trim()}
+          className="flex h-11 items-center gap-2 rounded-lg bg-emerald-700 px-5 font-semibold text-white disabled:opacity-50"
+        >
+          <Check size={16} />
+          {busy ? 'שומר…' : saved ? 'נשמר' : 'שמור שינויים'}
+        </button>
+
+        <input
+          ref={fileInput}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/avif"
+          className="sr-only"
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file) onUpload(product.id, file)
+            e.target.value = ''
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => fileInput.current?.click()}
+          disabled={busy}
+          className={`flex h-11 items-center gap-2 rounded-lg border px-4 text-sm font-semibold disabled:opacity-40 ${
+            hasUsableImage(product.image_url)
+              ? 'border-stone-300 bg-white text-stone-700'
+              : 'border-amber-400 bg-amber-50 text-amber-900'
+          }`}
+        >
+          <ImagePlus size={16} />
+          {hasUsableImage(product.image_url) ? 'החלף תמונה' : 'העלה תמונה'}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onSave(product.id, { is_active: !product.is_active })}
+          disabled={busy}
+          className="flex h-11 items-center gap-2 rounded-lg border border-stone-300 bg-white px-4 text-sm font-semibold text-stone-700 disabled:opacity-40"
+        >
+          {product.is_active ? <EyeOff size={16} /> : <Eye size={16} />}
+          {product.is_active ? 'הסתר מהקטלוג' : 'הצג בקטלוג'}
+        </button>
+
+        {product.source === 'manual' && (
+          <button
+            type="button"
+            onClick={() => onDelete(product.id)}
+            disabled={busy}
+            className="ms-auto flex h-11 items-center gap-2 rounded-lg px-3 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-40"
+          >
+            <Trash2 size={16} />
+            מחק
+          </button>
+        )}
+      </div>
+
+      {product.source === 'sheet' && (
+        <p className="mt-3 text-xs text-stone-500">
+          המוצר הזה מגיע מהגיליון. שינוי שם, מחיר או תיאור כאן יידרס בסנכרון הבא — לשינוי קבוע
+          ערוך בגיליון. מק״ט ותמונה שתעלה כאן נשמרים.
+        </p>
+      )}
+    </div>
   )
 }
 
@@ -413,6 +571,7 @@ export default function ProductsClient({
   const [filter, setFilter] = useState<Filter>('all')
   const [busy, setBusy] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const [openId, setOpenId] = useState<string | null>(null)
 
   const missingImage = products.filter((p) => !hasUsableImage(p.image_url)).length
   const missingSku = products.filter((p) => !p.sku).length
@@ -427,7 +586,8 @@ export default function ProductsClient({
     })
   }, [products, query, filter])
 
-  const patch = async (id: string, body: Record<string, unknown>) => {
+  // Returns whether it worked, so the panel can show "נשמר" only when it did.
+  const save = async (id: string, body: Record<string, unknown>): Promise<boolean> => {
     setBusy(id)
     setMessage(null)
     try {
@@ -439,8 +599,27 @@ export default function ProductsClient({
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'השמירה נכשלה')
       router.refresh()
+      return true
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'השמירה נכשלה')
+      return false
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const remove = async (id: string) => {
+    if (!confirm('למחוק את המוצר? הפעולה אינה הפיכה.')) return
+    setBusy(id)
+    setMessage(null)
+    try {
+      const response = await fetch(`/api/admin/products?id=${id}`, { method: 'DELETE' })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'המחיקה נכשלה')
+      setOpenId(null)
+      router.refresh()
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'המחיקה נכשלה')
     } finally {
       setBusy(null)
     }
@@ -506,20 +685,23 @@ export default function ProductsClient({
       ) : (
         <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
           {shown.map((product) => (
-            <Row
+            <ProductRow
               key={product.id}
               product={product}
+              categories={categories}
+              expanded={openId === product.id}
               busy={busy === product.id}
-              onPatch={patch}
+              onToggle={(id) => setOpenId(openId === id ? null : id)}
+              onSave={save}
               onUpload={upload}
+              onDelete={remove}
             />
           ))}
         </div>
       )}
 
       <p className="text-xs text-stone-500">
-        המחירים והשמות מגיעים מהגיליון בכל סנכרון. עריכה כאן נשמרת מיד, אבל סנכרון הבא ידרוס
-        אותה — לשינוי קבוע ערוך בגיליון.
+        לחיצה על מוצר פותחת את כל השדות לעריכה.
       </p>
     </div>
   )

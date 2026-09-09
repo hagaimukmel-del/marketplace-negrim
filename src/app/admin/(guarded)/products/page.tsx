@@ -4,7 +4,7 @@ import ProductsClient from './ProductsClient'
 export const dynamic = 'force-dynamic'
 
 const SELECT =
-  'id, sku, name_he, name_en, description_he, base_price_excl_vat, stock_qty, is_active, image_url, source, categories(name_he)'
+  'id, sku, name_he, name_en, description_he, base_price_excl_vat, stock_qty, is_active, image_url, category_id, source, categories(name_he)'
 
 export default async function AdminProductsPage() {
   const supabase = getSupabaseAdmin()
