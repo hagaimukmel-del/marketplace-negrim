@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatIls } from '@/lib/vat'
+import SyncButton from '../SyncButton'
 
 interface Product {
   id: string
@@ -75,7 +76,12 @@ export default function CampaignsClient({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold text-stone-900">קמפיינים</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-xl font-bold text-stone-900">קמפיינים</h1>
+        {/* The product list below comes from the catalogue, so the place to
+            refresh it is next to where you pick from it. */}
+        <SyncButton />
+      </div>
 
       <section className="rounded-xl border border-stone-300 bg-white p-5">
         <h2 className="font-bold text-stone-900">קמפיין חדש</h2>

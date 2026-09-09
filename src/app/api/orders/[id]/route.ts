@@ -1,6 +1,15 @@
+/**
+ * Read one order.
+ *
+ * This file used to export a PATCH as well, with no authentication of any kind:
+ * anyone on the internet could change any order's status and notes, and the
+ * response handed back the whole record — customer name, email, phone and
+ * address. Nothing called it. Every status change in the application goes
+ * through /api/admin/orders/[id], which is behind the operator password, so it
+ * is deleted rather than guarded.
+ */
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { resolveCarpenter } from '@/lib/offer'
-import type { OrderUpdate } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(
@@ -38,50 +47,6 @@ export async function GET(
     console.error('Order fetch error:', err)
     return NextResponse.json(
       { error: 'Failed to fetch order' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params
-    const body = await request.json()
-
-    // Update only allowed fields
-    const updateData: OrderUpdate = {}
-    if (typeof body.status === 'string') updateData.status = body.status
-    if (typeof body.notes === 'string') updateData.notes = body.notes
-
-    if (Object.keys(updateData).length === 0) {
-      return NextResponse.json(
-        { error: 'No valid fields to update' },
-        { status: 400 }
-      )
-    }
-
-    const { data, error } = await getSupabaseAdmin()
-      .from('orders')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single()
-
-    if (error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      )
-    }
-
-    return NextResponse.json({ order: data })
-  } catch (err) {
-    console.error('Order update error:', err)
-    return NextResponse.json(
-      { error: 'Failed to update order' },
       { status: 500 }
     )
   }

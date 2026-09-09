@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { parse } from 'csv-parse/sync'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { isAdmin } from '@/lib/admin-auth'
 import type { Database } from '@/lib/database.types'
 
 type ProductInsert = Database['public']['Tables']['products']['Insert']
@@ -133,6 +134,13 @@ async function resolveCategories(names: string[]): Promise<Map<string, string>> 
 }
 
 export async function GET() {
+  // Rebuilding the catalogue writes to production and pulls a Google Sheet on
+  // every call. It was reachable by anyone who knew the URL and could be run in
+  // a loop; it is an operator action and now needs the operator session.
+  if (!(await isAdmin())) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     const supabase = getSupabaseAdmin()
     const sheetProducts = await readSheet()
