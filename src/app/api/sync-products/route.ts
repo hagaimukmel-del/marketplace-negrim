@@ -11,8 +11,8 @@ const SHEET_NAME = 'דבקים'
 const ITAMIR_SUPPLIER_ID = '6048c39d-e5c1-497d-91cd-04e6bdf6e27a'
 
 /**
- * Column positions in the sheet. Index-based because several headers are
- * duplicated across languages and cannot be matched by name.
+ * Fixed column positions. Index-based because several headers are duplicated
+ * across languages and cannot be matched by name.
  */
 const COL = {
   nameEn: 0,
@@ -26,17 +26,31 @@ const COL = {
 } as const
 
 /**
- * Prices arrive as "820₪" or "1,250₪".
+ * The SKU column is found by its heading instead, wherever it sits.
  *
- * The previous implementation stripped the shekel sign and called parseFloat on
- * what was left, and parseFloat('1,250') is 1 — it stops at the separator. That
- * wrote eight products worth 1,200-1,450 ILS into the catalogue at 1.00 ILS.
- * Strip every character that is not a digit or a decimal point.
+ * The sheet has no SKU column yet. Adding one at a fixed index would mean
+ * either appending it at the far right or editing this file every time the
+ * sheet is rearranged, so the header row is searched for it and any of the
+ * spellings below is accepted.
+ */
+const SKU_HEADINGS = ['מק״ט', 'מק"ט', 'מקט', 'sku', 'קוד', 'קטלוגי', 'catalog']
+
+function findSkuColumn(header: string[]): number | null {
+  const index = header.findIndex((cell) => {
+    const value = cell.trim().toLowerCase()
+    return value.length > 0 && SKU_HEADINGS.some((h) => value.includes(h.toLowerCase()))
+  })
+  return index >= 0 ? index : null
+}
+
+/**
+ * Prices arrive as "820₪" or "1,250₪". parseFloat('1,250') is 1 — it stops at
+ * the separator — which once wrote eight products worth 1,200-1,450 ILS into
+ * the catalogue at 1.00 ILS. Strip everything that is not a digit or a point.
  */
 function parsePrice(raw: string | undefined): number {
   if (!raw) return 0
-  const cleaned = raw.replace(/[^\d.]/g, '')
-  const value = Number.parseFloat(cleaned)
+  const value = Number.parseFloat(raw.replace(/[^\d.]/g, ''))
   return Number.isFinite(value) ? value : 0
 }
 
@@ -45,12 +59,12 @@ function normaliseImageUrl(raw: string | undefined): string | null {
   const url = raw?.trim()
   if (!url) return null
   if (!url.includes('drive.google.com')) return url
-
   const fileId = url.match(/\/d\/([a-zA-Z0-9-_]+)/)?.[1]
   return fileId ? `https://drive.google.com/uc?export=view&id=${fileId}` : url
 }
 
-function cell(row: string[], index: number): string {
+function cell(row: string[], index: number | null): string {
+  if (index == null) return ''
   return (row[index] ?? '').trim()
 }
 
@@ -58,7 +72,7 @@ interface SheetProduct extends ProductInsert {
   _category: string
 }
 
-async function readSheet(): Promise<SheetProduct[]> {
+async function readSheet(): Promise<{ products: SheetProduct[]; hasSkuColumn: boolean }> {
   const url =
     `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq` +
     `?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`
@@ -69,15 +83,17 @@ async function readSheet(): Promise<SheetProduct[]> {
   }
 
   // A real CSV parser, not a hand-rolled split. The old one mis-handled quoted
-  // commas, which shifted every later column by one and wrote the category into
-  // the name for 32 of the 62 rows.
+  // commas, shifting every later column by one and writing the category into
+  // the product name for 32 of 62 rows.
   const rows: string[][] = parse(await response.text(), {
     skip_empty_lines: true,
     relax_column_count: true,
     bom: true,
   })
 
-  return rows
+  const skuColumn = rows.length > 0 ? findSkuColumn(rows[0]) : null
+
+  const products = rows
     .slice(1)
     .map((row): SheetProduct | null => {
       const nameHe = cell(row, COL.nameHe)
@@ -88,6 +104,7 @@ async function readSheet(): Promise<SheetProduct[]> {
       if (price <= 0) return null
 
       return {
+        sku: cell(row, skuColumn) || null,
         name_he: nameHe || nameEn,
         name_en: nameEn || nameHe,
         name_ar: cell(row, COL.nameAr) || null,
@@ -102,6 +119,8 @@ async function readSheet(): Promise<SheetProduct[]> {
       }
     })
     .filter((product): product is SheetProduct => product !== null)
+
+  return { products, hasSkuColumn: skuColumn != null }
 }
 
 /** Resolve category names to ids, creating any the sheet has introduced. */
@@ -135,19 +154,18 @@ async function resolveCategories(names: string[]): Promise<Map<string, string>> 
 
 export async function GET() {
   // Rebuilding the catalogue writes to production and pulls a Google Sheet on
-  // every call. It was reachable by anyone who knew the URL and could be run in
-  // a loop; it is an operator action and now needs the operator session.
+  // every call, so it is an operator action and needs the operator session.
   if (!(await isAdmin())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   try {
     const supabase = getSupabaseAdmin()
-    const sheetProducts = await readSheet()
+    const { products: sheetProducts, hasSkuColumn } = await readSheet()
 
     if (sheetProducts.length === 0) {
       return NextResponse.json(
-        { success: false, message: 'No usable rows found in the sheet' },
+        { success: false, message: 'לא נמצאו שורות תקינות בגיליון' },
         { status: 422 }
       )
     }
@@ -160,22 +178,47 @@ export async function GET() {
       updated_at: new Date().toISOString(),
     }))
 
-    // Upsert on the natural key from migration 0003. The old route always
-    // inserted, so every run duplicated the whole catalogue.
-    const { data, error } = await supabase
-      .from('products')
-      .upsert(rows, { onConflict: 'supplier_id,name_he,name_en' })
-      .select('id')
+    // Which SKUs already exist? Answered before writing, so the report can say
+    // what was overwritten rather than only what was touched — a repeated SKU
+    // replaces a product, and that has to be visible, not silent.
+    const incomingSkus = rows.map((r) => r.sku).filter((s): s is string => Boolean(s))
+    const { data: existingRows } = incomingSkus.length
+      ? await supabase
+          .from('products')
+          .select('sku, name_he')
+          .eq('supplier_id', ITAMIR_SUPPLIER_ID)
+          .in('sku', incomingSkus)
+      : { data: [] }
 
-    if (error) {
-      return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    const overwritten = (existingRows ?? [])
+      .filter((r) => r.sku)
+      .map((r) => ({ sku: r.sku as string, name_he: r.name_he }))
+
+    // Two passes, because the key differs. Rows carrying a SKU are matched on
+    // it; rows without one fall back to the name pair so a sheet that has not
+    // been given SKUs yet keeps working.
+    const withSku = rows.filter((r) => r.sku)
+    const withoutSku = rows.filter((r) => !r.sku)
+    const syncedIds: string[] = []
+
+    for (const [batch, onConflict] of [
+      [withSku, 'supplier_id,sku'],
+      [withoutSku, 'supplier_id,name_he,name_en'],
+    ] as const) {
+      if (batch.length === 0) continue
+      const { data, error } = await supabase
+        .from('products')
+        .upsert(batch, { onConflict })
+        .select('id')
+      if (error) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+      }
+      syncedIds.push(...(data ?? []).map((r) => r.id))
     }
 
     // Anything this supplier still has that the sheet no longer lists is
     // retired rather than deleted, so order history keeps resolving.
-    const syncedIds = (data ?? []).map((row) => row.id)
     let retiredCount = 0
-
     if (syncedIds.length > 0) {
       const idList = syncedIds.map((id) => `"${id}"`).join(',')
       const { data: retired, error: retireError } = await supabase
@@ -200,6 +243,9 @@ export async function GET() {
       synced: syncedIds.length,
       retired: retiredCount,
       categories: categories.size,
+      hasSkuColumn,
+      missingSku: withoutSku.length,
+      overwritten,
     })
   } catch (error) {
     return NextResponse.json(

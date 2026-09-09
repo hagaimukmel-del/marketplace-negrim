@@ -9,6 +9,7 @@ const NAV = [
   // Orders first: it is the screen with work waiting on it every day.
   { href: '/admin/orders', label: 'הזמנות' },
   { href: '/admin', label: 'תוצאות' },
+  { href: '/admin/products', label: 'מוצרים' },
   { href: '/admin/campaigns', label: 'קמפיינים' },
   { href: '/admin/carpenters', label: 'נגריות' },
 ]

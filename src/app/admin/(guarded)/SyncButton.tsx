@@ -16,6 +16,7 @@ export default function SyncButton() {
   const router = useRouter()
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState<string | null>(null)
+  const [overwritten, setOverwritten] = useState<{ sku: string; name_he: string }[]>([])
 
   const sync = async () => {
     setBusy(true)
@@ -26,17 +27,24 @@ export default function SyncButton() {
       if (!response.ok || !data.success) {
         throw new Error(data.error || data.message || 'הסנכרון נכשל')
       }
-      setResult(`עודכנו ${data.synced} מוצרים${data.retired ? `, ${data.retired} הוסרו` : ''}`)
+      const parts = [`עודכנו ${data.synced} מוצרים`]
+      if (data.retired) parts.push(`${data.retired} הוסרו`)
+      if (!data.hasSkuColumn) parts.push('אין עמודת מק״ט בגיליון')
+      else if (data.missingSku) parts.push(`${data.missingSku} בלי מק״ט`)
+      setResult(parts.join(' · '))
+      setOverwritten(data.overwritten ?? [])
       router.refresh()
     } catch (err) {
       setResult(err instanceof Error ? err.message : 'הסנכרון נכשל')
+      setOverwritten([])
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-col items-start gap-2">
+      <div className="flex flex-wrap items-center gap-3">
       <button
         type="button"
         onClick={sync}
@@ -46,7 +54,23 @@ export default function SyncButton() {
         <RefreshCw size={15} className={busy ? 'animate-spin' : undefined} />
         {busy ? 'מסנכרן…' : 'סנכרן מהגיליון'}
       </button>
-      {result && <span className="text-sm text-stone-600">{result}</span>}
+        {result && <span className="text-sm text-stone-600">{result}</span>}
+      </div>
+
+      {overwritten.length > 0 && (
+        <div className="w-full rounded-lg border border-amber-300 bg-amber-50 p-3">
+          <p className="text-sm font-semibold text-amber-900">
+            {overwritten.length} מוצרים נדרסו לפי מק״ט
+          </p>
+          <ul className="mt-1 space-y-0.5">
+            {overwritten.map((row) => (
+              <li key={row.sku} className="text-sm text-amber-900">
+                <span className="font-mono text-xs">{row.sku}</span> — {row.name_he}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   )
 }
