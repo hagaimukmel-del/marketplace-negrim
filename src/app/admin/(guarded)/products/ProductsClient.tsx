@@ -385,7 +385,7 @@ function NewProduct({
   onCreated,
 }: {
   categories: Category[]
-  onCreated: () => void
+  onCreated: (id: string) => void
 }) {
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState(EMPTY)
@@ -417,7 +417,7 @@ function NewProduct({
       if (!response.ok) throw new Error(data.error || 'ההוספה נכשלה')
       setForm(EMPTY)
       setOpen(false)
-      onCreated()
+      onCreated(data.id)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ההוספה נכשלה')
     } finally {
@@ -552,7 +552,7 @@ function NewProduct({
           {busy ? 'מוסיף…' : 'הוסף מוצר'}
         </button>
         <span className="text-xs text-stone-500">
-          את התמונה מעלים אחרי ההוספה, מהשורה של המוצר.
+          אחרי ההוספה המוצר ייפתח כאן להעלאת תמונה.
         </span>
       </div>
     </form>
@@ -648,7 +648,18 @@ export default function ProductsClient({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-bold text-stone-900">מוצרים</h1>
         <div className="flex flex-wrap items-center gap-3">
-          <NewProduct categories={categories} onCreated={() => router.refresh()} />
+          <NewProduct
+            categories={categories}
+            onCreated={(id) => {
+              // A new product can sit outside the current filter or search, so
+              // clear both before opening it - otherwise "added" looks like
+              // nothing happened.
+              setFilter('all')
+              setQuery('')
+              setOpenId(id)
+              router.refresh()
+            }}
+          />
           <SyncButton />
         </div>
       </div>
