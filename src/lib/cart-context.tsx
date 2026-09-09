@@ -25,7 +25,7 @@ interface CartContextType {
   vatRate: number
   vatAmount: number
   totalInclVat: number
-  logEvent: (action: string, data?: any) => void
+  logEvent: (action: string, data?: Record<string, unknown>) => void
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
@@ -129,7 +129,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems([])
   }
 
-  const logEvent = (action: string, data?: any) => {
+  const logEvent = (action: string, data?: Record<string, unknown>) => {
     const event = {
       timestamp: new Date().toISOString(),
       action,

@@ -44,27 +44,47 @@
   stored as snapshots on the supplier order) and/or supplier subscription. Not a cut of payment.
 
 ## 6. Current State vs Target — read before assuming
-The sections above describe the **target** stack. As of 2026-09-06 the repo does not match it yet.
-Do not assume these exist; install or build them as part of the task that first needs them, and
-update this section when the gap closes.
+Last verified 2026-09-09 by running the checks, not from memory. Re-verify before trusting it.
 
 | Rule says | Actually in the repo now |
 |---|---|
-| `@supabase/ssr`, server clients | Only `@supabase/supabase-js`, one shared browser client in `src/lib/supabase.ts` |
-| Server Components first | 29 of 45 source files are `'use client'`; nearly every page is a client component |
-| Zod + Server Actions | `zod` is only a transitive dependency (not in `package.json`); mutations go through `/api/*` route handlers |
-| Shadcn/ui + Radix + Lucide | None installed, no `components.json`; UI is hand-written Tailwind with emoji icons |
-| Migrations in `supabase/migrations/` | No `supabase/` directory and no CLI. Schema was applied by hand and **has drifted** from `docs/*.sql` |
-| `supabase gen types typescript` | No local Supabase setup; types are hand-written in `src/lib/types.ts` and partly stale vs the live DB |
-| No `any` | `npm run lint` currently reports ~43 errors, mostly `@typescript-eslint/no-explicit-any` |
-| `npm run build` clean | Passes as of 2026-09-06. `npm run lint` does **not** — treat lint-clean as "no new errors" until the backlog is cleared |
+| `@supabase/ssr`, server clients | Still only `@supabase/supabase-js`. Two clients: `lib/supabase.ts` (browser, public key, catalogue reads only) and `lib/supabase-admin.ts` (service role, `server-only`, everything else) |
+| Server Components first | 25 of 54 files are `'use client'`. `/admin/*` and `/o/[token]` are Server Components that hand data to a client island; the carpenter pages are still client-rendered |
+| Zod + Server Actions | `zod` is still not a declared dependency. Mutations go through `/api/*` route handlers with hand-written validation |
+| Shadcn/ui + Radix + Lucide | **Lucide is in.** No shadcn/Radix and no `components.json`; components are hand-written Tailwind on the tokens in `globals.css` |
+| Migrations in `supabase/migrations/` | **Done.** 7 migrations, CLI linked, `npm run db:push` / `db:types` work. Never edit schema in the dashboard |
+| `supabase gen types typescript` | **Done.** `npm run db:types` regenerates `lib/database.types.ts`; hand-written aliases live in `lib/db.ts` so they survive regeneration |
+| No `any` | `npm run lint`: 16 errors, 9 warnings, mostly `no-explicit-any` in older files. Treat lint-clean as "no new errors" |
+| `npm run build` clean | Passes |
 
-**Known blockers to fix before building on top of them:**
-- `orders.items_json` (JSONB blob) makes per-supplier RLS impossible. Must be replaced by
-  `supplier_orders` → `order_items` before supplier isolation can work.
-- Supplier auth is a hardcoded `DEMO_SUPPLIERS` array plus a `localStorage` session — any visitor
-  can reach `/supplier`. Must be replaced by Supabase Auth.
-- Two parallel profile tables (`profiles`, `user_profiles`) and two parallel order schemas
-  (normalized `sub_orders`/`order_items` vs flat `items_json`). Pick one, delete the other.
-- VAT is hardcoded as `* 1.18` inside `src/lib/cart-context.tsx`. It belongs on the order record.
-- No `/admin/*` routes exist, though `Navbar` and `AdminNavbar` link to seven of them.
+**Resolved since this file was written — do not re-report these:**
+- `orders.items_json` is gone. Orders are `orders` → `order_items` with `unit_price_excl_vat`
+  and `product_name_he` snapshotted at order time (migration 0004).
+- The mock supplier area and its `DEMO_SUPPLIERS` / localStorage login are deleted, along with
+  the unused `Navbar` and `AdminNavbar` (which linked to seven routes that never existed).
+- `/admin/*` exists: results, orders, campaigns, carpenters, login. Gated by ADMIN_PASSWORD +
+  ADMIN_SECRET, verified in a Server Component and re-checked in every admin route handler.
+- VAT lives in `lib/vat.ts` and is snapshotted onto each order as `orders.vat_rate`.
+- Only one profile table matters (`user_profiles`); `profiles` is legacy and unused.
+
+**Known gaps, in the order they matter:**
+- Nothing notifies the operator when an order arrives — `/admin/orders` has to be opened. Needs
+  a mail provider and an API key.
+- Product images are Google Drive share links that do not render when hot-linked. The UI skips
+  the request and shows an initials tile; the real fix is rehosting on Supabase Storage.
+- 44 emoji remain, all in files off the main path: `design-system`, the auth pages,
+  `ProductCard`, `VolumePricingTable`, `GatedPriceGuard`, `ProtectedRoute`.
+- `/auth/login`, `/auth/signup`, `ProtectedRoute` and `GatedPriceGuard` are from the abandoned
+  account model. Nothing on the live path uses them. Candidates for deletion.
+- `products.stock_qty` is 100 for every row because the sync writes a constant. Do not display
+  it as though it were real.
+
+**Security model, so it is not re-derived each time:**
+- The public key is read-only and reaches only `products`, `categories`, `volume_pricing`.
+- `carpenters`, `orders`, `order_items`, `campaigns`, `order_intents`, `offer_events` have RLS
+  on and no policy: reachable only through server code holding the service role.
+- A carpenter is identified by the token in `/o/[token]`, remembered in localStorage for the
+  visit. Every server use re-resolves it against the database; nothing trusts a client-supplied
+  id. Order reads are scoped to the owning carpenter.
+- `/api/join` is the only public endpoint that writes. It dedupes on the last 9 phone digits, so
+  repeated submissions return the same link instead of creating rows.

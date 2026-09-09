@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutGrid, ClipboardList, ShoppingCart } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
 import { Home } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { getCarpenterToken } from '@/lib/carpenter-session'
@@ -18,10 +18,16 @@ export default function CarpenterNav() {
   const cart = useCart()
   const pathname = usePathname()
 
-  // Read after mount: localStorage does not exist during the server render,
-  // and reading it in the body would make the markup differ on hydration.
-  const [token, setToken] = useState<string | null>(null)
-  useEffect(() => setToken(getCarpenterToken()), [])
+  // localStorage does not exist during the server render, so the token has to
+  // be read after hydration. useSyncExternalStore is the API for exactly this —
+  // a server snapshot of null, a client snapshot from storage — and it avoids
+  // the setState-inside-an-effect that the previous version needed. The token
+  // does not change during a visit, so there is nothing to subscribe to.
+  const token = useSyncExternalStore(
+    () => () => {},
+    () => getCarpenterToken(),
+    () => null
+  )
 
   return (
     <nav className="sticky top-0 z-40 border-b border-stone-200 bg-white">

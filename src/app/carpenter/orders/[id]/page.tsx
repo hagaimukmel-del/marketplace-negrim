@@ -20,29 +20,32 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Declared inside the effect: as a sibling it was referenced above its own
+  // declaration, and listing it as a dependency would have re-run the fetch on
+  // every render.
   useEffect(() => {
     if (!orderId) return
-    fetchOrder()
-  }, [orderId])
 
-  const fetchOrder = async () => {
-    try {
-      setLoading(true)
-      const token = getCarpenterToken()
-      const response = await fetch(
-        `/api/orders/${orderId}${token ? `?token=${encodeURIComponent(token)}` : ''}`
-      )
-      if (!response.ok) throw new Error('Failed to fetch order')
-      const data = await response.json()
-
-      setOrder(data.order)
-      setItems(data.order.order_items ?? [])
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load order')
-    } finally {
-      setLoading(false)
+    const fetchOrder = async () => {
+      try {
+        setLoading(true)
+        const token = getCarpenterToken()
+        const response = await fetch(
+          `/api/orders/${orderId}${token ? `?token=${encodeURIComponent(token)}` : ''}`
+        )
+        if (!response.ok) throw new Error('ההזמנה לא נמצאה')
+        const data = await response.json()
+        setOrder(data.order)
+        setItems(data.order.order_items ?? [])
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'טעינת ההזמנה נכשלה')
+      } finally {
+        setLoading(false)
+      }
     }
-  }
+
+    void fetchOrder()
+  }, [orderId])
 
   if (loading) {
     return (
@@ -198,8 +201,8 @@ export default function OrderDetailPage() {
             <div className="bg-gray-50 rounded-lg p-4 text-sm text-stone-500">
               <p>תאריך הזמנה</p>
               <p className="font-semibold text-stone-900 mt-1">
-                {new Date(order.created_at ?? Date.now()).toLocaleDateString('he-IL')} בשעה{' '}
-                {new Date(order.created_at ?? Date.now()).toLocaleTimeString('he-IL', {
+                {new Date(order.created_at ?? 0).toLocaleDateString('he-IL')} בשעה{' '}
+                {new Date(order.created_at ?? 0).toLocaleTimeString('he-IL', {
                   hour: '2-digit',
                   minute: '2-digit',
                 })}
