@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import type { OrderItemInsert } from '@/lib/db'
 import { logEvent, resolveCarpenter } from '@/lib/offer'
+import { bestOffer, OFFER_COLUMNS, type Offer } from '@/lib/catalog'
 
 /** One line as the checkout posts it. */
 interface IncomingItem {
@@ -42,6 +43,15 @@ function parseItems(raw: unknown): IncomingItem[] | null {
   return items
 }
 
+const CATALOG_OFFERS = `supplier_offers!inner(${OFFER_COLUMNS})`
+
+interface OrderableProduct {
+  id: string
+  name_he: string
+  name_en: string | null
+  supplier_offers: Offer[]
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -72,16 +82,24 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseAdmin()
     const { data: products, error: productError } = await supabase
       .from('products')
-      .select('id, name_he, name_en, base_price_excl_vat')
+      .select(`id, name_he, name_en, ${CATALOG_OFFERS}`)
       .in('id', items.map((item) => item.id))
       .eq('is_active', true)
+      .eq('supplier_offers.is_active', true)
 
     if (productError) {
       return NextResponse.json({ error: productError.message }, { status: 500 })
     }
 
-    const byId = new Map((products ?? []).map((product) => [product.id, product]))
-    const missing = items.filter((item) => !byId.has(item.id))
+    const byId = new Map(
+      ((products ?? []) as unknown as OrderableProduct[]).map((product) => [product.id, product])
+    )
+    // No live offer means nobody sells it, which is the same to the carpenter
+    // as the product being switched off.
+    const missing = items.filter((item) => {
+      const product = byId.get(item.id)
+      return !product || !bestOffer(product)
+    })
     if (missing.length > 0) {
       return NextResponse.json(
         { error: `Unavailable products: ${missing.map((m) => m.name_he).join(', ')}` },
@@ -91,13 +109,18 @@ export async function POST(request: NextRequest) {
 
     // Amounts are snapshots. They are stored as calculated here and never
     // recomputed from the product row afterwards.
+    // Which supplier is stamped on the line, not just which price: one cart
+    // becomes one purchase order per supplier, and that split is only possible
+    // if the line remembers who it was bought from.
     const lines = items.map((item) => {
       const product = byId.get(item.id)!
-      const unitPrice = Number(product.base_price_excl_vat)
+      const offer = bestOffer(product)
+      const unitPrice = Number(offer?.price_excl_vat ?? 0)
       return {
         product_id: product.id,
         product_name_he: product.name_he,
         product_name_en: product.name_en,
+        supplier_id: offer?.supplier_id ?? null,
         unit_price_excl_vat: unitPrice,
         quantity: item.quantity,
         line_total_excl_vat: Number((unitPrice * item.quantity).toFixed(2)),

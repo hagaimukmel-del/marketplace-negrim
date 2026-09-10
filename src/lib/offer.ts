@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { getSupabaseAdmin } from './supabase-admin'
+import { OFFER_COLUMNS, bestOffer, type Offer } from './catalog'
 import type { Database } from './database.types'
 
 type Tables = Database['public']['Tables']
@@ -35,26 +36,31 @@ export interface OfferPageData {
 }
 
 const PRODUCT_COLUMNS =
-  'id, name_he, name_en, description_he, image_url, base_price_excl_vat, stock_qty, category_id'
+  'id, name_he, name_en, description_he, image_url, category_id, base_unit, ' +
+  `supplier_offers!inner(${OFFER_COLUMNS})`
 
-type ProductPick = Pick<
-  Tables['products']['Row'],
-  | 'id'
-  | 'name_he'
-  | 'name_en'
-  | 'description_he'
-  | 'image_url'
-  | 'base_price_excl_vat'
-  | 'stock_qty'
-  | 'category_id'
->
+/**
+ * The offer page reads the same product + offer shape as the catalogue. The
+ * price it shows is the campaign price when one is running, and the supplier's
+ * offer price otherwise - resolved once, here, so the page never has to pick.
+ */
+interface ProductPick {
+  id: string
+  name_he: string
+  name_en: string | null
+  description_he: string | null
+  image_url: string | null
+  category_id: string | null
+  base_unit: string
+  supplier_offers: Offer[]
+}
 
 function toOfferProduct(
   product: ProductPick,
   tiers: Tables['volume_pricing']['Row'][],
   offerPrice?: number | null
 ): OfferProduct {
-  const list = Number(product.base_price_excl_vat)
+  const list = Number(bestOffer(product)?.price_excl_vat ?? 0)
   return {
     id: product.id,
     name_he: product.name_he,
@@ -63,7 +69,7 @@ function toOfferProduct(
     image_url: product.image_url,
     base_price_excl_vat: list,
     price_excl_vat: offerPrice != null ? Number(offerPrice) : list,
-    stock_qty: product.stock_qty,
+    stock_qty: bestOffer(product)?.stock_qty ?? null,
     tiers: tiers
       .filter((tier) => tier.product_id === product.id)
       .sort((a, b) => a.min_qty - b.min_qty)
@@ -159,10 +165,17 @@ export async function loadOfferPage(token: string): Promise<OfferPageData | null
   const wantedIds = [...new Set([campaign?.product_id, ...historyIds].filter(Boolean) as string[])]
 
   const { data: products } = wantedIds.length
-    ? await supabase.from('products').select(PRODUCT_COLUMNS).in('id', wantedIds).eq('is_active', true)
-    : { data: [] as ProductPick[] }
+    ? await supabase
+        .from('products')
+        .select(PRODUCT_COLUMNS)
+        .in('id', wantedIds)
+        .eq('is_active', true)
+        .eq('supplier_offers.is_active', true)
+    : { data: [] as unknown[] }
 
-  const byId = new Map((products ?? []).map((p) => [p.id, p as ProductPick]))
+  const byId = new Map(
+    ((products ?? []) as unknown as ProductPick[]).map((p) => [p.id, p])
+  )
 
   // A carpenter with no history still needs a reason to scroll: show other
   // products from the campaign product's own category.
@@ -174,10 +187,13 @@ export async function loadOfferPage(token: string): Promise<OfferPageData | null
       .from('products')
       .select(PRODUCT_COLUMNS)
       .eq('is_active', true)
+      .eq('supplier_offers.is_active', true)
       .neq('id', campaign?.product_id ?? '00000000-0000-0000-0000-000000000000')
-      .order('base_price_excl_vat', { ascending: false })
       .limit(6)
-    suggestionRows = (data ?? []) as ProductPick[]
+    // PostgREST cannot order on an embedded column, so the sort is here.
+    suggestionRows = ((data ?? []) as unknown as ProductPick[])
+      .slice()
+      .sort((a, b) => Number(bestOffer(b)?.price_excl_vat ?? 0) - Number(bestOffer(a)?.price_excl_vat ?? 0))
   }
 
   const tierIds = [

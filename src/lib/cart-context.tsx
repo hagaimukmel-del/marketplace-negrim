@@ -7,7 +7,10 @@ export interface CartItem {
   id: string
   name_he: string
   name_en: string
+  /** The price shown when it went in. The server re-reads it before ordering. */
   base_price_excl_vat: number
+  /** Who the line is bought from. One cart splits into an order per supplier. */
+  supplier_id?: string
   quantity: number
   addedAt: number
 }

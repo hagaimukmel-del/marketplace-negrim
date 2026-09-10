@@ -298,6 +298,7 @@ export type Database = {
           product_name_en: string | null
           product_name_he: string
           quantity: number
+          supplier_id: string | null
           unit_price_excl_vat: number
         }
         Insert: {
@@ -309,6 +310,7 @@ export type Database = {
           product_name_en?: string | null
           product_name_he: string
           quantity: number
+          supplier_id?: string | null
           unit_price_excl_vat: number
         }
         Update: {
@@ -320,6 +322,7 @@ export type Database = {
           product_name_en?: string | null
           product_name_he?: string
           quantity?: number
+          supplier_id?: string | null
           unit_price_excl_vat?: number
         }
         Relationships: [
@@ -335,6 +338,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]
@@ -431,7 +441,9 @@ export type Database = {
       }
       products: {
         Row: {
-          base_price_excl_vat: number
+          attributes: Json
+          base_unit: string
+          brand: string | null
           category_id: string | null
           created_at: string | null
           description_en: string | null
@@ -439,19 +451,16 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean | null
+          mpn: string | null
           name_ar: string | null
           name_en: string | null
           name_he: string
-          rating: number | null
-          return_rate: number | null
-          sku: string | null
-          source: string
-          stock_qty: number | null
-          supplier_id: string | null
           updated_at: string | null
         }
         Insert: {
-          base_price_excl_vat: number
+          attributes?: Json
+          base_unit?: string
+          brand?: string | null
           category_id?: string | null
           created_at?: string | null
           description_en?: string | null
@@ -459,19 +468,16 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          mpn?: string | null
           name_ar?: string | null
           name_en?: string | null
           name_he: string
-          rating?: number | null
-          return_rate?: number | null
-          sku?: string | null
-          source?: string
-          stock_qty?: number | null
-          supplier_id?: string | null
           updated_at?: string | null
         }
         Update: {
-          base_price_excl_vat?: number
+          attributes?: Json
+          base_unit?: string
+          brand?: string | null
           category_id?: string | null
           created_at?: string | null
           description_en?: string | null
@@ -479,15 +485,10 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          mpn?: string | null
           name_ar?: string | null
           name_en?: string | null
           name_he?: string
-          rating?: number | null
-          return_rate?: number | null
-          sku?: string | null
-          source?: string
-          stock_qty?: number | null
-          supplier_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -496,13 +497,6 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "products_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]
@@ -662,6 +656,72 @@ export type Database = {
           },
         ]
       }
+      supplier_offers: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          lead_time_days: number | null
+          min_order_qty: number
+          pack_label: string | null
+          pack_qty: number | null
+          price_excl_vat: number
+          product_id: string
+          source: string
+          stock_qty: number
+          supplier_id: string
+          supplier_sku: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          lead_time_days?: number | null
+          min_order_qty?: number
+          pack_label?: string | null
+          pack_qty?: number | null
+          price_excl_vat: number
+          product_id: string
+          source?: string
+          stock_qty?: number
+          supplier_id: string
+          supplier_sku?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          lead_time_days?: number | null
+          min_order_qty?: number
+          pack_label?: string | null
+          pack_qty?: number | null
+          price_excl_vat?: number
+          product_id?: string
+          source?: string
+          stock_qty?: number
+          supplier_id?: string
+          supplier_sku?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_offers_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       supplier_products: {
         Row: {
           created_at: string | null
@@ -710,11 +770,14 @@ export type Database = {
           contact_name: string | null
           created_at: string | null
           decided_at: string | null
+          default_lead_time_days: number | null
           email: string | null
           id: string
           is_verified: boolean | null
+          min_order_value_excl_vat: number | null
           phone: string | null
           phone_key: string | null
+          pickup_address: string | null
           rating: number | null
           sells_note: string | null
           source: string
@@ -730,11 +793,14 @@ export type Database = {
           contact_name?: string | null
           created_at?: string | null
           decided_at?: string | null
+          default_lead_time_days?: number | null
           email?: string | null
           id?: string
           is_verified?: boolean | null
+          min_order_value_excl_vat?: number | null
           phone?: string | null
           phone_key?: string | null
+          pickup_address?: string | null
           rating?: number | null
           sells_note?: string | null
           source?: string
@@ -750,11 +816,14 @@ export type Database = {
           contact_name?: string | null
           created_at?: string | null
           decided_at?: string | null
+          default_lead_time_days?: number | null
           email?: string | null
           id?: string
           is_verified?: boolean | null
+          min_order_value_excl_vat?: number | null
           phone?: string | null
           phone_key?: string | null
+          pickup_address?: string | null
           rating?: number | null
           sells_note?: string | null
           source?: string

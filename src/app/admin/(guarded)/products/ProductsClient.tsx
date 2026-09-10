@@ -2,21 +2,35 @@
 
 import { useMemo, useRef, useState } from 'react'
 import { formatIls } from '@/lib/vat'
+import { BASE_UNITS, unitLabel } from '@/lib/catalog'
 import { useRouter } from 'next/navigation'
 import { ImagePlus, Search, Check, EyeOff, Eye, Plus, X, ChevronDown, Trash2 } from 'lucide-react'
 import SyncButton from '../SyncButton'
 
+/**
+ * One line on the screen, but two rows in the database: the product is what the
+ * item is, the offer is what one supplier charges for it. The API splits the
+ * save back out again, so this can stay a single form.
+ */
 interface Product {
   id: string
+  /** Null when nobody has priced this product yet. */
+  offer_id: string | null
   sku: string | null
   name_he: string
   name_en: string | null
   description_he: string | null
+  brand: string | null
+  mpn: string | null
+  base_unit: string
   base_price_excl_vat: number
   stock_qty: number | null
+  pack_label: string | null
+  pack_qty: number | null
   is_active: boolean | null
   image_url: string | null
   category_id: string | null
+  supplier_name: string | null
   source: string
   categories: { name_he: string } | null
 }
@@ -92,7 +106,7 @@ function ProductRow({
   onToggle: (id: string) => void
   onSave: (id: string, body: Record<string, unknown>) => Promise<boolean>
   onUpload: (id: string, file: File) => void
-  onDelete: (id: string) => void
+  onDelete: (id: string, offerId: string | null) => void
 }) {
   const fileInput = useRef<HTMLInputElement>(null)
   const price = Number(product.base_price_excl_vat)
@@ -129,13 +143,14 @@ function ProductRow({
                 <span className="rounded bg-amber-100 px-1 text-xs text-amber-900">בלי מק״ט</span>
               )}
               {product.categories?.name_he && ` · ${product.categories.name_he}`}
+              {product.pack_label && ` · ${product.pack_label}`}
               {product.source === 'manual' && ' · ידני'}
             </p>
           </div>
           <div className="shrink-0 text-end">
             <p className="tnum font-bold text-stone-900">{formatIls(price)}</p>
             <p className="text-xs text-stone-400">
-              {product.stock_qty ?? 0} במלאי
+              ל{unitLabel(product.base_unit)} · {product.stock_qty ?? 0} במלאי
             </p>
           </div>
           <ChevronDown
@@ -180,7 +195,7 @@ function EditPanel({
   fileInput: React.RefObject<HTMLInputElement | null>
   onSave: (id: string, body: Record<string, unknown>) => Promise<boolean>
   onUpload: (id: string, file: File) => void
-  onDelete: (id: string) => void
+  onDelete: (id: string, offerId: string | null) => void
 }) {
   const [form, setForm] = useState({
     name_he: product.name_he,
@@ -190,6 +205,11 @@ function EditPanel({
     stock: String(product.stock_qty ?? 0),
     category_id: product.category_id ?? '',
     description_he: product.description_he ?? '',
+    brand: product.brand ?? '',
+    mpn: product.mpn ?? '',
+    base_unit: product.base_unit ?? 'unit',
+    pack_label: product.pack_label ?? '',
+    pack_qty: product.pack_qty == null ? '' : String(product.pack_qty),
   })
   const [saved, setSaved] = useState(false)
 
@@ -200,6 +220,7 @@ function EditPanel({
 
   const save = async () => {
     const ok = await onSave(product.id, {
+      offer_id: product.offer_id,
       name_he: form.name_he,
       name_en: form.name_en,
       sku: form.sku,
@@ -207,6 +228,11 @@ function EditPanel({
       stock_qty: form.stock,
       category_id: form.category_id,
       description_he: form.description_he,
+      brand: form.brand,
+      mpn: form.mpn,
+      base_unit: form.base_unit,
+      pack_label: form.pack_label,
+      pack_qty: form.pack_qty,
     })
     if (ok) setSaved(true)
   }
@@ -245,11 +271,74 @@ function EditPanel({
         </label>
 
         <label className="block">
-          <span className="text-sm font-medium text-stone-700">מחיר ליחידה ללא מע״מ</span>
+          <span className="text-sm font-medium text-stone-700">מותג / יצרן</span>
+          <input
+            value={form.brand}
+            onChange={(e) => set('brand', e.target.value)}
+            placeholder="Kleiberit"
+            className="mt-1 h-11 w-full rounded-lg border border-stone-300 bg-white px-3"
+          />
+        </label>
+
+        <label className="block">
+          <span className="text-sm font-medium text-stone-700">מק״ט יצרן</span>
+          <input
+            value={form.mpn}
+            onChange={(e) => set('mpn', e.target.value)}
+            placeholder="707.9"
+            className="tnum mt-1 h-11 w-full rounded-lg border border-stone-300 bg-white px-3"
+          />
+          <span className="mt-1 block text-xs text-stone-500">
+            זה מה שמחבר את המוצר לאותו מוצר אצל ספק אחר.
+          </span>
+        </label>
+
+        <label className="block">
+          <span className="text-sm font-medium text-stone-700">יחידת מידה</span>
+          <select
+            value={form.base_unit}
+            onChange={(e) => set('base_unit', e.target.value)}
+            className="mt-1 h-11 w-full rounded-lg border border-stone-300 bg-white px-2"
+          >
+            {Object.entries(BASE_UNITS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="block">
+          <span className="text-sm font-medium text-stone-700">
+            מחיר ל{unitLabel(form.base_unit)} ללא מע״מ
+          </span>
           <input
             inputMode="decimal"
             value={form.price}
             onChange={(e) => set('price', e.target.value)}
+            className="tnum mt-1 h-11 w-full rounded-lg border border-stone-300 bg-white px-3"
+          />
+        </label>
+
+        <label className="block">
+          <span className="text-sm font-medium text-stone-700">שם האריזה</span>
+          <input
+            value={form.pack_label}
+            onChange={(e) => set('pack_label', e.target.value)}
+            placeholder="קרטון"
+            className="mt-1 h-11 w-full rounded-lg border border-stone-300 bg-white px-3"
+          />
+        </label>
+
+        <label className="block">
+          <span className="text-sm font-medium text-stone-700">
+            כמה {unitLabel(form.base_unit)} באריזה
+          </span>
+          <input
+            inputMode="decimal"
+            value={form.pack_qty}
+            onChange={(e) => set('pack_qty', e.target.value)}
+            placeholder="25"
             className="tnum mt-1 h-11 w-full rounded-lg border border-stone-300 bg-white px-3"
           />
         </label>
@@ -340,7 +429,7 @@ function EditPanel({
         {product.source === 'manual' && (
           <button
             type="button"
-            onClick={() => onDelete(product.id)}
+            onClick={() => onDelete(product.id, product.offer_id)}
             disabled={busy}
             className="ms-auto flex h-11 items-center gap-2 rounded-lg px-3 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-40"
           >
@@ -608,12 +697,16 @@ export default function ProductsClient({
     }
   }
 
-  const remove = async (id: string) => {
+  const remove = async (id: string, offerId: string | null) => {
+    if (!offerId) {
+      setMessage('אין מה למחוק — למוצר הזה אין הצעת מחיר.')
+      return
+    }
     if (!confirm('למחוק את המוצר? הפעולה אינה הפיכה.')) return
     setBusy(id)
     setMessage(null)
     try {
-      const response = await fetch(`/api/admin/products?id=${id}`, { method: 'DELETE' })
+      const response = await fetch(`/api/admin/products?offer_id=${offerId}`, { method: 'DELETE' })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'המחיקה נכשלה')
       setOpenId(null)

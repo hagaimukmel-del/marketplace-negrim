@@ -3,11 +3,21 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Search, ShoppingCart, Minus, Plus, PackageX } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import type { ProductRow } from '@/lib/db'
 import { useCart } from '@/lib/cart-context'
 import { formatIls, withVat } from '@/lib/vat'
+import {
+  CATALOG_COLUMNS,
+  bestOffer,
+  byPrice,
+  inStock,
+  offerCount,
+  packLabel,
+  priceOf,
+  unitLabel,
+  type CatalogProduct,
+} from '@/lib/catalog'
 
-type Product = ProductRow
+type Product = CatalogProduct
 
 /**
  * Product image with a designed fallback.
@@ -54,8 +64,11 @@ function ProductRowItem({
   onChange: (id: string, qty: number) => void
   onAdd: (product: Product) => void
 }) {
-  const price = Number(product.base_price_excl_vat)
-  const outOfStock = (product.stock_qty ?? 0) <= 0
+  const offer = bestOffer(product)
+  const price = priceOf(product)
+  const outOfStock = !inStock(product)
+  const pack = packLabel(offer, product.base_unit)
+  const suppliers = offerCount(product)
 
   // On a phone the controls cannot share a row with the text: at 375px it
   // squeezed the product name into three lines and broke "ליח׳ ללא מע״מ"
@@ -76,14 +89,29 @@ function ProductRowItem({
             </p>
           )}
 
+          {/* What you actually take off the shelf, when the supplier said. */}
+          {pack && (
+            <p className="mt-0.5 text-xs text-stone-500">
+              נמכר ב{pack}
+            </p>
+          )}
+
           {/* A carpenter quotes and buys excluding VAT, so that is the number
               that gets the size. The old page had this the other way round. */}
           <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2">
             <span className="tnum text-lg font-bold text-stone-900">{formatIls(price)}</span>
-            <span className="whitespace-nowrap text-xs text-stone-500">ליח׳ ללא מע״מ</span>
+            <span className="whitespace-nowrap text-xs text-stone-500">
+              ל{unitLabel(product.base_unit)} ללא מע״מ
+            </span>
             <span className="tnum whitespace-nowrap text-xs text-stone-400">
               {formatIls(withVat(price))} כולל
             </span>
+            {/* Only worth saying once there is someone to compare against. */}
+            {suppliers > 1 && (
+              <span className="whitespace-nowrap rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                {suppliers} ספקים
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -149,14 +177,17 @@ export default function CatalogPage() {
     const load = async () => {
       try {
         setLoading(true)
+        // A product is in the catalogue because someone sells it. The inner
+        // join on live offers is what enforces that; PostgREST cannot sort on
+        // an embedded column, so the ordering happens below.
         const { data, error: queryError } = await supabase
           .from('products')
-          .select('*')
+          .select(CATALOG_COLUMNS)
           .eq('is_active', true)
-          .order('base_price_excl_vat', { ascending: false })
+          .eq('supplier_offers.is_active', true)
 
         if (queryError) throw queryError
-        setProducts(data ?? [])
+        setProducts(((data ?? []) as unknown as Product[]).slice().sort(byPrice))
       } catch (err) {
         setError(err instanceof Error ? err.message : 'טעינת הקטלוג נכשלה')
       } finally {
@@ -171,10 +202,17 @@ export default function CatalogPage() {
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return products
+    // Name first, because that is how a carpenter searches. Brand and part
+    // number are here for the times he is holding the box.
     return products.filter((p) =>
-      [p.name_he, p.name_en, p.description_he].some((field) =>
-        field?.toLowerCase().includes(q)
-      )
+      [
+        p.name_he,
+        p.name_en,
+        p.description_he,
+        p.brand,
+        p.mpn,
+        ...p.supplier_offers.map((offer) => offer.supplier_sku),
+      ].some((field) => field?.toLowerCase().includes(q))
     )
   }, [products, query])
 
@@ -187,7 +225,8 @@ export default function CatalogPage() {
         id: product.id,
         name_he: product.name_he,
         name_en: product.name_en ?? product.name_he,
-        base_price_excl_vat: Number(product.base_price_excl_vat),
+        base_price_excl_vat: priceOf(product),
+        supplier_id: bestOffer(product)?.supplier_id,
       },
       quantities[product.id] ?? 1
     )
@@ -243,7 +282,7 @@ export default function CatalogPage() {
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="חפש מוצר, מק״ט או תיאור"
+          placeholder="חפש מוצר, מותג או מק״ט"
           aria-label="חיפוש בקטלוג"
           className="h-12 w-full rounded-xl border border-stone-300 bg-white ps-10 pe-3 text-base"
         />
