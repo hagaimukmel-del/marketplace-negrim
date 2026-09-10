@@ -774,6 +774,7 @@ export type Database = {
           email: string | null
           id: string
           is_verified: boolean | null
+          logo_url: string | null
           min_order_value_excl_vat: number | null
           phone: string | null
           phone_key: string | null
@@ -797,6 +798,7 @@ export type Database = {
           email?: string | null
           id?: string
           is_verified?: boolean | null
+          logo_url?: string | null
           min_order_value_excl_vat?: number | null
           phone?: string | null
           phone_key?: string | null
@@ -820,6 +822,7 @@ export type Database = {
           email?: string | null
           id?: string
           is_verified?: boolean | null
+          logo_url?: string | null
           min_order_value_excl_vat?: number | null
           phone?: string | null
           phone_key?: string | null

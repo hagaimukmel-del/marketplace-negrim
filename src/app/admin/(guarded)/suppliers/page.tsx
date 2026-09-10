@@ -9,7 +9,7 @@ export default async function SuppliersPage() {
     // One literal, not a concatenation: PostgREST infers the row type from the
     // string itself, and a joined one degrades to an untyped error shape.
     .select(
-      'id, company_name, business_id, contact_name, phone, email, city, address, pickup_address, min_order_value_excl_vat, default_lead_time_days, sells_note, status, source, created_at, decided_at'
+      'id, company_name, business_id, contact_name, phone, email, city, address, pickup_address, min_order_value_excl_vat, default_lead_time_days, sells_note, logo_url, status, source, created_at, decided_at'
     )
     // Applications waiting on a decision come first; the rest by newest.
     .order('created_at', { ascending: false })

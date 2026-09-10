@@ -1,8 +1,8 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, X, RotateCcw, Phone, Mail, Plus, Pencil, Truck } from 'lucide-react'
+import { Check, X, RotateCcw, Phone, Mail, Plus, Pencil, Truck, ImagePlus, Trash2 } from 'lucide-react'
 import { formatIls } from '@/lib/vat'
 import SupplierForm, { EMPTY_SUPPLIER, type SupplierFields } from './SupplierForm'
 
@@ -19,6 +19,7 @@ export interface SupplierRow {
   min_order_value_excl_vat: number | null
   default_lead_time_days: number | null
   sells_note: string | null
+  logo_url: string | null
   status: string
   source: string
   created_at: string | null
@@ -42,6 +43,40 @@ function toFields(row: SupplierRow): SupplierFields {
       row.default_lead_time_days == null ? '' : String(row.default_lead_time_days),
     sells_note: row.sells_note ?? '',
   }
+}
+
+/**
+ * The logo, or the company's initials.
+ *
+ * Logos arrive in every aspect ratio there is, so the box is fixed and the
+ * image is contained inside it rather than filling it — a wide logo cropped to
+ * a square reads as a broken image. Most suppliers will never upload one, so
+ * the fallback is the normal case and has to look deliberate.
+ */
+function SupplierLogo({ row }: { row: SupplierRow }) {
+  const [failed, setFailed] = useState(false)
+  const initials = row.company_name.replace(/[^\p{L}\p{N}]/gu, ' ').trim().slice(0, 2)
+
+  if (!row.logo_url || failed) {
+    return (
+      <div
+        aria-hidden
+        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-sm font-bold text-stone-500"
+      >
+        {initials}
+      </div>
+    )
+  }
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={row.logo_url}
+      alt=""
+      onError={() => setFailed(true)}
+      className="h-12 w-12 shrink-0 rounded-lg border border-stone-200 bg-white object-contain p-1"
+    />
+  )
 }
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -76,12 +111,17 @@ function SupplierCard({
   busy,
   onDecide,
   onEdit,
+  onLogo,
+  onRemoveLogo,
 }: {
   row: SupplierRow
   busy: boolean
   onDecide: (id: string, status: string) => void
   onEdit: (id: string) => void
+  onLogo: (id: string, file: File) => void
+  onRemoveLogo: (id: string) => void
 }) {
+  const fileInput = useRef<HTMLInputElement>(null)
   const pending = row.status === 'pending'
 
   return (
@@ -91,13 +131,16 @@ function SupplierCard({
       }`}
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
+        <div className="flex min-w-0 items-start gap-3">
+          <SupplierLogo row={row} />
+          <div className="min-w-0">
           <p className="font-bold text-stone-900">{row.company_name}</p>
           <p className="tnum text-sm text-stone-500">
             ח.פ {row.business_id}
             {row.city && ` · ${row.city}`}
             {SOURCE_LABEL[row.source] && ` · ${SOURCE_LABEL[row.source]}`}
           </p>
+          </div>
         </div>
         <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${TONE[row.status]}`}>
           {LABEL[row.status] ?? row.status}
@@ -153,6 +196,39 @@ function SupplierCard({
           <Pencil size={15} />
           ערוך
         </button>
+
+        <input
+          ref={fileInput}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/avif,image/svg+xml"
+          className="sr-only"
+          onChange={(event) => {
+            const file = event.target.files?.[0]
+            if (file) onLogo(row.id, file)
+            event.target.value = ''
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => fileInput.current?.click()}
+          disabled={busy}
+          className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 px-3 text-sm font-semibold text-stone-700 disabled:opacity-50"
+        >
+          <ImagePlus size={15} />
+          {row.logo_url ? 'החלף לוגו' : 'לוגו'}
+        </button>
+
+        {row.logo_url && (
+          <button
+            type="button"
+            onClick={() => onRemoveLogo(row.id)}
+            disabled={busy}
+            className="flex h-10 items-center gap-1.5 rounded-lg px-2 text-sm text-stone-500 hover:bg-stone-100 disabled:opacity-50"
+          >
+            <Trash2 size={14} />
+            הסר
+          </button>
+        )}
         {pending ? (
           <>
             <button
@@ -229,6 +305,43 @@ export default function SuppliersClient({ rows }: { rows: SupplierRow[] }) {
       router.refresh()
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'השמירה נכשלה')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const uploadLogo = async (id: string, file: File) => {
+    setBusy(id)
+    setMessage(null)
+    try {
+      const data = new FormData()
+      data.append('id', id)
+      data.append('file', file)
+      const response = await fetch('/api/admin/suppliers', { method: 'PATCH', body: data })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'ההעלאה נכשלה')
+      router.refresh()
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'ההעלאה נכשלה')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const removeLogo = async (id: string) => {
+    setBusy(id)
+    setMessage(null)
+    try {
+      const response = await fetch('/api/admin/suppliers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, logo_url: null }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'ההסרה נכשלה')
+      router.refresh()
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'ההסרה נכשלה')
     } finally {
       setBusy(null)
     }
@@ -313,6 +426,8 @@ export default function SuppliersClient({ rows }: { rows: SupplierRow[] }) {
               busy={busy === row.id}
               onDecide={decide}
               onEdit={setEditing}
+              onLogo={uploadLogo}
+              onRemoveLogo={removeLogo}
             />
           ))}
         </section>
@@ -334,6 +449,8 @@ export default function SuppliersClient({ rows }: { rows: SupplierRow[] }) {
               busy={busy === row.id}
               onDecide={decide}
               onEdit={setEditing}
+              onLogo={uploadLogo}
+              onRemoveLogo={removeLogo}
             />
           ))
         )}

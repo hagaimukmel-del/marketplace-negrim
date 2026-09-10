@@ -5,6 +5,10 @@ import type { Database } from '@/lib/database.types'
 
 type SupplierUpdate = Database['public']['Tables']['suppliers']['Update']
 
+const LOGO_BUCKET = 'supplier-logos'
+const LOGO_MAX_BYTES = 2 * 1024 * 1024
+const LOGO_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/svg+xml']
+
 const DECISIONS = ['approved', 'rejected', 'pending'] as const
 type Decision = (typeof DECISIONS)[number]
 
@@ -145,6 +149,9 @@ export async function POST(request: NextRequest) {
  * `business_id` is editable only here, never by the supplier: it is the unique
  * key, so a supplier able to change it could collide with another or walk away
  * from a rejection.
+ *
+ * A multipart body is a logo upload instead - same route because it is the same
+ * row, and the content type says which.
  */
 export async function PATCH(request: NextRequest) {
   if (!(await isAdmin())) {
@@ -152,6 +159,56 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
+    const contentType = request.headers.get('content-type') ?? ''
+
+    // ---- logo upload ----------------------------------------------------
+    if (contentType.includes('multipart/form-data')) {
+      const form = await request.formData()
+      const id = form.get('id')
+      const file = form.get('file')
+
+      if (typeof id !== 'string' || !(file instanceof File)) {
+        return NextResponse.json({ error: 'חסר מזהה ספק או קובץ' }, { status: 400 })
+      }
+      if (!LOGO_TYPES.includes(file.type)) {
+        return NextResponse.json(
+          { error: 'קובץ תמונה בלבד (JPG, PNG, WEBP, SVG)' },
+          { status: 415 }
+        )
+      }
+      if (file.size > LOGO_MAX_BYTES) {
+        return NextResponse.json({ error: 'הקובץ גדול מ-2MB' }, { status: 413 })
+      }
+
+      const supabase = getSupabaseAdmin()
+      const extension = file.type.split('/')[1].replace('jpeg', 'jpg').replace('svg+xml', 'svg')
+      // The id keeps one logo per supplier; the timestamp busts any CDN copy
+      // of the one it replaces.
+      const path = `${id}/${Date.now()}.${extension}`
+
+      const { error: uploadError } = await supabase.storage
+        .from(LOGO_BUCKET)
+        .upload(path, file, { contentType: file.type, upsert: true })
+
+      if (uploadError) {
+        return NextResponse.json({ error: uploadError.message }, { status: 500 })
+      }
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from(LOGO_BUCKET).getPublicUrl(path)
+
+      const { error } = await supabase
+        .from('suppliers')
+        .update({ logo_url: publicUrl, updated_at: new Date().toISOString() })
+        .eq('id', id)
+
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+      return NextResponse.json({ ok: true, logo_url: publicUrl })
+    }
+
+    // ---- field edit -----------------------------------------------------
     const body = await request.json()
     if (typeof body.id !== 'string') {
       return NextResponse.json({ error: 'חסר מזהה ספק' }, { status: 400 })
@@ -203,6 +260,9 @@ export async function PATCH(request: NextRequest) {
       update.phone = phoneRaw
       update.phone_key = phoneKey
     }
+
+    // Explicit null clears it; the UI sends that from "הסר לוגו".
+    if (body.logo_url === null) update.logo_url = null
 
     if (body.contact_name !== undefined) update.contact_name = trimmed(body.contact_name, 120)
     if (body.city !== undefined) update.city = trimmed(body.city, 80)
