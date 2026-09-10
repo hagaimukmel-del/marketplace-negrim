@@ -7,8 +7,6 @@ import type { Database } from '@/lib/database.types'
 type ProductUpdate = Database['public']['Tables']['products']['Update']
 type OfferUpdate = Database['public']['Tables']['supplier_offers']['Update']
 
-const ITAMIR_SUPPLIER_ID = '6048c39d-e5c1-497d-91cd-04e6bdf6e27a'
-
 const BUCKET = 'product-images'
 const MAX_BYTES = 5 * 1024 * 1024
 const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/avif']
@@ -61,6 +59,31 @@ export async function POST(request: NextRequest) {
     const baseUnit = isBaseUnit(body.base_unit) ? body.base_unit : 'unit'
     const supabase = getSupabaseAdmin()
 
+    // Required, never defaulted. There used to be one supplier id compiled into
+    // this file; with more than one supplier, quietly falling back to it would
+    // file another supplier's product under the wrong company — and the price
+    // would look right, so nobody would notice.
+    const supplierId = trimmed(body.supplier_id)
+    if (!supplierId) {
+      return NextResponse.json({ error: 'צריך לבחור ספק' }, { status: 400 })
+    }
+
+    const { data: supplier } = await supabase
+      .from('suppliers')
+      .select('id, status')
+      .eq('id', supplierId)
+      .maybeSingle()
+
+    if (!supplier) {
+      return NextResponse.json({ error: 'הספק לא נמצא' }, { status: 404 })
+    }
+    if (supplier.status !== 'approved') {
+      return NextResponse.json(
+        { error: 'אי אפשר לטעון מוצרים לספק שלא אושר' },
+        { status: 409 }
+      )
+    }
+
     const { data: product, error } = await supabase
       .from('products')
       .insert({
@@ -86,7 +109,7 @@ export async function POST(request: NextRequest) {
 
     const { error: offerError } = await supabase.from('supplier_offers').insert({
       product_id: product.id,
-      supplier_id: ITAMIR_SUPPLIER_ID,
+      supplier_id: supplierId,
       supplier_sku: trimmed(body.sku),
       price_excl_vat: price,
       stock_qty: stock,

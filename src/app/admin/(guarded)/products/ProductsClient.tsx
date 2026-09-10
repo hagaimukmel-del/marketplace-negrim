@@ -142,6 +142,7 @@ function ProductRow({
               ) : (
                 <span className="rounded bg-amber-100 px-1 text-xs text-amber-900">בלי מק״ט</span>
               )}
+              {product.supplier_name && ` · ${product.supplier_name}`}
               {product.categories?.name_he && ` · ${product.categories.name_he}`}
               {product.pack_label && ` · ${product.pack_label}`}
               {product.source === 'manual' && ' · ידני'}
@@ -454,7 +455,13 @@ interface Category {
   name_he: string
 }
 
+interface Supplier {
+  id: string
+  company_name: string
+}
+
 const EMPTY = {
+  supplier_id: '',
   sku: '',
   name_he: '',
   name_en: '',
@@ -471,13 +478,20 @@ const EMPTY = {
  */
 function NewProduct({
   categories,
+  suppliers,
   onCreated,
 }: {
   categories: Category[]
+  suppliers: Supplier[]
   onCreated: (id: string) => void
 }) {
   const [open, setOpen] = useState(false)
-  const [form, setForm] = useState(EMPTY)
+  // Pre-picked when there is only one supplier, so the common case stays one
+  // less decision than it was.
+  const [form, setForm] = useState({
+    ...EMPTY,
+    supplier_id: suppliers.length === 1 ? suppliers[0].id : '',
+  })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -493,6 +507,7 @@ function NewProduct({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          supplier_id: form.supplier_id,
           sku: form.sku,
           name_he: form.name_he,
           name_en: form.name_en,
@@ -545,6 +560,26 @@ function NewProduct({
       </div>
 
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        {/* First, because it decides whose product this is. */}
+        <label className="block sm:col-span-2">
+          <span className="text-sm font-medium text-stone-700">
+            ספק <span className="text-red-600">*</span>
+          </span>
+          <select
+            value={form.supplier_id}
+            onChange={(e) => set('supplier_id', e.target.value)}
+            required
+            className="mt-1 h-11 w-full rounded-lg border border-stone-300 px-2"
+          >
+            <option value="">בחר ספק…</option>
+            {suppliers.map((supplier) => (
+              <option key={supplier.id} value={supplier.id}>
+                {supplier.company_name}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <label className="block sm:col-span-2">
           <span className="text-sm font-medium text-stone-700">
             שם המוצר <span className="text-red-600">*</span>
@@ -635,7 +670,7 @@ function NewProduct({
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <button
           type="submit"
-          disabled={busy || !form.name_he || !form.price}
+          disabled={busy || !form.supplier_id || !form.name_he || !form.price}
           className="h-11 rounded-lg bg-emerald-700 px-5 font-semibold text-white disabled:opacity-50"
         >
           {busy ? 'מוסיף…' : 'הוסף מוצר'}
@@ -651,9 +686,11 @@ function NewProduct({
 export default function ProductsClient({
   products,
   categories,
+  suppliers,
 }: {
   products: Product[]
   categories: Category[]
+  suppliers: Supplier[]
 }) {
   const router = useRouter()
   const [query, setQuery] = useState('')
@@ -743,6 +780,7 @@ export default function ProductsClient({
         <div className="flex flex-wrap items-center gap-3">
           <NewProduct
             categories={categories}
+            suppliers={suppliers}
             onCreated={(id) => {
               // A new product can sit outside the current filter or search, so
               // clear both before opening it - otherwise "added" looks like

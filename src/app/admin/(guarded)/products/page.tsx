@@ -42,9 +42,15 @@ interface RawProduct {
 export default async function AdminProductsPage() {
   const supabase = getSupabaseAdmin()
 
-  const [{ data: products }, { data: categories }] = await Promise.all([
+  const [{ data: products }, { data: categories }, { data: suppliers }] = await Promise.all([
     supabase.from('products').select(SELECT).limit(500),
     supabase.from('categories').select('id, name_he').order('name_he'),
+    // Only approved suppliers can be loaded against, so only they are offered.
+    supabase
+      .from('suppliers')
+      .select('id, company_name')
+      .eq('status', 'approved')
+      .order('company_name'),
   ])
 
   // One line per offer, because a price belongs to a supplier and not to the
@@ -86,5 +92,11 @@ export default async function AdminProductsPage() {
       return b.base_price_excl_vat - a.base_price_excl_vat
     })
 
-  return <ProductsClient products={rows} categories={categories ?? []} />
+  return (
+    <ProductsClient
+      products={rows}
+      categories={categories ?? []}
+      suppliers={suppliers ?? []}
+    />
+  )
 }

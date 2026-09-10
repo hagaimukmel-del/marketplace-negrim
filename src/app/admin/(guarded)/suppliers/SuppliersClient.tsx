@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, X, RotateCcw, Phone, Mail } from 'lucide-react'
+import { Check, X, RotateCcw, Phone, Mail, Plus, Pencil, Truck } from 'lucide-react'
+import { formatIls } from '@/lib/vat'
+import SupplierForm, { EMPTY_SUPPLIER, type SupplierFields } from './SupplierForm'
 
 export interface SupplierRow {
   id: string
@@ -12,11 +14,40 @@ export interface SupplierRow {
   phone: string | null
   email: string | null
   city: string | null
+  address: string | null
+  pickup_address: string | null
+  min_order_value_excl_vat: number | null
+  default_lead_time_days: number | null
   sells_note: string | null
   status: string
   source: string
   created_at: string | null
   decided_at: string | null
+}
+
+/** The row as the form wants it: every field a string, nulls as empty. */
+function toFields(row: SupplierRow): SupplierFields {
+  return {
+    company_name: row.company_name,
+    business_id: row.business_id,
+    contact_name: row.contact_name ?? '',
+    phone: row.phone ?? '',
+    email: row.email ?? '',
+    city: row.city ?? '',
+    address: row.address ?? '',
+    pickup_address: row.pickup_address ?? '',
+    min_order_value_excl_vat:
+      row.min_order_value_excl_vat == null ? '' : String(row.min_order_value_excl_vat),
+    default_lead_time_days:
+      row.default_lead_time_days == null ? '' : String(row.default_lead_time_days),
+    sells_note: row.sells_note ?? '',
+  }
+}
+
+const SOURCE_LABEL: Record<string, string> = {
+  seed: 'הוקם ידנית',
+  admin: 'נפתח על ידך',
+  self: 'נרשם לבד',
 }
 
 const LABEL: Record<string, string> = {
@@ -44,10 +75,12 @@ function SupplierCard({
   row,
   busy,
   onDecide,
+  onEdit,
 }: {
   row: SupplierRow
   busy: boolean
   onDecide: (id: string, status: string) => void
+  onEdit: (id: string) => void
 }) {
   const pending = row.status === 'pending'
 
@@ -63,7 +96,7 @@ function SupplierCard({
           <p className="tnum text-sm text-stone-500">
             ח.פ {row.business_id}
             {row.city && ` · ${row.city}`}
-            {row.source === 'seed' && ' · הוקם ידנית'}
+            {SOURCE_LABEL[row.source] && ` · ${SOURCE_LABEL[row.source]}`}
           </p>
         </div>
         <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${TONE[row.status]}`}>
@@ -91,7 +124,35 @@ function SupplierCard({
         <p className="mt-3 rounded-lg bg-stone-50 p-3 text-sm text-stone-700">{row.sells_note}</p>
       )}
 
+      {/* The terms a carpenter is held to. Blank ones are said out loud rather
+          than left off, because an unset minimum is a surprise at checkout. */}
+      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-stone-500">
+        <span className="flex items-center gap-1.5">
+          <Truck size={13} />
+          מינימום{' '}
+          <span className="tnum font-semibold text-stone-700">
+            {row.min_order_value_excl_vat ? formatIls(row.min_order_value_excl_vat) : 'לא הוגדר'}
+          </span>
+        </span>
+        <span>
+          אספקה{' '}
+          <span className="font-semibold text-stone-700">
+            {row.default_lead_time_days != null ? `${row.default_lead_time_days} ימים` : 'לא הוגדר'}
+          </span>
+        </span>
+        {row.pickup_address && <span>איסוף מ{row.pickup_address}</span>}
+      </div>
+
       <div className="mt-4 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onEdit(row.id)}
+          disabled={busy}
+          className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 px-3 text-sm font-semibold text-stone-700 disabled:opacity-50"
+        >
+          <Pencil size={15} />
+          ערוך
+        </button>
         {pending ? (
           <>
             <button
@@ -138,6 +199,9 @@ export default function SuppliersClient({ rows }: { rows: SupplierRow[] }) {
   const router = useRouter()
   const [busy, setBusy] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  // 'new' while opening a supplier, a supplier id while editing one.
+  const [editing, setEditing] = useState<string | null>(null)
+  const [formError, setFormError] = useState<string | null>(null)
 
   // Anything waiting on a decision floats to the top: it is the only part of
   // this screen with work on it.
@@ -148,6 +212,27 @@ export default function SuppliersClient({ rows }: { rows: SupplierRow[] }) {
     }),
     [rows]
   )
+
+  const save = async (fields: SupplierFields) => {
+    const creating = editing === 'new'
+    setBusy(editing)
+    setFormError(null)
+    try {
+      const response = await fetch('/api/admin/suppliers', {
+        method: creating ? 'POST' : 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(creating ? fields : { id: editing, ...fields }),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'השמירה נכשלה')
+      setEditing(null)
+      router.refresh()
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'השמירה נכשלה')
+    } finally {
+      setBusy(null)
+    }
+  }
 
   const decide = async (id: string, status: string) => {
     setBusy(id)
@@ -170,13 +255,49 @@ export default function SuppliersClient({ rows }: { rows: SupplierRow[] }) {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-bold text-stone-900">ספקים</h1>
-        <p className="mt-1 text-sm text-stone-600">
-          ספק נרשם דרך <span className="font-mono text-xs">/supplier/join</span> ומחכה לאישור
-          שלך. מוצרים שלו לא מגיעים לקטלוג לפני שאישרת.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-stone-900">ספקים</h1>
+          <p className="mt-1 text-sm text-stone-600">
+            ספק נרשם דרך <span className="font-mono text-xs">/supplier/join</span> ומחכה לאישור
+            שלך — או שאתה פותח אותו בעצמך, וזה כבר מאושר.
+          </p>
+        </div>
+        {editing === null && (
+          <button
+            type="button"
+            onClick={() => {
+              setEditing('new')
+              setFormError(null)
+            }}
+            className="flex h-10 shrink-0 items-center gap-2 rounded-lg bg-stone-900 px-4 text-sm font-semibold text-white"
+          >
+            <Plus size={16} />
+            ספק חדש
+          </button>
+        )}
       </div>
+
+      {editing !== null && (
+        <SupplierForm
+          // Remounts when the target changes, so the fields never carry over
+          // from the supplier you were editing a moment ago.
+          key={editing}
+          mode={editing === 'new' ? 'create' : 'edit'}
+          initial={
+            editing === 'new'
+              ? EMPTY_SUPPLIER
+              : toFields(rows.find((row) => row.id === editing)!)
+          }
+          busy={busy === editing}
+          error={formError}
+          onSubmit={save}
+          onCancel={() => {
+            setEditing(null)
+            setFormError(null)
+          }}
+        />
+      )}
 
       {message && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{message}</p>}
 
@@ -191,6 +312,7 @@ export default function SuppliersClient({ rows }: { rows: SupplierRow[] }) {
               row={row}
               busy={busy === row.id}
               onDecide={decide}
+              onEdit={setEditing}
             />
           ))}
         </section>
@@ -206,7 +328,13 @@ export default function SuppliersClient({ rows }: { rows: SupplierRow[] }) {
           </p>
         ) : (
           decided.map((row) => (
-            <SupplierCard key={row.id} row={row} busy={busy === row.id} onDecide={decide} />
+            <SupplierCard
+              key={row.id}
+              row={row}
+              busy={busy === row.id}
+              onDecide={decide}
+              onEdit={setEditing}
+            />
           ))
         )}
       </section>
