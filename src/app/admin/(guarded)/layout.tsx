@@ -16,17 +16,19 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // Counted on every admin page rather than only on the orders screen: an
   // order waiting for confirmation is the one thing that should follow the
   // supplier around the console.
-  const { count } = await getSupabaseAdmin()
-    .from('orders')
-    .select('id', { count: 'exact', head: true })
-    .eq('status', 'pending')
+  const supabase = getSupabaseAdmin()
+  const [{ count: pendingOrders }, { count: pendingSuppliers }] = await Promise.all([
+    supabase.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+    supabase.from('suppliers').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+  ])
 
   const nav: NavItem[] = [
     // Orders first: it is the screen with work waiting on it every day.
-    { href: '/admin/orders', label: 'הזמנות', count: count ?? 0 },
+    { href: '/admin/orders', label: 'הזמנות', count: pendingOrders ?? 0 },
     { href: '/admin', label: 'תוצאות' },
     { href: '/admin/products', label: 'מוצרים' },
     { href: '/admin/campaigns', label: 'קמפיינים' },
+    { href: '/admin/suppliers', label: 'ספקים', count: pendingSuppliers ?? 0 },
     { href: '/admin/carpenters', label: 'נגריות' },
   ]
 

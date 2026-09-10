@@ -709,11 +709,16 @@ export type Database = {
           company_name: string
           contact_name: string | null
           created_at: string | null
+          decided_at: string | null
           email: string | null
           id: string
           is_verified: boolean | null
           phone: string | null
+          phone_key: string | null
           rating: number | null
+          sells_note: string | null
+          source: string
+          status: string
           updated_at: string | null
           zip_code: string | null
         }
@@ -724,11 +729,16 @@ export type Database = {
           company_name: string
           contact_name?: string | null
           created_at?: string | null
+          decided_at?: string | null
           email?: string | null
           id?: string
           is_verified?: boolean | null
           phone?: string | null
+          phone_key?: string | null
           rating?: number | null
+          sells_note?: string | null
+          source?: string
+          status?: string
           updated_at?: string | null
           zip_code?: string | null
         }
@@ -739,11 +749,16 @@ export type Database = {
           company_name?: string
           contact_name?: string | null
           created_at?: string | null
+          decided_at?: string | null
           email?: string | null
           id?: string
           is_verified?: boolean | null
           phone?: string | null
+          phone_key?: string | null
           rating?: number | null
+          sells_note?: string | null
+          source?: string
+          status?: string
           updated_at?: string | null
           zip_code?: string | null
         }

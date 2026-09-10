@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function JoinPage() {
   const router = useRouter()
@@ -111,6 +112,13 @@ export default function JoinPage() {
             אם כבר יש לך קישור — הטופס יחזיר לך את אותו אחד, לא ייצור חדש.
           </p>
         </form>
+
+        <p className="mt-4 text-center text-sm text-stone-600">
+          ספק ולא נגרייה?{' '}
+          <Link href="/supplier/join" className="font-semibold text-emerald-700 underline">
+            להרשמה כספק
+          </Link>
+        </p>
       </div>
     </main>
   )
