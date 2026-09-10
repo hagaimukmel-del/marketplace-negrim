@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { ExternalLink } from 'lucide-react'
+import { Eye } from 'lucide-react'
 import { isAdmin } from '@/lib/admin-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import AdminNav, { type NavItem } from './AdminNav'
@@ -8,14 +8,23 @@ import LogoutButton from './LogoutButton'
 
 export const dynamic = 'force-dynamic'
 
+/**
+ * Looking through a user's eyes, rather than managing them. Kept apart from the
+ * working tabs because they answer a different question — not "what do I need
+ * to do" but "what does this look like from the other side".
+ */
+const VIEWS: NavItem[] = [
+  { href: '/admin/view/carpenter', label: 'האתר כפי שנגר רואה' },
+  { href: '/admin/view/supplier', label: 'האתר כפי שספק רואה' },
+]
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   // The guard runs here, on the server, before any child renders. Nothing
   // below this point reaches the browser unless the cookie already verified.
   if (!(await isAdmin())) redirect('/admin/login')
 
-  // Counted on every admin page rather than only on the orders screen: an
-  // order waiting for confirmation is the one thing that should follow the
-  // supplier around the console.
+  // Counted on every admin page rather than only on the screens they belong to:
+  // work waiting on the operator should follow them around the console.
   const supabase = getSupabaseAdmin()
   const [{ count: pendingOrders }, { count: pendingSuppliers }] = await Promise.all([
     supabase.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
@@ -40,17 +49,18 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             שוק הנגרים · ניהול
           </Link>
           <AdminNav items={nav} />
-          <div className="ms-auto flex items-center gap-4">
-            <a
-              href="/carpenter/catalog"
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900"
-            >
-              <ExternalLink size={14} />
-              הקטלוג כפי שנגר רואה
-            </a>
+          <div className="ms-auto">
             <LogoutButton />
+          </div>
+        </div>
+
+        <div className="border-t border-stone-200 bg-stone-50">
+          <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-3 gap-y-1 px-5 py-1.5">
+            <span className="flex items-center gap-1.5 text-xs font-medium text-stone-500">
+              <Eye size={13} />
+              תצוגות
+            </span>
+            <AdminNav items={VIEWS} />
           </div>
         </div>
       </header>
