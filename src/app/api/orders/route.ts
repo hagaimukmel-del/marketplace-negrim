@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import type { OrderItemInsert } from '@/lib/db'
 import { logEvent, resolveCarpenter } from '@/lib/offer'
 import { bestOffer, OFFER_COLUMNS, type Offer } from '@/lib/catalog'
+import { notifyNewOrder } from '@/lib/notify-order'
 
 /** One line as the checkout posts it. */
 interface IncomingItem {
@@ -177,6 +178,12 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
+
+    // Awaited rather than fired and forgotten: a serverless function that
+    // returns can be frozen mid-request, and a notification that vanishes
+    // sometimes is worse than one that never existed. It swallows its own
+    // failures, so it cannot fail the order.
+    await notifyNewOrder(order.id)
 
     if (carpenter) {
       await logEvent('order_sent', {

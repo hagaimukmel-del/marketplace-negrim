@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Check, ChevronDown, Truck, PackageCheck, X } from 'lucide-react'
 import { formatIls, round2 } from '@/lib/vat'
 import { statusInfo } from '@/lib/order-status'
+import EmailTestButton from './EmailTestButton'
 
 interface Line {
   id: string
@@ -258,6 +259,9 @@ export default function OrdersClient({ orders }: { orders: Order[] }) {
         <p className="text-sm text-stone-600">
           {open.length} ממתינות לאישור · {orders.length} בסך הכול
         </p>
+        <div className="mt-3">
+          <EmailTestButton />
+        </div>
       </div>
 
       {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
