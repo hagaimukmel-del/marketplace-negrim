@@ -52,7 +52,7 @@ Last verified 2026-09-09 by running the checks, not from memory. Re-verify befor
 | Server Components first | 25 of 54 files are `'use client'`. `/admin/*` and `/o/[token]` are Server Components that hand data to a client island; the carpenter pages are still client-rendered |
 | Zod + Server Actions | `zod` is still not a declared dependency. Mutations go through `/api/*` route handlers with hand-written validation |
 | Shadcn/ui + Radix + Lucide | **Lucide is in.** No shadcn/Radix and no `components.json`; components are hand-written Tailwind on the tokens in `globals.css` |
-| Migrations in `supabase/migrations/` | **Done.** 7 migrations, CLI linked, `npm run db:push` / `db:types` work. Never edit schema in the dashboard |
+| Migrations in `supabase/migrations/` | **Done.** 12 migrations, CLI linked, `npm run db:push` / `db:types` work. Never edit schema in the dashboard |
 | `supabase gen types typescript` | **Done.** `npm run db:types` regenerates `lib/database.types.ts`; hand-written aliases live in `lib/db.ts` so they survive regeneration |
 | No `any` | `npm run lint`: 16 errors, 9 warnings, mostly `no-explicit-any` in older files. Treat lint-clean as "no new errors" |
 | `npm run build` clean | Passes |
@@ -67,6 +67,26 @@ Last verified 2026-09-09 by running the checks, not from memory. Re-verify befor
 - VAT lives in `lib/vat.ts` and is snapshotted onto each order as `orders.vat_rate`.
 - Only one profile table matters (`user_profiles`); `profiles` is legacy and unused.
 
+**The catalogue's shape (migration 0011/0012, 2026-09-10) — read this before touching prices:**
+- `products` is the **canonical product**: what the item is. Name, brand, `mpn` (manufacturer
+  part number), `base_unit`, `attributes`, image, category. It has **no price and no supplier**.
+- `supplier_offers` is **what one supplier charges**: `price_excl_vat`, `stock_qty`,
+  `supplier_sku`, `pack_label` + `pack_qty`, `min_order_qty`, `lead_time_days`. One row per
+  (product, supplier).
+- **Prices are always per base unit**, and `base_unit` is a closed five-value vocabulary
+  (`unit`/`kg`/`liter`/`meter`/`sqm`) owned by the platform, never by suppliers. That is what
+  makes a carton of 25 comparable with a sleeve of 6. Do not turn it into free text.
+- Every read goes through `src/lib/catalog.ts`. `bestOffer()` is the one place that decides
+  which offer a carpenter sees (in stock first, then cheapest). Do not re-implement it.
+- A product with no live offer is not in the catalogue — the `!inner` join enforces it. Nobody
+  sells it, so there is no price to show.
+- `order_items.supplier_id` is stamped at order time, ready for one cart to split into one
+  purchase order per supplier. That split is **not built yet**.
+- Matching a supplier's row to a canonical product: `brand` + `mpn` where they exist, otherwise
+  a suggestion a human confirms. The sheet sync matches on the Hebrew **and** English name pair,
+  and that is deliberate — the sheet lists `קלינר Q1924 ניקוי EVA` twice, at 1,200 and 89, and
+  only the English name separates them.
+
 **Known gaps, in the order they matter:**
 - Nothing notifies the operator when an order arrives — `/admin/orders` has to be opened. Needs
   a mail provider and an API key.
@@ -76,13 +96,19 @@ Last verified 2026-09-09 by running the checks, not from memory. Re-verify befor
   `ProductCard`, `VolumePricingTable`, `GatedPriceGuard`, `ProtectedRoute`.
 - `/auth/login`, `/auth/signup`, `ProtectedRoute` and `GatedPriceGuard` are from the abandoned
   account model. Nothing on the live path uses them. Candidates for deletion.
-- `products.stock_qty` is 100 for every row because the sync writes a constant. Do not display
-  it as though it were real.
+- `supplier_offers.stock_qty` is 100 for every synced row because the sheet has no stock column.
+  Do not display it as though it were real.
+- The sheet has no `מק״ט` column, so all 30 offers have a null `supplier_sku`, and no product has
+  a `brand` or `mpn` yet. Matching stays on the weak name key until that changes.
 
 **Security model, so it is not re-derived each time:**
 - The public key is read-only and reaches only `products`, `categories`, `volume_pricing`.
-- `carpenters`, `orders`, `order_items`, `campaigns`, `order_intents`, `offer_events` have RLS
-  on and no policy: reachable only through server code holding the service role.
+- `carpenters`, `orders`, `order_items`, `campaigns`, `order_intents`, `offer_events` and
+  `suppliers` have RLS on and no policy: reachable only through server code holding the service
+  role. `suppliers` being closed is why the browser cannot read a supplier's name — an embed of
+  it returns undefined rather than failing, so keep supplier names to server components.
+- `supplier_offers` has one policy: public SELECT where `is_active`. Prices are public today.
+  When they move behind a carpenter login, that policy is the single thing that changes.
 - A carpenter is identified by the token in `/o/[token]`, remembered in localStorage for the
   visit. Every server use re-resolves it against the database; nothing trusts a client-supplied
   id. Order reads are scoped to the owning carpenter.
