@@ -32,7 +32,7 @@ export const dynamic = 'force-dynamic'
  * competitors. The lock is a condition of recruiting them, not a UX flourish.
  */
 export default async function CatalogPage() {
-  const [showPrices, { data }] = await Promise.all([
+  const [showPrices, { data }, { data: allCategories }] = await Promise.all([
     canSeePrices(),
     getSupabaseAdmin()
       .from('products')
@@ -43,7 +43,24 @@ export default async function CatalogPage() {
       .eq('is_active', true)
       .eq('supplier_offers.is_active', true)
       .limit(1000),
+    getSupabaseAdmin().from('categories').select('id, name_he, parent_category_id'),
   ])
+
+  // Fetched flat and resolved here rather than embedded: a self-referencing
+  // join for ten rows is more machinery than the problem deserves.
+  const categoryById = new Map(
+    (allCategories ?? []).map((c) => [c.id, c as { id: string; name_he: string; parent_category_id: string | null }])
+  )
+
+  /** The top-level group a category belongs to, or the category itself. */
+  function groupOf(categoryId: string | null): string {
+    const category = categoryId ? categoryById.get(categoryId) : undefined
+    if (!category) return 'אחר'
+    const parent = category.parent_category_id
+      ? categoryById.get(category.parent_category_id)
+      : undefined
+    return parent?.name_he ?? category.name_he
+  }
 
   const products = ((data ?? []) as unknown as (CatalogProduct & {
     categories: { name_he: string } | null
@@ -68,6 +85,7 @@ export default async function CatalogPage() {
       supplierCount: offerCount(product),
       packLabel: packLabel(offer, product.base_unit),
       category: product.categories?.name_he ?? 'ללא קטגוריה',
+      group: groupOf(product.category_id),
       price: showPrices ? priceOf(product) : null,
     }
   })

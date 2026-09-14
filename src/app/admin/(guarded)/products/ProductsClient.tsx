@@ -361,12 +361,7 @@ function EditPanel({
             onChange={(e) => set('category_id', e.target.value)}
             className="mt-1 h-11 w-full rounded-lg border border-stone-300 bg-white px-2"
           >
-            <option value="">ללא קטגוריה</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name_he}
-              </option>
-            ))}
+            <CategoryOptions categories={categories} />
           </select>
         </label>
 
@@ -453,6 +448,53 @@ function EditPanel({
 interface Category {
   id: string
   name_he: string
+  parent_category_id: string | null
+}
+
+/**
+ * The category list, drawn as the tree it is.
+ *
+ * A flat list of every category is unusable the moment a second supplier files
+ * boards and hardware alongside adhesives — you scroll looking for the one that
+ * fits. Grouping puts the choice where the eye already is.
+ *
+ * A top-level group is selectable in its own right: a supplier with something
+ * that does not fit any sub-category should file it under the group rather than
+ * invent one, and "אחר" exists for the rest.
+ */
+function CategoryOptions({ categories }: { categories: Category[] }) {
+  const tops = categories.filter((c) => !c.parent_category_id)
+  const orphans = categories.filter(
+    (c) => c.parent_category_id && !tops.some((t) => t.id === c.parent_category_id)
+  )
+
+  return (
+    <>
+      <option value="">ללא קטגוריה</option>
+      {tops.map((top) => {
+        const children = categories.filter((c) => c.parent_category_id === top.id)
+        return (
+          <optgroup key={top.id} label={top.name_he}>
+            <option value={top.id}>{top.name_he} — כללי</option>
+            {children.map((child) => (
+              <option key={child.id} value={child.id}>
+                {child.name_he}
+              </option>
+            ))}
+          </optgroup>
+        )
+      })}
+      {orphans.length > 0 && (
+        <optgroup label="ללא שיוך">
+          {orphans.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name_he}
+            </option>
+          ))}
+        </optgroup>
+      )}
+    </>
+  )
 }
 
 interface Supplier {
@@ -645,12 +687,7 @@ function NewProduct({
             onChange={(e) => set('category_id', e.target.value)}
             className="mt-1 h-11 w-full rounded-lg border border-stone-300 px-2"
           >
-            <option value="">ללא קטגוריה</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name_he}
-              </option>
-            ))}
+            <CategoryOptions categories={categories} />
           </select>
         </label>
 

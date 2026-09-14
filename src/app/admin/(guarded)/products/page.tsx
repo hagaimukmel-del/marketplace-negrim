@@ -44,7 +44,7 @@ export default async function AdminProductsPage() {
 
   const [{ data: products }, { data: categories }, { data: suppliers }] = await Promise.all([
     supabase.from('products').select(SELECT).limit(500),
-    supabase.from('categories').select('id, name_he').order('name_he'),
+    supabase.from('categories').select('id, name_he, parent_category_id').order('name_he'),
     // Only approved suppliers can be loaded against, so only they are offered.
     supabase
       .from('suppliers')

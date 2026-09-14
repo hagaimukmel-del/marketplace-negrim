@@ -27,6 +27,8 @@ export interface CatalogItem {
   supplierCount: number
   packLabel: string | null
   category: string
+  /** The top-level group. Chips filter on this; headings show the category. */
+  group: string
   price: number | null
 }
 
@@ -214,9 +216,9 @@ export default function CatalogClient({
 
   // Counted over everything, not over what is currently filtered — a chip that
   // changes its own number when you press it is disorienting.
-  const categories = useMemo(() => {
+  const groups = useMemo(() => {
     const counts = new Map<string, number>()
-    for (const item of items) counts.set(item.category, (counts.get(item.category) ?? 0) + 1)
+    for (const item of items) counts.set(item.group, (counts.get(item.group) ?? 0) + 1)
     return [...counts.entries()].sort((a, b) => b[1] - a[1])
   }, [items])
 
@@ -235,7 +237,7 @@ export default function CatalogClient({
       )
     }
     if (category === ALL) return items
-    return items.filter((item) => item.category === category)
+    return items.filter((item) => item.group === category)
   }, [items, query, category])
 
   /**
@@ -243,8 +245,8 @@ export default function CatalogClient({
    * rather than scrolled. Inside one category, or while searching, the headings
    * would just be noise.
    */
-  const groups = useMemo(() => {
-    if (query.trim() || category !== ALL) return [{ name: null, items: shown }]
+  const sections = useMemo(() => {
+    if (query.trim()) return [{ name: null, items: shown }]
     const byCategory = new Map<string, CatalogItem[]>()
     for (const item of shown) {
       const existing = byCategory.get(item.category)
@@ -254,7 +256,7 @@ export default function CatalogClient({
     return [...byCategory.entries()]
       .sort((a, b) => b[1].length - a[1].length)
       .map(([name, list]) => ({ name, items: list }))
-  }, [shown, query, category])
+  }, [shown, query])
 
   const setQty = (id: string, qty: number) =>
     setQuantities((prev) => ({ ...prev, [id]: Math.max(1, qty) }))
@@ -303,7 +305,7 @@ export default function CatalogClient({
       {/* Sticky, because the point of it is to stop the scrolling. */}
       <div className="sticky top-14 z-30 -mx-4 mb-3 overflow-x-auto bg-stone-50 px-4 py-2">
         <div className="flex gap-2">
-          {[[ALL, items.length] as const, ...categories].map(([name, count]) => {
+          {[[ALL, items.length] as const, ...groups].map(([name, count]) => {
             const active = category === name
             return (
               <button
@@ -353,18 +355,18 @@ export default function CatalogClient({
         </div>
       ) : (
         <div className="space-y-5">
-          {groups.map((group) => (
-            <section key={group.name ?? 'all'}>
-              {group.name && (
+          {sections.map((section) => (
+            <section key={section.name ?? 'all'}>
+              {section.name && (
                 <h2 className="mb-2 flex items-baseline gap-2 text-sm font-bold text-stone-900">
-                  {group.name}
+                  {section.name}
                   <span className="tnum text-xs font-normal text-stone-400">
-                    {group.items.length}
+                    {section.items.length}
                   </span>
                 </h2>
               )}
               <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
-                {group.items.map((item) => (
+                {section.items.map((item) => (
                   <ProductRowItem
                     key={item.id}
                     item={item}
