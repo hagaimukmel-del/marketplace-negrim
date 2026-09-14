@@ -191,10 +191,24 @@ export default function OfferClient({
   reorder,
   suggestions,
 }: Props) {
-  // Keep the identity for the rest of the visit, so an order placed from the
-  // catalogue is still attributed to this carpenter.
+  // Two things, and they are not the same thing.
+  //
+  // localStorage keeps the token for the rest of the visit, so an order placed
+  // from the catalogue is still attributed to this carpenter.
+  //
+  // The exchange below turns that token into a signed cookie the SERVER can
+  // check. A token the browser volunteers is a claim; a cookie we minted is
+  // proof — and proof is what decides whether a price is rendered at all.
   useEffect(() => {
     rememberCarpenter(token)
+    void fetch('/api/carpenter/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    }).catch(() => {
+      // The page still works; this carpenter just keeps seeing the
+      // logged-out catalogue until the next time they open their link.
+    })
   }, [token])
 
   const [quantities, setQuantities] = useState<Record<string, number>>({})
