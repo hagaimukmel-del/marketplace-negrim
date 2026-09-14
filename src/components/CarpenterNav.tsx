@@ -1,12 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { LayoutGrid, ClipboardList, ShoppingCart } from 'lucide-react'
-import { useSyncExternalStore } from 'react'
-import { Home } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { LayoutGrid, ClipboardList, ShoppingCart, CircleUser, LogOut } from 'lucide-react'
+import { useState } from 'react'
 import { useCart } from '@/lib/cart-context'
-import { getCarpenterToken } from '@/lib/carpenter-session'
+import { forgetCarpenter } from '@/lib/carpenter-session'
 import { formatIls } from '@/lib/vat'
 
 const LINKS = [
@@ -14,20 +13,43 @@ const LINKS = [
   { href: '/carpenter/orders', label: 'הזמנות', Icon: ClipboardList },
 ]
 
-export default function CarpenterNav() {
+export interface CarpenterSession {
+  name: string
+  token: string
+}
+
+/**
+ * The identity here comes from the layout, which read the signed cookie on the
+ * server. It used to come from localStorage, which was the browser's own
+ * opinion — and the browser's opinion is not what decides whether a price is
+ * shown, so the two could disagree and the header would say the wrong thing.
+ */
+export default function CarpenterNav({ session }: { session: CarpenterSession | null }) {
   const cart = useCart()
   const pathname = usePathname()
+  const router = useRouter()
+  const [leaving, setLeaving] = useState(false)
 
-  // localStorage does not exist during the server render, so the token has to
-  // be read after hydration. useSyncExternalStore is the API for exactly this —
-  // a server snapshot of null, a client snapshot from storage — and it avoids
-  // the setState-inside-an-effect that the previous version needed. The token
-  // does not change during a visit, so there is nothing to subscribe to.
-  const token = useSyncExternalStore(
-    () => () => {},
-    () => getCarpenterToken(),
-    () => null
-  )
+  /**
+   * Both halves, or it is not a sign-out.
+   *
+   * The cookie is what the server checks; the token in localStorage is what
+   * the checkout attaches to an order. Clearing one and not the other leaves
+   * someone half signed in — no prices, but still placing orders under the
+   * previous carpenter's name.
+   */
+  const signOut = async () => {
+    setLeaving(true)
+    try {
+      await fetch('/api/carpenter/session', { method: 'DELETE' })
+    } catch {
+      // Offline. The local half still goes, and the cookie expires on its own.
+    }
+    forgetCarpenter()
+    cart.clearCart()
+    router.replace('/carpenter/catalog')
+    router.refresh()
+  }
 
   return (
     <nav className="sticky top-0 z-40 border-b border-stone-200 bg-white">
@@ -41,14 +63,28 @@ export default function CarpenterNav() {
           </Link>
           {/* Someone browsing the public catalogue has no link of their own
               yet. This is the only way for them to get one. */}
-          {token ? (
-            <Link
-              href={`/o/${token}`}
-              className="flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-emerald-800"
-            >
-              <Home size={15} />
-              <span className="hidden sm:inline">הדף שלי</span>
-            </Link>
+          {session ? (
+            <>
+              <Link
+                href="/carpenter/account"
+                className="flex min-w-0 items-center gap-1.5 text-sm font-medium text-emerald-800"
+              >
+                <CircleUser size={16} className="shrink-0" />
+                <span className="hidden truncate sm:inline">{session.name}</span>
+                <span className="sm:hidden">האזור שלי</span>
+              </Link>
+              <button
+                type="button"
+                onClick={signOut}
+                disabled={leaving}
+                title="יציאה מהחשבון"
+                aria-label="יציאה מהחשבון"
+                className="flex shrink-0 items-center gap-1 text-xs text-stone-400 hover:text-stone-700 disabled:opacity-50"
+              >
+                <LogOut size={14} />
+                <span className="hidden sm:inline">{leaving ? 'יוצא…' : 'יציאה'}</span>
+              </button>
+            </>
           ) : (
             <Link
               href="/join"
