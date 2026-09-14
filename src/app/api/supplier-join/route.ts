@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { sendEmail } from '@/lib/email'
+import {
+  applicationReceivedHtml,
+  applicationReceivedSubject,
+  newApplicationHtml,
+  newApplicationSubject,
+  type SupplierApplication,
+} from '@/lib/emails/supplier-application'
 
 /**
  * A supplier applies to sell on the marketplace.
@@ -70,10 +78,20 @@ export async function POST(request: NextRequest) {
     // actual state, rather than a unique-constraint error.
     const { data: existing } = await supabase
       .from('suppliers')
-      .select('status')
+      .select('status, business_id')
       .or(`business_id.eq.${businessId},phone_key.eq.${phone}`)
       .limit(1)
       .maybeSingle()
+
+    // Matching on the phone but not the company number is almost always a
+    // mistyped digit, and "your application is pending" sends them away
+    // puzzled. Say which field collided.
+    if (existing && existing.business_id !== businessId) {
+      return NextResponse.json(
+        { error: 'מספר הטלפון הזה כבר רשום אצל ספק אחר. בדקו את המספר, או צרו קשר.' },
+        { status: 409 }
+      )
+    }
 
     if (existing) {
       return NextResponse.json(
@@ -106,6 +124,39 @@ export async function POST(request: NextRequest) {
         )
       }
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // Two messages, neither of which existed: registering and hearing nothing
+    // reads as a form that swallowed your details, and the operator should not
+    // have to open the console to learn that somebody applied.
+    //
+    // Awaited but non-fatal — the application is already saved, and a
+    // notification that fails must not turn a successful signup into an error.
+    const application: SupplierApplication = {
+      companyName,
+      businessId,
+      contactName: text(body.contact_name, 120),
+      phone: text(body.phone, 40),
+      email,
+      city: text(body.city, 80),
+      sellsNote: text(body.sells_note, 600),
+    }
+
+    if (email) {
+      await sendEmail({
+        to: email,
+        subject: applicationReceivedSubject(),
+        html: applicationReceivedHtml(application),
+      })
+    }
+
+    const operator = process.env.ADMIN_EMAIL || process.env.EMAIL_REPLY_TO
+    if (operator) {
+      await sendEmail({
+        to: operator,
+        subject: newApplicationSubject(application),
+        html: newApplicationHtml(application),
+      })
     }
 
     return NextResponse.json({ ok: true, existing: false, status: 'pending' }, { status: 201 })

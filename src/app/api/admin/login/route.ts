@@ -1,11 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { buildSessionCookie, checkPassword, clearSessionCookie } from '@/lib/admin-auth'
+import {
+  checkLoginThrottle,
+  recordLoginAttempt,
+  THROTTLE_WINDOW_MINUTES,
+} from '@/lib/login-throttle'
 
 export async function POST(request: NextRequest) {
   try {
-    const { password } = await request.json()
+    // Asked before the password is even looked at, so a blocked address cannot
+    // use the endpoint's timing to learn anything about the guess it sent.
+    const throttle = await checkLoginThrottle(request)
+    if (throttle.blocked) {
+      return NextResponse.json(
+        {
+          error: `יותר מדי ניסיונות. נסה שוב בעוד ${THROTTLE_WINDOW_MINUTES} דקות.`,
+        },
+        { status: 429 }
+      )
+    }
 
-    if (!checkPassword(password)) {
+    const { password } = await request.json()
+    const ok = checkPassword(password)
+    await recordLoginAttempt(throttle.ip, ok)
+
+    if (!ok) {
       // Deliberately vague, and no hint about which half was wrong.
       return NextResponse.json({ error: 'סיסמה שגויה' }, { status: 401 })
     }

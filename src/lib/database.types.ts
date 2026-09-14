@@ -39,6 +39,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_login_attempts: {
+        Row: {
+          attempted_at: string
+          id: string
+          ip: string
+          succeeded: boolean
+        }
+        Insert: {
+          attempted_at?: string
+          id?: string
+          ip: string
+          succeeded: boolean
+        }
+        Update: {
+          attempted_at?: string
+          id?: string
+          ip?: string
+          succeeded?: boolean
+        }
+        Relationships: []
+      }
       campaigns: {
         Row: {
           body_he: string | null
