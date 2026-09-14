@@ -18,7 +18,7 @@ export default async function AccountPage() {
 
   const { data: carpenter } = await getSupabaseAdmin()
     .from('carpenters')
-    .select('business_name, contact_name, phone, email, city, token')
+    .select('business_name, contact_name, phone, email, address, city, token')
     .eq('id', carpenterId)
     .eq('is_active', true)
     .maybeSingle()

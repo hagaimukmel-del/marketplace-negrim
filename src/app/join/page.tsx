@@ -11,6 +11,7 @@ export default function JoinPage() {
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [city, setCity] = useState('')
+  const [address, setAddress] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -27,6 +28,7 @@ export default function JoinPage() {
           contact_name: contactName,
           phone,
           email,
+          address,
           city,
         }),
       })
@@ -109,10 +111,29 @@ export default function JoinPage() {
           </label>
 
           <label className="block">
-            <span className="text-sm font-medium text-stone-700">עיר</span>
+            <span className="text-sm font-medium text-stone-700">
+              כתובת לאספקה <span className="text-red-600">*</span>
+            </span>
+            <input
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              required
+              placeholder="רחוב הנגר 12, אזור תעשייה"
+              className="mt-1 h-12 w-full rounded-lg border border-stone-300 px-3"
+            />
+            <span className="mt-1 block text-xs text-stone-500">
+              לאן הספק שולח. אפשר לשנות בכל הזמנה.
+            </span>
+          </label>
+
+          <label className="block">
+            <span className="text-sm font-medium text-stone-700">
+              עיר <span className="text-red-600">*</span>
+            </span>
             <input
               value={city}
               onChange={(e) => setCity(e.target.value)}
+              required
               placeholder="תל אביב"
               className="mt-1 h-12 w-full rounded-lg border border-stone-300 px-3"
             />
@@ -122,7 +143,7 @@ export default function JoinPage() {
 
           <button
             type="submit"
-            disabled={busy || !businessName || !phone || !email}
+            disabled={busy || !businessName || !phone || !email || !address || !city}
             className="h-12 w-full rounded-lg bg-emerald-700 font-bold text-white disabled:opacity-50"
           >
             {busy ? 'רגע…' : 'קבל קישור אישי'}

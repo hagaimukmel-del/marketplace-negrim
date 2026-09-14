@@ -40,7 +40,7 @@ export default async function CheckoutPage() {
   const [{ data: carpenter }, { data: lastOrder }] = await Promise.all([
     supabase
       .from('carpenters')
-      .select('business_name, contact_name, phone, email, city')
+      .select('business_name, contact_name, phone, email, address, city')
       .eq('id', carpenterId)
       .maybeSingle(),
     supabase
@@ -58,10 +58,10 @@ export default async function CheckoutPage() {
     businessName: carpenter?.business_name ?? '',
     phone: displayPhone(carpenter?.phone ?? null),
     email: carpenter?.email ?? '',
-    // The address from the last delivery beats the registered city, because it
-    // is where things actually went.
-    address: lastOrder?.address ?? '',
-    city: lastOrder?.city ?? carpenter?.city ?? '',
+    // The carpenter's own address is the default they set; the last order wins
+    // only if they have not set one, because it is still where things went.
+    address: carpenter?.address ?? lastOrder?.address ?? '',
+    city: carpenter?.city ?? lastOrder?.city ?? '',
     zipCode: lastOrder?.zip_code ?? '',
     paymentTerms: lastOrder?.payment_method ?? '',
   }

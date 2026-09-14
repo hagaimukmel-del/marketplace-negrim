@@ -12,6 +12,7 @@ export interface AccountCarpenter {
   contact_name: string | null
   phone: string | null
   email: string | null
+  address: string | null
   city: string | null
   token: string
 }
@@ -38,6 +39,7 @@ export default function AccountClient({
     contact_name: carpenter.contact_name ?? '',
     phone: carpenter.phone ?? '',
     email: carpenter.email ?? '',
+    address: carpenter.address ?? '',
     city: carpenter.city ?? '',
   })
   const [busy, setBusy] = useState(false)
@@ -183,6 +185,19 @@ export default function AccountClient({
               type="email"
               className="mt-1 h-12 w-full rounded-lg border border-stone-300 px-3"
             />
+          </label>
+
+          <label className="block sm:col-span-2">
+            <span className="text-sm font-medium text-stone-700">כתובת לאספקה</span>
+            <input
+              value={form.address}
+              onChange={(e) => set('address', e.target.value)}
+              placeholder="רחוב הנגר 12, אזור תעשייה"
+              className="mt-1 h-12 w-full rounded-lg border border-stone-300 px-3"
+            />
+            <span className="mt-1 block text-xs text-stone-500">
+              ממולאת מראש בכל הזמנה. אפשר לשנות להזמנה בודדת בלי לשנות אותה כאן.
+            </span>
           </label>
 
           <label className="block">

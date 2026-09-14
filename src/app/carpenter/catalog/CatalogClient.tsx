@@ -26,6 +26,7 @@ export interface CatalogItem {
   inStock: boolean
   supplierCount: number
   packLabel: string | null
+  category: string
   price: number | null
 }
 
@@ -197,6 +198,8 @@ function ProductRowItem({
   )
 }
 
+const ALL = 'הכל'
+
 export default function CatalogClient({
   items,
   showPrices,
@@ -207,18 +210,51 @@ export default function CatalogClient({
   const cart = useCart()
   const [quantities, setQuantities] = useState<Record<string, number>>({})
   const [query, setQuery] = useState('')
+  const [category, setCategory] = useState(ALL)
+
+  // Counted over everything, not over what is currently filtered — a chip that
+  // changes its own number when you press it is disorienting.
+  const categories = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const item of items) counts.set(item.category, (counts.get(item.category) ?? 0) + 1)
+    return [...counts.entries()].sort((a, b) => b[1] - a[1])
+  }, [items])
 
   // A carpenter arrives knowing what he wants. Search is the primary way in;
-  // the list is the fallback, not the other way round.
+  // the categories are for the times he is browsing rather than looking.
+  //
+  // Search deliberately ignores the chosen category: typing something that is
+  // filtered out should find it, not return nothing and leave you wondering.
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return items
-    return items.filter((item) =>
-      [item.name_he, item.name_en, item.description_he, item.brand, item.mpn, ...item.skus].some(
-        (field) => field?.toLowerCase().includes(q)
+    if (q) {
+      return items.filter((item) =>
+        [item.name_he, item.name_en, item.description_he, item.brand, item.mpn, ...item.skus].some(
+          (field) => field?.toLowerCase().includes(q)
+        )
       )
-    )
-  }, [items, query])
+    }
+    if (category === ALL) return items
+    return items.filter((item) => item.category === category)
+  }, [items, query, category])
+
+  /**
+   * With no filter on, the list is broken up by category so it can be scanned
+   * rather than scrolled. Inside one category, or while searching, the headings
+   * would just be noise.
+   */
+  const groups = useMemo(() => {
+    if (query.trim() || category !== ALL) return [{ name: null, items: shown }]
+    const byCategory = new Map<string, CatalogItem[]>()
+    for (const item of shown) {
+      const existing = byCategory.get(item.category)
+      if (existing) existing.push(item)
+      else byCategory.set(item.category, [item])
+    }
+    return [...byCategory.entries()]
+      .sort((a, b) => b[1].length - a[1].length)
+      .map(([name, list]) => ({ name, items: list }))
+  }, [shown, query, category])
 
   const setQty = (id: string, qty: number) =>
     setQuantities((prev) => ({ ...prev, [id]: Math.max(1, qty) }))
@@ -264,6 +300,35 @@ export default function CatalogClient({
         </div>
       )}
 
+      {/* Sticky, because the point of it is to stop the scrolling. */}
+      <div className="sticky top-14 z-30 -mx-4 mb-3 overflow-x-auto bg-stone-50 px-4 py-2">
+        <div className="flex gap-2">
+          {[[ALL, items.length] as const, ...categories].map(([name, count]) => {
+            const active = category === name
+            return (
+              <button
+                key={name}
+                type="button"
+                onClick={() => {
+                  setCategory(name)
+                  setQuery('')
+                }}
+                className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors ${
+                  active
+                    ? 'border-stone-900 bg-stone-900 text-white'
+                    : 'border-stone-300 bg-white text-stone-700'
+                }`}
+              >
+                {name}
+                <span className={`tnum text-xs ${active ? 'text-stone-300' : 'text-stone-400'}`}>
+                  {count}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
       <div className="relative mb-4">
         <Search
           size={18}
@@ -287,15 +352,29 @@ export default function CatalogClient({
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
-          {shown.map((item) => (
-            <ProductRowItem
-              key={item.id}
-              item={item}
-              qty={quantities[item.id] ?? 1}
-              onChange={setQty}
-              onAdd={add}
-            />
+        <div className="space-y-5">
+          {groups.map((group) => (
+            <section key={group.name ?? 'all'}>
+              {group.name && (
+                <h2 className="mb-2 flex items-baseline gap-2 text-sm font-bold text-stone-900">
+                  {group.name}
+                  <span className="tnum text-xs font-normal text-stone-400">
+                    {group.items.length}
+                  </span>
+                </h2>
+              )}
+              <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+                {group.items.map((item) => (
+                  <ProductRowItem
+                    key={item.id}
+                    item={item}
+                    qty={quantities[item.id] ?? 1}
+                    onChange={setQty}
+                    onAdd={add}
+                  />
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       )}

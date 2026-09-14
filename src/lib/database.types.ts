@@ -91,6 +91,7 @@ export type Database = {
       }
       carpenters: {
         Row: {
+          address: string | null
           business_name: string
           city: string | null
           contact_name: string | null
@@ -107,6 +108,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          address?: string | null
           business_name: string
           city?: string | null
           contact_name?: string | null
@@ -123,6 +125,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          address?: string | null
           business_name?: string
           city?: string | null
           contact_name?: string | null

@@ -65,6 +65,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, token: existing.token, existing: true })
     }
 
+    // Where a pallet actually goes. Asked here rather than left to the first
+    // checkout so that an order can be placed without stopping to type it, and
+    // so the operator can see at a glance whether a new signup is reachable.
+    const address = typeof body.address === 'string' ? body.address.trim().slice(0, 200) : ''
+    const city = typeof body.city === 'string' ? body.city.trim().slice(0, 80) : ''
+    if (!address || !city) {
+      return NextResponse.json({ error: 'צריך כתובת ועיר לאספקה' }, { status: 400 })
+    }
+
     const { data, error } = await supabase
       .from('carpenters')
       .insert({
@@ -75,8 +84,8 @@ export async function POST(request: NextRequest) {
             : null,
         phone,
         email,
-        city:
-          typeof body.city === 'string' && body.city.trim() ? body.city.trim() : null,
+        address,
+        city,
         source: 'self',
       })
       .select('token')

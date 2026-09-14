@@ -72,6 +72,7 @@ export async function PATCH(request: NextRequest) {
         contact_name: text(body.contact_name, 120),
         phone,
         email,
+        address: text(body.address, 200),
         city: text(body.city, 80),
         updated_at: new Date().toISOString(),
       })

@@ -1,7 +1,7 @@
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { canSeePrices } from '@/lib/carpenter-auth'
 import {
-  CATALOG_COLUMNS,
+  OFFER_COLUMNS,
   bestOffer,
   byPrice,
   inStock,
@@ -36,13 +36,20 @@ export default async function CatalogPage() {
     canSeePrices(),
     getSupabaseAdmin()
       .from('products')
-      .select(CATALOG_COLUMNS)
+      .select(
+        'id, name_he, name_en, description_he, image_url, category_id, brand, mpn, base_unit, ' +
+          `categories(name_he), supplier_offers!inner(${OFFER_COLUMNS})`
+      )
       .eq('is_active', true)
       .eq('supplier_offers.is_active', true)
       .limit(1000),
   ])
 
-  const products = ((data ?? []) as unknown as CatalogProduct[]).slice().sort(byPrice)
+  const products = ((data ?? []) as unknown as (CatalogProduct & {
+    categories: { name_he: string } | null
+  })[])
+    .slice()
+    .sort(byPrice)
 
   const items: CatalogItem[] = products.map((product) => {
     const offer = bestOffer(product)
@@ -60,6 +67,7 @@ export default async function CatalogPage() {
       inStock: inStock(product),
       supplierCount: offerCount(product),
       packLabel: packLabel(offer, product.base_unit),
+      category: product.categories?.name_he ?? 'ללא קטגוריה',
       price: showPrices ? priceOf(product) : null,
     }
   })
