@@ -40,6 +40,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'מספר טלפון לא תקין' }, { status: 400 })
     }
 
+    // Required from here on: it is where an order confirmation goes, and a
+    // carpenter with no address is one we cannot tell that their order moved.
+    const email = typeof body.email === 'string' ? body.email.trim().slice(0, 160) : ''
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: 'כתובת מייל לא תקינה' }, { status: 400 })
+    }
+
     const supabase = getSupabaseAdmin()
 
     // Already known — from the operator's list or from an earlier submission.
@@ -67,6 +74,7 @@ export async function POST(request: NextRequest) {
             ? body.contact_name.trim()
             : null,
         phone,
+        email,
         city:
           typeof body.city === 'string' && body.city.trim() ? body.city.trim() : null,
         source: 'self',

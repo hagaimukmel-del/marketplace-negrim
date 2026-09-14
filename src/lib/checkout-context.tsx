@@ -24,9 +24,12 @@ export interface OrderForm {
 }
 
 interface CheckoutContextType {
-  formData: Partial<OrderForm>
-  updateForm: (data: Partial<OrderForm>) => void
-  submitOrder: (items: CartItem[]) => Promise<{ orderId: string }>
+  /**
+   * The form is passed in rather than held here. It used to live in this
+   * provider, which meant submitting read whatever the last render had written
+   * — and a page that seeds its fields from the server would have raced it.
+   */
+  submitOrder: (items: CartItem[], form: OrderForm) => Promise<{ orderId: string }>
   isSubmitting: boolean
   error: string | null
 }
@@ -34,15 +37,10 @@ interface CheckoutContextType {
 const CheckoutContext = createContext<CheckoutContextType | undefined>(undefined)
 
 export function CheckoutProvider({ children }: { children: React.ReactNode }) {
-  const [formData, setFormData] = useState<Partial<OrderForm>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const updateForm = (data: Partial<OrderForm>) => {
-    setFormData((prev) => ({ ...prev, ...data }))
-  }
-
-  const submitOrder = async (items: CartItem[]) => {
+  const submitOrder = async (items: CartItem[], formData: OrderForm) => {
     setIsSubmitting(true)
     setError(null)
 
@@ -110,8 +108,6 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
   return (
     <CheckoutContext.Provider
       value={{
-        formData,
-        updateForm,
         submitOrder,
         isSubmitting,
         error,
