@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, X, RotateCcw, Phone, Mail, Plus, Pencil, Truck, ImagePlus, Trash2 } from 'lucide-react'
+import { Check, X, RotateCcw, Phone, Mail, Plus, Pencil, Truck, ImagePlus, Trash2, Link2, Copy } from 'lucide-react'
 import { formatIls } from '@/lib/vat'
 import SupplierForm, { EMPTY_SUPPLIER, type SupplierFields } from './SupplierForm'
 
@@ -20,6 +20,7 @@ export interface SupplierRow {
   default_lead_time_days: number | null
   sells_note: string | null
   logo_url: string | null
+  token: string | null
   status: string
   source: string
   created_at: string | null
@@ -106,6 +107,50 @@ function formatDate(value: string | null): string {
   })
 }
 
+/**
+ * The approved supplier's way in, shown so it can be sent by hand.
+ *
+ * The approval already emails it, but an address can be wrong, a message can go
+ * to spam, and somebody will want it read out over the phone. This is the only
+ * place it can be found again — and it is a credential, so the card says what
+ * holding it means rather than presenting it as a convenience.
+ */
+function EntryLink({ token }: { token: string }) {
+  const [copied, setCopied] = useState(false)
+  const link =
+    typeof window === 'undefined' ? `/supplier/enter/${token}` : `${window.location.origin}/supplier/enter/${token}`
+
+  return (
+    <div className="mt-3 rounded-lg bg-stone-50 p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="flex min-w-0 flex-1 items-center gap-2 text-xs text-stone-700">
+          <Link2 size={14} className="shrink-0 text-stone-400" />
+          <span className="min-w-0 break-all font-mono">/supplier/enter/{token}</span>
+        </p>
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(link)
+              setCopied(true)
+              setTimeout(() => setCopied(false), 2000)
+            } catch {
+              // Clipboard blocked; the link is on screen to select by hand.
+            }
+          }}
+          className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-xs font-semibold text-stone-700"
+        >
+          {copied ? <Check size={13} /> : <Copy size={13} />}
+          {copied ? 'הועתק' : 'העתק'}
+        </button>
+      </div>
+      <p className="mt-1.5 text-xs text-stone-500">
+        זו הכניסה שלהם, ואין סיסמה מאחוריה — מי שמחזיק בקישור יכול לשנות את המחירים שלהם.
+      </p>
+    </div>
+  )
+}
+
 function SupplierCard({
   row,
   busy,
@@ -185,6 +230,8 @@ function SupplierCard({
         </span>
         {row.pickup_address && <span>איסוף מ{row.pickup_address}</span>}
       </div>
+
+      {row.status === 'approved' && row.token && <EntryLink token={row.token} />}
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <button

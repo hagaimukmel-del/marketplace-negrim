@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/admin-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { sendEmail } from '@/lib/email'
+import { supplierApprovedHtml, supplierApprovedSubject } from '@/lib/emails/supplier-approved'
 import type { Database } from '@/lib/database.types'
 
 type SupplierUpdate = Database['public']['Tables']['suppliers']['Update']
@@ -286,7 +288,12 @@ export async function PATCH(request: NextRequest) {
       update.default_lead_time_days = leadTime
     }
 
-    const { error } = await getSupabaseAdmin().from('suppliers').update(update).eq('id', body.id)
+    const { data: decided, error } = await getSupabaseAdmin()
+      .from('suppliers')
+      .update(update)
+      .eq('id', body.id)
+      .select('company_name, contact_name, email, token, status')
+      .maybeSingle()
 
     if (error) {
       const duplicate = error.code === '23505'
@@ -296,7 +303,27 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ ok: true })
+    // Approving somebody and telling nobody leaves them exactly where they
+    // were. The link in this message is the only way into their console, so
+    // the approval and the email are the same act.
+    //
+    // A rejection is deliberately silent: there is nothing useful to say that
+    // does not invite an argument, and the operator can pick up the phone.
+    let emailed = false
+    if (body.status === 'approved' && decided?.email && decided.token) {
+      const result = await sendEmail({
+        to: decided.email,
+        subject: supplierApprovedSubject(),
+        html: supplierApprovedHtml({
+          companyName: decided.company_name,
+          contactName: decided.contact_name,
+          token: decided.token,
+        }),
+      })
+      emailed = result.sent
+    }
+
+    return NextResponse.json({ ok: true, emailed })
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Failed' },

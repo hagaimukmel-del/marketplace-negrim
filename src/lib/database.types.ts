@@ -807,6 +807,7 @@ export type Database = {
           sells_note: string | null
           source: string
           status: string
+          token: string
           updated_at: string | null
           zip_code: string | null
         }
@@ -831,6 +832,7 @@ export type Database = {
           sells_note?: string | null
           source?: string
           status?: string
+          token?: string
           updated_at?: string | null
           zip_code?: string | null
         }
@@ -855,6 +857,7 @@ export type Database = {
           sells_note?: string | null
           source?: string
           status?: string
+          token?: string
           updated_at?: string | null
           zip_code?: string | null
         }
