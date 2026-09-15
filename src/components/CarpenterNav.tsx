@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { useCart } from '@/lib/cart-context'
 import { forgetCarpenter } from '@/lib/carpenter-session'
 import { formatIls } from '@/lib/vat'
+import Logo from '@/components/brand/Logo'
 
 const LINKS = [
   { href: '/carpenter/catalog', label: 'קטלוג', Icon: LayoutGrid },
@@ -57,9 +58,9 @@ export default function CarpenterNav({ session }: { session: CarpenterSession | 
         {/* The spacer lives on this group, not on the join link — that link is
             narrower on a phone, and hanging the spacing off it collapsed the
             whole bar at mobile width. */}
-        <div className="me-auto flex min-w-0 items-baseline gap-3">
-          <Link href="/carpenter/catalog" className="font-bold text-stone-900">
-            שוק הנגרים
+        <div className="me-auto flex min-w-0 items-center gap-3">
+          <Link href="/carpenter/catalog" className="shrink-0" aria-label="שוק הנגרים — לקטלוג">
+            <Logo size="sm" compact />
           </Link>
           {/* Someone browsing the public catalogue has no link of their own
               yet. This is the only way for them to get one. */}

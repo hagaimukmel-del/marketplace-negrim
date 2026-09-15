@@ -3,6 +3,7 @@ import 'server-only'
 import { formatIls } from '../vat'
 import { confirmUrl } from '../supplier-link'
 import { siteUrl } from '../email'
+import { emailLogo } from './brand'
 
 /**
  * The one email the marketplace sends.
@@ -87,8 +88,8 @@ export function newOrderHtml(
     <tr><td>
 
       <div style="text-align:center;padding-bottom:16px">
-        <div style="font:bold 15px ${FONT};color:#78716c">שוק הנגרים</div>
-        <div style="font:bold 24px ${FONT};color:#1c1917;padding-top:6px">הזמנה חדשה</div>
+        ${emailLogo()}
+        <div style="font:bold 24px ${FONT};color:#1c1917;padding-top:14px">הזמנה חדשה</div>
         <div style="font:13px ${FONT};color:#78716c;padding-top:4px">${escapeHtml(order.orderNumber)}</div>
       </div>
 

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { TERMS_UPDATED_LABEL, TERMS_VERSION } from '@/lib/terms'
+import Logo from '@/components/brand/Logo'
 
 export const metadata: Metadata = {
   title: 'תקנון ותנאי שימוש — שוק הנגרים',
@@ -416,7 +417,7 @@ export default function TermsPage() {
         </Link>
 
         <header className="mt-2 border-b border-stone-300 pb-5">
-          <p className="text-xs font-semibold tracking-wide text-emerald-800">שוק הנגרים</p>
+          <Logo size="sm" tagline="always" />
           <h1 className="mt-1 text-2xl font-bold text-balance text-stone-900 sm:text-3xl">
             תקנון, תנאי שימוש ומדיניות פרטיות
           </h1>

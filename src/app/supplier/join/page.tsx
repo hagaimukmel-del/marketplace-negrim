@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { CheckCircle2 } from 'lucide-react'
 import LoginLinkBox from './LoginLinkBox'
+import Logo from '@/components/brand/Logo'
 
 const EMPTY = {
   company_name: '',
@@ -78,6 +79,9 @@ export default function SupplierJoinPage() {
   return (
     <main dir="rtl" className="min-h-screen bg-stone-50 px-4 py-10">
       <div className="mx-auto max-w-md">
+        <div className="mb-6 flex justify-center">
+          <Logo size="md" tagline="always" />
+        </div>
         <LoginLinkBox />
 
         <h1 className="text-2xl font-bold text-stone-900">הצטרפות כספק</h1>

@@ -4,9 +4,36 @@ import { CartProvider } from "@/lib/cart-context";
 import { CheckoutProvider } from "@/lib/checkout-context";
 import "./globals.css";
 
+/**
+ * Absolute URLs in the <head> — the link-preview image WhatsApp fetches has to
+ * be a full address, and it has to be the production one, not the address of
+ * whichever deployment happened to render the page.
+ */
+function siteOrigin(): string {
+  const explicit = process.env.NEXT_PUBLIC_SITE_URL;
+  if (explicit) return explicit.replace(/\/$/, "");
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
+  return "http://localhost:3000";
+}
+
+const description = "הזמנת חומרים, פרזול וציוד לנגריות — ישירות מהספק.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteOrigin()),
   title: "שוק הנגרים",
-  description: "הזמנת דבקים, קנטים וחומרי עזר לנגריות — ישירות מהספק.",
+  description,
+  applicationName: "שוק הנגרים",
+  // The image itself is app/opengraph-image.png; these are the words beside it.
+  openGraph: {
+    type: "website",
+    siteName: "שוק הנגרים · Nagarim",
+    locale: "he_IL",
+    title: "שוק הנגרים — Nagarim B2B Marketplace",
+    description,
+  },
+  appleWebApp: { title: "שוק הנגרים" },
 };
 
 export default function RootLayout({

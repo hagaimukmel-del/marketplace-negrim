@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { siteUrl } from '../email'
+import { emailLogo } from './brand'
 
 /**
  * The message a raffle winner gets.
@@ -38,7 +39,7 @@ export function raffleWinHtml({
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;margin:0 auto">
     <tr><td>
       <div style="text-align:center;padding-bottom:16px">
-        <div style="font:bold 15px ${FONT};color:#78716c">שוק הנגרים</div>
+        ${emailLogo()}
       </div>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #e7e5e4;border-radius:12px">
         <tr><td style="padding:22px">

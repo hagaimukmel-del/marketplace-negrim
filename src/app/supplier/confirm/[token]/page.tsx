@@ -3,6 +3,7 @@ import { LinkIcon, CheckCircle2, Users } from 'lucide-react'
 import { loadConfirmable } from '@/lib/supplier-confirm'
 import { formatIls } from '@/lib/vat'
 import ConfirmClient from './ConfirmClient'
+import Logo from '@/components/brand/Logo'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,8 +15,13 @@ export const metadata = {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <main dir="rtl" className="min-h-screen bg-stone-50 px-4 py-10">
-      <div className="mx-auto max-w-lg">{children}</div>
+    <main dir="rtl" className="min-h-screen bg-stone-50 px-4 py-8">
+      <div className="mx-auto max-w-lg">
+        <div className="mb-6 flex justify-center">
+          <Logo size="md" tagline="always" />
+        </div>
+        {children}
+      </div>
     </main>
   )
 }

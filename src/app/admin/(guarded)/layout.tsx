@@ -5,6 +5,7 @@ import { isAdmin } from '@/lib/admin-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import AdminNav, { type NavItem } from './AdminNav'
 import LogoutButton from './LogoutButton'
+import Logo from '@/components/brand/Logo'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,8 +47,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div dir="rtl" className="min-h-screen bg-stone-100">
       <header className="border-b border-stone-300 bg-white">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-5 gap-y-2 px-5 py-3">
-          <Link href="/admin/orders" className="font-bold text-stone-900">
-            שוק הנגרים · ניהול
+          <Link href="/admin/orders" className="flex items-center gap-2" aria-label="שוק הנגרים · ניהול">
+            <Logo size="sm" tagline={false} />
+            <span className="rounded-full bg-stone-900 px-2 py-0.5 text-[11px] font-semibold text-white">
+              ניהול
+            </span>
           </Link>
           <AdminNav items={nav} />
           <div className="ms-auto">

@@ -363,7 +363,7 @@ export default function OfferClient({
     <main dir="rtl" className="min-h-screen bg-stone-50 pb-40">
       <div className="mx-auto max-w-2xl px-4 py-6">
         <header className="mb-5">
-          <p className="text-sm text-stone-500">שוק הנגרים</p>
+          <p className="text-sm text-stone-500">הדף האישי שלך</p>
           <h1 className="text-xl font-bold text-stone-900">{carpenterName}</h1>
         </header>
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Logo from '@/components/brand/Logo'
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -36,7 +37,8 @@ export default function AdminLoginPage() {
         onSubmit={submit}
         className="w-full max-w-sm rounded-2xl border border-stone-300 bg-white p-6"
       >
-        <h1 className="text-lg font-bold text-stone-900">שוק הנגרים · ניהול</h1>
+        <Logo size="md" tagline="always" />
+        <h1 className="mt-5 text-lg font-bold text-stone-900">כניסת מנהל</h1>
         <p className="mt-1 text-sm text-stone-600">הזן סיסמת מפעיל</p>
 
         <input

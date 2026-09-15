@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { LogOut, Store } from 'lucide-react'
+import { LogoMark } from '@/components/brand/Logo'
 
 /**
  * The supplier's header: who you are, and the way out.
@@ -31,6 +32,10 @@ export default function SupplierNav({ company, logo }: { company: string; logo: 
   return (
     <nav className="sticky top-0 z-40 border-b border-stone-200 bg-white/95 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-4xl items-center gap-3 px-4">
+        <Link href="/supplier" aria-label="שוק הנגרים — ממשק הספק" className="shrink-0">
+          <LogoMark size={30} />
+        </Link>
+        <span className="h-6 w-px shrink-0 bg-stone-200" aria-hidden />
         <Link href="/supplier" className="flex min-w-0 items-center gap-2">
           {logo ? (
             // eslint-disable-next-line @next/next/no-img-element
