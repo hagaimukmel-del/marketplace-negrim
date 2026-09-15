@@ -15,7 +15,7 @@ export default async function SupplierLayout({ children }: { children: React.Rea
 
   return (
     <>
-      {supplier && <SupplierNav company={supplier.company_name} />}
+      {supplier && <SupplierNav company={supplier.company_name} logo={supplier.logo_url} />}
       <main className="w-full flex-1 px-4 py-5">
         <div className="mx-auto max-w-4xl">{children}</div>
       </main>

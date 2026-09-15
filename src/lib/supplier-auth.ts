@@ -110,11 +110,12 @@ export interface SessionSupplier {
   default_lead_time_days: number | null
   logo_url: string | null
   sells_note: string | null
+  payment_terms: string[]
 }
 
 const COLUMNS =
   'id, token, company_name, business_id, contact_name, phone, email, city, address, ' +
-  'pickup_address, min_order_value_excl_vat, default_lead_time_days, logo_url, sells_note'
+  'pickup_address, min_order_value_excl_vat, default_lead_time_days, logo_url, sells_note, payment_terms'
 
 /**
  * The supplier behind the cookie, re-read every time.

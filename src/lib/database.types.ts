@@ -470,6 +470,7 @@ export type Database = {
           brand: string | null
           category_id: string | null
           created_at: string | null
+          created_by_supplier_id: string | null
           description_en: string | null
           description_he: string | null
           id: string
@@ -487,6 +488,7 @@ export type Database = {
           brand?: string | null
           category_id?: string | null
           created_at?: string | null
+          created_by_supplier_id?: string | null
           description_en?: string | null
           description_he?: string | null
           id?: string
@@ -504,6 +506,7 @@ export type Database = {
           brand?: string | null
           category_id?: string | null
           created_at?: string | null
+          created_by_supplier_id?: string | null
           description_en?: string | null
           description_he?: string | null
           id?: string
@@ -521,6 +524,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_created_by_supplier_id_fkey"
+            columns: ["created_by_supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]
@@ -800,6 +810,7 @@ export type Database = {
           is_verified: boolean | null
           logo_url: string | null
           min_order_value_excl_vat: number | null
+          payment_terms: string[]
           phone: string | null
           phone_key: string | null
           pickup_address: string | null
@@ -825,6 +836,7 @@ export type Database = {
           is_verified?: boolean | null
           logo_url?: string | null
           min_order_value_excl_vat?: number | null
+          payment_terms?: string[]
           phone?: string | null
           phone_key?: string | null
           pickup_address?: string | null
@@ -850,6 +862,7 @@ export type Database = {
           is_verified?: boolean | null
           logo_url?: string | null
           min_order_value_excl_vat?: number | null
+          payment_terms?: string[]
           phone?: string | null
           phone_key?: string | null
           pickup_address?: string | null
