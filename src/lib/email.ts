@@ -9,11 +9,21 @@ import 'server-only'
  * told it was not sent. An order must never fail because a notification could
  * not go out.
  *
- * The second valve matters more while this is being built. EMAIL_TEST_RECIPIENT
- * redirects every message to one inbox, with a banner naming who it was really
- * addressed to. Real supplier addresses sit in the production database; without
- * this, one test run mails an actual company.
+ * The second valve is EMAIL_TEST_RECIPIENT. It used to redirect every message,
+ * which was right while the database held only test rows and wrong the moment
+ * real suppliers began registering: an approved supplier's entry link went to
+ * the operator instead of to them.
+ *
+ * It now redirects only messages marked as a test — and what marks one is the
+ * convention the operator already uses: a business whose name contains
+ * "ניסיון". Real businesses get their real mail; test ones keep landing in one
+ * inbox with a banner naming who they were really for.
  */
+
+/** The operator's marker for a test business, in any name we hold. */
+export function isTestName(...names: (string | null | undefined)[]): boolean {
+  return names.some((name) => typeof name === 'string' && name.includes('ניסיון'))
+}
 
 export interface SendResult {
   sent: boolean
@@ -56,13 +66,16 @@ export async function sendEmail({
   to,
   subject,
   html,
+  isTest = false,
 }: {
   to: string
   subject: string
   html: string
+  /** Redirect to EMAIL_TEST_RECIPIENT. Only for businesses marked as tests. */
+  isTest?: boolean
 }): Promise<SendResult> {
   const apiKey = process.env.RESEND_API_KEY
-  const testRecipient = process.env.EMAIL_TEST_RECIPIENT
+  const testRecipient = isTest ? process.env.EMAIL_TEST_RECIPIENT : undefined
 
   const recipient = testRecipient || to
   const body = testRecipient && testRecipient !== to ? banner(to) + html : html

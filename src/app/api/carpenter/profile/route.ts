@@ -41,7 +41,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'מספר טלפון לא תקין' }, { status: 400 })
     }
 
-    const email = text(body.email, 160)
+    const email = text(body.email, 160)?.toLowerCase() ?? null
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: 'כתובת מייל לא תקינה' }, { status: 400 })
     }

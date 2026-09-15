@@ -125,7 +125,7 @@ function EntryLink({ token }: { token: string }) {
       <div className="flex flex-wrap items-center gap-2">
         <p className="flex min-w-0 flex-1 items-center gap-2 text-xs text-stone-700">
           <Link2 size={14} className="shrink-0 text-stone-400" />
-          <span className="min-w-0 break-all font-mono">/supplier/enter/{token}</span>
+          <span dir="ltr" className="min-w-0 break-all font-mono">/supplier/enter/{token}</span>
         </p>
         <button
           type="button"

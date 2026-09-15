@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     // Required from here on: it is where an order confirmation goes, and a
     // carpenter with no address is one we cannot tell that their order moved.
-    const email = typeof body.email === 'string' ? body.email.trim().slice(0, 160) : ''
+    const email = typeof body.email === 'string' ? body.email.trim().slice(0, 160).toLowerCase() : ''
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: 'כתובת מייל לא תקינה' }, { status: 400 })
     }

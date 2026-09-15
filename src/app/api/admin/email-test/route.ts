@@ -106,6 +106,7 @@ export async function POST(request: NextRequest) {
       to,
       subject: `[בדיקה] ${newOrderSubject(SAMPLE)}`,
       html: newOrderHtml(SAMPLE),
+      isTest: true,
     })
 
     return NextResponse.json({

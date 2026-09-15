@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { getSupabaseAdmin } from './supabase-admin'
-import { sendEmail } from './email'
+import { isTestName, sendEmail } from './email'
 import { newOrderHtml, newOrderSubject, type NewOrderLine } from './emails/new-order'
 
 /**
@@ -88,6 +88,9 @@ export async function notifyNewOrder(orderId: string): Promise<void> {
         // The confirm button only works on an order this supplier owns outright,
         // because order status is one field for the whole order.
         html: newOrderHtml(payload, { canConfirm: bySupplier.size === 1 }),
+        // A test carpenter ordering from a real supplier is still a test; the
+        // real supplier must not receive it.
+        isTest: isTestName(supplier.company_name, payload.carpenterName),
       })
     }
   } catch (err) {

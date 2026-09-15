@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/admin-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
-import { sendEmail } from '@/lib/email'
+import { isTestName, sendEmail } from '@/lib/email'
 import { supplierApprovedHtml, supplierApprovedSubject } from '@/lib/emails/supplier-approved'
 import type { Database } from '@/lib/database.types'
 
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'ח.פ / ע.מ צריך להיות 9 ספרות' }, { status: 400 })
     }
 
-    const email = trimmed(body.email, 160)
+    const email = trimmed(body.email, 160)?.toLowerCase() ?? null
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: 'כתובת מייל לא תקינה' }, { status: 400 })
     }
@@ -246,7 +246,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (body.email !== undefined) {
-      const email = trimmed(body.email, 160)
+      const email = trimmed(body.email, 160)?.toLowerCase() ?? null
       if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         return NextResponse.json({ error: 'כתובת מייל לא תקינה' }, { status: 400 })
       }
@@ -319,6 +319,7 @@ export async function PATCH(request: NextRequest) {
           contactName: decided.contact_name,
           token: decided.token,
         }),
+        isTest: isTestName(decided.company_name),
       })
       emailed = result.sent
     }

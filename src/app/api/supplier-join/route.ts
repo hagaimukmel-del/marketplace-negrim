@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
-import { sendEmail } from '@/lib/email'
+import { isTestName, sendEmail } from '@/lib/email'
 import {
   applicationReceivedHtml,
   applicationReceivedSubject,
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'מספר טלפון לא תקין' }, { status: 400 })
     }
 
-    const email = text(body.email, 160)
+    const email = text(body.email, 160)?.toLowerCase() ?? null
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: 'כתובת מייל לא תקינה' }, { status: 400 })
     }
@@ -147,6 +147,7 @@ export async function POST(request: NextRequest) {
         to: email,
         subject: applicationReceivedSubject(),
         html: applicationReceivedHtml(application),
+        isTest: isTestName(companyName),
       })
     }
 
