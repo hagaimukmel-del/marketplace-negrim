@@ -16,15 +16,21 @@ import { getSupabaseAdmin } from './supabase-admin'
  * A carpenter's link shows their own prices; a supplier's link edits what the
  * whole marketplace pays. So: only an APPROVED supplier can mint a session, the
  * status is re-read from the database on every use rather than trusted from the
- * cookie, and the session is shorter than a carpenter's.
+ * cookie — so a rejected supplier loses access the moment they are rejected,
+ * however long their cookie still has to run.
  */
 
 const COOKIE = 'negrim_supplier'
 const PURPOSE = 'supplier-session.v1'
 
-/** Thirty days. Long enough not to nag, short enough that a stale link on an
- *  old phone stops working without anyone having to think about it. */
-const MAX_AGE_SECONDS = 60 * 60 * 24 * 30
+/**
+ * Six months, the same as a carpenter. It was thirty days, and in practice that
+ * meant a supplier went through email, link and sign-in again every month — the
+ * slowest part of the whole flow, repeated for nothing. Access is still
+ * re-checked against the database on every request, which is what actually
+ * protects against a supplier who should no longer be let in.
+ */
+const MAX_AGE_SECONDS = 60 * 60 * 24 * 180
 
 /**
  * Derived from ADMIN_SECRET with its own label, so one of these can never
