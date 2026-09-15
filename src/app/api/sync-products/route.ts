@@ -198,6 +198,25 @@ export async function GET() {
 
   try {
     const supabase = getSupabaseAdmin()
+
+    // The sheet belongs to one supplier. If that supplier is gone, writing
+    // their prices would fail halfway — or worse, recreate a catalogue the
+    // operator deliberately removed. Say so instead.
+    const { data: owner } = await supabase
+      .from('suppliers')
+      .select('id')
+      .eq('id', ITAMIR_SUPPLIER_ID)
+      .maybeSingle()
+    if (!owner) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'הספק שהגיליון משויך אליו נמחק, ולכן הסנכרון כבוי. מוצרים מוסיפים עכשיו מממשק הספק.',
+        },
+        { status: 409 }
+      )
+    }
+
     const { products: sheetProducts, hasSkuColumn } = await readSheet()
 
     if (sheetProducts.length === 0) {

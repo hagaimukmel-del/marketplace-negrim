@@ -21,8 +21,24 @@ function escapeHtml(value: string): string {
     .replace(/"/g, '&quot;')
 }
 
+/** Israel time, "15.09 14:32" — makes each copy of this mail distinct. */
+function sentAt(): string {
+  return new Date().toLocaleString('he-IL', {
+    timeZone: 'Asia/Jerusalem',
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+/**
+ * Stamped with the time: a supplier approved twice (after being sent back for
+ * review) would otherwise get an identical second message, which Gmail threads
+ * and folds behind "•••" — hiding the button.
+ */
 export function supplierApprovedSubject(): string {
-  return 'אושרתם כספק בשוק הנגרים — הכניסה שלכם'
+  return `אושרתם כספק בשוק הנגרים — הכניסה שלכם · ${sentAt()}`
 }
 
 export function supplierApprovedHtml({
@@ -59,6 +75,10 @@ export function supplierApprovedHtml({
               </a>
             </td></tr>
           </table>
+          <p style="margin:12px 0 0;font-size:12px;color:#78716c">
+            הכפתור לא מופיע? הקישור עצמו:<br>
+            <a href="${link}" dir="ltr" style="color:#047857;word-break:break-all">${link}</a>
+          </p>
 
           <p style="margin:16px 0 0;background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:12px;color:#78350f;font-size:13px">
             <strong>הקישור הזה הוא הכניסה שלכם.</strong> אין סיסמה לשחזר, אז שמרו אותו

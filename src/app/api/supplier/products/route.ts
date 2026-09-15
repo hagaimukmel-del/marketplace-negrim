@@ -92,6 +92,58 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as Record<string, unknown>
     const supabase = getSupabaseAdmin()
 
+    // ---- "I sell this too": a price on a product that already exists ----
+    // The supplier picked it from the catalogue, so nothing about the product
+    // is taken from the request — only their own price, stock and pack.
+    if (typeof body.product_id === 'string') {
+      const offerFields = readOfferFields(body, true)
+      if (typeof offerFields === 'string') {
+        return NextResponse.json({ error: offerFields }, { status: 400 })
+      }
+
+      const { data: product } = await supabase
+        .from('products')
+        .select('id')
+        .eq('id', body.product_id)
+        .eq('is_active', true)
+        .maybeSingle()
+      if (!product) return NextResponse.json({ error: 'המוצר לא נמצא בקטלוג' }, { status: 404 })
+
+      const { data: offer, error } = await supabase
+        .from('supplier_offers')
+        .insert({
+          product_id: product.id,
+          supplier_id: supplier.id,
+          price_excl_vat: offerFields.price as number,
+          stock_qty: offerFields.stock ?? 0,
+          supplier_sku: offerFields.sku ?? null,
+          pack_label: offerFields.packLabel ?? null,
+          pack_qty: offerFields.packQty ?? null,
+          min_order_qty: offerFields.minOrderQty ?? 1,
+          is_active: true,
+          source: 'manual',
+        })
+        .select('id')
+        .single()
+
+      if (error) {
+        const duplicate = error.code === '23505'
+        return NextResponse.json(
+          {
+            error: duplicate
+              ? 'המוצר הזה כבר נמצא ברשימה שלך, או שהמק״ט כבר קיים אצלך'
+              : error.message,
+          },
+          { status: duplicate ? 409 : 500 }
+        )
+      }
+
+      return NextResponse.json(
+        { ok: true, offer_id: offer.id, product_id: product.id, merged: true },
+        { status: 201 }
+      )
+    }
+
     const name = text(body.name_he, 160)
     if (!name) return NextResponse.json({ error: 'צריך שם מוצר' }, { status: 400 })
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Ban,
@@ -409,8 +409,144 @@ function SupplierCard({
   )
 }
 
+interface Impact {
+  orderLines: number
+  offers: number
+  soleProducts: string[]
+  sharedProducts: number
+}
+
+/**
+ * The last stop before a supplier is deleted, with the consequences spelled out
+ * from the database rather than guessed: how many prices go, which products
+ * leave the catalogue because only this supplier sold them, and how many stay
+ * because another supplier sells them too. Deleting needs a tick that says the
+ * operator read it.
+ */
+function DeleteDialog({
+  row,
+  onCancel,
+  onConfirm,
+}: {
+  row: SupplierRow
+  onCancel: () => void
+  onConfirm: () => Promise<void>
+}) {
+  const [impact, setImpact] = useState<Impact | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [understood, setUnderstood] = useState(false)
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch(`/api/admin/suppliers?impact=${row.id}`)
+      .then(async (response) => {
+        const data = await response.json()
+        if (!response.ok) throw new Error(data.error || 'לא הצלחנו לבדוק מה יימחק')
+        if (!cancelled) setImpact(data as Impact)
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : 'לא הצלחנו לבדוק מה יימחק')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [row.id])
+
+  const blocked = (impact?.orderLines ?? 0) > 0
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="delete-supplier-title"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-stone-900/50 sm:items-center sm:p-4"
+    >
+      <div className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 sm:max-w-lg sm:rounded-2xl">
+        <h2 id="delete-supplier-title" className="text-lg font-bold text-stone-900">
+          מחיקת {row.company_name}
+        </h2>
+
+        {!impact && !error && <p className="mt-4 text-sm text-stone-600">בודק מה יימחק…</p>}
+        {error && <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+
+        {impact && blocked && (
+          <p className="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+            לספק הזה יש הזמנות, ולכן אי אפשר למחוק אותו — ההזמנות הן הרישום של מי מכר מה. אפשר לחסום
+            אותו: הוא לא ייכנס והמוצרים שלו ייעלמו מהקטלוג, ושום דבר לא יימחק.
+          </p>
+        )}
+
+        {impact && !blocked && (
+          <div className="mt-4 space-y-3 text-sm">
+            <div className="rounded-lg bg-red-50 p-3 text-red-900">
+              <p className="font-bold">יימחק לצמיתות:</p>
+              <ul className="mt-1 list-disc space-y-0.5 ps-5">
+                <li>הספק, הפרטים והלוגו שלו, וקישור הכניסה</li>
+                <li className="tnum">{impact.offers} מחירים שהוא הזין</li>
+                <li className="tnum">
+                  {impact.soleProducts.length} מוצרים שרק הוא מוכר — ייצאו מהקטלוג
+                </li>
+              </ul>
+              {impact.soleProducts.length > 0 && (
+                <p className="mt-2 max-h-28 overflow-y-auto rounded bg-white/60 p-2 text-xs leading-relaxed text-red-800">
+                  {impact.soleProducts.join(' · ')}
+                </p>
+              )}
+            </div>
+            <div className="rounded-lg bg-emerald-50 p-3 text-emerald-900">
+              <p className="font-bold">יישאר:</p>
+              <p className="tnum mt-1">
+                {impact.sharedProducts > 0
+                  ? `${impact.sharedProducts} מוצרים שגם ספקים אחרים מוכרים — נשארים בקטלוג עם המחירים שלהם`
+                  : 'אין מוצרים שספק אחר מוכר'}
+              </p>
+            </div>
+            <label className="flex items-start gap-3 rounded-lg border border-stone-200 p-3">
+              <input
+                type="checkbox"
+                checked={understood}
+                onChange={(e) => setUnderstood(e.target.checked)}
+                className="mt-0.5 h-5 w-5 shrink-0 accent-red-700"
+              />
+              <span className="text-stone-800">הבנתי שהמחיקה סופית ואי אפשר לשחזר אותה</span>
+            </label>
+          </div>
+        )}
+
+        <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={busy}
+            className="h-12 flex-1 rounded-lg border border-stone-300 font-semibold text-stone-700"
+          >
+            ביטול
+          </button>
+          {impact && !blocked && (
+            <button
+              type="button"
+              onClick={async () => {
+                setBusy(true)
+                await onConfirm()
+                setBusy(false)
+              }}
+              disabled={!understood || busy}
+              className="flex h-12 flex-1 items-center justify-center gap-2 rounded-lg bg-red-700 font-bold text-white disabled:opacity-40"
+            >
+              <Trash2 size={17} />
+              {busy ? 'מוחק…' : 'מחק לצמיתות'}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function SuppliersClient({ rows }: { rows: SupplierRow[] }) {
   const router = useRouter()
+  const [deleting, setDeleting] = useState<SupplierRow | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   // 'new' while opening a supplier, a supplier id while editing one.
@@ -508,18 +644,7 @@ export default function SuppliersClient({ rows }: { rows: SupplierRow[] }) {
         'הפעולה נכשלה'
       )
     },
-    onDelete: (row) => {
-      if (
-        !confirm(
-          `למחוק לצמיתות את ${row.company_name}?\n` +
-            `${row.offer_count} המחירים שלו יימחקו, ומוצרים שרק הוא מוכר ייצאו מהקטלוג. אי אפשר לבטל.\n\n` +
-            'אם רק רוצים לעצור אותו — עדיף לחסום.'
-        )
-      ) {
-        return
-      }
-      void request(row.id, `/api/admin/suppliers?id=${row.id}`, { method: 'DELETE' }, 'המחיקה נכשלה')
-    },
+    onDelete: (row) => setDeleting(row),
   }
 
   return (
@@ -567,6 +692,22 @@ export default function SuppliersClient({ rows }: { rows: SupplierRow[] }) {
       )}
 
       {message && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{message}</p>}
+
+      {deleting && (
+        <DeleteDialog
+          row={deleting}
+          onCancel={() => setDeleting(null)}
+          onConfirm={async () => {
+            const ok = await request(
+              deleting.id,
+              `/api/admin/suppliers?id=${deleting.id}`,
+              { method: 'DELETE' },
+              'המחיקה נכשלה'
+            )
+            if (ok) setDeleting(null)
+          }}
+        />
+      )}
 
       {pending.length > 0 && (
         <section className="space-y-2">

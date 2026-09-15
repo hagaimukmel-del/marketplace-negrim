@@ -343,6 +343,65 @@ export async function PATCH(request: NextRequest) {
 }
 
 /**
+ * What deleting a supplier would take with it, worked out before anything is
+ * touched: their prices, the products nobody else sells (which go), and the
+ * products another supplier also sells (which stay).
+ */
+async function deletionImpact(supplierId: string) {
+  const supabase = getSupabaseAdmin()
+
+  const [{ count: lines }, { data: offers }] = await Promise.all([
+    supabase.from('order_items').select('id', { count: 'exact', head: true }).eq('supplier_id', supplierId),
+    supabase.from('supplier_offers').select('product_id, products(name_he)').eq('supplier_id', supplierId),
+  ])
+
+  const productIds = [...new Set((offers ?? []).map((offer) => offer.product_id))]
+  const { data: others } = productIds.length
+    ? await supabase
+        .from('supplier_offers')
+        .select('product_id')
+        .in('product_id', productIds)
+        .neq('supplier_id', supplierId)
+    : { data: [] as { product_id: string }[] }
+
+  const shared = new Set((others ?? []).map((row) => row.product_id))
+  const nameOf = new Map(
+    (offers ?? []).map((offer) => [
+      offer.product_id,
+      (offer.products as { name_he: string } | null)?.name_he ?? '',
+    ])
+  )
+
+  return {
+    orderLines: lines ?? 0,
+    offers: offers?.length ?? 0,
+    soleProducts: productIds
+      .filter((productId) => !shared.has(productId))
+      .map((productId) => ({ id: productId, name_he: nameOf.get(productId) ?? '' })),
+    sharedProducts: productIds.filter((productId) => shared.has(productId)).length,
+  }
+}
+
+/** The warning shown before a supplier is deleted. Reads only. */
+export async function GET(request: NextRequest) {
+  if (!(await isAdmin())) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const id = request.nextUrl.searchParams.get('impact')
+  if (!id) return NextResponse.json({ error: 'חסר מזהה ספק' }, { status: 400 })
+
+  const impact = await deletionImpact(id)
+  return NextResponse.json({
+    ok: true,
+    orderLines: impact.orderLines,
+    offers: impact.offers,
+    soleProducts: impact.soleProducts.map((product) => product.name_he),
+    sharedProducts: impact.sharedProducts,
+  })
+}
+
+/**
  * Remove a supplier for good, with their prices.
  *
  * Refused once they have order lines: those lines are the record of who sold
@@ -374,10 +433,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    const { data: offers } = await supabase
-      .from('supplier_offers')
-      .select('product_id')
-      .eq('supplier_id', id)
+    const impact = await deletionImpact(id)
 
     const { data: removed, error } = await supabase
       .from('suppliers')
@@ -389,26 +445,24 @@ export async function DELETE(request: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     if (!removed) return NextResponse.json({ error: 'הספק לא נמצא' }, { status: 404 })
 
-    // Offers went with the supplier. A product nobody sells any more is
-    // removed, or switched off if an old order still points at it.
-    const productIds = [...new Set((offers ?? []).map((offer) => offer.product_id))]
-    for (const productId of productIds) {
-      const { count } = await supabase
-        .from('supplier_offers')
-        .select('id', { count: 'exact', head: true })
-        .eq('product_id', productId)
-      if ((count ?? 0) > 0) continue
-
-      const { error: productError } = await supabase.from('products').delete().eq('id', productId)
+    // Their prices went with them (cascade). Products only they sold go too —
+    // or are switched off if something still points at them. A product another
+    // supplier also sells is never touched: it is that supplier's listing too.
+    for (const product of impact.soleProducts) {
+      const { error: productError } = await supabase.from('products').delete().eq('id', product.id)
       if (productError) {
         await supabase
           .from('products')
           .update({ is_active: false, updated_at: new Date().toISOString() })
-          .eq('id', productId)
+          .eq('id', product.id)
       }
     }
 
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({
+      ok: true,
+      deletedProducts: impact.soleProducts.length,
+      keptProducts: impact.sharedProducts,
+    })
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Failed' },

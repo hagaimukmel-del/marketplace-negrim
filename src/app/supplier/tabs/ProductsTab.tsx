@@ -5,7 +5,8 @@ import { Plus, Search, ImageOff, PackageOpen } from 'lucide-react'
 import { formatIls } from '@/lib/vat'
 import { unitLabel } from '@/lib/catalog'
 import ProductForm from './ProductForm'
-import type { CategoryOption, ProductItem } from '../types'
+import ProductPicker from './ProductPicker'
+import type { CatalogPick, CategoryOption, ProductItem } from '../types'
 import type { Notify } from '../SupplierApp'
 
 function Thumb({ product }: { product: ProductItem }) {
@@ -70,14 +71,18 @@ function ProductRow({ product, onOpen }: { product: ProductItem; onOpen: () => v
 export default function ProductsTab({
   products,
   categories,
+  catalog,
   notify,
 }: {
   products: ProductItem[]
   categories: CategoryOption[]
+  catalog: CatalogPick[]
   notify: Notify
 }) {
   const [query, setQuery] = useState('')
   const [editing, setEditing] = useState<ProductItem | 'new' | null>(null)
+  const [picking, setPicking] = useState(false)
+  const [attachTo, setAttachTo] = useState<CatalogPick | null>(null)
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -103,7 +108,7 @@ export default function ProductsTab({
           </p>
           <button
             type="button"
-            onClick={() => setEditing('new')}
+            onClick={() => setPicking(true)}
             className="mt-5 inline-flex h-12 items-center gap-2 rounded-lg bg-emerald-700 px-6 font-bold text-white"
           >
             <Plus size={18} />
@@ -129,7 +134,7 @@ export default function ProductsTab({
             </div>
             <button
               type="button"
-              onClick={() => setEditing('new')}
+              onClick={() => setPicking(true)}
               className="hidden h-11 shrink-0 items-center gap-2 rounded-xl bg-emerald-700 px-4 font-semibold text-white sm:flex"
             >
               <Plus size={17} />
@@ -159,7 +164,7 @@ export default function ProductsTab({
 
           <button
             type="button"
-            onClick={() => setEditing('new')}
+            onClick={() => setPicking(true)}
             aria-label="הוסף מוצר"
             className="fixed bottom-20 end-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-700 text-white shadow-lg sm:hidden"
           >
@@ -168,12 +173,33 @@ export default function ProductsTab({
         </>
       )}
 
+      {picking && (
+        <ProductPicker
+          catalog={catalog}
+          onPick={(item) => {
+            setPicking(false)
+            setAttachTo(item)
+            setEditing('new')
+          }}
+          onCreate={() => {
+            setPicking(false)
+            setAttachTo(null)
+            setEditing('new')
+          }}
+          onClose={() => setPicking(false)}
+        />
+      )}
+
       {editing && (
         <ProductForm
-          key={editing === 'new' ? 'new' : editing.offerId}
+          key={editing === 'new' ? `new-${attachTo?.productId ?? ''}` : editing.offerId}
           product={editing === 'new' ? null : editing}
+          attachTo={editing === 'new' ? attachTo : null}
           categories={categories}
-          onClose={() => setEditing(null)}
+          onClose={() => {
+            setEditing(null)
+            setAttachTo(null)
+          }}
           notify={notify}
         />
       )}

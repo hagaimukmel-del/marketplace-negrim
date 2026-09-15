@@ -65,6 +65,23 @@ export interface ProductItem {
   canEditProduct: boolean
 }
 
+/**
+ * A product already in the catalogue that this supplier does not sell yet.
+ * Never carries another supplier's price — only what the product is.
+ */
+export interface CatalogPick {
+  productId: string
+  name: string
+  nameEn: string | null
+  description: string | null
+  categoryId: string | null
+  categoryName: string | null
+  brand: string | null
+  mpn: string | null
+  baseUnit: string
+  imageUrl: string | null
+}
+
 export interface OrderLine {
   id: string
   name: string

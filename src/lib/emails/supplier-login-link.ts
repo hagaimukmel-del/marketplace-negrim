@@ -20,8 +20,25 @@ function escapeHtml(value: string): string {
     .replace(/"/g, '&quot;')
 }
 
+/** Israel time, "15.09 14:32" — makes each copy of this mail distinct. */
+function sentAt(): string {
+  return new Date().toLocaleString('he-IL', {
+    timeZone: 'Asia/Jerusalem',
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+/**
+ * Stamped with the time, because this mail is asked for repeatedly and each copy
+ * is identical. Gmail threads identical messages and folds the repeated body
+ * behind "•••" — button included — so a supplier asking a second time got what
+ * looked like an email with no way in.
+ */
 export function supplierLoginLinkSubject(): string {
-  return 'קישור הכניסה שלכם — שוק הנגרים'
+  return `קישור כניסה לשוק הנגרים · ${sentAt()}`
 }
 
 export function supplierLoginLinkHtml({
@@ -44,7 +61,7 @@ export function supplierLoginLinkHtml({
         <tr><td style="padding:20px">
           <div style="font:bold 20px ${FONT}">כניסה לממשק הספק</div>
           <p style="margin:12px 0 0">
-            ביקשתם קישור כניסה עבור <strong>${escapeHtml(companyName)}</strong>.
+            ביקשתם קישור כניסה עבור <strong>${escapeHtml(companyName)}</strong> · ${sentAt()}.
           </p>
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:18px">
             <tr><td align="center">
@@ -53,6 +70,10 @@ export function supplierLoginLinkHtml({
               </a>
             </td></tr>
           </table>
+          <p style="margin:12px 0 0;font-size:12px;color:#78716c">
+            הכפתור לא מופיע? הקישור עצמו:<br>
+            <a href="${link}" dir="ltr" style="color:#047857;word-break:break-all">${link}</a>
+          </p>
           <p style="margin:16px 0 0;font-size:13px;color:#78716c">
             לא ביקשתם? אפשר להתעלם מהמייל — בלי ללחוץ על הקישור שום דבר לא קורה.
           </p>

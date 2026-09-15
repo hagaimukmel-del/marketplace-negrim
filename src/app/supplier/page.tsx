@@ -4,6 +4,7 @@ import { getSessionSupplier } from '@/lib/supplier-auth'
 import SupplierApp from './SupplierApp'
 import {
   isTab,
+  type CatalogPick,
   type CategoryOption,
   type ProductItem,
   type SupplierOrder,
@@ -83,7 +84,7 @@ export default async function SupplierHome({
   const { tab } = await searchParams
   const supabase = getSupabaseAdmin()
 
-  const [{ data: offers }, { data: lines }, { data: categories }] = await Promise.all([
+  const [{ data: offers }, { data: lines }, { data: categories }, { data: catalogRows }] = await Promise.all([
     supabase
       .from('supplier_offers')
       .select(
@@ -105,6 +106,14 @@ export default async function SupplierHome({
       .select('id, name_he, parent_category_id')
       .order('sort_order')
       .order('name_he'),
+    // What already exists, so a supplier can say "I sell this too" instead of
+    // typing a duplicate. What it is — never what anyone else charges for it.
+    supabase
+      .from('products')
+      .select('id, name_he, name_en, description_he, category_id, brand, mpn, base_unit, image_url, categories(name_he)')
+      .eq('is_active', true)
+      .order('name_he')
+      .limit(3000),
   ])
 
   const myLines = (lines ?? []) as unknown as RawLine[]
@@ -195,6 +204,35 @@ export default async function SupplierHome({
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   )
 
+  const alreadySold = new Set(products.map((product) => product.productId))
+  const catalog: CatalogPick[] = (
+    (catalogRows ?? []) as unknown as {
+      id: string
+      name_he: string
+      name_en: string | null
+      description_he: string | null
+      category_id: string | null
+      brand: string | null
+      mpn: string | null
+      base_unit: string
+      image_url: string | null
+      categories: { name_he: string } | null
+    }[]
+  )
+    .filter((row) => !alreadySold.has(row.id))
+    .map((row) => ({
+      productId: row.id,
+      name: row.name_he,
+      nameEn: row.name_en,
+      description: row.description_he,
+      categoryId: row.category_id,
+      categoryName: row.categories?.name_he ?? null,
+      brand: row.brand,
+      mpn: row.mpn,
+      baseUnit: row.base_unit,
+      imageUrl: row.image_url,
+    }))
+
   const waiting = orders.filter((order) => order.status === 'pending').length
   const initialTab: Tab = isTab(tab) ? tab : waiting > 0 ? 'orders' : 'products'
 
@@ -221,6 +259,7 @@ export default async function SupplierHome({
       products={products}
       orders={orders}
       categories={(categories ?? []) as CategoryOption[]}
+      catalog={catalog}
     />
   )
 }

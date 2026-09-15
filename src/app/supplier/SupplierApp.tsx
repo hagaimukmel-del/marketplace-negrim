@@ -6,7 +6,7 @@ import OrdersTab from './tabs/OrdersTab'
 import ProductsTab from './tabs/ProductsTab'
 import BusinessTab from './tabs/BusinessTab'
 import TermsTab from './tabs/TermsTab'
-import type { CategoryOption, ProductItem, SupplierOrder, SupplierProfile, Tab } from './types'
+import type { CatalogPick, CategoryOption, ProductItem, SupplierOrder, SupplierProfile, Tab } from './types'
 
 export type Notify = (text: string, kind?: 'ok' | 'error') => void
 
@@ -91,12 +91,14 @@ export default function SupplierApp({
   products,
   orders,
   categories,
+  catalog,
 }: {
   initialTab: Tab
   profile: SupplierProfile
   products: ProductItem[]
   orders: SupplierOrder[]
   categories: CategoryOption[]
+  catalog: CatalogPick[]
 }) {
   const [tab, setTab] = useState<Tab>(initialTab)
   const [toast, setToast] = useState<{ text: string; kind: 'ok' | 'error' } | null>(null)
@@ -185,7 +187,7 @@ export default function SupplierApp({
       <div>
         {tab === 'orders' && <OrdersTab orders={orders} notify={notify} />}
         {tab === 'products' && (
-          <ProductsTab products={products} categories={categories} notify={notify} />
+          <ProductsTab products={products} categories={categories} catalog={catalog} notify={notify} />
         )}
         {tab === 'business' && <BusinessTab profile={profile} notify={notify} />}
         {tab === 'terms' && <TermsTab profile={profile} notify={notify} />}

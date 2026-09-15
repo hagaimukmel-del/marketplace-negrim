@@ -2,29 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import {
-  Check,
-  ChevronLeft,
-  Droplets,
-  Factory,
-  Hammer,
-  Layers,
-  Lock,
-  Minus,
-  Package,
-  PackageX,
-  Paintbrush,
-  Plus,
-  Ruler,
-  Search,
-  ShieldCheck,
-  ShoppingCart,
-  SprayCan,
-  TreePine,
-  Wrench,
-  X,
-  type LucideIcon,
-} from 'lucide-react'
+import { Check, ChevronLeft, Lock, Minus, PackageX, Plus, Search, ShieldCheck, ShoppingCart, X } from 'lucide-react'
+import CategoryIcon from '@/components/CategoryIcon'
 import { useCart } from '@/lib/cart-context'
 import { formatIls, withVat } from '@/lib/vat'
 import { unitLabel } from '@/lib/catalog'
@@ -62,24 +41,6 @@ export interface TopCategory {
   icon: string | null
   count: number
   children: { id: string; name: string; count: number }[]
-}
-
-const ICONS: Record<string, LucideIcon> = {
-  boards: Layers,
-  wood: TreePine,
-  edge: Ruler,
-  glue: Droplets,
-  hardware: Wrench,
-  finish: Paintbrush,
-  tools: Hammer,
-  machines: Factory,
-  care: SprayCan,
-  other: Package,
-}
-
-function CategoryIcon({ icon, size = 22 }: { icon: string | null; size?: number }) {
-  const Icon = (icon && ICONS[icon]) || Package
-  return <Icon size={size} strokeWidth={1.8} />
 }
 
 /**

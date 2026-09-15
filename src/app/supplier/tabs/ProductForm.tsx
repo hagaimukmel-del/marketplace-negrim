@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Camera, X, Trash2, Eye, EyeOff, Info } from 'lucide-react'
 import { formatIls, withVat } from '@/lib/vat'
 import { BASE_UNITS, unitLabel } from '@/lib/catalog'
-import { callApi, jsonInit, type CategoryOption, type ProductItem } from '../types'
+import { callApi, jsonInit, type CatalogPick, type CategoryOption, type ProductItem } from '../types'
 import type { Notify } from '../SupplierApp'
 
 /** The category tree as grouped options: each group selectable on its own. */
@@ -71,11 +71,14 @@ const INPUT =
  */
 export default function ProductForm({
   product,
+  attachTo = null,
   categories,
   onClose,
   notify,
 }: {
   product: ProductItem | null
+  /** A catalogue product this supplier is adding their own price to. */
+  attachTo?: CatalogPick | null
   categories: CategoryOption[]
   onClose: () => void
   notify: Notify
@@ -83,15 +86,17 @@ export default function ProductForm({
   const router = useRouter()
   const fileInput = useRef<HTMLInputElement>(null)
   const isNew = product === null
-  const canEditProduct = isNew || product.canEditProduct
+  const canEditProduct = product ? product.canEditProduct : !attachTo
+  // What the product is: from the supplier's own row, or from the catalogue.
+  const shared = product ?? attachTo
 
   const initial = {
-    name_he: product?.name ?? '',
-    category_id: product?.categoryId ?? '',
-    brand: product?.brand ?? '',
-    mpn: product?.mpn ?? '',
-    base_unit: product?.baseUnit ?? 'unit',
-    description_he: product?.description ?? '',
+    name_he: shared?.name ?? '',
+    category_id: shared?.categoryId ?? '',
+    brand: shared?.brand ?? '',
+    mpn: shared?.mpn ?? '',
+    base_unit: shared?.baseUnit ?? 'unit',
+    description_he: shared?.description ?? '',
     price: product ? String(product.price) : '',
     stock: product ? String(product.stock) : '',
     sku: product?.sku ?? '',
@@ -112,7 +117,8 @@ export default function ProductForm({
 
   const dirty = file !== null || JSON.stringify(form) !== snapshot
   const price = Number(form.price)
-  const imageShown = preview ?? (product?.imageUrl && !product.imageUrl.includes('drive.google.com') ? product.imageUrl : null)
+  const imageShown =
+    preview ?? (shared?.imageUrl && !shared.imageUrl.includes('drive.google.com') ? shared.imageUrl : null)
 
   const close = () => {
     if (dirty && !busy && !confirm('לצאת בלי לשמור את השינויים?')) return
@@ -159,7 +165,13 @@ export default function ProductForm({
         description_he: form.description_he,
       }
 
-      if (isNew) {
+      if (attachTo) {
+        await callApi(
+          '/api/supplier/products',
+          jsonInit('POST', { product_id: attachTo.productId, ...offerFields })
+        )
+        notify('המוצר נוסף לרשימה שלך, עם המחיר שלך')
+      } else if (isNew) {
         const created = await callApi<{ offer_id: string; merged: boolean }>(
           '/api/supplier/products',
           jsonInit('POST', { ...productFields, ...offerFields })
@@ -242,7 +254,9 @@ export default function ProductForm({
     >
       <div className="flex max-h-[94dvh] w-full flex-col rounded-t-2xl bg-white sm:max-w-xl sm:rounded-2xl">
         <header className="flex items-center justify-between border-b border-stone-200 px-4 py-3">
-          <h2 className="font-bold text-stone-900">{isNew ? 'מוצר חדש' : 'עריכת מוצר'}</h2>
+          <h2 className="font-bold text-stone-900">
+            {attachTo ? 'הוספה מהקטלוג' : isNew ? 'מוצר חדש' : 'עריכת מוצר'}
+          </h2>
           <button
             type="button"
             onClick={close}
@@ -257,8 +271,9 @@ export default function ProductForm({
           {!canEditProduct && (
             <p className="flex gap-2 rounded-lg bg-sky-50 p-3 text-sm text-sky-900">
               <Info size={17} className="mt-0.5 shrink-0" />
-              המוצר הזה משותף לספקים נוספים, ולכן השם, הקטגוריה והתמונה שלו נעולים. אתה שולט
-              במחיר, במלאי ובאריזה שלך.
+              {attachTo
+                ? 'המוצר כבר קיים באתר. מוסיפים אליו רק את המחיר, המלאי והאריזה שלך — השם, התמונה והקטגוריה משותפים לכל הספקים שמוכרים אותו.'
+                : 'המוצר הזה משותף לספקים נוספים, ולכן השם, הקטגוריה והתמונה שלו נעולים. אתה שולט במחיר, במלאי ובאריזה שלך.'}
             </p>
           )}
 
@@ -468,7 +483,7 @@ export default function ProductForm({
             disabled={busy}
             className="h-12 flex-1 rounded-lg bg-emerald-700 font-bold text-white disabled:opacity-60"
           >
-            {busy ? 'שומר…' : isNew ? 'הוסף מוצר' : 'שמור'}
+            {busy ? 'שומר…' : attachTo ? 'הוסף לרשימה שלי' : isNew ? 'הוסף מוצר' : 'שמור'}
           </button>
           <button
             type="button"
