@@ -22,6 +22,7 @@ const EMPTY = {
  */
 export default function SupplierJoinPage() {
   const [form, setForm] = useState(EMPTY)
+  const [acceptTerms, setAcceptTerms] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState<{ existing: boolean; message?: string } | null>(null)
@@ -37,7 +38,7 @@ export default function SupplierJoinPage() {
       const response = await fetch('/api/supplier-join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, accept_terms: acceptTerms }),
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'ההרשמה נכשלה')
@@ -177,11 +178,28 @@ export default function SupplierJoinPage() {
             />
           </label>
 
+          <label className="flex items-start gap-3 rounded-lg border border-stone-200 p-3">
+            <input
+              type="checkbox"
+              checked={acceptTerms}
+              onChange={(e) => setAcceptTerms(e.target.checked)}
+              required
+              className="mt-0.5 h-5 w-5 shrink-0 accent-emerald-700"
+            />
+            <span className="text-sm text-stone-800">
+              קראתי ואני מסכים/ה ל
+              <a href="/terms" target="_blank" rel="noreferrer" className="font-semibold text-emerald-800 underline">
+                תקנון ולתנאי השימוש לספקים
+              </a>{' '}
+              <span className="text-red-600">*</span>
+            </span>
+          </label>
+
           {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
           <button
             type="submit"
-            disabled={busy || !form.company_name || !form.business_id || !form.phone}
+            disabled={busy || !form.company_name || !form.business_id || !form.phone || !acceptTerms}
             className="h-12 w-full rounded-lg bg-emerald-700 font-bold text-white disabled:opacity-50"
           >
             {busy ? 'שולח…' : 'שלח בקשה'}

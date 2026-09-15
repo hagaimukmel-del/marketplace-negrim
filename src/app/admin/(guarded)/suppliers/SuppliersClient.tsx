@@ -2,7 +2,23 @@
 
 import { useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, X, RotateCcw, Phone, Mail, Plus, Pencil, Truck, ImagePlus, Trash2, Link2, Copy } from 'lucide-react'
+import {
+  Ban,
+  Check,
+  ChevronDown,
+  Copy,
+  ExternalLink,
+  ImagePlus,
+  Link2,
+  Mail,
+  Pencil,
+  Phone,
+  Plus,
+  RotateCcw,
+  Trash2,
+  Truck,
+  X,
+} from 'lucide-react'
 import { formatIls } from '@/lib/vat'
 import SupplierForm, { EMPTY_SUPPLIER, type SupplierFields } from './SupplierForm'
 
@@ -25,6 +41,10 @@ export interface SupplierRow {
   source: string
   created_at: string | null
   decided_at: string | null
+  payment_terms: string[] | null
+  terms_accepted_at: string | null
+  offer_count: number
+  order_count: number
 }
 
 /** The row as the form wants it: every field a string, nulls as empty. */
@@ -51,8 +71,7 @@ function toFields(row: SupplierRow): SupplierFields {
  *
  * Logos arrive in every aspect ratio there is, so the box is fixed and the
  * image is contained inside it rather than filling it — a wide logo cropped to
- * a square reads as a broken image. Most suppliers will never upload one, so
- * the fallback is the normal case and has to look deliberate.
+ * a square reads as a broken image.
  */
 function SupplierLogo({ row }: { row: SupplierRow }) {
   const [failed, setFailed] = useState(false)
@@ -62,7 +81,7 @@ function SupplierLogo({ row }: { row: SupplierRow }) {
     return (
       <div
         aria-hidden
-        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-sm font-bold text-stone-500"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-sm font-bold text-stone-500"
       >
         {initials}
       </div>
@@ -75,7 +94,7 @@ function SupplierLogo({ row }: { row: SupplierRow }) {
       src={row.logo_url}
       alt=""
       onError={() => setFailed(true)}
-      className="h-12 w-12 shrink-0 rounded-lg border border-stone-200 bg-white object-contain p-1"
+      className="h-11 w-11 shrink-0 rounded-lg border border-stone-200 bg-white object-contain p-1"
     />
   )
 }
@@ -90,12 +109,14 @@ const LABEL: Record<string, string> = {
   pending: 'ממתין לאישור',
   approved: 'מאושר',
   rejected: 'נדחה',
+  blocked: 'חסום',
 }
 
 const TONE: Record<string, string> = {
   pending: 'bg-amber-100 text-amber-900',
   approved: 'bg-emerald-100 text-emerald-900',
   rejected: 'bg-stone-200 text-stone-600',
+  blocked: 'bg-red-100 text-red-800',
 }
 
 function formatDate(value: string | null): string {
@@ -108,12 +129,8 @@ function formatDate(value: string | null): string {
 }
 
 /**
- * The approved supplier's way in, shown so it can be sent by hand.
- *
- * The approval already emails it, but an address can be wrong, a message can go
- * to spam, and somebody will want it read out over the phone. This is the only
- * place it can be found again — and it is a credential, so the card says what
- * holding it means rather than presenting it as a convenience.
+ * The approved supplier's way in, shown so it can be sent by hand — and opened
+ * from here to see their console exactly as they do.
  */
 function EntryLink({ token }: { token: string }) {
   const [copied, setCopied] = useState(false)
@@ -121,7 +138,7 @@ function EntryLink({ token }: { token: string }) {
     typeof window === 'undefined' ? `/supplier/enter/${token}` : `${window.location.origin}/supplier/enter/${token}`
 
   return (
-    <div className="mt-3 rounded-lg bg-stone-50 p-3">
+    <div className="mt-3 rounded-lg bg-white p-3">
       <div className="flex flex-wrap items-center gap-2">
         <p className="flex min-w-0 flex-1 items-center gap-2 text-xs text-stone-700">
           <Link2 size={14} className="shrink-0 text-stone-400" />
@@ -143,6 +160,15 @@ function EntryLink({ token }: { token: string }) {
           {copied ? <Check size={13} /> : <Copy size={13} />}
           {copied ? 'הועתק' : 'העתק'}
         </button>
+        <a
+          href={`/supplier/enter/${token}`}
+          target="_blank"
+          rel="noreferrer"
+          className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-xs font-semibold text-stone-700"
+        >
+          <ExternalLink size={13} />
+          פתח כספק
+        </a>
       </div>
       <p className="mt-1.5 text-xs text-stone-500">
         זו הכניסה שלהם, ואין סיסמה מאחוריה — מי שמחזיק בקישור יכול לשנות את המחירים שלהם.
@@ -151,169 +177,234 @@ function EntryLink({ token }: { token: string }) {
   )
 }
 
-function SupplierCard({
-  row,
-  busy,
-  onDecide,
-  onEdit,
-  onLogo,
-  onRemoveLogo,
-}: {
-  row: SupplierRow
-  busy: boolean
-  onDecide: (id: string, status: string) => void
+interface CardActions {
+  onDecide: (row: SupplierRow, status: string) => void
   onEdit: (id: string) => void
   onLogo: (id: string, file: File) => void
   onRemoveLogo: (id: string) => void
+  onDelete: (row: SupplierRow) => void
+}
+
+/**
+ * One supplier: a line with the essentials, opened to everything else.
+ *
+ * Closed, it answers "who, and is anything wrong" — status, how many products,
+ * how many orders. Open, it holds contact details, terms, the entry link and
+ * every action. Applications waiting on a decision start open, because that is
+ * the work on this screen.
+ */
+function SupplierCard({
+  row,
+  busy,
+  actions,
+}: {
+  row: SupplierRow
+  busy: boolean
+  actions: CardActions
 }) {
   const fileInput = useRef<HTMLInputElement>(null)
   const pending = row.status === 'pending'
+  const [open, setOpen] = useState(pending)
 
   return (
     <div
-      className={`rounded-xl border bg-white p-4 ${
-        pending ? 'border-amber-300' : 'border-stone-200'
+      className={`overflow-hidden rounded-xl border bg-white ${
+        pending ? 'border-amber-300' : row.status === 'blocked' ? 'border-red-200' : 'border-stone-200'
       }`}
     >
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="flex min-w-0 items-start gap-3">
-          <SupplierLogo row={row} />
-          <div className="min-w-0">
-          <p className="font-bold text-stone-900">{row.company_name}</p>
-          <p className="tnum text-sm text-stone-500">
-            ח.פ {row.business_id}
-            {row.city && ` · ${row.city}`}
-            {SOURCE_LABEL[row.source] && ` · ${SOURCE_LABEL[row.source]}`}
-          </p>
-          </div>
-        </div>
-        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${TONE[row.status]}`}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-3 p-3 text-start hover:bg-stone-50"
+      >
+        <SupplierLogo row={row} />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate font-bold text-stone-900">{row.company_name}</span>
+          <span className="tnum block truncate text-xs text-stone-500">
+            {row.city ?? 'ללא עיר'} · {row.offer_count} מוצרים · {row.order_count} הזמנות
+          </span>
+        </span>
+        <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${TONE[row.status] ?? ''}`}>
           {LABEL[row.status] ?? row.status}
         </span>
-      </div>
+        <ChevronDown size={17} className={`shrink-0 text-stone-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
 
-      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-stone-700">
-        {row.contact_name && <span>{row.contact_name}</span>}
-        {row.phone && (
-          <a href={`tel:${row.phone}`} className="flex items-center gap-1.5 hover:underline">
-            <Phone size={14} className="text-stone-400" />
-            <span className="tnum">{row.phone}</span>
-          </a>
-        )}
-        {row.email && (
-          <a href={`mailto:${row.email}`} className="flex items-center gap-1.5 hover:underline">
-            <Mail size={14} className="text-stone-400" />
-            {row.email}
-          </a>
-        )}
-      </div>
+      {open && (
+        <div className="border-t border-stone-100 bg-stone-50 p-4">
+          <p className="tnum text-sm text-stone-600">
+            ח.פ {row.business_id}
+            {SOURCE_LABEL[row.source] && ` · ${SOURCE_LABEL[row.source]}`}
+            {' · '}נרשם {formatDate(row.created_at)}
+            {row.decided_at && ` · הוחלט ${formatDate(row.decided_at)}`}
+          </p>
 
-      {row.sells_note && (
-        <p className="mt-3 rounded-lg bg-stone-50 p-3 text-sm text-stone-700">{row.sells_note}</p>
-      )}
+          <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-stone-700">
+            {row.contact_name && <span>{row.contact_name}</span>}
+            {row.phone && (
+              <a href={`tel:${row.phone}`} className="flex items-center gap-1.5 hover:underline">
+                <Phone size={14} className="text-stone-400" />
+                <span className="tnum">{row.phone}</span>
+              </a>
+            )}
+            {row.email && (
+              <a href={`mailto:${row.email}`} className="flex items-center gap-1.5 hover:underline">
+                <Mail size={14} className="text-stone-400" />
+                {row.email}
+              </a>
+            )}
+          </div>
 
-      {/* The terms a carpenter is held to. Blank ones are said out loud rather
-          than left off, because an unset minimum is a surprise at checkout. */}
-      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-stone-500">
-        <span className="flex items-center gap-1.5">
-          <Truck size={13} />
-          מינימום{' '}
-          <span className="tnum font-semibold text-stone-700">
-            {row.min_order_value_excl_vat ? formatIls(row.min_order_value_excl_vat) : 'לא הוגדר'}
-          </span>
-        </span>
-        <span>
-          אספקה{' '}
-          <span className="font-semibold text-stone-700">
-            {row.default_lead_time_days != null ? `${row.default_lead_time_days} ימים` : 'לא הוגדר'}
-          </span>
-        </span>
-        {row.pickup_address && <span>איסוף מ{row.pickup_address}</span>}
-      </div>
+          {row.sells_note && (
+            <p className="mt-3 rounded-lg bg-white p-3 text-sm text-stone-700">{row.sells_note}</p>
+          )}
 
-      {row.status === 'approved' && row.token && <EntryLink token={row.token} />}
-
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={() => onEdit(row.id)}
-          disabled={busy}
-          className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 px-3 text-sm font-semibold text-stone-700 disabled:opacity-50"
-        >
-          <Pencil size={15} />
-          ערוך
-        </button>
-
-        <input
-          ref={fileInput}
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/avif,image/svg+xml"
-          className="sr-only"
-          onChange={(event) => {
-            const file = event.target.files?.[0]
-            if (file) onLogo(row.id, file)
-            event.target.value = ''
-          }}
-        />
-        <button
-          type="button"
-          onClick={() => fileInput.current?.click()}
-          disabled={busy}
-          className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 px-3 text-sm font-semibold text-stone-700 disabled:opacity-50"
-        >
-          <ImagePlus size={15} />
-          {row.logo_url ? 'החלף לוגו' : 'לוגו'}
-        </button>
-
-        {row.logo_url && (
-          <button
-            type="button"
-            onClick={() => onRemoveLogo(row.id)}
-            disabled={busy}
-            className="flex h-10 items-center gap-1.5 rounded-lg px-2 text-sm text-stone-500 hover:bg-stone-100 disabled:opacity-50"
-          >
-            <Trash2 size={14} />
-            הסר
-          </button>
-        )}
-        {pending ? (
-          <>
-            <button
-              type="button"
-              onClick={() => onDecide(row.id, 'approved')}
-              disabled={busy}
-              className="flex h-10 items-center gap-2 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white disabled:opacity-50"
-            >
-              <Check size={16} />
-              אשר ספק
-            </button>
-            <button
-              type="button"
-              onClick={() => onDecide(row.id, 'rejected')}
-              disabled={busy}
-              className="flex h-10 items-center gap-2 rounded-lg border border-stone-300 px-4 text-sm font-semibold text-stone-700 disabled:opacity-50"
-            >
-              <X size={16} />
-              דחה
-            </button>
-          </>
-        ) : (
-          <>
-            <span className="text-xs text-stone-500">
-              הוחלט {formatDate(row.decided_at)} · נרשם {formatDate(row.created_at)}
+          {/* The terms a carpenter is held to. Blank ones are said out loud rather
+              than left off, because an unset minimum is a surprise at checkout. */}
+          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-stone-500">
+            <span className="flex items-center gap-1.5">
+              <Truck size={13} />
+              מינימום{' '}
+              <span className="tnum font-semibold text-stone-700">
+                {row.min_order_value_excl_vat ? formatIls(row.min_order_value_excl_vat) : 'לא הוגדר'}
+              </span>
             </span>
+            <span>
+              אספקה{' '}
+              <span className="font-semibold text-stone-700">
+                {row.default_lead_time_days != null ? `${row.default_lead_time_days} ימים` : 'לא הוגדר'}
+              </span>
+            </span>
+            <span>
+              תשלום{' '}
+              <span className="font-semibold text-stone-700">
+                {row.payment_terms?.length ? row.payment_terms.join(' / ') : 'לא הוגדר'}
+              </span>
+            </span>
+            {row.pickup_address && <span>איסוף מ{row.pickup_address}</span>}
+            <span>
+              תקנון{' '}
+              <span className="font-semibold text-stone-700">
+                {row.terms_accepted_at ? `אושר ${formatDate(row.terms_accepted_at)}` : 'עוד לא אישר'}
+              </span>
+            </span>
+          </div>
+
+          {row.status === 'approved' && row.token && <EntryLink token={row.token} />}
+
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {pending && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => actions.onDecide(row, 'approved')}
+                  disabled={busy}
+                  className="flex h-10 items-center gap-2 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  <Check size={16} />
+                  אשר ספק
+                </button>
+                <button
+                  type="button"
+                  onClick={() => actions.onDecide(row, 'rejected')}
+                  disabled={busy}
+                  className="flex h-10 items-center gap-2 rounded-lg border border-stone-300 bg-white px-4 text-sm font-semibold text-stone-700 disabled:opacity-50"
+                >
+                  <X size={16} />
+                  דחה
+                </button>
+              </>
+            )}
+
             <button
               type="button"
-              onClick={() => onDecide(row.id, 'pending')}
+              onClick={() => actions.onEdit(row.id)}
               disabled={busy}
-              className="ms-auto flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm text-stone-500 hover:bg-stone-100 disabled:opacity-50"
+              className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-stone-700 disabled:opacity-50"
             >
-              <RotateCcw size={14} />
-              החזר לבדיקה
+              <Pencil size={15} />
+              ערוך
             </button>
-          </>
-        )}
-      </div>
+
+            <input
+              ref={fileInput}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/avif,image/svg+xml"
+              className="sr-only"
+              onChange={(event) => {
+                const file = event.target.files?.[0]
+                if (file) actions.onLogo(row.id, file)
+                event.target.value = ''
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => fileInput.current?.click()}
+              disabled={busy}
+              className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-stone-700 disabled:opacity-50"
+            >
+              <ImagePlus size={15} />
+              {row.logo_url ? 'החלף לוגו' : 'לוגו'}
+            </button>
+            {row.logo_url && (
+              <button
+                type="button"
+                onClick={() => actions.onRemoveLogo(row.id)}
+                disabled={busy}
+                className="flex h-10 items-center gap-1.5 rounded-lg px-2 text-sm text-stone-500 hover:bg-stone-100 disabled:opacity-50"
+              >
+                <Trash2 size={14} />
+                הסר לוגו
+              </button>
+            )}
+
+            {row.status === 'approved' && (
+              <button
+                type="button"
+                onClick={() => actions.onDecide(row, 'blocked')}
+                disabled={busy}
+                className="flex h-10 items-center gap-1.5 rounded-lg border border-red-300 bg-white px-3 text-sm font-semibold text-red-800 disabled:opacity-50"
+              >
+                <Ban size={15} />
+                חסום
+              </button>
+            )}
+            {row.status === 'blocked' && (
+              <button
+                type="button"
+                onClick={() => actions.onDecide(row, 'approved')}
+                disabled={busy}
+                className="flex h-10 items-center gap-1.5 rounded-lg bg-emerald-700 px-3 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                <RotateCcw size={15} />
+                בטל חסימה
+              </button>
+            )}
+            {row.status === 'rejected' && (
+              <button
+                type="button"
+                onClick={() => actions.onDecide(row, 'pending')}
+                disabled={busy}
+                className="flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm text-stone-600 hover:bg-stone-100 disabled:opacity-50"
+              >
+                <RotateCcw size={14} />
+                החזר לבדיקה
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => actions.onDelete(row)}
+              disabled={busy}
+              className="ms-auto flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+            >
+              <Trash2 size={15} />
+              מחק מהאתר
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -336,6 +427,23 @@ export default function SuppliersClient({ rows }: { rows: SupplierRow[] }) {
     [rows]
   )
 
+  const request = async (id: string, url: string, init: RequestInit, fallback: string) => {
+    setBusy(id)
+    setMessage(null)
+    try {
+      const response = await fetch(url, init)
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.error || fallback)
+      router.refresh()
+      return true
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : fallback)
+      return false
+    } finally {
+      setBusy(null)
+    }
+  }
+
   const save = async (fields: SupplierFields) => {
     const creating = editing === 'new'
     setBusy(editing)
@@ -357,60 +465,61 @@ export default function SuppliersClient({ rows }: { rows: SupplierRow[] }) {
     }
   }
 
-  const uploadLogo = async (id: string, file: File) => {
-    setBusy(id)
-    setMessage(null)
-    try {
+  const actions: CardActions = {
+    onEdit: (id) => {
+      setEditing(id)
+      setFormError(null)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    },
+    onLogo: (id, file) => {
       const data = new FormData()
       data.append('id', id)
       data.append('file', file)
-      const response = await fetch('/api/admin/suppliers', { method: 'PATCH', body: data })
-      const result = await response.json()
-      if (!response.ok) throw new Error(result.error || 'ההעלאה נכשלה')
-      router.refresh()
-    } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'ההעלאה נכשלה')
-    } finally {
-      setBusy(null)
-    }
-  }
-
-  const removeLogo = async (id: string) => {
-    setBusy(id)
-    setMessage(null)
-    try {
-      const response = await fetch('/api/admin/suppliers', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, logo_url: null }),
-      })
-      const result = await response.json()
-      if (!response.ok) throw new Error(result.error || 'ההסרה נכשלה')
-      router.refresh()
-    } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'ההסרה נכשלה')
-    } finally {
-      setBusy(null)
-    }
-  }
-
-  const decide = async (id: string, status: string) => {
-    setBusy(id)
-    setMessage(null)
-    try {
-      const response = await fetch('/api/admin/suppliers', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status }),
-      })
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.error || 'הפעולה נכשלה')
-      router.refresh()
-    } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'הפעולה נכשלה')
-    } finally {
-      setBusy(null)
-    }
+      void request(id, '/api/admin/suppliers', { method: 'PATCH', body: data }, 'ההעלאה נכשלה')
+    },
+    onRemoveLogo: (id) =>
+      void request(
+        id,
+        '/api/admin/suppliers',
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, logo_url: null }),
+        },
+        'ההסרה נכשלה'
+      ),
+    onDecide: (row, status) => {
+      if (
+        status === 'blocked' &&
+        !confirm(
+          `לחסום את ${row.company_name}?\nהמוצרים שלו ייעלמו מהקטלוג והוא לא יוכל להיכנס. שום דבר לא נמחק, ואפשר לבטל בכל רגע.`
+        )
+      ) {
+        return
+      }
+      void request(
+        row.id,
+        '/api/admin/suppliers',
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: row.id, status }),
+        },
+        'הפעולה נכשלה'
+      )
+    },
+    onDelete: (row) => {
+      if (
+        !confirm(
+          `למחוק לצמיתות את ${row.company_name}?\n` +
+            `${row.offer_count} המחירים שלו יימחקו, ומוצרים שרק הוא מוכר ייצאו מהקטלוג. אי אפשר לבטל.\n\n` +
+            'אם רק רוצים לעצור אותו — עדיף לחסום.'
+        )
+      ) {
+        return
+      }
+      void request(row.id, `/api/admin/suppliers?id=${row.id}`, { method: 'DELETE' }, 'המחיקה נכשלה')
+    },
   }
 
   return (
@@ -419,8 +528,8 @@ export default function SuppliersClient({ rows }: { rows: SupplierRow[] }) {
         <div>
           <h1 className="text-xl font-bold text-stone-900">ספקים</h1>
           <p className="mt-1 text-sm text-stone-600">
-            ספק נרשם דרך <span className="font-mono text-xs">/supplier/join</span> ומחכה לאישור
-            שלך — או שאתה פותח אותו בעצמך, וזה כבר מאושר.
+            ספק נרשם דרך <span className="font-mono text-xs">/supplier/join</span> ומחכה לאישור שלך — או
+            שאתה פותח אותו בעצמך, וזה כבר מאושר. לחיצה על ספק פותחת את כל הפרטים.
           </p>
         </div>
         {editing === null && (
@@ -445,9 +554,7 @@ export default function SuppliersClient({ rows }: { rows: SupplierRow[] }) {
           key={editing}
           mode={editing === 'new' ? 'create' : 'edit'}
           initial={
-            editing === 'new'
-              ? EMPTY_SUPPLIER
-              : toFields(rows.find((row) => row.id === editing)!)
+            editing === 'new' ? EMPTY_SUPPLIER : toFields(rows.find((row) => row.id === editing)!)
           }
           busy={busy === editing}
           error={formError}
@@ -462,25 +569,15 @@ export default function SuppliersClient({ rows }: { rows: SupplierRow[] }) {
       {message && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{message}</p>}
 
       {pending.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="text-sm font-bold text-stone-900">
-            ממתינים לאישור ({pending.length})
-          </h2>
+        <section className="space-y-2">
+          <h2 className="text-sm font-bold text-stone-900">ממתינים לאישור ({pending.length})</h2>
           {pending.map((row) => (
-            <SupplierCard
-              key={row.id}
-              row={row}
-              busy={busy === row.id}
-              onDecide={decide}
-              onEdit={setEditing}
-              onLogo={uploadLogo}
-              onRemoveLogo={removeLogo}
-            />
+            <SupplierCard key={row.id} row={row} busy={busy === row.id} actions={actions} />
           ))}
         </section>
       )}
 
-      <section className="space-y-3">
+      <section className="space-y-2">
         <h2 className="text-sm font-bold text-stone-900">
           {pending.length > 0 ? `כל השאר (${decided.length})` : `ספקים (${decided.length})`}
         </h2>
@@ -490,15 +587,7 @@ export default function SuppliersClient({ rows }: { rows: SupplierRow[] }) {
           </p>
         ) : (
           decided.map((row) => (
-            <SupplierCard
-              key={row.id}
-              row={row}
-              busy={busy === row.id}
-              onDecide={decide}
-              onEdit={setEditing}
-              onLogo={uploadLogo}
-              onRemoveLogo={removeLogo}
-            />
+            <SupplierCard key={row.id} row={row} busy={busy === row.id} actions={actions} />
           ))
         )}
       </section>

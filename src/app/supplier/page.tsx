@@ -100,7 +100,11 @@ export default async function SupplierHome({
       )
       .eq('supplier_id', supplier.id)
       .limit(1000),
-    supabase.from('categories').select('id, name_he, parent_category_id').order('name_he'),
+    supabase
+      .from('categories')
+      .select('id, name_he, parent_category_id')
+      .order('sort_order')
+      .order('name_he'),
   ])
 
   const myLines = (lines ?? []) as unknown as RawLine[]

@@ -141,3 +141,76 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+/**
+ * Block or unblock a carpenter.
+ *
+ * A blocked carpenter keeps their row, their orders and their link — they just
+ * stop being let in: no prices, no orders, and /join refuses to hand the link
+ * back. Unblocking restores all of it exactly as it was.
+ */
+export async function PATCH(request: NextRequest) {
+  if (!(await isAdmin())) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  try {
+    const body = await request.json()
+    if (typeof body.id !== 'string' || typeof body.is_active !== 'boolean') {
+      return NextResponse.json({ error: 'בקשה לא תקינה' }, { status: 400 })
+    }
+
+    const { data, error } = await getSupabaseAdmin()
+      .from('carpenters')
+      .update({ is_active: body.is_active, updated_at: new Date().toISOString() })
+      .eq('id', body.id)
+      .select('id')
+      .maybeSingle()
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (!data) return NextResponse.json({ error: 'הנגרייה לא נמצאה' }, { status: 404 })
+
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Failed' },
+      { status: 500 }
+    )
+  }
+}
+
+/**
+ * Remove a carpenter for good.
+ *
+ * Their past orders stay — each one already holds the business name, phone and
+ * prices as they were — and only lose the link back to this row. Blocking is
+ * the reversible option; this is for someone who asked to be removed, or a row
+ * that should never have existed.
+ */
+export async function DELETE(request: NextRequest) {
+  if (!(await isAdmin())) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  try {
+    const id = request.nextUrl.searchParams.get('id')
+    if (!id) return NextResponse.json({ error: 'חסר מזהה' }, { status: 400 })
+
+    const { data, error } = await getSupabaseAdmin()
+      .from('carpenters')
+      .delete()
+      .eq('id', id)
+      .select('id')
+      .maybeSingle()
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (!data) return NextResponse.json({ error: 'הנגרייה לא נמצאה' }, { status: 404 })
+
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Failed' },
+      { status: 500 }
+    )
+  }
+}

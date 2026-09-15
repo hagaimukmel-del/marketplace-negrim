@@ -3,6 +3,7 @@ import 'server-only'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { cookies } from 'next/headers'
 import { getSupabaseAdmin } from './supabase-admin'
+import { isAdmin } from './admin-auth'
 
 /**
  * Who the carpenter is, in a form the server can check on any page.
@@ -110,6 +111,8 @@ export interface SessionCarpenter {
   contact_name: string | null
   phone: string | null
   city: string | null
+  terms_version: string | null
+  marketing_consent: boolean
 }
 
 /**
@@ -125,7 +128,7 @@ export async function getSessionCarpenter(): Promise<SessionCarpenter | null> {
 
   const { data } = await getSupabaseAdmin()
     .from('carpenters')
-    .select('id, token, business_name, contact_name, phone, city')
+    .select('id, token, business_name, contact_name, phone, city, terms_version, marketing_consent')
     .eq('id', id)
     .eq('is_active', true)
     .maybeSingle()
@@ -133,7 +136,15 @@ export async function getSessionCarpenter(): Promise<SessionCarpenter | null> {
   return data ?? null
 }
 
-/** Whether prices may be shown. One question, asked in one place. */
+/**
+ * Whether prices may be shown. One question, asked in one place.
+ *
+ * A registered, still-active carpenter — the cookie alone is not enough, or a
+ * blocked carpenter would keep seeing prices for the life of it. The operator
+ * sees them too: "the site as a carpenter sees it" is useless if it shows the
+ * page a stranger gets.
+ */
 export async function canSeePrices(): Promise<boolean> {
-  return (await getCarpenterId()) !== null
+  if (await getSessionCarpenter()) return true
+  return isAdmin()
 }

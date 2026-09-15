@@ -12,6 +12,8 @@ export default function JoinPage() {
   const [email, setEmail] = useState('')
   const [city, setCity] = useState('')
   const [address, setAddress] = useState('')
+  const [acceptTerms, setAcceptTerms] = useState(false)
+  const [marketing, setMarketing] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -30,6 +32,8 @@ export default function JoinPage() {
           email,
           address,
           city,
+          accept_terms: acceptTerms,
+          marketing_consent: marketing,
         }),
       })
       const data = await response.json()
@@ -139,11 +143,40 @@ export default function JoinPage() {
             />
           </label>
 
+          <label className="flex items-start gap-3 rounded-lg border border-stone-200 p-3">
+            <input
+              type="checkbox"
+              checked={acceptTerms}
+              onChange={(e) => setAcceptTerms(e.target.checked)}
+              required
+              className="mt-0.5 h-5 w-5 shrink-0 accent-emerald-700"
+            />
+            <span className="text-sm text-stone-800">
+              קראתי ואני מסכים/ה ל
+              <a href="/terms" target="_blank" rel="noreferrer" className="font-semibold text-emerald-800 underline">
+                תקנון ולמדיניות הפרטיות
+              </a>{' '}
+              <span className="text-red-600">*</span>
+            </span>
+          </label>
+
+          <label className="flex items-start gap-3 px-3">
+            <input
+              type="checkbox"
+              checked={marketing}
+              onChange={(e) => setMarketing(e.target.checked)}
+              className="mt-0.5 h-5 w-5 shrink-0 accent-emerald-700"
+            />
+            <span className="text-sm text-stone-600">
+              אשמח לקבל במייל מבצעים, עדכונים והזמנה להגרלות (לא חובה)
+            </span>
+          </label>
+
           {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
           <button
             type="submit"
-            disabled={busy || !businessName || !phone || !email || !address || !city}
+            disabled={busy || !businessName || !phone || !email || !address || !city || !acceptTerms}
             className="h-12 w-full rounded-lg bg-emerald-700 font-bold text-white disabled:opacity-50"
           >
             {busy ? 'רגע…' : 'קבל קישור אישי'}

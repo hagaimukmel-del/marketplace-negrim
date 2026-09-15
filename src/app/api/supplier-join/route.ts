@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { TERMS_VERSION } from '@/lib/terms'
 import { isTestName, sendEmail } from '@/lib/email'
 import {
   applicationReceivedHtml,
@@ -72,6 +73,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'כתובת מייל לא תקינה' }, { status: 400 })
     }
 
+    if (body.accept_terms !== true) {
+      return NextResponse.json({ error: 'צריך לאשר את התקנון' }, { status: 400 })
+    }
+
     const supabase = getSupabaseAdmin()
 
     // Matched before inserting so the applicant gets a sentence that fits their
@@ -112,6 +117,8 @@ export async function POST(request: NextRequest) {
       status: 'pending',
       source: 'self',
       is_verified: false,
+      terms_accepted_at: new Date().toISOString(),
+      terms_version: TERMS_VERSION,
     })
 
     if (error) {

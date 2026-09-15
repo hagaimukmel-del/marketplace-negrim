@@ -122,9 +122,12 @@ export type Database = {
           id: string
           is_active: boolean
           last_seen_at: string | null
+          marketing_consent: boolean
           notes: string | null
           phone: string | null
           source: string
+          terms_accepted_at: string | null
+          terms_version: string | null
           token: string
           updated_at: string
         }
@@ -139,9 +142,12 @@ export type Database = {
           id?: string
           is_active?: boolean
           last_seen_at?: string | null
+          marketing_consent?: boolean
           notes?: string | null
           phone?: string | null
           source?: string
+          terms_accepted_at?: string | null
+          terms_version?: string | null
           token?: string
           updated_at?: string
         }
@@ -156,9 +162,12 @@ export type Database = {
           id?: string
           is_active?: boolean
           last_seen_at?: string | null
+          marketing_consent?: boolean
           notes?: string | null
           phone?: string | null
           source?: string
+          terms_accepted_at?: string | null
+          terms_version?: string | null
           token?: string
           updated_at?: string
         }
@@ -167,30 +176,36 @@ export type Database = {
       categories: {
         Row: {
           created_at: string | null
+          icon: string | null
           id: string
           is_active: boolean | null
           name_ar: string | null
           name_en: string | null
           name_he: string
           parent_category_id: string | null
+          sort_order: number
         }
         Insert: {
           created_at?: string | null
+          icon?: string | null
           id?: string
           is_active?: boolean | null
           name_ar?: string | null
           name_en?: string | null
           name_he: string
           parent_category_id?: string | null
+          sort_order?: number
         }
         Update: {
           created_at?: string | null
+          icon?: string | null
           id?: string
           is_active?: boolean | null
           name_ar?: string | null
           name_en?: string | null
           name_he?: string
           parent_category_id?: string | null
+          sort_order?: number
         }
         Relationships: [
           {
@@ -574,6 +589,50 @@ export type Database = {
         }
         Relationships: []
       }
+      raffle_draws: {
+        Row: {
+          carpenter_id: string | null
+          drawn_at: string
+          id: string
+          included_test: boolean
+          notified_at: string | null
+          pool_size: number
+          prize: string | null
+          winner_email: string | null
+          winner_name: string
+        }
+        Insert: {
+          carpenter_id?: string | null
+          drawn_at?: string
+          id?: string
+          included_test?: boolean
+          notified_at?: string | null
+          pool_size: number
+          prize?: string | null
+          winner_email?: string | null
+          winner_name: string
+        }
+        Update: {
+          carpenter_id?: string | null
+          drawn_at?: string
+          id?: string
+          included_test?: boolean
+          notified_at?: string | null
+          pool_size?: number
+          prize?: string | null
+          winner_email?: string | null
+          winner_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raffle_draws_carpenter_id_fkey"
+            columns: ["carpenter_id"]
+            isOneToOne: false
+            referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       returns: {
         Row: {
           approved_by: string | null
@@ -818,6 +877,8 @@ export type Database = {
           sells_note: string | null
           source: string
           status: string
+          terms_accepted_at: string | null
+          terms_version: string | null
           token: string
           updated_at: string | null
           zip_code: string | null
@@ -844,6 +905,8 @@ export type Database = {
           sells_note?: string | null
           source?: string
           status?: string
+          terms_accepted_at?: string | null
+          terms_version?: string | null
           token?: string
           updated_at?: string | null
           zip_code?: string | null
@@ -870,6 +933,8 @@ export type Database = {
           sells_note?: string | null
           source?: string
           status?: string
+          terms_accepted_at?: string | null
+          terms_version?: string | null
           token?: string
           updated_at?: string | null
           zip_code?: string | null

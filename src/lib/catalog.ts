@@ -33,7 +33,7 @@ export interface Offer {
   pack_qty: number | null
   min_order_qty: number
   lead_time_days: number | null
-  suppliers?: { company_name: string } | null
+  suppliers?: { status?: string; company_name?: string } | null
 }
 
 export interface CatalogProduct {
@@ -49,8 +49,21 @@ export interface CatalogProduct {
   supplier_offers: Offer[]
 }
 
-export const OFFER_COLUMNS =
+const OFFER_FIELDS =
   'id, supplier_id, supplier_sku, price_excl_vat, stock_qty, pack_label, pack_qty, min_order_qty, lead_time_days'
+
+/**
+ * An offer, joined to its supplier's status.
+ *
+ * The join is only half of it: every read that uses this must also filter
+ * `.eq('supplier_offers.suppliers.status', 'approved')`. That is what takes a
+ * blocked supplier's prices out of the catalogue, the offer page and the order
+ * that gets written — without deleting them, so unblocking puts them back.
+ */
+export const OFFER_COLUMNS = `${OFFER_FIELDS}, suppliers!inner(status)`
+
+/** The filter that pairs with OFFER_COLUMNS. */
+export const LIVE_SUPPLIER_STATUS = 'approved'
 
 /**
  * `!inner` is what keeps a product with no live offer out of the catalogue.
@@ -67,7 +80,7 @@ export const CATALOG_COLUMNS =
  */
 export const CATALOG_COLUMNS_WITH_SUPPLIER =
   'id, name_he, name_en, description_he, image_url, category_id, brand, mpn, base_unit, ' +
-  `supplier_offers!inner(${OFFER_COLUMNS}, suppliers(company_name))`
+  `supplier_offers!inner(${OFFER_FIELDS}, suppliers!inner(status, company_name))`
 
 /**
  * Which offer the carpenter is shown.

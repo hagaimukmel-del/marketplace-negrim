@@ -1,5 +1,9 @@
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
+import { isAdmin } from '@/lib/admin-auth'
+import { acceptedCurrentTerms } from '@/lib/terms'
 import CarpenterNav from '@/components/CarpenterNav'
+import TermsGate from '@/components/TermsGate'
+import SiteFooter from '@/components/SiteFooter'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +17,8 @@ export const dynamic = 'force-dynamic'
  * admit it knew who they were.
  */
 export default async function OfferLayout({ children }: { children: React.ReactNode }) {
-  const carpenter = await getSessionCarpenter()
+  const [carpenter, admin] = await Promise.all([getSessionCarpenter(), isAdmin()])
+  const needsTerms = carpenter && !admin && !acceptedCurrentTerms(carpenter.terms_version)
 
   return (
     <>
@@ -21,6 +26,8 @@ export default async function OfferLayout({ children }: { children: React.ReactN
         session={carpenter ? { name: carpenter.business_name, token: carpenter.token } : null}
       />
       <main className="w-full flex-1">{children}</main>
+      <SiteFooter />
+      {needsTerms && <TermsGate role="carpenter" />}
     </>
   )
 }

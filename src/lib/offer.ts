@@ -171,6 +171,7 @@ export async function loadOfferPage(token: string): Promise<OfferPageData | null
         .in('id', wantedIds)
         .eq('is_active', true)
         .eq('supplier_offers.is_active', true)
+        .eq('supplier_offers.suppliers.status', 'approved')
     : { data: [] as unknown[] }
 
   const byId = new Map(
@@ -188,6 +189,7 @@ export async function loadOfferPage(token: string): Promise<OfferPageData | null
       .select(PRODUCT_COLUMNS)
       .eq('is_active', true)
       .eq('supplier_offers.is_active', true)
+      .eq('supplier_offers.suppliers.status', 'approved')
       .neq('id', campaign?.product_id ?? '00000000-0000-0000-0000-000000000000')
       .limit(6)
     // PostgREST cannot order on an embedded column, so the sort is here.

@@ -11,7 +11,7 @@ const LOGO_BUCKET = 'supplier-logos'
 const LOGO_MAX_BYTES = 2 * 1024 * 1024
 const LOGO_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/svg+xml']
 
-const DECISIONS = ['approved', 'rejected', 'pending'] as const
+const DECISIONS = ['approved', 'rejected', 'pending', 'blocked'] as const
 type Decision = (typeof DECISIONS)[number]
 
 function isDecision(value: unknown): value is Decision {
@@ -218,6 +218,13 @@ export async function PATCH(request: NextRequest) {
 
     const update: SupplierUpdate = { updated_at: new Date().toISOString() }
 
+    // What it was before, so unblocking a supplier does not send them the
+    // "you've been approved" welcome a second time.
+    const { data: before } =
+      body.status !== undefined
+        ? await getSupabaseAdmin().from('suppliers').select('status').eq('id', body.id).maybeSingle()
+        : { data: null }
+
     // ---- the decision ----
     if (body.status !== undefined) {
       if (!isDecision(body.status)) {
@@ -310,7 +317,9 @@ export async function PATCH(request: NextRequest) {
     // A rejection is deliberately silent: there is nothing useful to say that
     // does not invite an argument, and the operator can pick up the phone.
     let emailed = false
-    if (body.status === 'approved' && decided?.email && decided.token) {
+    const newlyApproved =
+      body.status === 'approved' && before?.status !== 'approved' && before?.status !== 'blocked'
+    if (newlyApproved && decided?.email && decided.token) {
       const result = await sendEmail({
         to: decided.email,
         subject: supplierApprovedSubject(),
@@ -325,6 +334,81 @@ export async function PATCH(request: NextRequest) {
     }
 
     return NextResponse.json({ ok: true, emailed })
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Failed' },
+      { status: 500 }
+    )
+  }
+}
+
+/**
+ * Remove a supplier for good, with their prices.
+ *
+ * Refused once they have order lines: those lines are the record of who sold
+ * what, and commission is calculated from them. A supplier who traded is
+ * blocked, not deleted. One who never sold anything — an application, a test,
+ * a duplicate — can go, and so can the products only they created, as long as
+ * nobody else sells them.
+ */
+export async function DELETE(request: NextRequest) {
+  if (!(await isAdmin())) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  try {
+    const id = request.nextUrl.searchParams.get('id')
+    if (!id) return NextResponse.json({ error: 'חסר מזהה ספק' }, { status: 400 })
+
+    const supabase = getSupabaseAdmin()
+
+    const { count: lines } = await supabase
+      .from('order_items')
+      .select('id', { count: 'exact', head: true })
+      .eq('supplier_id', id)
+
+    if ((lines ?? 0) > 0) {
+      return NextResponse.json(
+        { error: 'לספק הזה יש הזמנות, ולכן אי אפשר למחוק אותו. אפשר לחסום אותו במקום.' },
+        { status: 409 }
+      )
+    }
+
+    const { data: offers } = await supabase
+      .from('supplier_offers')
+      .select('product_id')
+      .eq('supplier_id', id)
+
+    const { data: removed, error } = await supabase
+      .from('suppliers')
+      .delete()
+      .eq('id', id)
+      .select('id')
+      .maybeSingle()
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (!removed) return NextResponse.json({ error: 'הספק לא נמצא' }, { status: 404 })
+
+    // Offers went with the supplier. A product nobody sells any more is
+    // removed, or switched off if an old order still points at it.
+    const productIds = [...new Set((offers ?? []).map((offer) => offer.product_id))]
+    for (const productId of productIds) {
+      const { count } = await supabase
+        .from('supplier_offers')
+        .select('id', { count: 'exact', head: true })
+        .eq('product_id', productId)
+      if ((count ?? 0) > 0) continue
+
+      const { error: productError } = await supabase.from('products').delete().eq('id', productId)
+      if (productError) {
+        await supabase
+          .from('products')
+          .update({ is_active: false, updated_at: new Date().toISOString() })
+          .eq('id', productId)
+      }
+    }
+
+    return NextResponse.json({ ok: true })
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Failed' },

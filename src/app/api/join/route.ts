@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { TERMS_VERSION } from '@/lib/terms'
 
 /**
  * Self sign-up for a carpenter.
@@ -47,6 +48,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'כתובת מייל לא תקינה' }, { status: 400 })
     }
 
+    // Nobody gets a link without accepting the terms first. Checked on the
+    // server, because a disabled button is a suggestion.
+    if (body.accept_terms !== true) {
+      return NextResponse.json({ error: 'צריך לאשר את התקנון' }, { status: 400 })
+    }
+    const acceptance = {
+      terms_accepted_at: new Date().toISOString(),
+      terms_version: TERMS_VERSION,
+      marketing_consent: body.marketing_consent === true,
+    }
+
     const supabase = getSupabaseAdmin()
 
     // Already known — from the operator's list or from an earlier submission.
@@ -54,7 +66,7 @@ export async function POST(request: NextRequest) {
     // split one business across two identities.
     const { data: existing } = await supabase
       .from('carpenters')
-      .select('token, is_active')
+      .select('id, token, is_active')
       .eq('phone', phone)
       .maybeSingle()
 
@@ -62,6 +74,8 @@ export async function POST(request: NextRequest) {
       if (!existing.is_active) {
         return NextResponse.json({ error: 'החשבון אינו פעיל. צור קשר.' }, { status: 403 })
       }
+      // They just ticked the box, so what they ticked is now the record.
+      await supabase.from('carpenters').update(acceptance).eq('id', existing.id)
       return NextResponse.json({ ok: true, token: existing.token, existing: true })
     }
 
@@ -87,6 +101,7 @@ export async function POST(request: NextRequest) {
         address,
         city,
         source: 'self',
+        ...acceptance,
       })
       .select('token')
       .single()

@@ -16,6 +16,7 @@ interface Product {
   id: string
   /** Null when nobody has priced this product yet. */
   offer_id: string | null
+  supplier_id: string | null
   sku: string | null
   name_he: string
   name_en: string | null
@@ -91,6 +92,10 @@ function Chip({
 
 function ProductRow({
   product,
+  rowKey,
+  siblings,
+  suppliers,
+  allProducts,
   categories,
   expanded,
   busy,
@@ -100,10 +105,14 @@ function ProductRow({
   onDelete,
 }: {
   product: Product
+  rowKey: string
+  siblings: Product[]
+  suppliers: Supplier[]
+  allProducts: ProductOption[]
   categories: Category[]
   expanded: boolean
   busy: boolean
-  onToggle: (id: string) => void
+  onToggle: (key: string) => void
   onSave: (id: string, body: Record<string, unknown>) => Promise<boolean>
   onUpload: (id: string, file: File) => void
   onDelete: (id: string, offerId: string | null) => void
@@ -123,7 +132,7 @@ function ProductRow({
       <div className="flex items-center gap-3 p-3">
         <button
           type="button"
-          onClick={() => onToggle(product.id)}
+          onClick={() => onToggle(rowKey)}
           aria-expanded={expanded}
           className="flex min-w-0 flex-1 items-center gap-3 text-start"
         >
@@ -143,6 +152,11 @@ function ProductRow({
                 <span className="rounded bg-amber-100 px-1 text-xs text-amber-900">בלי מק״ט</span>
               )}
               {product.supplier_name && ` · ${product.supplier_name}`}
+              {siblings.length > 1 && (
+                <span className="ms-1 rounded bg-emerald-50 px-1 text-xs font-semibold text-emerald-800">
+                  {siblings.length} ספקים
+                </span>
+              )}
               {product.categories?.name_he && ` · ${product.categories.name_he}`}
               {product.pack_label && ` · ${product.pack_label}`}
               {product.source === 'manual' && ' · ידני'}
@@ -169,6 +183,9 @@ function ProductRow({
           // actually stored rather than from stale local state.
           key={`${product.id}-${product.name_he}-${product.sku}-${price}-${product.stock_qty}`}
           product={product}
+          siblings={siblings}
+          suppliers={suppliers}
+          allProducts={allProducts}
           categories={categories}
           busy={busy}
           fileInput={fileInput}
@@ -183,6 +200,9 @@ function ProductRow({
 
 function EditPanel({
   product,
+  siblings,
+  suppliers,
+  allProducts,
   categories,
   busy,
   fileInput,
@@ -191,6 +211,9 @@ function EditPanel({
   onDelete,
 }: {
   product: Product
+  siblings: Product[]
+  suppliers: Supplier[]
+  allProducts: ProductOption[]
   categories: Category[]
   busy: boolean
   fileInput: React.RefObject<HTMLInputElement | null>
@@ -441,6 +464,13 @@ function EditPanel({
           ערוך בגיליון. מק״ט ותמונה שתעלה כאן נשמרים.
         </p>
       )}
+
+      <SupplierLinks
+        product={product}
+        siblings={siblings}
+        suppliers={suppliers}
+        allProducts={allProducts}
+      />
     </div>
   )
 }
@@ -500,6 +530,243 @@ function CategoryOptions({ categories }: { categories: Category[] }) {
 interface Supplier {
   id: string
   company_name: string
+}
+
+interface ProductOption {
+  id: string
+  name_he: string
+}
+
+/**
+ * Who sells this product, and the two ways to change that.
+ *
+ * "Link a supplier" puts a second company's price on the same product — the
+ * Cleaner that Itamir and a dealer in Holon both sell becomes one product with
+ * two prices, and the carpenter sees the better one. "Merge" is the repair for
+ * when the second supplier already created their own copy under another name:
+ * their price moves onto the right product and the duplicate goes away.
+ */
+function SupplierLinks({
+  product,
+  siblings,
+  suppliers,
+  allProducts,
+}: {
+  product: Product
+  siblings: Product[]
+  suppliers: Supplier[]
+  allProducts: ProductOption[]
+}) {
+  const router = useRouter()
+  const [mode, setMode] = useState<'idle' | 'link' | 'move'>('idle')
+  const [supplierId, setSupplierId] = useState('')
+  const [price, setPrice] = useState('')
+  const [stock, setStock] = useState('0')
+  const [sku, setSku] = useState('')
+  const [search, setSearch] = useState('')
+  const [targetId, setTargetId] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const offers = siblings.filter((row) => row.offer_id)
+  const taken = new Set(offers.map((row) => row.supplier_id))
+  const available = suppliers.filter((supplier) => !taken.has(supplier.id))
+
+  const matches = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return allProducts
+      .filter((option) => option.id !== product.id && (!q || option.name_he.toLowerCase().includes(q)))
+      .slice(0, 50)
+  }, [allProducts, product.id, search])
+
+  const send = async (method: 'POST' | 'PATCH', body: Record<string, unknown>) => {
+    setBusy(true)
+    setError(null)
+    try {
+      const response = await fetch('/api/admin/offers', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.error || 'הפעולה נכשלה')
+      setMode('idle')
+      setSupplierId('')
+      setPrice('')
+      setSku('')
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'הפעולה נכשלה')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const move = () => {
+    const target = allProducts.find((option) => option.id === targetId)
+    if (!target || !product.offer_id) return
+    const ok = confirm(
+      `להעביר את המחיר של ${product.supplier_name ?? 'הספק'} אל "${target.name_he}"?\n` +
+        'אם לא יישאר למוצר הנוכחי אף ספק — הוא יוסר מהקטלוג.'
+    )
+    if (ok) void send('PATCH', { offer_id: product.offer_id, product_id: targetId })
+  }
+
+  return (
+    <div className="mt-4 rounded-lg border border-stone-200 bg-white p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-bold text-stone-900">ספקים שמוכרים את המוצר ({offers.length})</p>
+        <div className="flex flex-wrap gap-2">
+          {available.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setMode(mode === 'link' ? 'idle' : 'link')}
+              className="flex h-9 items-center gap-1.5 rounded-lg border border-emerald-700 px-3 text-xs font-semibold text-emerald-800"
+            >
+              <Plus size={14} />
+              קשר ספק נוסף
+            </button>
+          )}
+          {product.offer_id && (
+            <button
+              type="button"
+              onClick={() => setMode(mode === 'move' ? 'idle' : 'move')}
+              className="h-9 rounded-lg border border-stone-300 px-3 text-xs font-semibold text-stone-700"
+            >
+              מזג למוצר קיים
+            </button>
+          )}
+        </div>
+      </div>
+
+      {offers.length > 0 && (
+        <ul className="mt-2 divide-y divide-stone-100 text-sm">
+          {offers.map((row) => (
+            <li key={row.offer_id} className="flex flex-wrap items-center gap-x-3 py-1.5">
+              <span className="font-medium text-stone-900">{row.supplier_name ?? 'ספק'}</span>
+              <span className="tnum text-stone-700">{formatIls(Number(row.base_price_excl_vat))}</span>
+              <span className="tnum text-xs text-stone-500">מלאי {row.stock_qty ?? 0}</span>
+              {!row.is_active && <span className="text-xs text-stone-400">מוסתר</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {mode === 'link' && (
+        <div className="mt-3 grid gap-2 rounded-lg bg-stone-50 p-3 sm:grid-cols-4">
+          <select
+            value={supplierId}
+            onChange={(e) => setSupplierId(e.target.value)}
+            aria-label="ספק"
+            className="h-10 rounded-lg border border-stone-300 bg-white px-2 text-sm sm:col-span-4"
+          >
+            <option value="">בחר ספק…</option>
+            {available.map((supplier) => (
+              <option key={supplier.id} value={supplier.id}>
+                {supplier.company_name}
+              </option>
+            ))}
+          </select>
+          <input
+            inputMode="decimal"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            placeholder={`מחיר ל${unitLabel(product.base_unit)} ללא מע״מ`}
+            aria-label="מחיר"
+            className="tnum h-10 rounded-lg border border-stone-300 bg-white px-3 text-sm sm:col-span-2"
+          />
+          <input
+            inputMode="numeric"
+            value={stock}
+            onChange={(e) => setStock(e.target.value)}
+            placeholder="מלאי"
+            aria-label="מלאי"
+            className="tnum h-10 rounded-lg border border-stone-300 bg-white px-3 text-sm"
+          />
+          <input
+            value={sku}
+            onChange={(e) => setSku(e.target.value)}
+            placeholder="מק״ט הספק"
+            aria-label="מק״ט הספק"
+            className="tnum h-10 rounded-lg border border-stone-300 bg-white px-3 text-sm"
+          />
+          <div className="flex gap-2 sm:col-span-4">
+            <button
+              type="button"
+              onClick={() =>
+                send('POST', {
+                  product_id: product.id,
+                  supplier_id: supplierId,
+                  price_excl_vat: price,
+                  stock_qty: stock,
+                  supplier_sku: sku,
+                })
+              }
+              disabled={busy || !supplierId || !price}
+              className="h-10 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {busy ? 'מקשר…' : 'קשר'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('idle')}
+              className="h-10 rounded-lg px-3 text-sm text-stone-600 hover:bg-stone-100"
+            >
+              ביטול
+            </button>
+          </div>
+        </div>
+      )}
+
+      {mode === 'move' && (
+        <div className="mt-3 space-y-2 rounded-lg bg-stone-50 p-3">
+          <p className="text-xs text-stone-600">
+            המחיר של <strong>{product.supplier_name ?? 'הספק'}</strong> יעבור למוצר שתבחר. שימושי כשספק יצר
+            עותק של מוצר שכבר קיים.
+          </p>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="חפש את המוצר הנכון"
+            aria-label="חיפוש מוצר יעד"
+            className="h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm"
+          />
+          <select
+            value={targetId}
+            onChange={(e) => setTargetId(e.target.value)}
+            size={Math.min(6, Math.max(2, matches.length))}
+            aria-label="מוצר יעד"
+            className="w-full rounded-lg border border-stone-300 bg-white p-1 text-sm"
+          >
+            {matches.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.name_he}
+              </option>
+            ))}
+          </select>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={move}
+              disabled={busy || !targetId}
+              className="h-10 rounded-lg bg-stone-900 px-4 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {busy ? 'ממזג…' : 'מזג'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('idle')}
+              className="h-10 rounded-lg px-3 text-sm text-stone-600 hover:bg-stone-100"
+            >
+              ביטול
+            </button>
+          </div>
+        </div>
+      )}
+
+      {error && <p className="mt-2 rounded-lg bg-red-50 p-2 text-sm text-red-700">{error}</p>}
+    </div>
+  )
 }
 
 const EMPTY = {
@@ -739,6 +1006,22 @@ export default function ProductsClient({
   const missingImage = products.filter((p) => !hasUsableImage(p.image_url)).length
   const missingSku = products.filter((p) => !p.sku).length
 
+  // A product sold by two suppliers is two rows here, one per price. These tie
+  // the rows back together.
+  const byProduct = useMemo(() => {
+    const map = new Map<string, Product[]>()
+    for (const row of products) map.set(row.id, [...(map.get(row.id) ?? []), row])
+    return map
+  }, [products])
+
+  const allProducts = useMemo<ProductOption[]>(
+    () =>
+      [...byProduct.values()]
+        .map((rows) => ({ id: rows[0].id, name_he: rows[0].name_he }))
+        .sort((a, b) => a.name_he.localeCompare(b.name_he, 'he')),
+    [byProduct]
+  )
+
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase()
     return products.filter((p) => {
@@ -863,19 +1146,28 @@ export default function ProductsClient({
         </p>
       ) : (
         <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
-          {shown.map((product) => (
+          {shown.map((product) => {
+            const rowKey = product.offer_id ?? product.id
+            return (
             <ProductRow
-              key={product.id}
+              key={rowKey}
               product={product}
+              rowKey={rowKey}
+              siblings={byProduct.get(product.id) ?? [product]}
+              suppliers={suppliers}
+              allProducts={allProducts}
               categories={categories}
-              expanded={openId === product.id}
+              // A freshly created product is opened by its product id, since
+              // its offer id is not known to the form that made it.
+              expanded={openId === rowKey || openId === product.id}
               busy={busy === product.id}
-              onToggle={(id) => setOpenId(openId === id ? null : id)}
+              onToggle={(key) => setOpenId(openId === key ? null : key)}
               onSave={save}
               onUpload={upload}
               onDelete={remove}
             />
-          ))}
+            )
+          })}
         </div>
       )}
 

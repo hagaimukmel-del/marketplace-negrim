@@ -87,6 +87,7 @@ export async function POST(request: NextRequest) {
       .in('id', items.map((item) => item.id))
       .eq('is_active', true)
       .eq('supplier_offers.is_active', true)
+      .eq('supplier_offers.suppliers.status', 'approved')
 
     if (productError) {
       return NextResponse.json({ error: productError.message }, { status: 500 })

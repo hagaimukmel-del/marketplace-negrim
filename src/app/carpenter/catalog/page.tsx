@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
-import { canSeePrices } from '@/lib/carpenter-auth'
+import { getSessionCarpenter } from '@/lib/carpenter-auth'
+import { isAdmin } from '@/lib/admin-auth'
 import {
   OFFER_COLUMNS,
   bestOffer,
@@ -10,9 +11,18 @@ import {
   priceOf,
   type CatalogProduct,
 } from '@/lib/catalog'
-import CatalogClient, { type CatalogItem } from './CatalogClient'
+import CatalogClient, { type CatalogItem, type TopCategory } from './CatalogClient'
 
 export const dynamic = 'force-dynamic'
+
+interface CategoryRow {
+  id: string
+  name_he: string
+  parent_category_id: string | null
+  sort_order: number
+  icon: string | null
+  is_active: boolean | null
+}
 
 /**
  * The catalogue, with prices for whoever has earned them.
@@ -30,11 +40,22 @@ export const dynamic = 'force-dynamic'
  * Suppliers are the other half of why. No supplier joins a marketplace that
  * publishes their wholesale prices to their retail customers and their
  * competitors. The lock is a condition of recruiting them, not a UX flourish.
+ *
+ * The category tree is resolved here too: every product is placed under its
+ * main category and sub-category, and the client only draws the hub and the
+ * branches.
  */
-export default async function CatalogPage() {
-  const [showPrices, { data }, { data: allCategories }] = await Promise.all([
-    canSeePrices(),
-    getSupabaseAdmin()
+export default async function CatalogPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ c?: string; s?: string }>
+}) {
+  const supabase = getSupabaseAdmin()
+  const [{ c, s }, carpenter, admin, { data }, { data: allCategories }] = await Promise.all([
+    searchParams,
+    getSessionCarpenter(),
+    isAdmin(),
+    supabase
       .from('products')
       .select(
         'id, name_he, name_en, description_he, image_url, category_id, brand, mpn, base_unit, ' +
@@ -42,24 +63,29 @@ export default async function CatalogPage() {
       )
       .eq('is_active', true)
       .eq('supplier_offers.is_active', true)
+      .eq('supplier_offers.suppliers.status', 'approved')
       .limit(1000),
-    getSupabaseAdmin().from('categories').select('id, name_he, parent_category_id'),
+    supabase.from('categories').select('id, name_he, parent_category_id, sort_order, icon, is_active'),
   ])
 
-  // Fetched flat and resolved here rather than embedded: a self-referencing
-  // join for ten rows is more machinery than the problem deserves.
-  const categoryById = new Map(
-    (allCategories ?? []).map((c) => [c.id, c as { id: string; name_he: string; parent_category_id: string | null }])
-  )
+  // A registered carpenter, or the operator looking at the site as one.
+  const showPrices = Boolean(carpenter) || admin
 
-  /** The top-level group a category belongs to, or the category itself. */
-  function groupOf(categoryId: string | null): string {
-    const category = categoryId ? categoryById.get(categoryId) : undefined
-    if (!category) return 'אחר'
-    const parent = category.parent_category_id
-      ? categoryById.get(category.parent_category_id)
-      : undefined
-    return parent?.name_he ?? category.name_he
+  const categories = ((allCategories ?? []) as CategoryRow[]).filter((row) => row.is_active !== false)
+  const byId = new Map(categories.map((row) => [row.id, row]))
+  const bySort = (a: CategoryRow, b: CategoryRow) =>
+    a.sort_order - b.sort_order || a.name_he.localeCompare(b.name_he, 'he')
+
+  // Uncategorised products still need a home, and "other" is the honest one.
+  const fallbackTop = categories.find((row) => !row.parent_category_id && row.icon === 'other') ?? null
+
+  function placeOf(categoryId: string | null): { top: string | null; sub: string | null } {
+    const category = categoryId ? byId.get(categoryId) : undefined
+    if (!category) return { top: fallbackTop?.id ?? null, sub: null }
+    if (category.parent_category_id && byId.has(category.parent_category_id)) {
+      return { top: category.parent_category_id, sub: category.id }
+    }
+    return { top: category.id, sub: null }
   }
 
   const products = ((data ?? []) as unknown as (CatalogProduct & {
@@ -70,6 +96,7 @@ export default async function CatalogPage() {
 
   const items: CatalogItem[] = products.map((product) => {
     const offer = bestOffer(product)
+    const place = placeOf(product.category_id)
     return {
       id: product.id,
       name_he: product.name_he,
@@ -84,11 +111,45 @@ export default async function CatalogPage() {
       inStock: inStock(product),
       supplierCount: offerCount(product),
       packLabel: packLabel(offer, product.base_unit),
-      category: product.categories?.name_he ?? 'ללא קטגוריה',
-      group: groupOf(product.category_id),
+      category: product.categories?.name_he ?? null,
+      topId: place.top,
+      subId: place.sub,
       price: showPrices ? priceOf(product) : null,
     }
   })
 
-  return <CatalogClient items={items} showPrices={showPrices} />
+  const tree: TopCategory[] = categories
+    .filter((row) => !row.parent_category_id)
+    .sort(bySort)
+    .map((top) => ({
+      id: top.id,
+      name: top.name_he,
+      icon: top.icon,
+      count: items.filter((item) => item.topId === top.id).length,
+      children: categories
+        .filter((row) => row.parent_category_id === top.id)
+        .sort(bySort)
+        .map((child) => ({
+          id: child.id,
+          name: child.name_he,
+          count: items.filter((item) => item.subId === child.id).length,
+        })),
+    }))
+
+  const initialTop = tree.some((top) => top.id === c) ? c! : null
+  const initialSub =
+    initialTop && tree.find((top) => top.id === initialTop)!.children.some((child) => child.id === s)
+      ? s!
+      : null
+
+  return (
+    <CatalogClient
+      items={items}
+      tree={tree}
+      showPrices={showPrices}
+      adminView={admin && !carpenter}
+      initialTop={initialTop}
+      initialSub={initialSub}
+    />
+  )
 }

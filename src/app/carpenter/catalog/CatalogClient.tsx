@@ -1,8 +1,30 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Search, ShoppingCart, Minus, Plus, PackageX, Lock, Check } from 'lucide-react'
+import {
+  Check,
+  ChevronLeft,
+  Droplets,
+  Factory,
+  Hammer,
+  Layers,
+  Lock,
+  Minus,
+  Package,
+  PackageX,
+  Paintbrush,
+  Plus,
+  Ruler,
+  Search,
+  ShieldCheck,
+  ShoppingCart,
+  SprayCan,
+  TreePine,
+  Wrench,
+  X,
+  type LucideIcon,
+} from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { formatIls, withVat } from '@/lib/vat'
 import { unitLabel } from '@/lib/catalog'
@@ -26,19 +48,46 @@ export interface CatalogItem {
   inStock: boolean
   supplierCount: number
   packLabel: string | null
-  category: string
-  /** The top-level group. Chips filter on this; headings show the category. */
-  group: string
+  /** The category the product is filed under, as written. */
+  category: string | null
+  topId: string | null
+  /** Null when the product is filed on the main category itself. */
+  subId: string | null
   price: number | null
+}
+
+export interface TopCategory {
+  id: string
+  name: string
+  icon: string | null
+  count: number
+  children: { id: string; name: string; count: number }[]
+}
+
+const ICONS: Record<string, LucideIcon> = {
+  boards: Layers,
+  wood: TreePine,
+  edge: Ruler,
+  glue: Droplets,
+  hardware: Wrench,
+  finish: Paintbrush,
+  tools: Hammer,
+  machines: Factory,
+  care: SprayCan,
+  other: Package,
+}
+
+function CategoryIcon({ icon, size = 22 }: { icon: string | null; size?: number }) {
+  const Icon = (icon && ICONS[icon]) || Package
+  return <Icon size={size} strokeWidth={1.8} />
 }
 
 /**
  * Product image with a designed fallback.
  *
  * Every image_url from the sheet is a Google Drive share link, which does not
- * render when hot-linked — the request hangs, then fails. Rendering the <img>
- * anyway left a 350px empty grey box on every row. Skip the request and show
- * the product's initials instead.
+ * render when hot-linked — the request hangs, then fails. Skip the request and
+ * show the product's initials instead.
  */
 function Thumb({ item }: { item: CatalogItem }) {
   const [failed, setFailed] = useState(false)
@@ -200,63 +249,137 @@ function ProductRowItem({
   )
 }
 
-const ALL = 'הכל'
+/**
+ * A main category on the hub: its icon, its size, and the first few branches
+ * that actually hold something — so the tile says what is inside before it is
+ * opened. An empty one is still shown, quieter, because the structure is part of
+ * what tells a supplier where their goods go and a carpenter what is coming.
+ */
+function HubTile({ top, onOpen }: { top: TopCategory; onOpen: () => void }) {
+  const filled = top.children.filter((child) => child.count > 0)
+  const preview = (filled.length > 0 ? filled : top.children).slice(0, 3).map((child) => child.name)
+  const empty = top.count === 0
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className={`group flex h-full flex-col rounded-2xl border p-3.5 text-start transition-colors sm:p-4 ${
+        empty
+          ? 'border-stone-200 bg-stone-50'
+          : 'border-stone-200 bg-white hover:border-emerald-600 hover:shadow-sm'
+      }`}
+    >
+      <span className="flex items-start justify-between gap-2">
+        <span
+          className={`flex h-11 w-11 items-center justify-center rounded-xl ${
+            empty ? 'bg-stone-200/70 text-stone-400' : 'bg-emerald-50 text-emerald-800'
+          }`}
+        >
+          <CategoryIcon icon={top.icon} />
+        </span>
+        <span
+          className={`tnum rounded-full px-2 py-0.5 text-xs font-semibold ${
+            empty ? 'text-stone-400' : 'bg-stone-100 text-stone-600'
+          }`}
+        >
+          {empty ? 'בקרוב' : top.count}
+        </span>
+      </span>
+      <span className={`mt-3 font-bold leading-tight ${empty ? 'text-stone-500' : 'text-stone-900'}`}>
+        {top.name}
+      </span>
+      {preview.length > 0 && (
+        <span className="mt-1 line-clamp-2 text-xs leading-snug text-stone-500">
+          {preview.join(' · ')}
+          {top.children.length > preview.length && ' …'}
+        </span>
+      )}
+    </button>
+  )
+}
 
 export default function CatalogClient({
   items,
+  tree,
   showPrices,
+  adminView,
+  initialTop,
+  initialSub,
 }: {
   items: CatalogItem[]
+  tree: TopCategory[]
   showPrices: boolean
+  adminView: boolean
+  initialTop: string | null
+  initialSub: string | null
 }) {
   const cart = useCart()
   const [quantities, setQuantities] = useState<Record<string, number>>({})
   const [query, setQuery] = useState('')
-  const [category, setCategory] = useState(ALL)
-
-  // Counted over everything, not over what is currently filtered — a chip that
-  // changes its own number when you press it is disorienting.
-  const groups = useMemo(() => {
-    const counts = new Map<string, number>()
-    for (const item of items) counts.set(item.group, (counts.get(item.group) ?? 0) + 1)
-    return [...counts.entries()].sort((a, b) => b[1] - a[1])
-  }, [items])
-
-  // A carpenter arrives knowing what he wants. Search is the primary way in;
-  // the categories are for the times he is browsing rather than looking.
-  //
-  // Search deliberately ignores the chosen category: typing something that is
-  // filtered out should find it, not return nothing and leave you wondering.
-  const shown = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (q) {
-      return items.filter((item) =>
-        [item.name_he, item.name_en, item.description_he, item.brand, item.mpn, ...item.skus].some(
-          (field) => field?.toLowerCase().includes(q)
-        )
-      )
-    }
-    if (category === ALL) return items
-    return items.filter((item) => item.group === category)
-  }, [items, query, category])
+  const [topId, setTopId] = useState<string | null>(initialTop)
+  const [subId, setSubId] = useState<string | null>(initialSub)
 
   /**
-   * With no filter on, the list is broken up by category so it can be scanned
-   * rather than scrolled. Inside one category, or while searching, the headings
-   * would just be noise.
+   * Where you are lives in the address, pushed without a server round trip, so
+   * the phone's back button goes up one level — from MDF to boards to the hub —
+   * instead of leaving the catalogue.
    */
-  const sections = useMemo(() => {
-    if (query.trim()) return [{ name: null, items: shown }]
-    const byCategory = new Map<string, CatalogItem[]>()
-    for (const item of shown) {
-      const existing = byCategory.get(item.category)
-      if (existing) existing.push(item)
-      else byCategory.set(item.category, [item])
+  const go = (nextTop: string | null, nextSub: string | null = null) => {
+    setTopId(nextTop)
+    setSubId(nextSub)
+    setQuery('')
+    const params = new URLSearchParams()
+    if (nextTop) params.set('c', nextTop)
+    if (nextSub) params.set('s', nextSub)
+    const search = params.toString()
+    window.history.pushState(null, '', search ? `?${search}` : window.location.pathname)
+    window.scrollTo({ top: 0 })
+  }
+
+  useEffect(() => {
+    const onPop = () => {
+      const params = new URLSearchParams(window.location.search)
+      setTopId(params.get('c'))
+      setSubId(params.get('s'))
     }
-    return [...byCategory.entries()]
-      .sort((a, b) => b[1].length - a[1].length)
-      .map(([name, list]) => ({ name, items: list }))
-  }, [shown, query])
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
+
+  const top = tree.find((node) => node.id === topId) ?? null
+  const sub = top?.children.find((child) => child.id === subId) ?? null
+
+  // A carpenter arrives knowing what he wants. Search is the primary way in and
+  // looks across everything, wherever you are in the tree: typing something
+  // that is filtered out should find it, not return nothing.
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return null
+    return items.filter((item) =>
+      [item.name_he, item.name_en, item.description_he, item.brand, item.mpn, item.category, ...item.skus].some(
+        (field) => field?.toLowerCase().includes(q)
+      )
+    )
+  }, [items, query])
+
+  const inTop = useMemo(
+    () => (top ? items.filter((item) => item.topId === top.id) : []),
+    [items, top]
+  )
+
+  /** Inside a main category with no branch chosen, the list is split by branch. */
+  const sections = useMemo(() => {
+    if (!top) return []
+    if (sub) return [{ id: sub.id, name: null as string | null, items: inTop.filter((item) => item.subId === sub.id) }]
+    const general = inTop.filter((item) => !item.subId)
+    return [
+      ...top.children
+        .map((child) => ({ id: child.id, name: child.name as string | null, items: inTop.filter((item) => item.subId === child.id) }))
+        .filter((section) => section.items.length > 0),
+      ...(general.length > 0 ? [{ id: 'general', name: top.children.length > 0 ? 'כללי' : null, items: general }] : []),
+    ]
+  }, [top, sub, inTop])
 
   const setQty = (id: string, qty: number) =>
     setQuantities((prev) => ({ ...prev, [id]: Math.max(1, qty) }))
@@ -275,16 +398,32 @@ export default function CatalogClient({
     setQuantities((prev) => ({ ...prev, [item.id]: 1 }))
   }
 
+  const list = (rows: CatalogItem[]) => (
+    <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+      {rows.map((item) => (
+        <ProductRowItem
+          key={item.id}
+          item={item}
+          qty={quantities[item.id] ?? 1}
+          onChange={setQty}
+          onAdd={add}
+        />
+      ))}
+    </div>
+  )
+
+  const filledChildren = top?.children.filter((child) => child.count > 0) ?? []
+  const emptyChildren = top?.children.filter((child) => child.count === 0) ?? []
+  const generalCount = inTop.filter((item) => !item.subId).length
+
   return (
-    <div className="mx-auto max-w-3xl px-4 py-5">
-      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-        <h1 className="text-xl font-bold text-stone-900">קטלוג</h1>
-        <p className="text-sm text-stone-500">
-          {shown.length === items.length
-            ? `${items.length} מוצרים`
-            : `${shown.length} מתוך ${items.length}`}
+    <div className="pb-4">
+      {adminView && (
+        <p className="mb-3 flex items-center gap-2 rounded-lg bg-amber-100 px-3 py-2 text-xs font-semibold text-amber-900">
+          <ShieldCheck size={15} className="shrink-0" />
+          מצב אדמין — המחירים גלויים לך כי אתה מחובר כמנהל. מבקר לא רשום רואה מנעול.
         </p>
-      </div>
+      )}
 
       {!showPrices && (
         <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
@@ -302,34 +441,31 @@ export default function CatalogClient({
         </div>
       )}
 
-      {/* Sticky, because the point of it is to stop the scrolling. */}
-      <div className="sticky top-14 z-30 -mx-4 mb-3 overflow-x-auto bg-stone-50 px-4 py-2">
-        <div className="flex gap-2">
-          {[[ALL, items.length] as const, ...groups].map(([name, count]) => {
-            const active = category === name
-            return (
-              <button
-                key={name}
-                type="button"
-                onClick={() => {
-                  setCategory(name)
-                  setQuery('')
-                }}
-                className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors ${
-                  active
-                    ? 'border-stone-900 bg-stone-900 text-white'
-                    : 'border-stone-300 bg-white text-stone-700'
-                }`}
-              >
-                {name}
-                <span className={`tnum text-xs ${active ? 'text-stone-300' : 'text-stone-400'}`}>
-                  {count}
-                </span>
-              </button>
-            )
-          })}
-        </div>
-      </div>
+      {/* Breadcrumb: always one tap back up the tree. */}
+      <nav aria-label="מיקום בקטלוג" className="mb-2 flex min-h-8 flex-wrap items-center gap-1 text-sm">
+        {top ? (
+          <>
+            <button type="button" onClick={() => go(null)} className="font-medium text-emerald-800 hover:underline">
+              קטלוג
+            </button>
+            <ChevronLeft size={14} className="text-stone-400" />
+            {sub ? (
+              <>
+                <button type="button" onClick={() => go(top.id)} className="font-medium text-emerald-800 hover:underline">
+                  {top.name}
+                </button>
+                <ChevronLeft size={14} className="text-stone-400" />
+                <span className="font-semibold text-stone-900">{sub.name}</span>
+              </>
+            ) : (
+              <span className="font-semibold text-stone-900">{top.name}</span>
+            )}
+          </>
+        ) : (
+          <h1 className="text-xl font-bold text-stone-900">קטלוג</h1>
+        )}
+        <span className="tnum ms-auto text-xs text-stone-500">{items.length} מוצרים באתר</span>
+      </nav>
 
       <div className="relative mb-4">
         <Search
@@ -342,42 +478,125 @@ export default function CatalogClient({
           onChange={(e) => setQuery(e.target.value)}
           placeholder="חפש מוצר, מותג או מק״ט"
           aria-label="חיפוש בקטלוג"
-          className="h-12 w-full rounded-xl border border-stone-300 bg-white ps-10 pe-3 text-base"
+          className="h-12 w-full rounded-xl border border-stone-300 bg-white ps-10 pe-10 text-base"
         />
+        {query && (
+          <button
+            type="button"
+            onClick={() => setQuery('')}
+            aria-label="נקה חיפוש"
+            className="absolute top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-stone-400 hover:bg-stone-100"
+            style={{ insetInlineEnd: '0.25rem' }}
+          >
+            <X size={17} />
+          </button>
+        )}
       </div>
 
-      {shown.length === 0 ? (
-        <div className="rounded-xl border border-stone-200 bg-white p-10 text-center">
-          <p className="font-semibold text-stone-900">לא נמצא מוצר בשם הזה</p>
-          <p className="mt-1 text-sm text-stone-600">
-            אם אתה צריך משהו שאינו בקטלוג — כתוב לנו ונשיג אותו.
-          </p>
+      {results ? (
+        results.length === 0 ? (
+          <div className="rounded-xl border border-stone-200 bg-white p-10 text-center">
+            <p className="font-semibold text-stone-900">לא נמצא מוצר בשם הזה</p>
+            <p className="mt-1 text-sm text-stone-600">
+              אם אתה צריך משהו שאינו בקטלוג — כתוב לנו ונשיג אותו.
+            </p>
+          </div>
+        ) : (
+          <section>
+            <h2 className="tnum mb-2 text-sm font-bold text-stone-900">{results.length} תוצאות</h2>
+            {list(results)}
+          </section>
+        )
+      ) : !top ? (
+        // The hub: every main category at once, so the whole shape of the
+        // catalogue is visible before the first tap.
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
+          {tree.map((node) => (
+            <HubTile key={node.id} top={node} onOpen={() => go(node.id)} />
+          ))}
         </div>
       ) : (
-        <div className="space-y-5">
-          {sections.map((section) => (
-            <section key={section.name ?? 'all'}>
-              {section.name && (
-                <h2 className="mb-2 flex items-baseline gap-2 text-sm font-bold text-stone-900">
-                  {section.name}
-                  <span className="tnum text-xs font-normal text-stone-400">
-                    {section.items.length}
-                  </span>
-                </h2>
-              )}
-              <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
-                {section.items.map((item) => (
-                  <ProductRowItem
-                    key={item.id}
-                    item={item}
-                    qty={quantities[item.id] ?? 1}
-                    onChange={setQty}
-                    onAdd={add}
-                  />
-                ))}
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800">
+              <CategoryIcon icon={top.icon} size={24} />
+            </span>
+            <div className="min-w-0">
+              <h1 className="text-xl font-bold leading-tight text-stone-900">{sub?.name ?? top.name}</h1>
+              <p className="tnum text-sm text-stone-500">
+                {sub ? `${sub.count} מוצרים ב${top.name}` : top.count > 0 ? `${top.count} מוצרים` : 'עוד אין מוצרים'}
+              </p>
+            </div>
+          </div>
+
+          {/* The branches. Sticky, because the point of them is to stop the scrolling. */}
+          {(filledChildren.length > 0 || generalCount > 0) && (
+            <div className="sticky top-14 z-30 -mx-4 overflow-x-auto bg-stone-50/95 px-4 py-2 backdrop-blur">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => go(top.id)}
+                  aria-pressed={!sub}
+                  className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-semibold ${
+                    !sub ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-300 bg-white text-stone-700'
+                  }`}
+                >
+                  הכל
+                  <span className={`tnum text-xs ${!sub ? 'text-stone-300' : 'text-stone-400'}`}>{top.count}</span>
+                </button>
+                {filledChildren.map((child) => {
+                  const active = sub?.id === child.id
+                  return (
+                    <button
+                      key={child.id}
+                      type="button"
+                      onClick={() => go(top.id, child.id)}
+                      aria-pressed={active}
+                      className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-semibold ${
+                        active ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-300 bg-white text-stone-700'
+                      }`}
+                    >
+                      {child.name}
+                      <span className={`tnum text-xs ${active ? 'text-stone-300' : 'text-stone-400'}`}>
+                        {child.count}
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
-            </section>
-          ))}
+            </div>
+          )}
+
+          {top.count === 0 ? (
+            <div className="rounded-xl border border-dashed border-stone-300 bg-white p-8 text-center">
+              <p className="font-semibold text-stone-900">הקטגוריה הזו מתמלאת בקרוב</p>
+              <p className="mt-1 text-sm text-stone-600">
+                ספקים מצטרפים כל הזמן. מוכרים {top.name}?{' '}
+                <Link href="/supplier/join" className="font-semibold text-emerald-800 underline">
+                  הצטרפו כספק
+                </Link>
+              </p>
+            </div>
+          ) : (
+            sections.map((section) => (
+              <section key={section.id}>
+                {section.name && (
+                  <h2 className="mb-2 flex items-baseline gap-2 text-sm font-bold text-stone-900">
+                    {section.name}
+                    <span className="tnum text-xs font-normal text-stone-400">{section.items.length}</span>
+                  </h2>
+                )}
+                {list(section.items)}
+              </section>
+            ))
+          )}
+
+          {!sub && emptyChildren.length > 0 && (
+            <p className="text-xs leading-relaxed text-stone-500">
+              <span className="font-semibold text-stone-600">בקרוב ב{top.name}: </span>
+              {emptyChildren.map((child) => child.name).join(' · ')}
+            </p>
+          )}
         </div>
       )}
     </div>
