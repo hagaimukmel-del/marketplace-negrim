@@ -121,7 +121,7 @@ const COLUMNS =
  *
  * The signature proves which id the browser holds; it cannot prove the supplier
  * is still approved. A rejected supplier must stop being able to edit prices
- * the moment they are rejected, not thirty days later when their cookie lapses.
+ * the moment they are rejected, not months later when their cookie lapses.
  */
 export async function getSessionSupplier(): Promise<SessionSupplier | null> {
   const id = await getSupplierId()
