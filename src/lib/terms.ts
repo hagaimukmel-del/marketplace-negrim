@@ -6,10 +6,10 @@
  * next time they come in — "accepted the terms" means nothing once the terms
  * are different.
  */
-export const TERMS_VERSION = '2026-09-15'
+export const TERMS_VERSION = '2026-09-16'
 
-/** Shown at the top of the terms page. */
-export const TERMS_UPDATED_LABEL = '15 בספטמבר 2026'
+/** Shown at the top of the terms page. 16.09: the Metzion section was added. */
+export const TERMS_UPDATED_LABEL = '16 בספטמבר 2026'
 
 export function acceptedCurrentTerms(version: string | null | undefined): boolean {
   return version === TERMS_VERSION

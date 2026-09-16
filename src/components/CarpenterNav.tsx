@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutGrid, ClipboardList, ShoppingCart, CircleUser, LogOut } from 'lucide-react'
+import { LayoutGrid, ClipboardList, ShoppingCart, CircleUser, LogOut, Recycle } from 'lucide-react'
 import { useState } from 'react'
 import { useCart } from '@/lib/cart-context'
 import { forgetCarpenter } from '@/lib/carpenter-session'
@@ -11,6 +11,7 @@ import Logo from '@/components/brand/Logo'
 
 const LINKS = [
   { href: '/carpenter/catalog', label: 'קטלוג', Icon: LayoutGrid },
+  { href: '/carpenter/metzion', label: 'מציאון', Icon: Recycle },
   { href: '/carpenter/orders', label: 'הזמנות', Icon: ClipboardList },
 ]
 

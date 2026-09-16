@@ -217,6 +217,131 @@ export type Database = {
           },
         ]
       }
+      metzion_listings: {
+        Row: {
+          carpenter_id: string
+          category: string
+          city: string
+          condition: string
+          contact_name: string
+          contact_phone: string
+          created_at: string
+          deal_type: string
+          description: string | null
+          expires_at: string
+          id: string
+          images: string[]
+          price_per_unit: number | null
+          quantity: number
+          regions: string[]
+          removed_reason: string | null
+          sold_at: string | null
+          status: string
+          title: string
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          carpenter_id: string
+          category: string
+          city: string
+          condition: string
+          contact_name: string
+          contact_phone: string
+          created_at?: string
+          deal_type: string
+          description?: string | null
+          expires_at?: string
+          id?: string
+          images: string[]
+          price_per_unit?: number | null
+          quantity: number
+          regions?: string[]
+          removed_reason?: string | null
+          sold_at?: string | null
+          status?: string
+          title: string
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          carpenter_id?: string
+          category?: string
+          city?: string
+          condition?: string
+          contact_name?: string
+          contact_phone?: string
+          created_at?: string
+          deal_type?: string
+          description?: string | null
+          expires_at?: string
+          id?: string
+          images?: string[]
+          price_per_unit?: number | null
+          quantity?: number
+          regions?: string[]
+          removed_reason?: string | null
+          sold_at?: string | null
+          status?: string
+          title?: string
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metzion_listings_carpenter_id_fkey"
+            columns: ["carpenter_id"]
+            isOneToOne: false
+            referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      metzion_reports: {
+        Row: {
+          created_at: string
+          id: string
+          listing_id: string
+          note: string | null
+          reason: string
+          reporter_id: string | null
+          resolved_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_id: string
+          note?: string | null
+          reason: string
+          reporter_id?: string | null
+          resolved_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_id?: string
+          note?: string | null
+          reason?: string
+          reporter_id?: string | null
+          resolved_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metzion_reports_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "metzion_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metzion_reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       offer_events: {
         Row: {
           campaign_id: string | null

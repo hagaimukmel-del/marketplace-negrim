@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Check, ChevronLeft, Lock, Minus, PackageX, Plus, Search, ShieldCheck, ShoppingCart, X } from 'lucide-react'
+import { Check, ChevronLeft, Lock, Minus, PackageX, Plus, Recycle, Search, ShieldCheck, ShoppingCart, X } from 'lucide-react'
 import CategoryIcon from '@/components/CategoryIcon'
 import { useCart } from '@/lib/cart-context'
 import { formatIls, withVat } from '@/lib/vat'
@@ -471,10 +471,26 @@ export default function CatalogClient({
       ) : !top ? (
         // The hub: every main category at once, so the whole shape of the
         // catalogue is visible before the first tap.
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
-          {tree.map((node) => (
-            <HubTile key={node.id} top={node} onOpen={() => go(node.id)} />
-          ))}
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
+            {tree.map((node) => (
+              <HubTile key={node.id} top={node} onOpen={() => go(node.id)} />
+            ))}
+          </div>
+          {/* The board of carpenters for carpenters, one tap from the catalogue. */}
+          <Link
+            href="/carpenter/metzion"
+            className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 hover:border-emerald-600"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-700 text-white">
+              <Recycle size={22} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-bold text-emerald-950">מציאון</span>
+              <span className="block text-sm text-emerald-900">עודפי חומר, פרזול ומכונות — מנגרים לנגרים, למכירה או בחינם</span>
+            </span>
+            <ChevronLeft size={18} className="shrink-0 text-emerald-700" />
+          </Link>
         </div>
       ) : (
         <div className="space-y-4">

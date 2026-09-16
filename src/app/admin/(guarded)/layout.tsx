@@ -27,9 +27,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // Counted on every admin page rather than only on the screens they belong to:
   // work waiting on the operator should follow them around the console.
   const supabase = getSupabaseAdmin()
-  const [{ count: pendingOrders }, { count: pendingSuppliers }] = await Promise.all([
+  const [{ count: pendingOrders }, { count: pendingSuppliers }, { count: openReports }] = await Promise.all([
     supabase.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
     supabase.from('suppliers').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+    supabase.from('metzion_reports').select('id', { count: 'exact', head: true }).is('resolved_at', null),
   ])
 
   const nav: NavItem[] = [
@@ -41,6 +42,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: '/admin/campaigns', label: 'קמפיינים' },
     { href: '/admin/suppliers', label: 'ספקים', count: pendingSuppliers ?? 0 },
     { href: '/admin/carpenters', label: 'נגריות' },
+    { href: '/admin/metzion', label: 'מציאון', count: openReports ?? 0 },
   ]
 
   return (
