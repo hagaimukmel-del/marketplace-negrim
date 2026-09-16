@@ -37,6 +37,12 @@
   the carpenter. Order status values reflect fulfilment, never payment.
 - **An order is a purchase order (הזמנת רכש), not an invoice.** Store prices excl. VAT; VAT is
   indicative display only. Never render a document that could be mistaken for a חשבונית.
+- **Two databases (since 2026-09-16).** Production `marketplace-negrim` (ihburmhtcfhwlairyfyf) and
+  staging `marketplace-negrim-staging` (dyueyfmuhwvpgocbypqz). Local `.env.local` points at
+  STAGING; the production copy is `.env.prod.local` (Next never loads it). Test on staging, never on
+  production rows. Every migration goes to both: `npm run db:push:staging` first, then
+  `npm run db:push` (production, the linked project). Staging sets `NEXT_PUBLIC_ENV_LABEL` (yellow
+  strip) and `EMAIL_REDIRECT_ALL=true` (all mail to the test inbox).
 - **Amounts are snapshots.** Store `unit_price` at time of order and never recompute from the
   current price. The supplier's confirmed amount — not the submitted amount — is the basis for
   any commission calculation.

@@ -75,7 +75,10 @@ export async function sendEmail({
   isTest?: boolean
 }): Promise<SendResult> {
   const apiKey = process.env.RESEND_API_KEY
-  const testRecipient = isTest ? process.env.EMAIL_TEST_RECIPIENT : undefined
+  // In the staging environment every business is a test business, whatever its
+  // name: nothing sent from there may reach a real inbox.
+  const redirectAll = process.env.EMAIL_REDIRECT_ALL === 'true'
+  const testRecipient = isTest || redirectAll ? process.env.EMAIL_TEST_RECIPIENT : undefined
 
   const recipient = testRecipient || to
   const body = testRecipient && testRecipient !== to ? banner(to) + html : html

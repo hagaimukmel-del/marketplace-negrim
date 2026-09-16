@@ -46,6 +46,12 @@ export default function RootLayout({
   return (
     <html lang="he" dir="rtl" className="h-full">
       <body className="min-h-full flex flex-col bg-stone-50 text-stone-900 antialiased">
+        {/* Set only on staging, so a test screen is never mistaken for the live site. */}
+        {process.env.NEXT_PUBLIC_ENV_LABEL && (
+          <div className="bg-amber-400 px-4 py-1 text-center text-xs font-bold text-amber-950">
+            {process.env.NEXT_PUBLIC_ENV_LABEL} — נתונים לבדיקה בלבד, לא האתר החי
+          </div>
+        )}
         <AuthProvider>
           <CartProvider>
             <CheckoutProvider>{children}</CheckoutProvider>

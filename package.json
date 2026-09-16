@@ -14,6 +14,7 @@
     "verify": "npm run type-check && npm run lint && npm run audit:dependencies",
     "db:link": "supabase link --project-ref ihburmhtcfhwlairyfyf",
     "db:push": "supabase db push",
+    "db:push:staging": "node scripts/db-push-staging.mjs",
     "db:diff": "supabase db diff",
     "db:types": "supabase gen types typescript --project-id ihburmhtcfhwlairyfyf > src/lib/database.types.ts"
   },
