@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionSupplier } from '@/lib/supplier-auth'
 import type { OrderUpdate } from '@/lib/db'
+import { notifyCarpenterOrderUpdate } from '@/lib/notify-order'
 
 /**
  * A supplier moves an order along: confirm it, send it, mark it delivered.
@@ -97,6 +98,9 @@ export async function PATCH(request: NextRequest) {
         { status: 409 }
       )
     }
+
+    if (body.action === 'confirm') await notifyCarpenterOrderUpdate(body.order_id, 'confirmed')
+    if (body.action === 'ship') await notifyCarpenterOrderUpdate(body.order_id, 'shipped')
 
     return NextResponse.json({ ok: true, status: moved.status })
   } catch (err) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { loadConfirmable } from '@/lib/supplier-confirm'
+import { notifyCarpenterOrderUpdate } from '@/lib/notify-order'
 
 /**
  * A supplier confirms an order from the link in their email.
@@ -64,6 +65,8 @@ export async function POST(request: NextRequest) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
+
+    await notifyCarpenterOrderUpdate(view.orderId, 'confirmed')
 
     return NextResponse.json({ ok: true, confirmed_subtotal_excl_vat: amount })
   } catch (err) {

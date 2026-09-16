@@ -4,6 +4,7 @@ import type { OrderItemInsert } from '@/lib/db'
 import { logEvent, resolveCarpenter } from '@/lib/offer'
 import { bestOffer, OFFER_COLUMNS, type Offer } from '@/lib/catalog'
 import { notifyNewOrder } from '@/lib/notify-order'
+import { getSessionCarpenter } from '@/lib/carpenter-auth'
 
 /** One line as the checkout posts it. */
 interface IncomingItem {
@@ -65,7 +66,16 @@ export async function POST(request: NextRequest) {
     // An order coming from an offer link carries the token, never a
     // carpenter id: the token is the only thing the browser holds that is
     // worth believing.
-    const carpenter = body.token ? await resolveCarpenter(body.token) : null
+    //
+    // Without one — a carpenter who signed in on this device from an emailed
+    // login link, so nothing was ever stored in the browser — the signed session
+    // cookie identifies them instead. It is proof we minted ourselves.
+    const session = body.token ? null : await getSessionCarpenter()
+    const carpenter = body.token
+      ? await resolveCarpenter(body.token)
+      : session
+        ? await resolveCarpenter(session.token)
+        : null
     if (body.token && !carpenter) {
       return NextResponse.json({ error: 'Unknown link' }, { status: 404 })
     }

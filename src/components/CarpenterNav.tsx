@@ -92,8 +92,7 @@ export default function CarpenterNav({ session }: { session: CarpenterSession | 
               href="/join"
               className="whitespace-nowrap text-sm font-medium text-emerald-800 underline underline-offset-4"
             >
-              <span className="sm:hidden">קישור אישי</span>
-              <span className="hidden sm:inline">קבל קישור אישי</span>
+              כניסה / הרשמה
             </Link>
           )}
         </div>

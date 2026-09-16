@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { TERMS_VERSION } from '@/lib/terms'
+import { isTestName, sendEmail } from '@/lib/email'
+import { carpenterLoginHtml, carpenterLoginSubject } from '@/lib/emails/carpenter'
+
+/** "h****l@gmail.com" — enough to recognise your own address, not to read someone else's. */
+function maskEmail(email: string): string {
+  const [local, domain] = email.split('@')
+  if (!domain) return '***'
+  const visible = local.length <= 2 ? local[0] : `${local[0]}${'*'.repeat(Math.min(local.length - 2, 5))}${local[local.length - 1]}`
+  return `${visible}@${domain}`
+}
 
 /**
  * Self sign-up for a carpenter.
@@ -62,11 +72,13 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseAdmin()
 
     // Already known — from the operator's list or from an earlier submission.
-    // Hand back the existing link rather than issuing a second one, which would
-    // split one business across two identities.
+    //
+    // This used to hand the existing link straight back, which meant anyone who
+    // typed a registered phone number walked into that carpenter's account. Now
+    // the link goes to the email on file, and the page only says where it went.
     const { data: existing } = await supabase
       .from('carpenters')
-      .select('id, token, is_active')
+      .select('id, token, is_active, email, business_name')
       .eq('phone', phone)
       .maybeSingle()
 
@@ -74,9 +86,19 @@ export async function POST(request: NextRequest) {
       if (!existing.is_active) {
         return NextResponse.json({ error: 'החשבון אינו פעיל. צור קשר.' }, { status: 403 })
       }
-      // They just ticked the box, so what they ticked is now the record.
-      await supabase.from('carpenters').update(acceptance).eq('id', existing.id)
-      return NextResponse.json({ ok: true, token: existing.token, existing: true })
+      if (existing.email) {
+        await sendEmail({
+          to: existing.email,
+          subject: carpenterLoginSubject(),
+          html: carpenterLoginHtml({ businessName: existing.business_name, token: existing.token }),
+          isTest: isTestName(existing.business_name),
+        })
+      }
+      return NextResponse.json({
+        ok: true,
+        existing: true,
+        emailedTo: existing.email ? maskEmail(existing.email) : null,
+      })
     }
 
     // Where a pallet actually goes. Asked here rather than left to the first

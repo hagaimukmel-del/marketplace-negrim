@@ -76,6 +76,27 @@ export default function AccountClient({
     }
   }
 
+  const [sending, setSending] = useState(false)
+  const [deviceMessage, setDeviceMessage] = useState<string | null>(null)
+
+  const sendToEmail = async () => {
+    setSending(true)
+    setDeviceMessage(null)
+    try {
+      const response = await fetch('/api/carpenter/login-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ self: true }),
+      })
+      const data = await response.json().catch(() => ({}))
+      setDeviceMessage(response.ok ? data.message : data.error || 'השליחה נכשלה')
+    } catch {
+      setDeviceMessage('השליחה נכשלה')
+    } finally {
+      setSending(false)
+    }
+  }
+
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(personalLink)
@@ -135,6 +156,23 @@ export default function AccountClient({
             <ExternalLink size={16} />
             לדף שלי
           </Link>
+        </div>
+
+        {/* The easy way onto a second device: no copying, just open the email there. */}
+        <div className="mt-4 rounded-lg bg-emerald-50 p-3">
+          <p className="text-sm font-semibold text-emerald-950">חיבור ממכשיר נוסף</p>
+          <p className="mt-0.5 text-sm text-emerald-900">
+            נשלח קישור כניסה למייל שלך. פותחים אותו במחשב או בטלפון השני — וזהו.
+          </p>
+          <button
+            type="button"
+            onClick={sendToEmail}
+            disabled={sending}
+            className="mt-2 h-11 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            {sending ? 'שולח…' : 'שלחו לי קישור כניסה למייל'}
+          </button>
+          {deviceMessage && <p className="mt-2 text-sm text-emerald-900">{deviceMessage}</p>}
         </div>
       </section>
 
