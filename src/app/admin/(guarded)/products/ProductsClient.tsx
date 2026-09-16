@@ -4,8 +4,9 @@ import { useMemo, useRef, useState } from 'react'
 import { formatIls } from '@/lib/vat'
 import { BASE_UNITS, unitLabel } from '@/lib/catalog'
 import { useRouter } from 'next/navigation'
-import { ImagePlus, Search, Check, EyeOff, Eye, Plus, X, ChevronDown, Trash2 } from 'lucide-react'
+import { ImagePlus, Search, Check, EyeOff, Eye, Plus, X, ChevronDown, Trash2, FileSpreadsheet } from 'lucide-react'
 import SyncButton from '../SyncButton'
+import ImportPanel from './ImportPanel'
 
 /**
  * One line on the screen, but two rows in the database: the product is what the
@@ -1002,6 +1003,7 @@ export default function ProductsClient({
   const [busy, setBusy] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
+  const [importOpen, setImportOpen] = useState(false)
 
   const missingImage = products.filter((p) => !hasUsableImage(p.image_url)).length
   const missingSku = products.filter((p) => !p.sku).length
@@ -1111,9 +1113,19 @@ export default function ProductsClient({
               router.refresh()
             }}
           />
+          <button
+            type="button"
+            onClick={() => setImportOpen(!importOpen)}
+            className="flex h-10 items-center gap-2 rounded-lg border border-stone-300 bg-white px-4 text-sm font-semibold text-stone-800"
+          >
+            <FileSpreadsheet size={16} />
+            ייבוא מחירון
+          </button>
           <SyncButton />
         </div>
       </div>
+
+      {importOpen && <ImportPanel suppliers={suppliers} onClose={() => setImportOpen(false)} />}
 
       {/* The two counts that decide what to do next: a grey tile on the
           catalogue and a product an import cannot match. */}

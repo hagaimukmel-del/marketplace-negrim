@@ -217,6 +217,47 @@ export type Database = {
           },
         ]
       }
+      import_batches: {
+        Row: {
+          changes: Json
+          created_at: string
+          created_by: string
+          file_name: string | null
+          id: string
+          summary: Json
+          supplier_id: string
+          undone_at: string | null
+        }
+        Insert: {
+          changes?: Json
+          created_at?: string
+          created_by: string
+          file_name?: string | null
+          id?: string
+          summary?: Json
+          supplier_id: string
+          undone_at?: string | null
+        }
+        Update: {
+          changes?: Json
+          created_at?: string
+          created_by?: string
+          file_name?: string | null
+          id?: string
+          summary?: Json
+          supplier_id?: string
+          undone_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_batches_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       metzion_listings: {
         Row: {
           carpenter_id: string

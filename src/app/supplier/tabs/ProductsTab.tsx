@@ -1,9 +1,10 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Plus, Search, ImageOff, PackageOpen } from 'lucide-react'
+import { FileSpreadsheet, Plus, Search, ImageOff, PackageOpen, X } from 'lucide-react'
 import { formatIls } from '@/lib/vat'
 import { unitLabel } from '@/lib/catalog'
+import PriceImport from '@/components/import/PriceImport'
 import ProductForm from './ProductForm'
 import ProductPicker from './ProductPicker'
 import type { CatalogPick, CategoryOption, ProductItem } from '../types'
@@ -83,6 +84,7 @@ export default function ProductsTab({
   const [editing, setEditing] = useState<ProductItem | 'new' | null>(null)
   const [picking, setPicking] = useState(false)
   const [attachTo, setAttachTo] = useState<CatalogPick | null>(null)
+  const [importing, setImporting] = useState(false)
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -114,6 +116,14 @@ export default function ProductsTab({
             <Plus size={18} />
             הוסף מוצר ראשון
           </button>
+          <button
+            type="button"
+            onClick={() => setImporting(true)}
+            className="mt-2 flex h-11 w-full items-center justify-center gap-2 text-sm font-semibold text-emerald-800 underline sm:inline-flex sm:w-auto sm:px-4"
+          >
+            <FileSpreadsheet size={16} />
+            יש לכם מחירון באקסל? ייבוא בבת אחת
+          </button>
         </div>
       ) : (
         <>
@@ -132,6 +142,16 @@ export default function ProductsTab({
                 className="h-11 w-full rounded-xl border border-stone-300 bg-white ps-10 pe-3"
               />
             </div>
+            <button
+              type="button"
+              onClick={() => setImporting(true)}
+              aria-label="ייבוא מאקסל"
+              title="ייבוא מאקסל"
+              className="flex h-11 shrink-0 items-center gap-2 rounded-xl border border-stone-300 bg-white px-3 font-semibold text-stone-700"
+            >
+              <FileSpreadsheet size={17} />
+              <span className="hidden sm:inline">ייבוא מאקסל</span>
+            </button>
             <button
               type="button"
               onClick={() => setPicking(true)}
@@ -171,6 +191,27 @@ export default function ProductsTab({
             <Plus size={26} />
           </button>
         </>
+      )}
+
+      {importing && (
+        <div role="dialog" aria-modal="true" aria-label="ייבוא מחירון" className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-4">
+          <div className="flex max-h-[96dvh] w-full flex-col rounded-t-2xl bg-stone-50 sm:max-w-2xl sm:rounded-2xl">
+            <header className="flex items-center justify-between border-b border-stone-200 bg-white px-4 py-3 sm:rounded-t-2xl">
+              <h2 className="font-bold text-stone-900">ייבוא מחירון מאקסל</h2>
+              <button type="button" onClick={() => setImporting(false)} aria-label="סגור" className="flex h-10 w-10 items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100">
+                <X size={20} />
+              </button>
+            </header>
+            <div className="overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+              <PriceImport
+                onClose={() => {
+                  setImporting(false)
+                  notify('המחירון עודכן')
+                }}
+              />
+            </div>
+          </div>
+        </div>
       )}
 
       {picking && (

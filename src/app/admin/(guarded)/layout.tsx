@@ -37,6 +37,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     // Orders first: it is the screen with work waiting on it every day.
     { href: '/admin/orders', label: 'הזמנות', count: pendingOrders ?? 0 },
     { href: '/admin', label: 'תוצאות' },
+    { href: '/admin/reports', label: 'דוחות' },
     { href: '/admin/products', label: 'מוצרים' },
     { href: '/admin/categories', label: 'קטגוריות' },
     { href: '/admin/campaigns', label: 'קמפיינים' },
