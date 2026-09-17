@@ -63,13 +63,13 @@ export default async function CarpenterViewPage({
   // The public pages, which look the same to everyone.
   const publicPages = [
     {
-      href: '/carpenter/catalog',
+      href: '/app/catalog',
       label: 'קטלוג',
       icon: Store,
       note: 'עם כל המחירים — כמנהל אתה רואה אותם בלי להירשם',
     },
-    { href: '/carpenter/cart', label: 'עגלה', icon: ShoppingCart, note: 'ריקה עד שמוסיפים משהו' },
-    { href: '/carpenter/orders', label: 'ההזמנות שלי', icon: ClipboardList, note: 'דורש קישור אישי' },
+    { href: '/app/order', label: 'הזמנה', icon: ShoppingCart, note: 'ריקה עד שמוסיפים משהו' },
+    { href: '/app/orders', label: 'ההזמנות שלי', icon: ClipboardList, note: 'דורש קישור אישי' },
     { href: '/join', label: 'הרשמת נגרייה', icon: UserPlus, note: 'הטופס שנגר חדש ממלא' },
   ]
 

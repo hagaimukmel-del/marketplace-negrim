@@ -42,7 +42,7 @@ function Notice({
         <h1 className="mt-3 text-xl font-bold text-stone-900">{title}</h1>
         <p className="mt-2 text-stone-600">{body}</p>
         <Link
-          href="/carpenter/catalog"
+          href="/app/catalog"
           className="mt-5 inline-flex h-12 items-center justify-center rounded-lg border border-stone-300 px-5 font-semibold text-stone-700"
         >
           לקטלוג

@@ -138,7 +138,7 @@ export function carpenterOrderSentHtml({
     ${blocks}
     ${many ? `<p style="margin:14px 0 0;font:bold 15px ${FONT}">סה״כ כל ההזמנות ללא מע״מ: ${formatIls(Number(total.toFixed(2)))}</p>` : ''}
     ${paymentTerms ? `<p style="margin:10px 0 0;color:#57534e">תנאי תשלום מבוקשים: <strong>${escapeHtml(paymentTerms)}</strong></p>` : ''}
-    ${button(`${siteUrl()}/carpenter/orders`, 'להזמנות שלי')}
+    ${button(`${siteUrl()}/app/orders`, 'להזמנות שלי')}
     <p style="margin:14px 0 0;font-size:12px;color:#78716c">${many ? 'אלה הזמנות רכש, לא חשבוניות. כל ספק יאשר, יספק ויוציא לכם חשבונית ישירות.' : 'זו הזמנת רכש, לא חשבונית. הספק יאשר, יספק ויוציא לכם חשבונית ישירות.'}</p>`)
 }
 
@@ -184,5 +184,5 @@ export function carpenterOrderUpdateHtml({
     }
     ${note ? `<p style="margin:12px 0 0;background:#fafaf9;border-radius:8px;padding:10px"><strong>הערת הספק:</strong> ${escapeHtml(note)}</p>` : ''}
     ${supplierPhone ? `<p style="margin:12px 0 0">שאלות על האספקה או החשבונית — ישירות לספק: <a href="tel:${escapeHtml(supplierPhone)}" style="color:#047857;font-weight:bold" dir="ltr">${escapeHtml(supplierPhone)}</a></p>` : ''}
-    ${button(`${siteUrl()}/carpenter/orders`, 'להזמנות שלי')}`)
+    ${button(`${siteUrl()}/app/orders`, 'להזמנות שלי')}`)
 }

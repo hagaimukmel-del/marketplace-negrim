@@ -16,7 +16,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.redirect(new URL('/join?link=invalid', request.url))
   }
 
-  const response = NextResponse.redirect(new URL('/carpenter/catalog', request.url))
+  const response = NextResponse.redirect(new URL('/app', request.url))
   response.cookies.set(buildCarpenterCookie(carpenter.id))
   return response
 }

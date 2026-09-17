@@ -24,7 +24,7 @@ function nowMs(): number {
  * is sent to the screens they have today.
  */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  if (!(await canUseApp())) redirect('/carpenter/catalog')
+  if (!(await canUseApp())) redirect('/join')
 
   const [carpenter, admin] = await Promise.all([getSessionCarpenter(), isAdmin()])
   const orders = carpenter ? await loadCarpenterOrders(carpenter.id) : []
@@ -33,7 +33,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const needsTerms = carpenter && !admin && !acceptedCurrentTerms(carpenter.terms_version)
 
   return (
-    <AppShell attention={attention} initial={(carpenter?.business_name ?? 'נ').trim().charAt(0)}>
+    <AppShell attention={attention} signedIn={Boolean(carpenter)} initial={(carpenter?.business_name ?? 'נ').trim().charAt(0)}>
       {children}
       {needsTerms && <TermsGate role="carpenter" />}
     </AppShell>

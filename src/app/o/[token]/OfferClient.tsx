@@ -334,14 +334,14 @@ export default function OfferClient({
           {/* This screen used to end the visit: no links, nothing to do next. */}
           <div className="mt-6 grid gap-2">
             <Link
-              href="/carpenter/orders"
+              href="/app/orders"
               className="flex h-12 items-center justify-center gap-2 rounded-lg bg-stone-900 font-semibold text-white"
             >
               <ClipboardList size={17} />
               ההזמנות שלי
             </Link>
             <Link
-              href="/carpenter/catalog"
+              href="/app/catalog"
               className="flex h-12 items-center justify-center gap-2 rounded-lg border border-stone-300 font-semibold text-stone-700"
             >
               <LayoutGrid size={17} />
@@ -455,14 +455,14 @@ export default function OfferClient({
             through to everything. */}
         <div className="mt-5 grid gap-2 sm:grid-cols-2">
           <Link
-            href="/carpenter/catalog"
+            href="/app/catalog"
             className="flex h-12 items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white font-semibold text-stone-800"
           >
             <LayoutGrid size={17} />
             כל הקטלוג
           </Link>
           <Link
-            href="/carpenter/orders"
+            href="/app/orders"
             className="flex h-12 items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white font-semibold text-stone-800"
           >
             <ClipboardList size={17} />

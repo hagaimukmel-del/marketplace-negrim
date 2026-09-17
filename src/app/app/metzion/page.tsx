@@ -22,21 +22,21 @@ export default async function MetzionPage() {
 
   if (!carpenter && !admin) {
     return (
-      <div className="rounded-2xl border border-stone-200 bg-white p-8 text-center">
-        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800">
+      <div className="rounded-2xl border border-hair bg-white p-8 text-center">
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-soft text-brand-ink">
           <Recycle size={28} />
         </span>
-        <h1 className="mt-4 text-2xl font-bold text-stone-900">מציאון</h1>
-        <p className="mx-auto mt-2 max-w-md text-stone-600">
+        <h1 className="mt-4 text-2xl font-bold text-ink">מציאון</h1>
+        <p className="mx-auto mt-2 max-w-md text-muted">
           חומר שנשאר, פרזול עודף, מכונה שכבר לא צריך — אל תזרוק. נגר אחר אולי מחפש בדיוק את זה.
           למכירה או למסירה בחינם, ישירות בין נגרים.
         </p>
-        <p className="mt-5 inline-flex items-center gap-2 rounded-lg bg-stone-100 px-3 py-2 text-sm font-semibold text-stone-700">
+        <p className="mt-5 inline-flex items-center gap-2 rounded-[11px] bg-wood-soft px-3 py-2 text-sm font-semibold text-ink">
           <Lock size={14} />
           המציאון פתוח לנגריות רשומות
         </p>
         <div className="mt-5">
-          <Link href="/join" className="inline-flex h-12 items-center rounded-lg bg-emerald-700 px-6 font-bold text-white">
+          <Link href="/join" className="inline-flex h-12 items-center rounded-[11px] bg-brand px-6 font-bold text-navy">
             הרשמה — פחות מדקה
           </Link>
         </div>

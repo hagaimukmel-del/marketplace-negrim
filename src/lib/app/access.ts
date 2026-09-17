@@ -5,12 +5,12 @@ import { isAdmin } from '@/lib/admin-auth'
 /**
  * The switch for the new purchasing app at /app.
  *
- * While it is false the app is visible only to the operator, on the live site
- * and with live data, so it can be reviewed exactly as a carpenter will see it.
- * Carpenters keep the existing screens. Flipping this to true — together with
- * the redirects from the old carpenter routes — is the launch.
+ * Launched 18.09.2026: the app is the carpenter site, and the old carpenter
+ * routes redirect here (next.config.ts). Setting this back to false hides it
+ * from everyone but the operator — the old screens are gone, so that is a
+ * maintenance switch, not a way back.
  */
-export const APP_LIVE = false
+export const APP_LIVE = true
 
 /**
  * APP_PREVIEW_OPEN=true opens it without the operator login. It is set only in

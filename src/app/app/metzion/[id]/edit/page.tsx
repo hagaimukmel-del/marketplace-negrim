@@ -10,7 +10,7 @@ export const metadata = { title: 'עריכת מודעה — מציאון' }
 /** Only the carpenter who posted a listing can open it for editing. */
 export default async function EditListingPage({ params }: { params: Promise<{ id: string }> }) {
   const carpenter = await getSessionCarpenter()
-  if (!carpenter) redirect('/carpenter/metzion')
+  if (!carpenter) redirect('/app/metzion')
 
   const { id } = await params
   const { data: listing } = await getSupabaseAdmin()

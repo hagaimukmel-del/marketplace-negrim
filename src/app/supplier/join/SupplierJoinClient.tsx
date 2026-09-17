@@ -65,7 +65,7 @@ export default function SupplierJoinPage() {
           </p>
           <div className="mt-5 flex flex-col gap-2">
             <Link
-              href="/carpenter/catalog"
+              href="/app/catalog"
               className="flex h-12 items-center justify-center rounded-lg border border-stone-300 font-semibold text-stone-700"
             >
               לצפייה בקטלוג

@@ -22,14 +22,14 @@ function CardImage({ src, alt }: { src: string | undefined; alt: string }) {
   const [failed, setFailed] = useState(false)
   if (!src || failed) {
     return (
-      <div className="flex aspect-[4/3] w-full items-center justify-center bg-stone-100 text-stone-300">
+      <div className="flex aspect-[4/3] w-full items-center justify-center bg-wood-soft text-[#D9CFC1]">
         <Recycle size={32} />
       </div>
     )
   }
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt={alt} loading="lazy" onError={() => setFailed(true)} className="aspect-[4/3] w-full bg-stone-100 object-cover" />
+    <img src={src} alt={alt} loading="lazy" onError={() => setFailed(true)} className="aspect-[4/3] w-full bg-wood-soft object-cover" />
   )
 }
 
@@ -38,39 +38,39 @@ function Card({ card, onOpen }: { card: MetzionCard; onOpen: () => void }) {
     <button
       type="button"
       onClick={onOpen}
-      className="group flex flex-col overflow-hidden rounded-xl border border-stone-200 bg-white text-start transition-shadow hover:shadow-md"
+      className="group flex flex-col overflow-hidden rounded-xl border border-hair bg-white text-start transition-shadow hover:shadow-md"
     >
       <span className="relative block">
         <CardImage src={card.images[0]} alt={card.title} />
         {card.dealType === 'free' && (
-          <span className="absolute top-2 start-2 flex items-center gap-1 rounded-full bg-emerald-700 px-2.5 py-1 text-xs font-bold text-white">
+          <span className="absolute top-2 start-2 flex items-center gap-1 rounded-full bg-ok px-2.5 py-1 text-xs font-bold text-white">
             <Gift size={12} />
             בחינם
           </span>
         )}
         {card.mine && (
-          <span className="absolute top-2 end-2 rounded-full bg-stone-900/80 px-2 py-0.5 text-[11px] font-semibold text-white">
+          <span className="absolute top-2 end-2 rounded-full bg-navy/80 px-2 py-0.5 text-[11px] font-semibold text-white">
             המודעה שלך
           </span>
         )}
       </span>
       <span className="flex flex-1 flex-col p-3">
-        <span className="line-clamp-2 font-bold leading-snug text-stone-900">{card.title}</span>
-        <span className="mt-1 text-xs text-stone-500">
+        <span className="line-clamp-2 font-bold leading-snug text-ink">{card.title}</span>
+        <span className="mt-1 text-xs text-muted">
           {conditionLabel(card.condition)} · {card.quantity.toLocaleString('he-IL')} {card.unit}
         </span>
         <span className="mt-auto flex items-end justify-between gap-2 pt-2">
-          <span className="tnum font-bold text-stone-900">
+          <span className="tnum font-bold text-ink">
             {card.dealType === 'free' ? (
-              <span className="text-emerald-800">למסירה</span>
+              <span className="text-brand-ink">למסירה</span>
             ) : (
               <>
                 {formatIls(card.pricePerUnit!)}
-                <span className="text-xs font-normal text-stone-500"> ל{card.unit}</span>
+                <span className="text-xs font-normal text-muted"> ל{card.unit}</span>
               </>
             )}
           </span>
-          <span className="truncate text-[11px] text-stone-500">
+          <span className="truncate text-[11px] text-muted">
             {card.city} · {postedAgo(card.createdAt)}
           </span>
         </span>
@@ -124,30 +124,30 @@ export default function MetzionBoard({ cards, canPost }: { cards: MetzionCard[];
     setDeal('all')
   }
 
-  const selectClass = 'h-11 w-full rounded-lg border border-stone-300 bg-white px-2 text-sm'
+  const selectClass = 'h-11 w-full rounded-[11px] border border-hair bg-white px-2 text-sm'
 
   return (
     <div className="space-y-4 pb-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-xl font-bold text-stone-900">
-            <Recycle size={22} className="text-emerald-700" />
+          <h1 className="flex items-center gap-2 text-2xl font-extrabold text-ink md:text-[28px]">
+            <Recycle size={22} className="text-brand-ink" />
             מציאון
           </h1>
-          <p className="mt-0.5 text-sm text-stone-600">אל תזרוק — אולי נגר אחר צריך בדיוק את זה.</p>
+          <p className="mt-0.5 text-sm text-muted">אל תזרוק — אולי נגר אחר צריך בדיוק את זה.</p>
         </div>
         {canPost && (
           <div className="flex gap-2">
             <Link
-              href="/carpenter/metzion/mine"
-              className="flex h-11 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-stone-700"
+              href="/app/metzion/mine"
+              className="flex h-11 items-center gap-1.5 rounded-[11px] border border-hair bg-white px-3 text-sm font-semibold text-ink"
             >
               <ListChecks size={16} />
               המודעות שלי
             </Link>
             <Link
-              href="/carpenter/metzion/new"
-              className="flex h-11 items-center gap-1.5 rounded-lg bg-emerald-700 px-4 text-sm font-bold text-white"
+              href="/app/metzion/new"
+              className="flex h-11 items-center gap-1.5 rounded-[11px] bg-brand px-4 text-sm font-bold text-navy"
             >
               <Plus size={17} />
               פרסם
@@ -160,7 +160,7 @@ export default function MetzionBoard({ cards, canPost }: { cards: MetzionCard[];
         <div className="relative flex-1">
           <Search
             size={18}
-            className="pointer-events-none absolute top-1/2 -translate-y-1/2 text-stone-400"
+            className="pointer-events-none absolute top-1/2 -translate-y-1/2 text-faint"
             style={{ insetInlineStart: '0.75rem' }}
           />
           <input
@@ -169,7 +169,7 @@ export default function MetzionBoard({ cards, canPost }: { cards: MetzionCard[];
             onChange={(e) => setQuery(e.target.value)}
             placeholder="מה מחפשים? MDF, מסור, ידיות…"
             aria-label="חיפוש במציאון"
-            className="h-12 w-full rounded-xl border border-stone-300 bg-white ps-10 pe-3"
+            className="h-12 w-full rounded-xl border border-hair bg-white ps-10 pe-3"
           />
         </div>
         <button
@@ -177,13 +177,13 @@ export default function MetzionBoard({ cards, canPost }: { cards: MetzionCard[];
           onClick={() => setFiltersOpen(!filtersOpen)}
           aria-expanded={filtersOpen}
           className={`relative flex h-12 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold ${
-            filtersOpen || activeFilters ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-300 bg-white text-stone-700'
+            filtersOpen || activeFilters ? 'border-navy bg-navy text-white' : 'border-hair bg-white text-ink'
           }`}
         >
           <SlidersHorizontal size={17} />
           <span className="hidden sm:inline">סינון</span>
           {activeFilters > 0 && (
-            <span className="tnum flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1 text-[11px] text-white">
+            <span className="tnum flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1 text-[11px] text-white">
               {activeFilters}
             </span>
           )}
@@ -205,7 +205,7 @@ export default function MetzionBoard({ cards, canPost }: { cards: MetzionCard[];
             onClick={() => setDeal(key)}
             aria-pressed={deal === key}
             className={`h-9 rounded-full border px-3.5 text-sm font-semibold ${
-              deal === key ? 'border-emerald-700 bg-emerald-700 text-white' : 'border-stone-300 bg-white text-stone-700'
+              deal === key ? 'border-navy bg-navy text-white' : 'border-hair bg-white text-ink'
             }`}
           >
             {label}
@@ -214,9 +214,9 @@ export default function MetzionBoard({ cards, canPost }: { cards: MetzionCard[];
       </div>
 
       {filtersOpen && (
-        <div className="grid gap-3 rounded-xl border border-stone-200 bg-white p-3 sm:grid-cols-4">
+        <div className="grid gap-3 rounded-xl border border-hair bg-white p-3 sm:grid-cols-4">
           <label className="block">
-            <span className="text-xs font-medium text-stone-600">קטגוריה</span>
+            <span className="text-xs font-medium text-muted">קטגוריה</span>
             <select id="metzion-category" value={category} onChange={(e) => setCategory(e.target.value)} className={selectClass}>
               <option value="all">הכל</option>
               {METZION_CATEGORIES.map((item) => (
@@ -225,7 +225,7 @@ export default function MetzionBoard({ cards, canPost }: { cards: MetzionCard[];
             </select>
           </label>
           <label className="block">
-            <span className="text-xs font-medium text-stone-600">אזור</span>
+            <span className="text-xs font-medium text-muted">אזור</span>
             <select id="metzion-region" value={region} onChange={(e) => setRegion(e.target.value)} className={selectClass}>
               <option value="all">כל הארץ</option>
               {REGIONS.map((item) => (
@@ -234,7 +234,7 @@ export default function MetzionBoard({ cards, canPost }: { cards: MetzionCard[];
             </select>
           </label>
           <label className="block">
-            <span className="text-xs font-medium text-stone-600">מצב</span>
+            <span className="text-xs font-medium text-muted">מצב</span>
             <select id="metzion-condition" value={condition} onChange={(e) => setCondition(e.target.value)} className={selectClass}>
               <option value="all">הכל</option>
               {METZION_CONDITIONS.map((item) => (
@@ -243,7 +243,7 @@ export default function MetzionBoard({ cards, canPost }: { cards: MetzionCard[];
             </select>
           </label>
           <label className="block">
-            <span className="text-xs font-medium text-stone-600">מיון</span>
+            <span className="text-xs font-medium text-muted">מיון</span>
             <select id="metzion-sort" value={sort} onChange={(e) => setSort(e.target.value as Sort)} className={selectClass}>
               <option value="new">החדשות ראשונות</option>
               <option value="price_low">מחיר: מהזול</option>
@@ -251,7 +251,7 @@ export default function MetzionBoard({ cards, canPost }: { cards: MetzionCard[];
             </select>
           </label>
           {activeFilters > 0 && (
-            <button type="button" onClick={clear} className="flex h-9 items-center gap-1 text-sm font-semibold text-stone-600 sm:col-span-4">
+            <button type="button" onClick={clear} className="flex h-9 items-center gap-1 text-sm font-semibold text-muted sm:col-span-4">
               <X size={15} />
               נקה סינון
             </button>
@@ -260,29 +260,29 @@ export default function MetzionBoard({ cards, canPost }: { cards: MetzionCard[];
       )}
 
       {cards.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-stone-300 bg-white p-10 text-center">
-          <Recycle size={40} className="mx-auto text-stone-300" />
-          <p className="mt-3 text-lg font-bold text-stone-900">המציאון עוד ריק</p>
-          <p className="mx-auto mt-1 max-w-sm text-sm text-stone-600">
+        <div className="rounded-2xl border-2 border-dashed border-hair bg-white p-10 text-center">
+          <Recycle size={40} className="mx-auto text-[#D9CFC1]" />
+          <p className="mt-3 text-lg font-bold text-ink">המציאון עוד ריק</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
             יש לך עודף MDF, קופסת צירים שלא נגמרה או מכונה שעומדת בצד? תהיה הראשון.
           </p>
           {canPost && (
-            <Link href="/carpenter/metzion/new" className="mt-5 inline-flex h-12 items-center gap-2 rounded-lg bg-emerald-700 px-6 font-bold text-white">
+            <Link href="/app/metzion/new" className="mt-5 inline-flex h-12 items-center gap-2 rounded-[11px] bg-brand px-6 font-bold text-navy">
               <Plus size={18} />
               פרסם מודעה ראשונה
             </Link>
           )}
         </div>
       ) : shown.length === 0 ? (
-        <div className="rounded-xl border border-stone-200 bg-white p-8 text-center">
-          <p className="font-semibold text-stone-900">אין מודעות שמתאימות</p>
-          <button type="button" onClick={() => { clear(); setQuery('') }} className="mt-2 text-sm font-semibold text-emerald-800 underline">
+        <div className="rounded-xl border border-hair bg-white p-8 text-center">
+          <p className="font-semibold text-ink">אין מודעות שמתאימות</p>
+          <button type="button" onClick={() => { clear(); setQuery('') }} className="mt-2 text-sm font-semibold text-brand-ink underline">
             להציג הכל
           </button>
         </div>
       ) : (
         <>
-          <p className="tnum text-xs text-stone-500">
+          <p className="tnum text-xs text-muted">
             {shown.length} מודעות
             {region !== 'all' && ` ב${regionName(region)}`}
           </p>

@@ -10,7 +10,7 @@ export const metadata = { title: 'מודעה חדשה — מציאון' }
 /** A new listing, with who and where already filled in from registration. */
 export default async function NewListingPage() {
   const carpenter = await getSessionCarpenter()
-  if (!carpenter) redirect('/carpenter/metzion')
+  if (!carpenter) redirect('/app/metzion')
 
   return (
     <ListingForm

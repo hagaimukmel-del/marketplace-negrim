@@ -32,7 +32,7 @@ export function raffleWinHtml({
   winnerName: string
   prize: string | null
 }): string {
-  const catalog = `${siteUrl()}/carpenter/catalog`
+  const catalog = `${siteUrl()}/app/catalog`
 
   return `
 <div dir="rtl" style="background:#fafaf9;padding:24px 12px;font:14px/1.6 ${FONT};color:#1c1917">

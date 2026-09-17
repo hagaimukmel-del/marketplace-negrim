@@ -30,8 +30,11 @@ function Wordmark({ onDark = false }: { onDark?: boolean }) {
 export default function AppShell({
   attention,
   initial,
+  signedIn,
   children,
 }: {
+  /** No carpentry signed in: the avatar becomes the way in. */
+  signedIn: boolean
   /** Orders that want the carpenter — the dot on "הזמנות". */
   attention: number
   /** First letter of the carpentry, for the avatar. */
@@ -58,8 +61,8 @@ export default function AppShell({
           <SideLink href="/app/catalog" label="קטלוג" active={catalogActive} icon={<LayoutGrid size={19} />} />
           <SideLink href="/app/order" label="הזמנה" active={is('/app/order')} icon={<ShoppingBag size={19} />} count={lines} />
           <SideLink href="/app/orders" label="הזמנות" active={is('/app/orders')} icon={<ClipboardList size={19} />} count={attention} />
-          <SideLink href="/carpenter/metzion" label="מציאון" active={false} icon={<Recycle size={19} />} />
-          <SideLink href="/carpenter/account" label="הנגרייה שלי" active={false} icon={<UserRound size={19} />} />
+          <SideLink href="/app/metzion" label="מציאון" active={is('/app/metzion')} icon={<Recycle size={19} />} />
+          <SideLink href={signedIn ? '/app/account' : '/join'} label={signedIn ? 'הנגרייה שלי' : 'כניסה / הרשמה'} active={is('/app/account')} icon={<UserRound size={19} />} />
         </nav>
       </aside>
 
@@ -74,9 +77,15 @@ export default function AppShell({
           <Link href="/app/catalog?focus=search" aria-label="חיפוש" className="grid h-10 w-10 place-items-center rounded-xl border border-hair bg-white text-navy">
             <Search size={20} />
           </Link>
-          <Link href="/carpenter/account" aria-label="הנגרייה שלי" className="grid h-9 w-9 place-items-center rounded-full bg-navy text-[15px] font-bold text-white">
-            {initial}
-          </Link>
+          {signedIn ? (
+            <Link href="/app/account" aria-label="הנגרייה שלי" className="grid h-9 w-9 place-items-center rounded-full bg-navy text-[15px] font-bold text-white">
+              {initial}
+            </Link>
+          ) : (
+            <Link href="/join" className="inline-flex h-10 items-center rounded-xl bg-navy px-3 text-sm font-bold text-white">
+              כניסה
+            </Link>
+          )}
         </header>
 
         {/* Desktop head */}
@@ -102,9 +111,15 @@ export default function AppShell({
               'הזמנה חדשה'
             )}
           </Link>
-          <Link href="/carpenter/account" aria-label="הנגרייה שלי" className="grid h-9 w-9 place-items-center rounded-full bg-navy font-bold text-white">
-            {initial}
-          </Link>
+          {signedIn ? (
+            <Link href="/app/account" aria-label="הנגרייה שלי" className="grid h-9 w-9 place-items-center rounded-full bg-navy font-bold text-white">
+              {initial}
+            </Link>
+          ) : (
+            <Link href="/join" className="inline-flex h-10 items-center rounded-xl bg-navy px-3.5 text-sm font-bold text-white">
+              כניסה / הרשמה
+            </Link>
+          )}
         </header>
 
         <main className="mx-auto w-full max-w-[1120px] px-4 pb-28 pt-1 md:px-7 md:pb-12 md:pt-6">{children}</main>
@@ -129,7 +144,7 @@ export default function AppShell({
           הזמנה
         </Link>
         <BottomLink href="/app/orders" label="הזמנות" active={is('/app/orders')} icon={<ClipboardList size={22} />} dot={attention > 0} />
-        <BottomLink href="/carpenter/account" label="אני" active={false} icon={<UserRound size={22} />} />
+        <BottomLink href={signedIn ? '/app/account' : '/join'} label={signedIn ? 'אני' : 'כניסה'} active={is('/app/account')} icon={<UserRound size={22} />} />
       </nav>
     </div>
   )

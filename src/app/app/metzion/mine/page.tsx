@@ -12,7 +12,7 @@ export default async function MyListingsPage({
   searchParams: Promise<{ created?: string; saved?: string }>
 }) {
   const carpenter = await getSessionCarpenter()
-  if (!carpenter) redirect('/carpenter/metzion')
+  if (!carpenter) redirect('/app/metzion')
 
   const [{ created, saved }, { data }] = await Promise.all([
     searchParams,

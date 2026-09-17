@@ -80,28 +80,28 @@ export default function MyListings({ listings, notice }: { listings: MyListing[]
 
   return (
     <div className="space-y-4 pb-6">
-      <Link href="/carpenter/metzion" className="inline-flex h-9 items-center gap-1.5 text-sm font-medium text-stone-600">
+      <Link href="/app/metzion" className="inline-flex h-9 items-center gap-1.5 text-sm font-medium text-muted">
         <ArrowRight size={15} />
         למציאון
       </Link>
 
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-stone-900">המודעות שלי</h1>
-        <Link href="/carpenter/metzion/new" className="flex h-11 items-center gap-1.5 rounded-lg bg-emerald-700 px-4 text-sm font-bold text-white">
+        <h1 className="text-2xl font-extrabold text-ink md:text-[28px]">המודעות שלי</h1>
+        <Link href="/app/metzion/new" className="flex h-11 items-center gap-1.5 rounded-[11px] bg-brand px-4 text-sm font-bold text-navy">
           <Plus size={17} />
           מודעה חדשה
         </Link>
       </div>
 
       {notice && (
-        <p className="flex items-center gap-2 rounded-lg bg-emerald-50 p-3 text-sm font-semibold text-emerald-900">
+        <p className="flex items-center gap-2 rounded-[11px] bg-brand-soft p-3 text-sm font-semibold text-attn">
           <CheckCircle2 size={17} />
           {notice === 'created' ? 'המודעה פורסמה ונמצאת עכשיו במציאון.' : 'השינויים נשמרו.'}
         </p>
       )}
 
       {removedByAdmin.length > 0 && (
-        <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+        <p className="rounded-[11px] bg-amber-50 p-3 text-sm text-amber-900">
           {removedByAdmin.length === 1 ? 'מודעה אחת הוסרה' : `${removedByAdmin.length} מודעות הוסרו`} על ידי צוות האתר. לשאלות — צרו קשר.
         </p>
       )}
@@ -114,7 +114,7 @@ export default function MyListings({ listings, notice }: { listings: MyListing[]
             onClick={() => setGroup(tab.key)}
             aria-pressed={group === tab.key}
             className={`flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold ${
-              group === tab.key ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-300 bg-white text-stone-700'
+              group === tab.key ? 'border-navy bg-navy text-white' : 'border-hair bg-white text-ink'
             }`}
           >
             {tab.label}
@@ -123,12 +123,12 @@ export default function MyListings({ listings, notice }: { listings: MyListing[]
         ))}
       </div>
 
-      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {error && <p role="alert" className="rounded-[11px] bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
       {shown.length === 0 ? (
-        <div className="rounded-xl border border-stone-200 bg-white p-8 text-center">
-          <Recycle size={34} className="mx-auto text-stone-300" />
-          <p className="mt-2 text-sm text-stone-600">
+        <div className="rounded-xl border border-hair bg-white p-8 text-center">
+          <Recycle size={34} className="mx-auto text-[#D9CFC1]" />
+          <p className="mt-2 text-sm text-muted">
             {group === 'active' ? 'אין לך מודעות פעילות.' : group === 'expired' ? 'אין מודעות שפג תוקפן.' : 'עוד לא סימנת מודעה כנמכרה.'}
           </p>
         </div>
@@ -138,54 +138,54 @@ export default function MyListings({ listings, notice }: { listings: MyListing[]
             const left = daysLeft(listing.expiresAt)
             const busy = busyId === listing.id
             return (
-              <li key={listing.id} className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+              <li key={listing.id} className="overflow-hidden rounded-xl border border-hair bg-white">
                 <div className="flex gap-3 p-3">
                   {listing.image ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={listing.image} alt="" className="h-20 w-20 shrink-0 rounded-lg object-cover" />
+                    <img src={listing.image} alt="" className="h-20 w-20 shrink-0 rounded-[11px] object-cover" />
                   ) : (
-                    <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-300">
+                    <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[11px] bg-wood-soft text-[#D9CFC1]">
                       <Recycle size={24} />
                     </span>
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="font-bold leading-snug text-stone-900">{listing.title}</p>
-                    <p className="tnum mt-0.5 text-sm text-stone-600">
+                    <p className="font-bold leading-snug text-ink">{listing.title}</p>
+                    <p className="tnum mt-0.5 text-sm text-muted">
                       {listing.dealType === 'free' ? 'למסירה בחינם' : `${formatIls(listing.pricePerUnit!)} ל${listing.unit}`} ·{' '}
                       {listing.quantity.toLocaleString('he-IL')} {listing.unit}
                     </p>
                     {group === 'active' && (
-                      <p className={`tnum mt-1 text-xs font-semibold ${left <= 7 ? 'text-amber-700' : 'text-stone-500'}`}>
+                      <p className={`tnum mt-1 text-xs font-semibold ${left <= 7 ? 'text-amber-700' : 'text-muted'}`}>
                         עוד {left} ימים בלוח
                       </p>
                     )}
                     {group === 'expired' && <p className="mt-1 text-xs font-semibold text-red-700">ירדה מהלוח — אפשר להאריך</p>}
                     {group === 'sold' && listing.soldAt && (
-                      <p className="mt-1 text-xs text-emerald-800">
+                      <p className="mt-1 text-xs text-brand-ink">
                         נמכר ב-{new Date(listing.soldAt).toLocaleDateString('he-IL')}
                       </p>
                     )}
                   </div>
                 </div>
                 {group !== 'sold' && (
-                  <div className="flex flex-wrap gap-2 border-t border-stone-100 bg-stone-50 px-3 py-2">
+                  <div className="flex flex-wrap gap-2 border-t border-hair bg-warm px-3 py-2">
                     {(group === 'expired' || left <= 14) && (
-                      <button type="button" onClick={() => act(listing, 'extend')} disabled={busy} className="flex h-10 items-center gap-1.5 rounded-lg bg-emerald-700 px-3 text-sm font-semibold text-white disabled:opacity-50">
+                      <button type="button" onClick={() => act(listing, 'extend')} disabled={busy} className="flex h-10 items-center gap-1.5 rounded-[11px] bg-brand px-3 text-sm font-semibold text-navy disabled:opacity-50">
                         <RefreshCw size={15} />
                         הארך ב-60 יום
                       </button>
                     )}
                     {group === 'active' && (
-                      <button type="button" onClick={() => act(listing, 'sold')} disabled={busy} className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-stone-700 disabled:opacity-50">
+                      <button type="button" onClick={() => act(listing, 'sold')} disabled={busy} className="flex h-10 items-center gap-1.5 rounded-[11px] border border-hair bg-white px-3 text-sm font-semibold text-ink disabled:opacity-50">
                         <CheckCircle2 size={15} />
                         נמכר / נמסר
                       </button>
                     )}
-                    <Link href={`/carpenter/metzion/${listing.id}/edit`} className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-stone-700">
+                    <Link href={`/app/metzion/${listing.id}/edit`} className="flex h-10 items-center gap-1.5 rounded-[11px] border border-hair bg-white px-3 text-sm font-semibold text-ink">
                       <Pencil size={15} />
                       ערוך
                     </Link>
-                    <button type="button" onClick={() => act(listing, 'remove')} disabled={busy} className="ms-auto flex h-10 items-center gap-1.5 rounded-lg px-2 text-sm text-red-700 hover:bg-red-50 disabled:opacity-50">
+                    <button type="button" onClick={() => act(listing, 'remove')} disabled={busy} className="ms-auto flex h-10 items-center gap-1.5 rounded-[11px] px-2 text-sm text-red-700 hover:bg-red-50 disabled:opacity-50">
                       <Trash2 size={15} />
                       הסר
                     </button>

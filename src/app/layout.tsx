@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { AuthProvider } from "@/lib/auth-context";
 import { CartProvider } from "@/lib/cart-context";
-import { CheckoutProvider } from "@/lib/checkout-context";
 import "./globals.css";
 
 /**
@@ -54,7 +53,7 @@ export default function RootLayout({
         )}
         <AuthProvider>
           <CartProvider>
-            <CheckoutProvider>{children}</CheckoutProvider>
+            {children}
           </CartProvider>
         </AuthProvider>
       </body>

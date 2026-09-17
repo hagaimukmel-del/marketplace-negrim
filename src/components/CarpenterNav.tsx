@@ -10,9 +10,9 @@ import { formatIls } from '@/lib/vat'
 import Logo from '@/components/brand/Logo'
 
 const LINKS = [
-  { href: '/carpenter/catalog', label: 'קטלוג', Icon: LayoutGrid },
-  { href: '/carpenter/metzion', label: 'מציאון', Icon: Recycle },
-  { href: '/carpenter/orders', label: 'הזמנות', Icon: ClipboardList },
+  { href: '/app/catalog', label: 'קטלוג', Icon: LayoutGrid },
+  { href: '/app/metzion', label: 'מציאון', Icon: Recycle },
+  { href: '/app/orders', label: 'הזמנות', Icon: ClipboardList },
 ]
 
 export interface CarpenterSession {
@@ -49,7 +49,7 @@ export default function CarpenterNav({ session }: { session: CarpenterSession | 
     }
     forgetCarpenter()
     cart.clearCart()
-    router.replace('/carpenter/catalog')
+    router.replace('/app/catalog')
     router.refresh()
   }
 
@@ -60,7 +60,7 @@ export default function CarpenterNav({ session }: { session: CarpenterSession | 
             narrower on a phone, and hanging the spacing off it collapsed the
             whole bar at mobile width. */}
         <div className="me-auto flex min-w-0 items-center gap-3">
-          <Link href="/carpenter/catalog" className="shrink-0" aria-label="שוק הנגרים — לקטלוג">
+          <Link href="/app" className="shrink-0" aria-label="שוק הנגרים — לקטלוג">
             <Logo size="sm" compact />
           </Link>
           {/* Someone browsing the public catalogue has no link of their own
@@ -68,7 +68,7 @@ export default function CarpenterNav({ session }: { session: CarpenterSession | 
           {session ? (
             <>
               <Link
-                href="/carpenter/account"
+                href="/app/account"
                 className="flex min-w-0 items-center gap-1.5 text-sm font-medium text-emerald-800"
               >
                 <CircleUser size={16} className="shrink-0" />
@@ -117,7 +117,7 @@ export default function CarpenterNav({ session }: { session: CarpenterSession | 
         {/* The cart shows its running total, not just a count: the number a
             carpenter is deciding on is the money, and it is excl VAT. */}
         <Link
-          href="/carpenter/cart"
+          href="/app/order"
           className="flex h-10 items-center gap-2 rounded-lg bg-emerald-700 px-3 text-sm font-semibold text-white hover:bg-emerald-800"
         >
           <ShoppingCart size={17} />

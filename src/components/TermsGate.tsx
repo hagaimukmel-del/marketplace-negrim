@@ -45,7 +45,7 @@ export default function TermsGate({ role }: { role: 'carpenter' | 'supplier' }) 
     await fetch(role === 'supplier' ? '/api/supplier/session' : '/api/carpenter/session', {
       method: 'DELETE',
     }).catch(() => undefined)
-    window.location.href = role === 'supplier' ? '/supplier/join' : '/carpenter/catalog'
+    window.location.href = role === 'supplier' ? '/supplier/join' : '/app/catalog'
   }
 
   return (

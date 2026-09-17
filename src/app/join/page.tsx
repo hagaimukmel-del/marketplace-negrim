@@ -9,6 +9,6 @@ export const dynamic = 'force-dynamic'
  * is sent to the catalogue — there is nothing here for them.
  */
 export default async function JoinPage() {
-  if (await getSessionCarpenter()) redirect('/carpenter/catalog')
+  if (await getSessionCarpenter()) redirect('/app')
   return <JoinClient />
 }

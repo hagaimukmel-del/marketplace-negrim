@@ -10,7 +10,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'שוק הנגרים · Nagarim',
     short_name: 'Nagarim',
     description: 'הזמנת חומרים, פרזול וציוד לנגריות — ישירות מהספק.',
-    start_url: '/carpenter/catalog',
+    start_url: '/app',
     display: 'standalone',
     dir: 'rtl',
     lang: 'he',

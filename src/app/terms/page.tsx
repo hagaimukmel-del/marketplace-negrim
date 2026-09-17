@@ -432,7 +432,7 @@ export default function TermsPage() {
     <main dir="rtl" className="min-h-screen bg-stone-50 px-4 py-8">
       <article className="mx-auto max-w-2xl">
         <Link
-          href="/carpenter/catalog"
+          href="/app/catalog"
           className="inline-flex h-10 items-center gap-1.5 text-sm font-medium text-stone-600 hover:text-stone-900"
         >
           <ArrowRight size={16} />

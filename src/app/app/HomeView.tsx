@@ -434,7 +434,7 @@ function HowItWorks() {
 
 function Metzion() {
   return (
-    <Link href="/carpenter/metzion" className="flex items-center gap-3 rounded-xl border border-[#E6D6C2] bg-wood-soft px-3.5 py-3">
+    <Link href="/app/metzion" className="flex items-center gap-3 rounded-xl border border-[#E6D6C2] bg-wood-soft px-3.5 py-3">
       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] bg-white text-[#6B4E2E]">
         <Recycle size={22} />
       </span>
