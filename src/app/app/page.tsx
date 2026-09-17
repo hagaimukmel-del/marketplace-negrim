@@ -2,7 +2,7 @@ import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { loadCarpenterOrders } from '@/lib/app/orders-server'
 import { loadCategoryTree, loadProducts, loadReorder } from '@/lib/app/catalog-server'
-import SignedOutNotice from '@/components/app/SignedOutNotice'
+import { redirect } from 'next/navigation'
 import HomeView from './HomeView'
 
 export const dynamic = 'force-dynamic'
@@ -21,7 +21,8 @@ function nowMs(): number {
  */
 export default async function AppHome() {
   const carpenter = await getSessionCarpenter()
-  if (!carpenter) return <SignedOutNotice what="מסך הבית" />
+  // Home is a carpentry's own screen; a visitor starts on the catalogue.
+  if (!carpenter) redirect('/app/catalog')
 
   const [orders, reorder, products, { data: suppliers }] = await Promise.all([
     loadCarpenterOrders(carpenter.id),
