@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { LayoutGrid, ClipboardList, ArrowRight } from 'lucide-react'
+import { ArrowRight, Check, ClipboardList, LayoutGrid, Minus, Plus } from 'lucide-react'
 import { rememberCarpenter } from '@/lib/carpenter-session'
 import type { OfferProduct } from '@/lib/offer'
-import { formatIls, round2, vatAmount, withVat, VAT_RATE } from '@/lib/vat'
+import { round2, withVat, VAT_RATE } from '@/lib/vat'
+import { money } from '@/lib/app/format'
 
 interface Props {
   token: string
@@ -56,7 +57,7 @@ function ProductImage({
     return (
       <div
         aria-hidden
-        className={`flex shrink-0 items-center justify-center rounded-lg bg-stone-200 text-stone-500 ${fallbackSize}`}
+        className={`flex shrink-0 items-center justify-center rounded-[12px] bg-wood-soft text-[#7A5A3A] ${fallbackSize}`}
       >
         <span className={featured ? 'text-2xl font-bold' : 'text-sm font-bold'}>{initials}</span>
       </div>
@@ -69,7 +70,7 @@ function ProductImage({
       src={product.image_url}
       alt=""
       onError={() => setFailed(true)}
-      className={`shrink-0 rounded-lg bg-stone-100 object-cover ${size}`}
+      className={`shrink-0 rounded-[12px] bg-wood-soft object-cover ${size}`}
     />
   )
 }
@@ -105,72 +106,44 @@ function ProductRow({
   const discounted = unit < product.base_price_excl_vat
 
   return (
-    <div
-      className={`flex gap-3 border-b border-stone-200 p-4 last:border-b-0 ${
-        isFeatured ? 'flex-col sm:flex-row' : ''
-      }`}
-    >
+    <div className={`flex gap-3 border-t border-hair p-4 first:border-t-0 ${isFeatured ? 'flex-col sm:flex-row' : ''}`}>
       <ProductImage product={product} featured={isFeatured} />
 
       <div className="min-w-0 flex-1">
-        <p className={`font-bold text-stone-900 ${isFeatured ? 'text-lg' : 'text-base'}`}>
-          {product.name_he}
-        </p>
-        {product.name_en && <p className="text-sm text-stone-500">{product.name_en}</p>}
-        {isFeatured && product.description_he && (
-          <p className="mt-2 text-sm leading-relaxed text-stone-700">{product.description_he}</p>
-        )}
+        <p className={`m-0 font-bold ${isFeatured ? 'text-lg' : 'text-base'}`}>{product.name_he}</p>
+        {product.name_en && <p className="m-0 text-sm text-muted">{product.name_en}</p>}
+        {isFeatured && product.description_he && <p className="m-0 mt-2 text-sm leading-relaxed text-muted">{product.description_he}</p>}
 
         <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <span className="text-xl font-bold text-stone-900 tabular-nums">{formatIls(unit)}</span>
-          <span className="text-xs text-stone-500">ליח׳ ללא מע״מ</span>
-          {discounted && (
-            <span className="text-sm text-stone-400 line-through tabular-nums">
-              {formatIls(product.base_price_excl_vat)}
-            </span>
-          )}
+          <span className="tnum text-[22px] font-extrabold">{money(unit)}</span>
+          <span className="text-[13px] text-muted">ליח׳ לפני מע״מ</span>
+          {discounted && <s className="tnum text-sm text-faint">{money(product.base_price_excl_vat)}</s>}
         </div>
-        <p className="text-xs text-stone-500 tabular-nums">
-          {formatIls(withVat(unit))} כולל מע״מ
-        </p>
 
         {nextTier && (
-          <p className="mt-2 rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-900">
-            מ־{nextTier.min_qty} יח׳ המחיר יורד ל־{formatIls(nextTier.unit_price_excl_vat)}
+          <p className="m-0 mt-2 inline-block rounded-[8px] bg-brand-soft px-2 py-1 text-[13px] font-semibold text-attn">
+            מ־{nextTier.min_qty} יח׳ המחיר יורד ל־{money(nextTier.unit_price_excl_vat)}
           </p>
         )}
 
         {/* Big tap targets: this is read in a workshop, one-handed. */}
-        <div className="mt-3 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => onChange(product.id, qty - 1)}
-            disabled={qty === 0}
-            aria-label="הפחת כמות"
-            className="h-11 w-11 rounded-lg border border-stone-300 text-xl font-bold text-stone-700 disabled:opacity-30"
-          >
-            −
-          </button>
-          <input
-            inputMode="numeric"
-            value={qty}
-            onChange={(e) => onChange(product.id, parseInt(e.target.value, 10) || 0)}
-            aria-label={`כמות עבור ${product.name_he}`}
-            className="h-11 w-16 rounded-lg border border-stone-300 text-center text-lg font-semibold tabular-nums"
-          />
-          <button
-            type="button"
-            onClick={() => onChange(product.id, qty + 1)}
-            aria-label="הוסף כמות"
-            className="h-11 w-11 rounded-lg border border-stone-300 text-xl font-bold text-stone-700"
-          >
-            +
-          </button>
-          {qty > 0 && (
-            <span className="ms-auto text-base font-bold text-emerald-700 tabular-nums">
-              {formatIls(round2(unit * qty))}
-            </span>
-          )}
+        <div className="mt-3 flex items-center gap-2.5">
+          <span className="inline-flex items-center overflow-hidden rounded-xl border-[1.5px] border-hair bg-white">
+            <button type="button" onClick={() => onChange(product.id, qty + 1)} aria-label="הוסף כמות" className="grid h-11 w-11 place-items-center text-navy">
+              <Plus size={18} strokeWidth={2.4} />
+            </button>
+            <input
+              inputMode="numeric"
+              value={qty}
+              onChange={(e) => onChange(product.id, parseInt(e.target.value, 10) || 0)}
+              aria-label={`כמות עבור ${product.name_he}`}
+              className="tnum h-11 w-12 border-x border-hair text-center text-base font-bold"
+            />
+            <button type="button" onClick={() => onChange(product.id, qty - 1)} disabled={qty === 0} aria-label="הפחת כמות" className="grid h-11 w-11 place-items-center text-navy disabled:opacity-30">
+              <Minus size={18} strokeWidth={2.4} />
+            </button>
+          </span>
+          {qty > 0 && <span className="tnum ms-auto text-base font-bold">{money(round2(unit * qty))}</span>}
         </div>
       </div>
     </div>
@@ -313,51 +286,33 @@ export default function OfferClient({
 
   // ---------------------------------------------------------------- success
   if (sentOrder) {
+    const many = sentOrder.includes(',')
     return (
-      <main dir="rtl" className="min-h-screen bg-stone-50 px-4 py-16">
-        <div className="mx-auto max-w-md rounded-2xl border border-stone-200 bg-white p-8 text-center">
-          <p className="text-5xl">📩</p>
-          {/* Several numbers mean the cart went to several suppliers, one purchase order each. */}
-          <h1 className="mt-4 text-2xl font-bold text-stone-900">
-            {sentOrder.includes(',') ? `נשלחו ${sentOrder.split(',').length} הזמנות רכש` : 'ההזמנה נשלחה'}
-          </h1>
-          <p className="mt-2 font-mono text-sm text-stone-500">{sentOrder}</p>
-          <p className="mt-5 text-stone-700">
-            {sentOrder.includes(',')
-              ? 'כל ספק קיבל את ההזמנה שלו בלבד. כל אחד יאשר, יספק, ויוציא לך חשבונית ישירות.'
-              : 'העברנו את ההזמנה לספק. הוא יאשר אותה, יספק, ויוציא לך חשבונית ישירות.'}
-          </p>
-          <p className="mt-4 rounded-lg bg-stone-100 p-3 text-sm text-stone-600">
-            זו הזמנת רכש — לא חשבונית. הסכום המחייב הוא זה שיופיע בחשבונית של הספק.
-          </p>
-
-          {/* This screen used to end the visit: no links, nothing to do next. */}
-          <div className="mt-6 grid gap-2">
-            <Link
-              href="/app/orders"
-              className="flex h-12 items-center justify-center gap-2 rounded-lg bg-stone-900 font-semibold text-white"
-            >
-              <ClipboardList size={17} />
-              ההזמנות שלי
-            </Link>
-            <Link
-              href="/app/catalog"
-              className="flex h-12 items-center justify-center gap-2 rounded-lg border border-stone-300 font-semibold text-stone-700"
-            >
-              <LayoutGrid size={17} />
-              המשך לקטלוג המלא
-            </Link>
-            <button
-              type="button"
-              onClick={() => setSentOrder(null)}
-              className="flex h-11 items-center justify-center gap-2 text-sm font-medium text-stone-500"
-            >
-              <ArrowRight size={15} />
-              חזרה למבצע
-            </button>
-          </div>
+      <div className="mx-auto grid max-w-md grid-cols-[minmax(0,1fr)] gap-4 pt-4 text-center">
+        <span className="mx-auto grid h-[60px] w-[60px] place-items-center rounded-full bg-ok-soft text-ok">
+          <Check size={32} strokeWidth={2.4} />
+        </span>
+        {/* Several numbers mean the cart went to several suppliers, one purchase order each. */}
+        <h1 className="m-0 text-2xl font-extrabold">{many ? `נשלחו ${sentOrder.split(',').length} הזמנות רכש` : 'הזמנת הרכש נשלחה'}</h1>
+        <p className="tnum m-0 text-sm text-muted">{sentOrder}</p>
+        <p className="m-0 text-muted">
+          {many
+            ? 'כל ספק קיבל את ההזמנה שלו בלבד. כל אחד יאשר, יספק, ויוציא לך חשבונית ישירות.'
+            : 'העברנו את ההזמנה לספק. הוא יאשר אותה, יספק, ויוציא לך חשבונית ישירות.'}
+        </p>
+        <p className="m-0 rounded-[11px] bg-white p-3 text-sm text-muted">זו הזמנת רכש — לא חשבונית. הסכום המחייב הוא זה שיופיע בחשבונית של הספק.</p>
+        <div className="grid gap-2">
+          <Link href="/app/orders" className="flex h-12 items-center justify-center gap-2 rounded-[11px] bg-brand font-bold text-navy">
+            <ClipboardList size={18} /> ההזמנות שלי
+          </Link>
+          <Link href="/app/catalog" className="flex h-12 items-center justify-center gap-2 rounded-[11px] border-[1.5px] border-hair bg-white font-bold">
+            <LayoutGrid size={18} /> לקטלוג המלא
+          </Link>
+          <button type="button" onClick={() => setSentOrder(null)} className="flex h-11 items-center justify-center gap-2 text-sm font-semibold text-muted">
+            <ArrowRight size={15} /> חזרה למבצע
+          </button>
         </div>
-      </main>
+      </div>
     )
   }
 
@@ -365,142 +320,88 @@ export default function OfferClient({
   const secondaryTitle = reorder.length > 0 ? 'מה שהזמנת בפעם שעברה' : 'עוד מהקטלוג'
 
   return (
-    <main dir="rtl" className="min-h-screen bg-stone-50 pb-40">
-      <div className="mx-auto max-w-2xl px-4 py-6">
-        <header className="mb-5">
-          <p className="text-sm text-stone-500">הדף האישי שלך</p>
-          <h1 className="text-xl font-bold text-stone-900">{carpenterName}</h1>
-        </header>
+    <div className={`grid grid-cols-[minmax(0,1fr)] gap-5 pt-1 ${lines.length > 0 ? 'pb-44 md:pb-36' : ''}`}>
+      <section>
+        <div className="text-[15px] font-medium text-muted">הדף האישי שלך</div>
+        <h1 className="m-0 mt-0.5 text-[28px] font-extrabold leading-tight text-navy md:text-[34px]">{carpenterName}</h1>
+      </section>
 
-        {featured && (
-          <section className="mb-5 overflow-hidden rounded-2xl border border-stone-200 bg-white">
-            <div className="border-b border-stone-200 bg-stone-900 px-4 py-3">
-              <p className="text-base font-bold text-white">
-                {headline ?? (kind === 'discount' ? 'מבצע השבוע' : 'מוצר שאולי לא הכרת')}
-              </p>
-              {body && <p className="mt-1 text-sm leading-relaxed text-stone-300">{body}</p>}
-            </div>
-            <ProductRow
-              product={featured}
-              qty={quantities[featured.id] ?? 0}
-              onChange={setQty}
-              featured
-            />
-
-            <div className="border-t border-stone-200 bg-stone-50 px-4 py-3">
-              {intentSent ? (
-                <p className="text-sm font-medium text-emerald-700">
-                  ✓ נרשם. נחזור אליך עם מחיר לכמות שביקשת.
-                </p>
-              ) : intentOpen ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  <input
-                    inputMode="numeric"
-                    value={intentQty}
-                    onChange={(e) => setIntentQty(e.target.value)}
-                    placeholder="כמות"
-                    aria-label="כמות מבוקשת"
-                    className="h-11 w-24 rounded-lg border border-stone-300 px-3 text-center tabular-nums"
-                  />
-                  <input
-                    value={intentNote}
-                    onChange={(e) => setIntentNote(e.target.value)}
-                    placeholder="הערה (לא חובה)"
-                    aria-label="הערה"
-                    className="h-11 min-w-0 flex-1 rounded-lg border border-stone-300 px-3"
-                  />
-                  <button
-                    type="button"
-                    onClick={sendIntent}
-                    className="h-11 rounded-lg bg-stone-900 px-4 font-semibold text-white"
-                  >
-                    שלח
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-5 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] md:items-start md:gap-6">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5">
+          {featured && (
+            <section className="overflow-hidden rounded-2xl border border-hair bg-white shadow-[0_8px_24px_rgba(30,42,59,.06)]">
+              <div className="bg-navy px-4 py-3.5 text-white">
+                <span className="inline-flex rounded-full bg-brand px-2.5 py-0.5 text-[12.5px] font-bold text-navy">
+                  {kind === 'discount' ? 'מבצע' : 'מומלץ'}
+                </span>
+                <p className="m-0 mt-1.5 text-lg font-bold">{headline ?? (kind === 'discount' ? 'מבצע השבוע' : 'מוצר שאולי לא הכרת')}</p>
+                {body && <p className="m-0 mt-1 text-sm leading-relaxed text-slate-300">{body}</p>}
+              </div>
+              <ProductRow product={featured} qty={quantities[featured.id] ?? 0} onChange={setQty} featured />
+              <div className="border-t border-hair bg-warm px-4 py-3">
+                {intentSent ? (
+                  <p className="m-0 flex items-center gap-1.5 text-sm font-semibold text-ok-ink">
+                    <Check size={15} strokeWidth={2.6} /> נרשם. נחזור אליך עם מחיר לכמות שביקשת.
+                  </p>
+                ) : intentOpen ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input inputMode="numeric" value={intentQty} onChange={(e) => setIntentQty(e.target.value)} placeholder="כמות" aria-label="כמות מבוקשת" className="tnum h-11 w-24 rounded-[10px] border-[1.5px] border-hair bg-white px-3 text-center" />
+                    <input value={intentNote} onChange={(e) => setIntentNote(e.target.value)} placeholder="הערה (לא חובה)" aria-label="הערה" className="h-11 min-w-0 flex-1 rounded-[10px] border-[1.5px] border-hair bg-white px-3" />
+                    <button type="button" onClick={sendIntent} className="h-11 rounded-[11px] bg-navy px-4 font-bold text-white">
+                      שליחה
+                    </button>
+                  </div>
+                ) : (
+                  <button type="button" onClick={() => setIntentOpen(true)} className="text-sm font-semibold text-brand-ink">
+                    צריך כמות גדולה יותר? בקש הצעת מחיר ←
                   </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setIntentOpen(true)}
-                  className="text-sm font-semibold text-stone-700 underline underline-offset-4"
-                >
-                  צריך כמות גדולה יותר? בקש הצעת מחיר
-                </button>
-              )}
-            </div>
-          </section>
-        )}
+                )}
+              </div>
+            </section>
+          )}
 
-        {secondary.length > 0 && (
-          <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white">
-            <h2 className="border-b border-stone-200 px-4 py-3 text-base font-bold text-stone-900">
-              {secondaryTitle}
-            </h2>
-            {secondary.map((product) => (
-              <ProductRow
-                key={product.id}
-                product={product}
-                qty={quantities[product.id] ?? 0}
-                onChange={setQty}
-              />
-            ))}
-          </section>
-        )}
+          {secondary.length > 0 && (
+            <section>
+              <h2 className="mb-2 text-base font-bold">{secondaryTitle}</h2>
+              <div className="overflow-hidden rounded-2xl border border-hair bg-white">
+                {secondary.map((product) => (
+                  <ProductRow key={product.id} product={product} qty={quantities[product.id] ?? 0} onChange={setQty} />
+                ))}
+              </div>
+            </section>
+          )}
 
-        {error && (
-          <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>
-        )}
+          {error && <p role="alert" className="m-0 rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</p>}
+        </div>
 
-        {/* The campaign product and the reorder list are not the whole shop.
-            Someone who came for one thing and remembered another needs a way
-            through to everything. */}
-        <div className="mt-5 grid gap-2 sm:grid-cols-2">
-          <Link
-            href="/app/catalog"
-            className="flex h-12 items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white font-semibold text-stone-800"
-          >
-            <LayoutGrid size={17} />
-            כל הקטלוג
+        {/* The campaign product and the reorder list are not the whole shop. */}
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2">
+          <Link href="/app/catalog" className="flex h-12 items-center justify-center gap-2 rounded-[11px] border-[1.5px] border-hair bg-white font-bold">
+            <LayoutGrid size={18} /> כל הקטלוג
           </Link>
-          <Link
-            href="/app/orders"
-            className="flex h-12 items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white font-semibold text-stone-800"
-          >
-            <ClipboardList size={17} />
-            ההזמנות שלי
+          <Link href="/app/orders" className="flex h-12 items-center justify-center gap-2 rounded-[11px] border-[1.5px] border-hair bg-white font-bold">
+            <ClipboardList size={18} /> ההזמנות שלי
           </Link>
         </div>
       </div>
 
-      {/* Sticky basket: the order is never more than one tap away. */}
+      {/* The order being put together, one tap away — above the bottom navigation. */}
       {lines.length > 0 && (
-        <div className="fixed inset-x-0 bottom-0 border-t border-stone-200 bg-white p-4 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
-          <div className="mx-auto max-w-2xl">
-            <div className="mb-3 flex items-baseline justify-between">
-              <span className="text-sm text-stone-600">
-                {lines.length} פריטים · ללא מע״מ
-              </span>
-              <span className="text-2xl font-bold text-stone-900 tabular-nums">
-                {formatIls(subtotal)}
-              </span>
+        <div className="fixed inset-x-0 bottom-[72px] z-30 border-t border-hair bg-white/[.98] px-4 py-3 shadow-[0_-6px_16px_rgba(30,42,59,.06)] md:bottom-0 md:start-[236px]">
+          <div className="mx-auto flex max-w-[1060px] flex-wrap items-center gap-x-4 gap-y-2">
+            <div className="grid leading-tight">
+              <b className="tnum text-xl">{money(subtotal)}</b>
+              <small className="tnum text-[12.5px] text-muted">
+                {lines.length} פריטים · לפני מע״מ · כולל מע״מ {Math.round(VAT_RATE * 100)}%: {money(withVat(subtotal))}
+              </small>
             </div>
-            <p className="mb-3 text-xs text-stone-500 tabular-nums">
-              מע״מ {(VAT_RATE * 100).toFixed(0)}%: {formatIls(vatAmount(subtotal))} · סה״כ{' '}
-              {formatIls(withVat(subtotal))}
-            </p>
-            <button
-              type="button"
-              onClick={sendOrder}
-              disabled={sending}
-              className="h-14 w-full rounded-xl bg-emerald-700 text-lg font-bold text-white disabled:opacity-60"
-            >
-              {sending ? 'שולח…' : 'שלח הזמנה'}
+            <button type="button" onClick={sendOrder} disabled={sending} className="h-12 min-w-[180px] flex-1 rounded-[11px] bg-brand font-bold text-navy hover:bg-brand-hover disabled:opacity-60">
+              {sending ? 'שולח…' : 'שליחת הזמנה'}
             </button>
-            <p className="mt-2 text-center text-xs text-stone-500">
-              הספק יאשר, יספק, ויוציא חשבונית ישירות. אין תשלום כאן.
-            </p>
+            <p className="m-0 w-full text-center text-[12.5px] text-muted md:w-auto">הספק יאשר, יספק ויוציא חשבונית ישירות. אין תשלום כאן.</p>
           </div>
         </div>
       )}
-    </main>
+    </div>
   )
 }

@@ -122,7 +122,18 @@ export default function AppShell({
           )}
         </header>
 
-        <main className="mx-auto w-full max-w-[1120px] px-4 pb-28 pt-1 md:px-7 md:pb-12 md:pt-6">{children}</main>
+        <main className="mx-auto w-full max-w-[1120px] px-4 pb-28 pt-1 md:px-7 md:pb-12 md:pt-6">
+          {children}
+          {/* What every public page owes its visitors, kept quiet at the end. */}
+          <footer className="mt-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border-t border-hair pt-4 text-xs text-faint">
+            <span className="flex items-center gap-1.5">
+              <LogoMark size={16} tile /> © נגרימ · שוק הנגרים
+            </span>
+            <Link href="/terms" className="hover:text-ink">תקנון ותנאי שימוש</Link>
+            <Link href="/terms#privacy" className="hover:text-ink">מדיניות פרטיות</Link>
+            <Link href="/supplier/join" className="hover:text-ink">ספקים</Link>
+          </footer>
+        </main>
       </div>
 
       {/* Phone bottom navigation */}

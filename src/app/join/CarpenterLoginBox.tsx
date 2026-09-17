@@ -44,23 +44,23 @@ export default function CarpenterLoginBox() {
   }
 
   return (
-    <section className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-5">
-      <h2 className="flex items-center gap-2 font-bold text-emerald-950">
-        <KeyRound size={17} />
+    <section className="grid gap-2.5 rounded-2xl border border-hair bg-white p-4">
+      <h2 className="m-0 flex items-center gap-2 text-base font-bold">
+        <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-navy-soft text-navy">
+          <KeyRound size={17} />
+        </span>
         כבר רשומים? כניסה
       </h2>
 
       {invalidLink && (
-        <p className="mt-2 rounded-lg bg-amber-100 p-2.5 text-sm text-amber-900">
+        <p role="alert" className="m-0 rounded-[10px] bg-brand-soft p-2.5 text-sm text-attn">
           הקישור שפתחתם אינו תקף. בקשו קישור חדש.
         </p>
       )}
 
-      <p className="mt-1 text-sm text-emerald-900">
-        נרשמתם בטלפון ורוצים להיכנס מהמחשב (או להפך)? נשלח קישור כניסה למייל של הנגרייה.
-      </p>
+      <p className="m-0 text-sm text-muted">נשלח קישור כניסה למייל של הנגרייה. פותחים אותו במכשיר הזה — וזהו.</p>
 
-      <form onSubmit={send} className="mt-3 flex flex-wrap gap-2">
+      <form onSubmit={send} className="flex flex-wrap gap-2">
         <input
           id="carpenter-login-identifier"
           value={identifier}
@@ -68,19 +68,15 @@ export default function CarpenterLoginBox() {
           required
           placeholder="מייל או טלפון שאיתם נרשמתם"
           aria-label="מייל או טלפון"
-          className="h-12 min-w-0 flex-1 rounded-lg border border-emerald-300 bg-white px-3"
+          className="h-12 min-w-0 flex-1 rounded-[10px] border-[1.5px] border-hair bg-white px-3 text-base placeholder:text-faint focus:border-navy"
         />
-        <button
-          type="submit"
-          disabled={busy || !identifier.trim()}
-          className="h-12 shrink-0 rounded-lg bg-emerald-700 px-5 font-bold text-white disabled:opacity-50"
-        >
+        <button type="submit" disabled={busy || !identifier.trim()} className="h-12 shrink-0 rounded-[11px] bg-navy px-5 font-bold text-white disabled:opacity-50">
           {busy ? 'שולח…' : 'שלחו לי קישור'}
         </button>
       </form>
 
-      {message && <p className="mt-3 text-sm font-semibold text-emerald-900">{message}</p>}
-      {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
+      {message && <p role="status" className="m-0 text-sm font-semibold text-ok-ink">{message}</p>}
+      {error && <p role="alert" className="m-0 text-sm text-red-800">{error}</p>}
     </section>
   )
 }
