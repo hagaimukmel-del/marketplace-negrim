@@ -11,6 +11,12 @@ export interface CartItem {
   base_price_excl_vat: number
   /** Who the line is bought from. One cart splits into an order per supplier. */
   supplier_id?: string
+  /** For display only — the server re-reads everything before ordering. */
+  supplier_name?: string
+  unit?: string
+  pack_label?: string | null
+  pack_qty?: number | null
+  /** In base units: 50 for two 25 kg sacks. */
   quantity: number
   addedAt: number
 }
@@ -20,6 +26,11 @@ interface CartContextType {
   addItem: (item: Omit<CartItem, 'addedAt' | 'quantity'>, quantity: number) => void
   removeItem: (id: string) => void
   updateQuantity: (id: string, quantity: number) => void
+  /** Move a line to another supplier's offer, at that supplier's price. */
+  switchSupplier: (
+    id: string,
+    offer: Pick<CartItem, 'supplier_id' | 'supplier_name' | 'base_price_excl_vat' | 'pack_label' | 'pack_qty'>
+  ) => void
   clearCart: () => void
   totalItems: number
   /** Sum of the lines, excluding VAT. The figure the order stores. */
@@ -77,7 +88,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           newQty: existing.quantity + quantity,
         })
         return prev.map((i) =>
-          i.id === item.id ? { ...i, quantity: i.quantity + quantity } : i
+          // The latest add decides the supplier: it is the one just chosen.
+          i.id === item.id ? { ...i, ...item, quantity: i.quantity + quantity } : i
         )
       }
       logEvent('item_added_to_cart', {
@@ -127,6 +139,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     })
   }
 
+  const switchSupplier: CartContextType['switchSupplier'] = (id, offer) => {
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...offer } : i)))
+  }
+
   const clearCart = () => {
     logEvent('cart_cleared', { itemCount: items.length })
     setItems([])
@@ -148,6 +164,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     addItem,
     removeItem,
     updateQuantity,
+    switchSupplier,
     clearCart,
     totalItems: items.reduce((sum, item) => sum + item.quantity, 0),
     subtotalExclVat: calculateSubtotalExclVat(),

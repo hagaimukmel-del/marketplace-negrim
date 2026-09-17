@@ -36,6 +36,30 @@
 @theme inline {
   --color-background: var(--ground);
   --color-foreground: var(--ink);
+
+  /* The purchasing app (/app): the logo's colours. Navy carries the brand and
+     the navigation, amber is the one action, warm white is the ground, and green
+     is spent only on status. Named so they cannot collide with Tailwind's own
+     palettes, which the older screens still use. */
+  --color-navy: #1E2A3B;
+  --color-navy-deep: #151E2B;
+  --color-navy-soft: #E8ECF2;
+  --color-brand: #F29A12;
+  --color-brand-hover: #E68C06;
+  --color-brand-ink: #9A4F07;
+  --color-brand-soft: #FDF1E1;
+  --color-brand-line: #F1D7AE;
+  --color-attn: #7A4306;
+  --color-warm: #FAF7F2;
+  --color-ink: #1B2230;
+  --color-muted: #5F6673;
+  --color-faint: #8A909B;
+  --color-hair: #E7E1D7;
+  --color-wood: #C9A27A;
+  --color-wood-soft: #F3EADF;
+  --color-ok: #2E7D4F;
+  --color-ok-soft: #E6F2EA;
+  --color-ok-ink: #1F5A38;
   --font-sans: 'Assistant', ui-sans-serif, system-ui, sans-serif;
 }
 

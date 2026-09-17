@@ -560,6 +560,7 @@ export type Database = {
           business_name: string | null
           campaign_id: string | null
           carpenter_id: string | null
+          carpenter_seen_at: string | null
           checkout_id: string | null
           city: string | null
           confirmed_at: string | null
@@ -568,10 +569,15 @@ export type Database = {
           customer_email: string
           customer_name: string
           customer_phone: string
+          delivered_at: string | null
+          delivered_by: string | null
           id: string
           notes: string | null
           order_number: string
           payment_method: string | null
+          processing_at: string | null
+          shipped_at: string | null
+          short_number: number
           status: string | null
           subtotal_excl_vat: number
           supplier_id: string | null
@@ -586,6 +592,7 @@ export type Database = {
           business_name?: string | null
           campaign_id?: string | null
           carpenter_id?: string | null
+          carpenter_seen_at?: string | null
           checkout_id?: string | null
           city?: string | null
           confirmed_at?: string | null
@@ -594,10 +601,15 @@ export type Database = {
           customer_email: string
           customer_name: string
           customer_phone: string
+          delivered_at?: string | null
+          delivered_by?: string | null
           id?: string
           notes?: string | null
           order_number: string
           payment_method?: string | null
+          processing_at?: string | null
+          shipped_at?: string | null
+          short_number?: number
           status?: string | null
           subtotal_excl_vat?: number
           supplier_id?: string | null
@@ -612,6 +624,7 @@ export type Database = {
           business_name?: string | null
           campaign_id?: string | null
           carpenter_id?: string | null
+          carpenter_seen_at?: string | null
           checkout_id?: string | null
           city?: string | null
           confirmed_at?: string | null
@@ -620,10 +633,15 @@ export type Database = {
           customer_email?: string
           customer_name?: string
           customer_phone?: string
+          delivered_at?: string | null
+          delivered_by?: string | null
           id?: string
           notes?: string | null
           order_number?: string
           payment_method?: string | null
+          processing_at?: string | null
+          shipped_at?: string | null
+          short_number?: number
           status?: string | null
           subtotal_excl_vat?: number
           supplier_id?: string | null
