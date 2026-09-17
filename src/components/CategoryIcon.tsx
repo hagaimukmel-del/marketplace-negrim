@@ -1,4 +1,5 @@
 import {
+  Columns3,
   Droplets,
   Factory,
   Hammer,
@@ -20,6 +21,7 @@ export const CATEGORY_ICONS: { key: string; label: string; Icon: LucideIcon }[] 
   { key: 'boards', label: 'לוחות', Icon: Layers },
   { key: 'wood', label: 'עץ', Icon: TreePine },
   { key: 'edge', label: 'קנטים', Icon: Ruler },
+  { key: 'cladding', label: 'חיפויים', Icon: Columns3 },
   { key: 'glue', label: 'דבקים', Icon: Droplets },
   { key: 'hardware', label: 'פרזול', Icon: Wrench },
   { key: 'finish', label: 'גימור', Icon: Paintbrush },

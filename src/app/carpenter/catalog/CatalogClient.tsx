@@ -472,7 +472,7 @@ export default function CatalogClient({
         // The hub: every main category at once, so the whole shape of the
         // catalogue is visible before the first tap.
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 *:last:odd:col-span-2 sm:*:last:odd:col-span-1">
             {tree.map((node) => (
               <HubTile key={node.id} top={node} onOpen={() => go(node.id)} />
             ))}
