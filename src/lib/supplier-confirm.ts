@@ -56,7 +56,7 @@ export async function loadConfirmable(token: string): Promise<ConfirmResult> {
     supabase
       .from('orders')
       .select(
-        'id, order_number, created_at, status, business_name, customer_name, customer_phone, city, address, payment_method, notes, subtotal_excl_vat, confirmed_subtotal_excl_vat, confirmed_at, supplier_note'
+        'id, order_number, short_number, created_at, status, business_name, customer_name, customer_phone, city, address, payment_method, notes, subtotal_excl_vat, confirmed_subtotal_excl_vat, confirmed_at, supplier_note'
       )
       .eq('id', claim.orderId)
       .maybeSingle(),
@@ -82,7 +82,7 @@ export async function loadConfirmable(token: string): Promise<ConfirmResult> {
       orderId: order.id,
       supplierId: supplier.id,
       supplierName: supplier.company_name,
-      orderNumber: order.order_number,
+      orderNumber: order.short_number ? `#${order.short_number}` : order.order_number,
       createdAt: order.created_at ?? new Date().toISOString(),
       businessName: order.business_name,
       contactName: order.customer_name,

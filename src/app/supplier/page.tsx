@@ -47,6 +47,7 @@ interface RawLine {
   orders: {
     id: string
     order_number: string
+    short_number: number | null
     status: string | null
     created_at: string | null
     business_name: string | null
@@ -97,7 +98,7 @@ export default async function SupplierHome({
       .from('order_items')
       .select(
         'id, order_id, product_name_he, quantity, unit_price_excl_vat, line_total_excl_vat, ' +
-          'orders(id, order_number, status, created_at, business_name, customer_name, customer_phone, address, city, notes, payment_method, confirmed_subtotal_excl_vat, supplier_note)'
+          'orders(id, order_number, short_number, status, created_at, business_name, customer_name, customer_phone, address, city, notes, payment_method, confirmed_subtotal_excl_vat, supplier_note)'
       )
       .eq('supplier_id', supplier.id)
       .limit(1000),
@@ -182,7 +183,8 @@ export default async function SupplierHome({
     }
     byOrder.set(order.id, {
       id: order.id,
-      orderNumber: order.order_number,
+      // The number the carpenter sees and says on the phone.
+      orderNumber: order.short_number ? `#${order.short_number}` : order.order_number,
       status: order.status ?? 'pending',
       createdAt: order.created_at ?? new Date(0).toISOString(),
       buyer: order.business_name || order.customer_name || 'נגרייה',

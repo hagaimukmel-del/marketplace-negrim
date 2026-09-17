@@ -33,7 +33,7 @@ export async function notifyNewOrders(orderIds: string[]): Promise<void> {
       supabase
         .from('orders')
         .select(
-          'id, order_number, created_at, business_name, customer_name, customer_email, customer_phone, city, address, payment_method, notes'
+          'id, order_number, short_number, created_at, business_name, customer_name, customer_email, customer_phone, city, address, payment_method, notes'
         )
         .in('id', orderIds)
         .order('order_number'),
@@ -76,7 +76,7 @@ export async function notifyNewOrders(orderIds: string[]): Promise<void> {
         if (!supplier) continue
         const subtotal = Number(supplierLines.reduce((sum, line) => sum + line.line_total_excl_vat, 0).toFixed(2))
         sent.push({
-          orderNumber: order.order_number,
+          orderNumber: order.short_number ? `#${order.short_number}` : order.order_number,
           supplier: supplier.company_name,
           subtotal,
           lines: supplierLines.map((line) => ({
@@ -95,7 +95,7 @@ export async function notifyNewOrders(orderIds: string[]): Promise<void> {
         const payload = {
           orderId: order.id,
           supplierId: supplier.id,
-          orderNumber: order.order_number,
+          orderNumber: order.short_number ? `#${order.short_number}` : order.order_number,
           carpenterName: order.business_name || order.customer_name || 'נגרייה',
           contactName: order.business_name ? order.customer_name : null,
           phone: order.customer_phone,
@@ -155,7 +155,7 @@ export async function notifyCarpenterOrderUpdate(orderId: string, kind: 'confirm
     const [{ data: order }, { data: lines }] = await Promise.all([
       supabase
         .from('orders')
-        .select('order_number, business_name, customer_name, customer_email, subtotal_excl_vat, confirmed_subtotal_excl_vat, supplier_note')
+        .select('order_number, short_number, business_name, customer_name, customer_email, subtotal_excl_vat, confirmed_subtotal_excl_vat, supplier_note')
         .eq('id', orderId)
         .maybeSingle(),
       supabase.from('order_items').select('supplier_id').eq('order_id', orderId),
@@ -172,11 +172,11 @@ export async function notifyCarpenterOrderUpdate(orderId: string, kind: 'confirm
 
     await sendEmail({
       to: order.customer_email,
-      subject: carpenterOrderUpdateSubject(kind, order.order_number),
+      subject: carpenterOrderUpdateSubject(kind, order.short_number ? `#${order.short_number}` : order.order_number),
       html: carpenterOrderUpdateHtml({
         kind,
         businessName: carpenterName,
-        orderNumber: order.order_number,
+        orderNumber: order.short_number ? `#${order.short_number}` : order.order_number,
         supplierName: (suppliers ?? []).map((item) => item.company_name).join(' / ') || 'הספק',
         supplierPhone: suppliers && suppliers.length === 1 ? supplier?.phone ?? null : null,
         submitted: Number(order.subtotal_excl_vat),

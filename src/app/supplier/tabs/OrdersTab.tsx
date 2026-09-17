@@ -9,7 +9,7 @@ import { callApi, jsonInit, whatsappLink, type SupplierOrder } from '../types'
 import type { Notify } from '../SupplierApp'
 
 type Filter = 'pending' | 'active' | 'done' | 'all'
-type Action = 'confirm' | 'ship' | 'deliver'
+type Action = 'confirm' | 'prepare' | 'ship' | 'deliver'
 
 const FILTERS: { key: Filter; label: string; match: (status: string) => boolean }[] = [
   { key: 'pending', label: 'ממתינות לאישור', match: (s) => s === 'pending' },
@@ -213,6 +213,19 @@ function OrderCard({
             </>
           )}
 
+          {/* Optional, for suppliers who want the carpenter to see it: the
+              carpenter's timeline shows "בהכנה" only when it was marked. */}
+          {order.status === 'confirmed' && (
+            <button
+              type="button"
+              onClick={() => onAction(order, 'prepare')}
+              disabled={busy}
+              className="h-10 w-full rounded-lg border border-dashed border-stone-300 text-sm font-semibold text-stone-600 disabled:opacity-60"
+            >
+              סמן שההזמנה בהכנה (לא חובה)
+            </button>
+          )}
+
           {['confirmed', 'processing'].includes(order.status) && (
             <div className="flex gap-2">
               <button
@@ -254,6 +267,7 @@ function OrderCard({
 
 const DONE_MESSAGE: Record<Action, string> = {
   confirm: 'ההזמנה אושרה',
+  prepare: 'סומן: בהכנה',
   ship: 'סומן: יצא לאספקה',
   deliver: 'סומן: סופק',
 }

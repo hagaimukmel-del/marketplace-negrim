@@ -18,6 +18,8 @@ import { notifyCarpenterOrderUpdate } from '@/lib/notify-order'
  */
 const TRANSITIONS = {
   confirm: { from: ['pending'], to: 'confirmed' },
+  // Optional. A supplier who never marks it goes straight to ship or deliver.
+  prepare: { from: ['confirmed'], to: 'processing' },
   ship: { from: ['confirmed', 'processing'], to: 'shipped' },
   deliver: { from: ['confirmed', 'processing', 'shipped'], to: 'delivered' },
 } as const

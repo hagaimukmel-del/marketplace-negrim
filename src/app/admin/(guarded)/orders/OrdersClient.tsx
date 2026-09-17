@@ -18,6 +18,7 @@ interface Line {
 interface Order {
   id: string
   order_number: string
+  short_number: number
   created_at: string | null
   status: string | null
   customer_name: string
@@ -81,7 +82,7 @@ function Row({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="font-mono text-sm font-semibold text-stone-900">
-              {order.order_number}
+              #{order.short_number} <span className="text-xs font-normal text-stone-400">{order.order_number}</span>
             </span>
             <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${status.className}`}>
               {status.label}
