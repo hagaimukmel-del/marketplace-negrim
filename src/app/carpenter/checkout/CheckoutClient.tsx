@@ -79,6 +79,10 @@ export default function CheckoutClient({ prefill }: { prefill: CheckoutPrefill }
     paymentTerms: isTerms(prefill.paymentTerms) ? prefill.paymentTerms : 'שוטף+30',
   })
 
+  // Each supplier gets its own purchase order. Known from the cart for lines
+  // added from the catalogue; the server makes the final split either way.
+  const supplierCount = new Set(cart.items.map((item) => item.supplier_id).filter(Boolean)).size
+
   const set = (key: keyof OrderForm, value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }))
 
@@ -100,10 +104,12 @@ export default function CheckoutClient({ prefill }: { prefill: CheckoutPrefill }
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     try {
-      const { orderId } = await checkout.submitOrder(cart.items, form)
+      const { checkoutId, orders } = await checkout.submitOrder(cart.items, form)
       setSent(true)
       cart.clearCart()
-      router.push(`/carpenter/orders/${orderId}`)
+      // One supplier: straight to that order. Several: the list, with the
+      // orders just sent called out, because there is no single page for them.
+      router.push(orders.length === 1 ? `/carpenter/orders/${orders[0].id}` : `/carpenter/orders?sent=${checkoutId}`)
     } catch {
       // checkout.error already carries the message for display below
     }
@@ -221,7 +227,11 @@ export default function CheckoutClient({ prefill }: { prefill: CheckoutPrefill }
             className="flex h-13 w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 py-3.5 text-lg font-bold text-white hover:bg-emerald-800 disabled:opacity-60"
           >
             <Send size={18} />
-            {checkout.isSubmitting ? 'שולח…' : 'שלח הזמנה לספק'}
+            {checkout.isSubmitting
+              ? 'שולח…'
+              : supplierCount > 1
+                ? `שלח ${supplierCount} הזמנות רכש`
+                : 'שלח הזמנה לספק'}
           </button>
         </form>
 
@@ -259,6 +269,12 @@ export default function CheckoutClient({ prefill }: { prefill: CheckoutPrefill }
             </span>
           </div>
 
+          {supplierCount > 1 && (
+            <p className="mt-3 rounded-lg bg-amber-50 p-2.5 text-xs text-amber-900">
+              המוצרים מ-{supplierCount} ספקים, ולכן יישלחו {supplierCount} הזמנות רכש — אחת לכל ספק. כל ספק
+              מאשר, מספק ומוציא חשבונית על ההזמנה שלו.
+            </p>
+          )}
           <p className="mt-3 rounded-lg bg-stone-100 p-2.5 text-xs text-stone-600">
             זו הזמנת רכש. הסכום המחייב הוא זה שיופיע בחשבונית של הספק.
           </p>

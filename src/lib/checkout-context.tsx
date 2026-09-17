@@ -23,13 +23,19 @@ export interface OrderForm {
   paymentTerms: PaymentTerms
 }
 
+/** One checkout becomes one purchase order per supplier. */
+export interface SubmittedCheckout {
+  checkoutId: string
+  orders: { id: string; orderNumber: string }[]
+}
+
 interface CheckoutContextType {
   /**
    * The form is passed in rather than held here. It used to live in this
    * provider, which meant submitting read whatever the last render had written
    * — and a page that seeds its fields from the server would have raced it.
    */
-  submitOrder: (items: CartItem[], form: OrderForm) => Promise<{ orderId: string }>
+  submitOrder: (items: CartItem[], form: OrderForm) => Promise<SubmittedCheckout>
   isSubmitting: boolean
   error: string | null
 }
@@ -93,9 +99,7 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
 
       const result = await response.json()
 
-      console.log('✅ Order submitted:', result.orderNumber)
-
-      return { orderId: result.orderId }
+      return { checkoutId: result.checkoutId, orders: result.orders }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'שגיאה בשליחת ההזמנה'
       setError(errorMsg)

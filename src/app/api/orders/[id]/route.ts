@@ -10,6 +10,7 @@
  */
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { resolveCarpenter } from '@/lib/offer'
+import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(
@@ -21,8 +22,15 @@ export async function GET(
 
     // An order id alone used to be enough to read someone's name, phone,
     // address and prices. The caller has to prove the order is theirs.
+    // The token from this browser, or the signed session cookie of a carpenter
+    // who came in from an emailed login link.
     const token = request.nextUrl.searchParams.get('token')
-    const carpenter = token ? await resolveCarpenter(token) : null
+    const session = token ? null : await getSessionCarpenter()
+    const carpenter = token
+      ? await resolveCarpenter(token)
+      : session
+        ? await resolveCarpenter(session.token)
+        : null
 
     if (!carpenter) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
@@ -30,7 +38,7 @@ export async function GET(
 
     const { data, error } = await getSupabaseAdmin()
       .from('orders')
-      .select('*, order_items(*)')
+      .select('*, order_items(*), suppliers(company_name, phone)')
       .eq('id', id)
       .eq('carpenter_id', carpenter.id)
       .single()
@@ -42,7 +50,17 @@ export async function GET(
       )
     }
 
-    return NextResponse.json({ order: data })
+    // The other purchase orders sent in the same checkout, to other suppliers.
+    const { data: siblings } = data.checkout_id
+      ? await getSupabaseAdmin()
+          .from('orders')
+          .select('id, order_number, status, subtotal_excl_vat, suppliers(company_name)')
+          .eq('checkout_id', data.checkout_id)
+          .eq('carpenter_id', carpenter.id)
+          .neq('id', data.id)
+      : { data: [] }
+
+    return NextResponse.json({ order: data, siblings: siblings ?? [] })
   } catch (err) {
     console.error('Order fetch error:', err)
     return NextResponse.json(

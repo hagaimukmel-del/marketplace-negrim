@@ -560,6 +560,7 @@ export type Database = {
           business_name: string | null
           campaign_id: string | null
           carpenter_id: string | null
+          checkout_id: string | null
           city: string | null
           confirmed_at: string | null
           confirmed_subtotal_excl_vat: number | null
@@ -573,6 +574,7 @@ export type Database = {
           payment_method: string | null
           status: string | null
           subtotal_excl_vat: number
+          supplier_id: string | null
           supplier_note: string | null
           total_amount: number
           updated_at: string | null
@@ -584,6 +586,7 @@ export type Database = {
           business_name?: string | null
           campaign_id?: string | null
           carpenter_id?: string | null
+          checkout_id?: string | null
           city?: string | null
           confirmed_at?: string | null
           confirmed_subtotal_excl_vat?: number | null
@@ -597,6 +600,7 @@ export type Database = {
           payment_method?: string | null
           status?: string | null
           subtotal_excl_vat?: number
+          supplier_id?: string | null
           supplier_note?: string | null
           total_amount: number
           updated_at?: string | null
@@ -608,6 +612,7 @@ export type Database = {
           business_name?: string | null
           campaign_id?: string | null
           carpenter_id?: string | null
+          checkout_id?: string | null
           city?: string | null
           confirmed_at?: string | null
           confirmed_subtotal_excl_vat?: number | null
@@ -621,6 +626,7 @@ export type Database = {
           payment_method?: string | null
           status?: string | null
           subtotal_excl_vat?: number
+          supplier_id?: string | null
           supplier_note?: string | null
           total_amount?: number
           updated_at?: string | null
@@ -640,6 +646,13 @@ export type Database = {
             columns: ["carpenter_id"]
             isOneToOne: false
             referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]

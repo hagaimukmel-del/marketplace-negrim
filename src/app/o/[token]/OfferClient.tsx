@@ -317,10 +317,15 @@ export default function OfferClient({
       <main dir="rtl" className="min-h-screen bg-stone-50 px-4 py-16">
         <div className="mx-auto max-w-md rounded-2xl border border-stone-200 bg-white p-8 text-center">
           <p className="text-5xl">📩</p>
-          <h1 className="mt-4 text-2xl font-bold text-stone-900">ההזמנה נשלחה</h1>
+          {/* Several numbers mean the cart went to several suppliers, one purchase order each. */}
+          <h1 className="mt-4 text-2xl font-bold text-stone-900">
+            {sentOrder.includes(',') ? `נשלחו ${sentOrder.split(',').length} הזמנות רכש` : 'ההזמנה נשלחה'}
+          </h1>
           <p className="mt-2 font-mono text-sm text-stone-500">{sentOrder}</p>
           <p className="mt-5 text-stone-700">
-            העברנו את ההזמנה לספק. הוא יאשר אותה, יספק, ויוציא לך חשבונית ישירות.
+            {sentOrder.includes(',')
+              ? 'כל ספק קיבל את ההזמנה שלו בלבד. כל אחד יאשר, יספק, ויוציא לך חשבונית ישירות.'
+              : 'העברנו את ההזמנה לספק. הוא יאשר אותה, יספק, ויוציא לך חשבונית ישירות.'}
           </p>
           <p className="mt-4 rounded-lg bg-stone-100 p-3 text-sm text-stone-600">
             זו הזמנת רכש — לא חשבונית. הסכום המחייב הוא זה שיופיע בחשבונית של הספק.

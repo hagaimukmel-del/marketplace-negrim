@@ -6,126 +6,142 @@ import { newOrderHtml, newOrderSubject, type NewOrderLine } from './emails/new-o
 import {
   carpenterOrderSentHtml,
   carpenterOrderSentSubject,
+  type CarpenterOrderLine,
   carpenterOrderUpdateHtml,
   carpenterOrderUpdateSubject,
 } from './emails/carpenter'
 
 /**
- * Tell each supplier on an order that it exists.
+ * Tell each supplier about the purchase order addressed to them, and the
+ * carpenter about everything they just sent.
  *
- * One email per supplier, carrying only that supplier's lines and only their
- * subtotal — nobody sees another company's prices. The operator deliberately
- * does not get a copy: he watches the console, and a message per order would
- * train him to ignore them.
+ * One checkout becomes one order per supplier, so each supplier gets one email
+ * with their own order, their own lines and their own subtotal — nobody sees
+ * another company's prices. The carpenter gets a single email covering all of
+ * them, not one per supplier. The operator deliberately does not get a copy: he
+ * watches the console, and a message per order would train him to ignore them.
  *
  * Never throws. A notification that fails must not take an order down with it;
- * the order is already saved and the console still shows it.
+ * the orders are already saved and the console still shows them.
  */
-export async function notifyNewOrder(orderId: string): Promise<void> {
+export async function notifyNewOrders(orderIds: string[]): Promise<void> {
+  if (orderIds.length === 0) return
   try {
     const supabase = getSupabaseAdmin()
 
-    const [{ data: order }, { data: lines }] = await Promise.all([
+    const [{ data: orders }, { data: lines }] = await Promise.all([
       supabase
         .from('orders')
         .select(
-          'id, order_number, business_name, customer_name, customer_email, customer_phone, city, address, payment_method, notes'
+          'id, order_number, created_at, business_name, customer_name, customer_email, customer_phone, city, address, payment_method, notes'
         )
-        .eq('id', orderId)
-        .maybeSingle(),
+        .in('id', orderIds)
+        .order('order_number'),
       supabase
         .from('order_items')
-        .select('product_name_he, quantity, unit_price_excl_vat, line_total_excl_vat, supplier_id')
-        .eq('order_id', orderId),
+        .select('order_id, product_name_he, quantity, unit_price_excl_vat, line_total_excl_vat, supplier_id')
+        .in('order_id', orderIds),
     ])
 
-    if (!order || !lines || lines.length === 0) return
+    if (!orders || orders.length === 0 || !lines || lines.length === 0) return
 
-    const bySupplier = new Map<string, NewOrderLine[]>()
-    for (const line of lines) {
-      if (!line.supplier_id) continue
-      const existing = bySupplier.get(line.supplier_id)
-      const entry: NewOrderLine = {
-        product_name_he: line.product_name_he,
-        quantity: line.quantity,
-        unit_price_excl_vat: Number(line.unit_price_excl_vat),
-        line_total_excl_vat: Number(line.line_total_excl_vat),
-      }
-      if (existing) existing.push(entry)
-      else bySupplier.set(line.supplier_id, [entry])
-    }
+    const supplierIds = [...new Set(lines.map((line) => line.supplier_id).filter(Boolean))] as string[]
+    const { data: suppliers } = supplierIds.length
+      ? await supabase.from('suppliers').select('id, company_name, email').in('id', supplierIds)
+      : { data: [] as { id: string; company_name: string; email: string | null }[] }
+    const supplierById = new Map((suppliers ?? []).map((supplier) => [supplier.id, supplier]))
 
-    if (bySupplier.size === 0) return
+    const first = orders[0]
+    const carpenterName = first.business_name || first.customer_name || 'נגרייה'
+    const sent: { orderNumber: string; supplier: string; lines: CarpenterOrderLine[]; subtotal: number }[] = []
 
-    const { data: suppliers } = await supabase
-      .from('suppliers')
-      .select('id, company_name, email')
-      .in('id', [...bySupplier.keys()])
-
-    for (const supplier of suppliers ?? []) {
-      if (!supplier.email) {
-        console.info(`[email] supplier ${supplier.company_name} has no address; nothing sent`)
-        continue
-      }
-
-      const supplierLines = bySupplier.get(supplier.id) ?? []
-      const subtotal = Number(
-        supplierLines.reduce((sum, line) => sum + line.line_total_excl_vat, 0).toFixed(2)
-      )
-
-      const payload = {
-        orderId: order.id,
-        supplierId: supplier.id,
-        orderNumber: order.order_number,
-        carpenterName: order.business_name || order.customer_name || 'נגרייה',
-        contactName: order.business_name ? order.customer_name : null,
-        phone: order.customer_phone,
-        city: order.city,
-        address: order.address,
-        paymentTerms: order.payment_method,
-        notes: order.notes,
-        lines: supplierLines,
-        subtotalExclVat: subtotal,
+    for (const order of orders) {
+      const orderLines = lines.filter((line) => line.order_id === order.id)
+      const bySupplier = new Map<string, NewOrderLine[]>()
+      for (const line of orderLines) {
+        if (!line.supplier_id) continue
+        bySupplier.set(line.supplier_id, [
+          ...(bySupplier.get(line.supplier_id) ?? []),
+          {
+            product_name_he: line.product_name_he,
+            quantity: line.quantity,
+            unit_price_excl_vat: Number(line.unit_price_excl_vat),
+            line_total_excl_vat: Number(line.line_total_excl_vat),
+          },
+        ])
       }
 
-      await sendEmail({
-        to: supplier.email,
-        subject: newOrderSubject(payload),
-        // The confirm button only works on an order this supplier owns outright,
-        // because order status is one field for the whole order.
-        html: newOrderHtml(payload, { canConfirm: bySupplier.size === 1 }),
-        // A test carpenter ordering from a real supplier is still a test; the
-        // real supplier must not receive it.
-        isTest: isTestName(supplier.company_name, payload.carpenterName),
-      })
-    }
-
-    // And the carpenter: the order they sent, and who it went to.
-    if (order.customer_email) {
-      const nameOf = new Map((suppliers ?? []).map((supplier) => [supplier.id, supplier.company_name]))
-      const carpenterName = order.business_name || order.customer_name || 'נגרייה'
-      const subtotal = Number(lines.reduce((sum, line) => sum + Number(line.line_total_excl_vat), 0).toFixed(2))
-      await sendEmail({
-        to: order.customer_email,
-        subject: carpenterOrderSentSubject(order.order_number),
-        html: carpenterOrderSentHtml({
-          businessName: carpenterName,
+      for (const [supplierId, supplierLines] of bySupplier) {
+        const supplier = supplierById.get(supplierId)
+        if (!supplier) continue
+        const subtotal = Number(supplierLines.reduce((sum, line) => sum + line.line_total_excl_vat, 0).toFixed(2))
+        sent.push({
           orderNumber: order.order_number,
+          supplier: supplier.company_name,
           subtotal,
-          paymentTerms: order.payment_method,
-          lines: lines.map((line) => ({
+          lines: supplierLines.map((line) => ({
             name: line.product_name_he,
             quantity: line.quantity,
-            lineTotal: Number(line.line_total_excl_vat),
-            supplier: (line.supplier_id && nameOf.get(line.supplier_id)) || 'הספק',
+            lineTotal: line.line_total_excl_vat,
+            supplier: supplier.company_name,
           })),
+        })
+
+        if (!supplier.email) {
+          console.info(`[email] supplier ${supplier.company_name} has no address; nothing sent`)
+          continue
+        }
+
+        const payload = {
+          orderId: order.id,
+          supplierId: supplier.id,
+          orderNumber: order.order_number,
+          carpenterName: order.business_name || order.customer_name || 'נגרייה',
+          contactName: order.business_name ? order.customer_name : null,
+          phone: order.customer_phone,
+          city: order.city,
+          address: order.address,
+          paymentTerms: order.payment_method,
+          notes: order.notes,
+          lines: supplierLines,
+          subtotalExclVat: subtotal,
+        }
+
+        await sendEmail({
+          to: supplier.email,
+          subject: newOrderSubject(payload),
+          // The confirm button works on an order this supplier owns outright,
+          // which since the split is every new order. Older orders that held
+          // more than one supplier are still confirmed centrally.
+          html: newOrderHtml(payload, { canConfirm: bySupplier.size === 1 }),
+          // A test carpenter ordering from a real supplier is still a test; the
+          // real supplier must not receive it.
+          isTest: isTestName(supplier.company_name, payload.carpenterName),
+        })
+      }
+    }
+
+    // And the carpenter: one email for everything they sent, order by order.
+    if (first.customer_email && sent.length > 0) {
+      await sendEmail({
+        to: first.customer_email,
+        subject: carpenterOrderSentSubject(sent.map((order) => order.orderNumber)),
+        html: carpenterOrderSentHtml({
+          businessName: carpenterName,
+          orders: sent,
+          paymentTerms: first.payment_method,
         }),
-        isTest: isTestName(carpenterName, ...(suppliers ?? []).map((supplier) => supplier.company_name)),
+        isTest: isTestName(carpenterName, ...sent.map((order) => order.supplier)),
       })
     }
   } catch (err) {
     console.error('[email] notifying suppliers failed', err)
   }
+}
+
+/** One order, for callers that hold a single id. */
+export async function notifyNewOrder(orderId: string): Promise<void> {
+  await notifyNewOrders([orderId])
 }
 
 /**

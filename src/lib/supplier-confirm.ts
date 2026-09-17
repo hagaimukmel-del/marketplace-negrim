@@ -41,8 +41,9 @@ export type ConfirmResult =
  *
  * The split check is the important one. `orders.status` is a single field for
  * the whole order, so confirming an order that also contains another supplier's
- * lines would speak for a company that never saw it. Until one cart becomes one
- * purchase order per supplier, such an order is refused here and sent to the
+ * lines would speak for a company that never saw it. Since 17.09.2026 a cart
+ * becomes one purchase order per supplier, so new orders always pass; an older
+ * order that held several suppliers is still refused here and sent to the
  * console rather than half-confirmed by the wrong party.
  */
 export async function loadConfirmable(token: string): Promise<ConfirmResult> {

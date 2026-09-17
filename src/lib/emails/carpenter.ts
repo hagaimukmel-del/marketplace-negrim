@@ -78,47 +78,68 @@ export interface CarpenterOrderLine {
   supplier: string
 }
 
-export function carpenterOrderSentSubject(orderNumber: string): string {
-  return `ההזמנה נשלחה לספק · ${orderNumber}`
+export function carpenterOrderSentSubject(orderNumbers: string[]): string {
+  return orderNumbers.length > 1
+    ? `${orderNumbers.length} הזמנות רכש נשלחו לספקים · ${orderNumbers[0].replace(/-\d+$/, '')}`
+    : `ההזמנה נשלחה לספק · ${orderNumbers[0]}`
+}
+
+export interface CarpenterSentOrder {
+  orderNumber: string
+  supplier: string
+  lines: CarpenterOrderLine[]
+  subtotal: number
 }
 
 export function carpenterOrderSentHtml({
   businessName,
-  orderNumber,
-  lines,
-  subtotal,
+  orders,
   paymentTerms,
 }: {
   businessName: string
-  orderNumber: string
-  lines: CarpenterOrderLine[]
-  subtotal: number
+  /** One purchase order per supplier, from the same checkout. */
+  orders: CarpenterSentOrder[]
   paymentTerms: string | null
 }): string {
-  const suppliers = [...new Set(lines.map((line) => line.supplier))]
-  const rows = lines
-    .map(
-      (line) => `
+  const many = orders.length > 1
+  const blocks = orders
+    .map((order) => {
+      const rows = order.lines
+        .map(
+          (line) => `
       <tr>
         <td style="padding:8px 0;border-bottom:1px solid #e7e5e4">${escapeHtml(line.name)}
-          <div style="color:#78716c;font-size:12px">${line.quantity} יח׳${suppliers.length > 1 ? ` · ${escapeHtml(line.supplier)}` : ''}</div></td>
+          <div style="color:#78716c;font-size:12px">${line.quantity} יח׳</div></td>
         <td style="padding:8px 0;border-bottom:1px solid #e7e5e4;text-align:left;white-space:nowrap;font-weight:bold">${formatIls(line.lineTotal)}</td>
       </tr>`
-    )
+        )
+        .join('')
+      return `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:18px;font:14px ${FONT}">
+      <tr><td colspan="2" style="padding-bottom:4px">
+        <strong>${escapeHtml(order.supplier)}</strong>
+        <span style="color:#78716c;font-size:12px" dir="ltr"> · ${escapeHtml(order.orderNumber)}</span></td></tr>
+      ${rows}
+      <tr><td style="padding-top:8px;font-weight:bold">סה״כ ${many ? 'לספק ' : ''}ללא מע״מ</td>
+        <td style="padding-top:8px;text-align:left;font:bold 16px ${FONT};white-space:nowrap">${formatIls(order.subtotal)}</td></tr>
+    </table>`
+    })
     .join('')
+  const total = orders.reduce((sum, order) => sum + order.subtotal, 0)
 
   return shell(`
-    <div style="font:bold 20px ${FONT}">ההזמנה נשלחה</div>
-    <p style="margin:8px 0 0">שלום ${escapeHtml(businessName)}, הזמנה <strong dir="ltr">${escapeHtml(orderNumber)}</strong> נשלחה ל${escapeHtml(suppliers.join(' ול'))}.
-      נעדכן אתכם במייל כשהספק יאשר אותה.</p>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:14px;font:14px ${FONT}">
-      ${rows}
-      <tr><td style="padding-top:10px;font-weight:bold">סה״כ ללא מע״מ</td>
-        <td style="padding-top:10px;text-align:left;font:bold 18px ${FONT};white-space:nowrap">${formatIls(subtotal)}</td></tr>
-    </table>
+    <div style="font:bold 20px ${FONT}">${many ? `נשלחו ${orders.length} הזמנות רכש` : 'ההזמנה נשלחה'}</div>
+    <p style="margin:8px 0 0">שלום ${escapeHtml(businessName)}, ${
+      many
+        ? `ההזמנה פוצלה להזמנת רכש נפרדת לכל ספק: ${escapeHtml(orders.map((order) => order.supplier).join(', '))}. כל ספק מאשר את שלו.`
+        : `הזמנה <strong dir="ltr">${escapeHtml(orders[0].orderNumber)}</strong> נשלחה ל${escapeHtml(orders[0].supplier)}.`
+    }
+      נעדכן אתכם במייל כשהספק יאשר.</p>
+    ${blocks}
+    ${many ? `<p style="margin:14px 0 0;font:bold 15px ${FONT}">סה״כ כל ההזמנות ללא מע״מ: ${formatIls(Number(total.toFixed(2)))}</p>` : ''}
     ${paymentTerms ? `<p style="margin:10px 0 0;color:#57534e">תנאי תשלום מבוקשים: <strong>${escapeHtml(paymentTerms)}</strong></p>` : ''}
     ${button(`${siteUrl()}/carpenter/orders`, 'להזמנות שלי')}
-    <p style="margin:14px 0 0;font-size:12px;color:#78716c">זו הזמנת רכש, לא חשבונית. הספק יאשר, יספק ויוציא לכם חשבונית ישירות.</p>`)
+    <p style="margin:14px 0 0;font-size:12px;color:#78716c">${many ? 'אלה הזמנות רכש, לא חשבוניות. כל ספק יאשר, יספק ויוציא לכם חשבונית ישירות.' : 'זו הזמנת רכש, לא חשבונית. הספק יאשר, יספק ויוציא לכם חשבונית ישירות.'}</p>`)
 }
 
 // ---- supplier's answer ------------------------------------------------------

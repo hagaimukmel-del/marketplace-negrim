@@ -42,7 +42,7 @@ export default async function AdminHome() {
       .select('id, name, kind, is_active, created_at, products(name_he)')
       .order('created_at', { ascending: false })
       .limit(10),
-    supabase.from('orders').select('campaign_id, carpenter_id, subtotal_excl_vat, order_items(id)'),
+    supabase.from('orders').select('campaign_id, carpenter_id, checkout_id, subtotal_excl_vat, order_items(id)'),
     supabase.from('offer_events').select('campaign_id, carpenter_id, event_type'),
     supabase
       .from('order_intents')
@@ -51,6 +51,11 @@ export default async function AdminHome() {
       .order('created_at', { ascending: false })
       .limit(10),
   ])
+
+  // A carpenter's order is a checkout. Since one checkout became one purchase
+  // order per supplier, counting rows would count the same order twice.
+  const checkouts = (rows: { checkout_id: string | null }[]) =>
+    new Set(rows.map((row, index) => row.checkout_id ?? `row-${index}`)).size
 
   const perCampaign = (campaigns ?? []).map((campaign) => {
     const campaignEvents = (events ?? []).filter((e) => e.campaign_id === campaign.id)
@@ -63,6 +68,7 @@ export default async function AdminHome() {
 
     const revenue = campaignOrders.reduce((sum, o) => sum + Number(o.subtotal_excl_vat), 0)
     const lines = campaignOrders.reduce((sum, o) => sum + (o.order_items?.length ?? 0), 0)
+    const count = checkouts(campaignOrders)
 
     return {
       id: campaign.id,
@@ -71,10 +77,10 @@ export default async function AdminHome() {
       isActive: campaign.is_active,
       opened: uniqueBy('offer_opened'),
       added: uniqueBy('item_added'),
-      orders: campaignOrders.length,
+      orders: count,
       revenue,
-      avgOrder: campaignOrders.length ? revenue / campaignOrders.length : 0,
-      avgLines: campaignOrders.length ? lines / campaignOrders.length : 0,
+      avgOrder: count ? revenue / count : 0,
+      avgLines: count ? lines / count : 0,
     }
   })
 
@@ -93,7 +99,7 @@ export default async function AdminHome() {
               : undefined
           }
         />
-        <Stat label="הזמנות" value={String((orders ?? []).length)} />
+        <Stat label="הזמנות" value={String(checkouts(orders ?? []))} />
       </div>
 
       <section className="overflow-hidden rounded-xl border border-stone-300 bg-white">

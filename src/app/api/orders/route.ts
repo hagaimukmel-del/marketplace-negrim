@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import type { OrderItemInsert } from '@/lib/db'
 import { logEvent, resolveCarpenter } from '@/lib/offer'
 import { bestOffer, OFFER_COLUMNS, type Offer } from '@/lib/catalog'
-import { notifyNewOrder } from '@/lib/notify-order'
+import { notifyNewOrders } from '@/lib/notify-order'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
 
 /** One line as the checkout posts it. */
@@ -139,51 +139,76 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    const subtotalExclVat = Number(
-      lines.reduce((sum, line) => sum + line.line_total_excl_vat, 0).toFixed(2)
-    )
-    const totalInclVat = Number((subtotalExclVat * (1 + VAT_RATE)).toFixed(2))
+    // One cart, one purchase order per supplier. An order has a single status,
+    // confirmed amount and supplier note, so it can only ever speak for one
+    // company. Lines without a supplier cannot happen here — bestOffer found an
+    // offer for every product above — but they would have nowhere to go.
+    const bySupplier = new Map<string, typeof lines>()
+    for (const line of lines) {
+      if (!line.supplier_id) continue
+      bySupplier.set(line.supplier_id, [...(bySupplier.get(line.supplier_id) ?? []), line])
+    }
 
-    const { data: order, error: orderError } = await supabase
+    const checkoutId = crypto.randomUUID()
+    const stamp = Date.now()
+    const groups = [...bySupplier].map(([supplierId, supplierLines], index) => {
+      const subtotal = Number(
+        supplierLines.reduce((sum, line) => sum + line.line_total_excl_vat, 0).toFixed(2)
+      )
+      return {
+        supplierId,
+        lines: supplierLines,
+        subtotal,
+        // Orders from one checkout share the number and differ by suffix, so a
+        // carpenter reading "ORD-…-2" knows it went out with "ORD-…-1".
+        orderNumber: bySupplier.size > 1 ? `ORD-${stamp}-${index + 1}` : `ORD-${stamp}`,
+      }
+    })
+
+    const { data: created, error: orderError } = await supabase
       .from('orders')
-      .insert({
-        order_number: `ORD-${Date.now()}`,
-        customer_name,
-        customer_email,
-        customer_phone,
-        business_name: body.business_name || null,
-        address: body.address || null,
-        city: body.city || null,
-        zip_code: body.zip_code || null,
-        payment_method: body.payment_method || null,
-        carpenter_id: carpenter?.id ?? null,
-        campaign_id: typeof body.campaign_id === 'string' ? body.campaign_id : null,
-        subtotal_excl_vat: subtotalExclVat,
-        vat_rate: VAT_RATE,
-        total_amount: totalInclVat,
-        status: 'pending',
-      })
-      .select('id, order_number')
-      .single()
+      .insert(
+        groups.map((group) => ({
+          order_number: group.orderNumber,
+          checkout_id: checkoutId,
+          supplier_id: group.supplierId,
+          customer_name,
+          customer_email,
+          customer_phone,
+          business_name: body.business_name || null,
+          address: body.address || null,
+          city: body.city || null,
+          zip_code: body.zip_code || null,
+          payment_method: body.payment_method || null,
+          carpenter_id: carpenter?.id ?? null,
+          campaign_id: typeof body.campaign_id === 'string' ? body.campaign_id : null,
+          subtotal_excl_vat: group.subtotal,
+          vat_rate: VAT_RATE,
+          total_amount: Number((group.subtotal * (1 + VAT_RATE)).toFixed(2)),
+          status: 'pending',
+        }))
+      )
+      .select('id, order_number, supplier_id')
 
-    if (orderError || !order) {
+    if (orderError || !created || created.length !== groups.length) {
+      await supabase.from('orders').delete().eq('checkout_id', checkoutId)
       return NextResponse.json(
         { error: orderError?.message ?? 'Failed to create order' },
         { status: 500 }
       )
     }
 
-    const orderItems: OrderItemInsert[] = lines.map((line) => ({
-      ...line,
-      order_id: order.id,
-    }))
+    const orderBySupplier = new Map(created.map((order) => [order.supplier_id, order]))
+    const orderItems: OrderItemInsert[] = groups.flatMap((group) =>
+      group.lines.map((line) => ({ ...line, order_id: orderBySupplier.get(group.supplierId)!.id }))
+    )
 
     const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
 
     if (itemsError) {
-      // Postgres has no transaction across two PostgREST calls, so an order
-      // without lines has to be cleaned up by hand rather than left orphaned.
-      await supabase.from('orders').delete().eq('id', order.id)
+      // Postgres has no transaction across two PostgREST calls, so orders
+      // without lines have to be cleaned up by hand rather than left orphaned.
+      await supabase.from('orders').delete().eq('checkout_id', checkoutId)
       return NextResponse.json(
         { error: `Failed to save order lines: ${itemsError.message}` },
         { status: 500 }
@@ -194,22 +219,33 @@ export async function POST(request: NextRequest) {
     // returns can be frozen mid-request, and a notification that vanishes
     // sometimes is worse than one that never existed. It swallows its own
     // failures, so it cannot fail the order.
-    await notifyNewOrder(order.id)
+    await notifyNewOrders(created.map((order) => order.id))
+
+    const subtotalExclVat = Number(groups.reduce((sum, group) => sum + group.subtotal, 0).toFixed(2))
+    const totalInclVat = Number((subtotalExclVat * (1 + VAT_RATE)).toFixed(2))
 
     if (carpenter) {
       await logEvent('order_sent', {
         carpenter_id: carpenter.id,
         campaign_id: typeof body.campaign_id === 'string' ? body.campaign_id : null,
         product_id: lines[0]?.product_id ?? null,
-        metadata: { lines: lines.length, subtotal_excl_vat: subtotalExclVat },
+        metadata: { lines: lines.length, suppliers: groups.length, subtotal_excl_vat: subtotalExclVat, checkout_id: checkoutId },
       })
     }
+
+    const orders = groups.map((group) => {
+      const order = orderBySupplier.get(group.supplierId)!
+      return { id: order.id, orderNumber: order.order_number, supplierId: group.supplierId, subtotalExclVat: group.subtotal }
+    })
 
     return NextResponse.json(
       {
         success: true,
-        orderId: order.id,
-        orderNumber: order.order_number,
+        checkoutId,
+        orders,
+        // The first order, for callers that only know about one.
+        orderId: orders[0].id,
+        orderNumber: orders.map((order) => order.orderNumber).join(', '),
         subtotalExclVat,
         totalInclVat,
       },
@@ -233,8 +269,15 @@ export async function GET(request: NextRequest) {
     // This used to return every order to any caller — one carpenter could read
     // another's name, phone and prices. A caller must now identify itself with
     // its token, and sees only its own orders.
+    // Or, with no token in this browser, the signed session cookie from an
+    // emailed login link — the same proof the POST above accepts.
     const token = searchParams.get('token')
-    const carpenter = token ? await resolveCarpenter(token) : null
+    const session = token ? null : await getSessionCarpenter()
+    const carpenter = token
+      ? await resolveCarpenter(token)
+      : session
+        ? await resolveCarpenter(session.token)
+        : null
 
     if (!carpenter) {
       return NextResponse.json({ orders: [], total: 0, limit, offset })
@@ -242,7 +285,7 @@ export async function GET(request: NextRequest) {
 
     const { data, error, count } = await getSupabaseAdmin()
       .from('orders')
-      .select('*, order_items(*)', { count: 'exact' })
+      .select('*, order_items(*), suppliers(company_name, phone)', { count: 'exact' })
       .eq('carpenter_id', carpenter.id)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)

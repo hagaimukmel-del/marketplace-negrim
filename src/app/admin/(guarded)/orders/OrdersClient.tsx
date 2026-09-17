@@ -29,6 +29,8 @@ interface Order {
   confirmed_at: string | null
   supplier_note: string | null
   carpenter_id: string | null
+  checkout_id: string | null
+  suppliers: { company_name: string } | null
   order_items: Line[]
 }
 
@@ -87,6 +89,11 @@ function Row({
             {order.carpenter_id && (
               <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-600">
                 מלינק
+              </span>
+            )}
+            {order.suppliers && (
+              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-900">
+                {order.suppliers.company_name}
               </span>
             )}
           </div>

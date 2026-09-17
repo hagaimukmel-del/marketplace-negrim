@@ -15,6 +15,8 @@ interface Order {
   status: string | null
   created_at: string | null
   payment_method: string | null
+  checkout_id: string | null
+  suppliers: { company_name: string } | null
   order_items?: { id: string }[]
 }
 
@@ -23,19 +25,25 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [known, setKnown] = useState(true)
+  // The checkout that was just sent, when checkout landed here after sending
+  // to more than one supplier.
+  const [sentCheckout, setSentCheckout] = useState<string | null>(null)
 
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true)
         const token = getCarpenterToken()
-        setKnown(Boolean(token))
+        setSentCheckout(new URLSearchParams(window.location.search).get('sent'))
         const response = await fetch(
           `/api/orders?limit=50${token ? `&token=${encodeURIComponent(token)}` : ''}`
         )
         if (!response.ok) throw new Error('טעינת ההזמנות נכשלה')
         const data = await response.json()
         setOrders(data.orders ?? [])
+        // Recognised by the token or by the session cookie; either way the
+        // server answered with this carpenter's orders.
+        setKnown(Boolean(token) || (data.orders ?? []).length > 0)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'טעינת ההזמנות נכשלה')
       } finally {
@@ -107,6 +115,17 @@ export default function OrdersPage() {
         <p className="text-sm text-stone-500">{orders.length} הזמנות</p>
       </div>
 
+      {sentCheckout && orders.some((order) => order.checkout_id === sentCheckout) && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950">
+          <p className="font-bold">
+            נשלחו {orders.filter((order) => order.checkout_id === sentCheckout).length} הזמנות רכש — אחת לכל ספק
+          </p>
+          <p className="mt-1 text-sm">
+            כל ספק קיבל את ההזמנה שלו בלבד, ויאשר, יספק ויוציא חשבונית בנפרד. נעדכן אותך במייל על כל אישור.
+          </p>
+        </div>
+      )}
+
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
         {orders.map((order) => {
           const status = statusInfo(order.status)
@@ -116,7 +135,9 @@ export default function OrdersPage() {
             <Link
               key={order.id}
               href={`/carpenter/orders/${order.id}`}
-              className="flex items-center gap-3 border-b border-stone-200 p-3 last:border-b-0 hover:bg-stone-50"
+              className={`flex items-center gap-3 border-b border-stone-200 p-3 last:border-b-0 hover:bg-stone-50 ${
+                sentCheckout && order.checkout_id === sentCheckout ? 'bg-emerald-50/40' : ''
+              }`}
             >
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -130,6 +151,9 @@ export default function OrdersPage() {
                   </span>
                 </div>
                 <p className="mt-0.5 text-sm text-stone-500">
+                  {order.suppliers?.company_name && (
+                    <span className="font-medium text-stone-700">{order.suppliers.company_name} · </span>
+                  )}
                   {order.created_at
                     ? new Date(order.created_at).toLocaleDateString('he-IL')
                     : '—'}

@@ -8,8 +8,17 @@ import { formatIls, vatAmount } from '@/lib/vat'
 import { statusInfo } from '@/lib/order-status'
 import { getCarpenterToken } from '@/lib/carpenter-session'
 
-type Order = OrderWithItems
+type Order = OrderWithItems & { suppliers: { company_name: string; phone: string | null } | null }
 type OrderItem = OrderItemRow
+
+/** The other purchase orders sent in the same checkout, to other suppliers. */
+interface Sibling {
+  id: string
+  order_number: string
+  status: string | null
+  subtotal_excl_vat: number
+  suppliers: { company_name: string } | null
+}
 
 export default function OrderDetailPage() {
   const params = useParams()
@@ -17,6 +26,7 @@ export default function OrderDetailPage() {
 
   const [order, setOrder] = useState<Order | null>(null)
   const [items, setItems] = useState<OrderItem[]>([])
+  const [siblings, setSiblings] = useState<Sibling[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -37,6 +47,7 @@ export default function OrderDetailPage() {
         const data = await response.json()
         setOrder(data.order)
         setItems(data.order.order_items ?? [])
+        setSiblings(data.siblings ?? [])
       } catch (err) {
         setError(err instanceof Error ? err.message : 'טעינת ההזמנה נכשלה')
       } finally {
@@ -82,6 +93,19 @@ export default function OrderDetailPage() {
           <div>
             <h1 className="text-xl font-bold text-stone-900">פרטי הזמנה</h1>
             <p className="text-stone-700 mt-2 font-mono">{order.order_number}</p>
+            {order.suppliers && (
+              <p className="mt-1 text-sm text-stone-600">
+                הזמנת רכש ל<span className="font-semibold text-stone-900">{order.suppliers.company_name}</span>
+                {order.suppliers.phone && (
+                  <>
+                    {' · '}
+                    <a href={`tel:${order.suppliers.phone}`} className="tnum text-emerald-800 underline" dir="ltr">
+                      {order.suppliers.phone}
+                    </a>
+                  </>
+                )}
+              </p>
+            )}
           </div>
           <div>
             <span
@@ -94,6 +118,30 @@ export default function OrderDetailPage() {
           </div>
         </div>
       </div>
+
+      {siblings.length > 0 && (
+        <div className="rounded-xl border border-stone-200 bg-white p-4">
+          <p className="text-sm text-stone-600">
+            נשלחה באותה הזמנה יחד עם {siblings.length === 1 ? 'הזמנה נוספת, לספק אחר' : `${siblings.length} הזמנות נוספות, לספקים אחרים`}:
+          </p>
+          <div className="mt-2 space-y-1.5">
+            {siblings.map((sibling) => (
+              <Link
+                key={sibling.id}
+                href={`/carpenter/orders/${sibling.id}`}
+                className="flex items-center gap-2 rounded-lg border border-stone-200 px-3 py-2 text-sm hover:bg-stone-50"
+              >
+                <span className="font-semibold text-stone-900">{sibling.suppliers?.company_name ?? 'ספק'}</span>
+                <span className="font-mono text-xs text-stone-500">{sibling.order_number}</span>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${statusInfo(sibling.status).className}`}>
+                  {statusInfo(sibling.status).label}
+                </span>
+                <span className="tnum ms-auto font-semibold">{formatIls(Number(sibling.subtotal_excl_vat))}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Main Content */}
