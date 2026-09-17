@@ -13,6 +13,8 @@ interface IncomingItem {
   name_en?: string | null
   base_price_excl_vat: number
   quantity: number
+  /** The supplier the carpenter chose. Honoured when it still has a live offer. */
+  supplier_id?: string
 }
 
 const VAT_RATE = 0.18
@@ -40,6 +42,7 @@ function parseItems(raw: unknown): IncomingItem[] | null {
       name_en: typeof item.name_en === 'string' ? item.name_en : null,
       base_price_excl_vat: price,
       quantity,
+      supplier_id: typeof item.supplier_id === 'string' ? item.supplier_id : undefined,
     })
   }
   return items
@@ -57,11 +60,6 @@ interface OrderableProduct {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { customer_name, customer_email, customer_phone } = body
-
-    if (!customer_name || !customer_email || !customer_phone) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
-    }
 
     // An order coming from an offer link carries the token, never a
     // carpenter id: the token is the only thing the browser holds that is
@@ -78,6 +76,15 @@ export async function POST(request: NextRequest) {
         : null
     if (body.token && !carpenter) {
       return NextResponse.json({ error: 'Unknown link' }, { status: 404 })
+    }
+
+    // The purchasing app does not ask a signed-in carpentry to retype who it is:
+    // what the request leaves out comes from the carpentry's own record.
+    const customer_name = body.customer_name || carpenter?.contact_name || carpenter?.business_name
+    const customer_email = body.customer_email || carpenter?.email
+    const customer_phone = body.customer_phone || carpenter?.phone
+    if (!customer_name || !customer_email || !customer_phone) {
+      return NextResponse.json({ error: 'חסרים פרטי קשר — שם, טלפון ומייל' }, { status: 400 })
     }
 
     const items = parseItems(body.items)
@@ -126,7 +133,13 @@ export async function POST(request: NextRequest) {
     // if the line remembers who it was bought from.
     const lines = items.map((item) => {
       const product = byId.get(item.id)!
-      const offer = bestOffer(product)
+      // The carpenter may have chosen another supplier than the suggested one.
+      // That choice stands only while that supplier still has a live offer;
+      // otherwise the catalogue's own rule decides, as it always did.
+      const chosen = item.supplier_id
+        ? product.supplier_offers.find((offer) => offer.supplier_id === item.supplier_id)
+        : undefined
+      const offer = chosen ?? bestOffer(product)
       const unitPrice = Number(offer?.price_excl_vat ?? 0)
       return {
         product_id: product.id,
@@ -147,6 +160,29 @@ export async function POST(request: NextRequest) {
     for (const line of lines) {
       if (!line.supplier_id) continue
       bySupplier.set(line.supplier_id, [...(bySupplier.get(line.supplier_id) ?? []), line])
+    }
+
+    // Each supplier's minimum order, and the payment terms the supplier set —
+    // those are the terms of its purchase order, not something the carpenter
+    // picks. A request that still sends terms (older screens) is used only
+    // where the supplier has set none.
+    const { data: supplierRows } = await supabase
+      .from('suppliers')
+      .select('id, company_name, min_order_value_excl_vat, payment_terms')
+      .in('id', [...bySupplier.keys()])
+    const supplierById = new Map((supplierRows ?? []).map((row) => [row.id, row]))
+
+    for (const [supplierId, supplierLines] of bySupplier) {
+      const supplier = supplierById.get(supplierId)
+      const min = supplier?.min_order_value_excl_vat == null ? 0 : Number(supplier.min_order_value_excl_vat)
+      const subtotal = supplierLines.reduce((sum, line) => sum + line.line_total_excl_vat, 0)
+      if (min > 0 && subtotal < min) {
+        const missing = (min - subtotal).toLocaleString('he-IL', { maximumFractionDigits: 2 })
+        return NextResponse.json(
+          { error: `חסר ₪${missing} למינימום ההזמנה אצל ${supplier?.company_name ?? 'הספק'}`, code: 'below_minimum', supplierId },
+          { status: 409 }
+        )
+      }
     }
 
     const checkoutId = crypto.randomUUID()
@@ -179,7 +215,10 @@ export async function POST(request: NextRequest) {
           address: body.address || null,
           city: body.city || null,
           zip_code: body.zip_code || null,
-          payment_method: body.payment_method || null,
+          payment_method: supplierById.get(group.supplierId)?.payment_terms?.length
+            ? supplierById.get(group.supplierId)!.payment_terms.join(' / ')
+            : body.payment_method || null,
+          notes: typeof body.notes === 'string' && body.notes.trim() ? body.notes.trim().slice(0, 600) : null,
           carpenter_id: carpenter?.id ?? null,
           campaign_id: typeof body.campaign_id === 'string' ? body.campaign_id : null,
           subtotal_excl_vat: group.subtotal,
@@ -188,7 +227,7 @@ export async function POST(request: NextRequest) {
           status: 'pending',
         }))
       )
-      .select('id, order_number, supplier_id')
+      .select('id, order_number, short_number, supplier_id')
 
     if (orderError || !created || created.length !== groups.length) {
       await supabase.from('orders').delete().eq('checkout_id', checkoutId)
@@ -235,7 +274,14 @@ export async function POST(request: NextRequest) {
 
     const orders = groups.map((group) => {
       const order = orderBySupplier.get(group.supplierId)!
-      return { id: order.id, orderNumber: order.order_number, supplierId: group.supplierId, subtotalExclVat: group.subtotal }
+      return {
+        id: order.id,
+        orderNumber: order.order_number,
+        shortNumber: order.short_number,
+        supplierId: group.supplierId,
+        supplierName: supplierById.get(group.supplierId)?.company_name ?? null,
+        subtotalExclVat: group.subtotal,
+      }
     })
 
     return NextResponse.json(
