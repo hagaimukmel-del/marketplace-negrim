@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { isTestName, sendEmail } from '@/lib/email'
 import { carpenterLoginHtml, carpenterLoginSubject } from '@/lib/emails/carpenter'
+import { checkRateLimit, getRateLimitHeaders, getClientIP, hashIdentifier } from '@/lib/rate-limit'
 
 const NEUTRAL = {
   ok: true,
@@ -24,6 +25,23 @@ export async function POST(request: NextRequest) {
   try {
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>
     const supabase = getSupabaseAdmin()
+
+    // Rate limiting: only for login attempts (not self login)
+    if (body.self !== true) {
+      const identifier = typeof body.identifier === 'string' ? body.identifier.trim() : ''
+      if (identifier) {
+        const limitKey = `carpenter-login:${hashIdentifier(identifier)}`
+        const limit = checkRateLimit(limitKey, 'login')
+
+        if (!limit.allowed) {
+          const headers = getRateLimitHeaders(limit)
+          return NextResponse.json(
+            { error: 'יותר מדי ניסיונות התחברות. נסו שוב בעוד 15 דקות' },
+            { status: 429, headers }
+          )
+        }
+      }
+    }
 
     let carpenter: { business_name: string; email: string | null; token: string } | null = null
 
