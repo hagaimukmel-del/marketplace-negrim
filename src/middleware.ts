@@ -3,6 +3,15 @@ import type { UserRole } from '@/lib/types'
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
+  const proto = request.headers.get('x-forwarded-proto')
+  const host = request.headers.get('host')
+
+  // Enforce HTTPS in production (Vercel sets x-forwarded-proto)
+  if (proto === 'http' && host && !host.includes('localhost')) {
+    return NextResponse.redirect(`https://${host}${request.nextUrl.pathname}${request.nextUrl.search}`, {
+      status: 307,
+    })
+  }
 
   // Skip middleware for public routes
   const publicRoutes = ['/', '/login', '/register', '/catalog', '/product']
