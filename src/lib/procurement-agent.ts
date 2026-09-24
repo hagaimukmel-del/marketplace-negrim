@@ -36,6 +36,16 @@ export interface MatchedProduct {
   }>
   sourceDocuments: string[]
   confidence: number
+  // Live data (Step 4)
+  offers?: Array<{
+    supplierId: string
+    supplierName: string
+    priceExclVat: number
+    stockQty: number
+    minOrderQty: number
+    leadTimeDays?: number | null
+    isActive: boolean
+  }>
 }
 
 /**
@@ -184,6 +194,7 @@ async function findMatchingProducts(
         specs: [],
         sourceDocuments: [],
         confidence: 0,
+        offers: [],
       })
     }
 
@@ -207,13 +218,80 @@ async function findMatchingProducts(
     }
   }
 
-  return Array.from(productMap.values())
+  // Step 4: Fetch live offer data for each matched product
+  const topProducts = Array.from(productMap.values())
     .sort((a, b) => b.confidence - a.confidence)
     .slice(0, 5) // Top 5 matches
+
+  for (const product of topProducts) {
+    const { data: offers, error: offersError } = await supabase
+      .from('supplier_offers')
+      .select(
+        `
+        id,
+        supplier_id,
+        price_excl_vat,
+        stock_qty,
+        min_order_qty,
+        lead_time_days,
+        is_active,
+        suppliers (
+          id,
+          company_name,
+          status
+        )
+      `
+      )
+      .eq('product_id', product.productId)
+      .eq('is_active', true)
+      .order('stock_qty', { ascending: false })
+
+    if (offersError) {
+      console.error('Offers query error:', offersError)
+      continue
+    }
+
+    if (offers && offers.length > 0) {
+      product.offers = offers
+        .filter((offer: any) => {
+          // Only include approved suppliers
+          return offer.suppliers?.status === 'approved'
+        })
+        .map((offer: any) => ({
+          supplierId: offer.supplier_id,
+          supplierName: offer.suppliers?.company_name || 'Unknown Supplier',
+          priceExclVat: offer.price_excl_vat,
+          stockQty: offer.stock_qty,
+          minOrderQty: offer.min_order_qty,
+          leadTimeDays: offer.lead_time_days,
+          isActive: offer.is_active,
+        }))
+        .slice(0, 3) // Top 3 suppliers per product
+    }
+  }
+
+  return topProducts
 }
 
 /**
- * Generate natural Hebrew response
+ * Format price in Hebrew
+ */
+function formatPrice(price: number): string {
+  return `₪${price.toFixed(0)}`
+}
+
+/**
+ * Format lead time in Hebrew
+ */
+function formatLeadTime(days?: number | null): string {
+  if (!days) return 'זמן הסעה לא ידוע'
+  if (days === 0) return 'היום'
+  if (days === 1) return 'מחר'
+  return `${days} ימים`
+}
+
+/**
+ * Generate natural Hebrew response with live data
  */
 function generateResponse(intent: ParsedIntent, matches: MatchedProduct[]): string {
   if (matches.length === 0) {
@@ -247,6 +325,25 @@ function generateResponse(intent: ParsedIntent, matches: MatchedProduct[]): stri
       }
     }
 
+    // Step 4: Show live offer data
+    if (product.offers && product.offers.length > 0) {
+      response += '\n\nאפשרויות רכש:'
+      for (const offer of product.offers.slice(0, 2)) {
+        response += `\n- **${offer.supplierName}**`
+        response += ` • מחיר: ${formatPrice(offer.priceExclVat)}`
+
+        if (offer.stockQty > 0) {
+          response += ` • מלאי: ${offer.stockQty} יחידות`
+        } else {
+          response += ` • אין במלאי כרגע`
+        }
+
+        response += ` • הסעה: ${formatLeadTime(offer.leadTimeDays)}`
+      }
+    } else {
+      response += '\n\nלא מצאתי ספקים עם מלאי בזמן זה.'
+    }
+
     if (product.sourceDocuments.length > 0) {
       response += `\n\n(מידע מתוך ${product.sourceDocuments.length} מסמך/ים מאושר/ים)`
     }
@@ -263,7 +360,16 @@ function generateResponse(intent: ParsedIntent, matches: MatchedProduct[]): stri
     const letter = String.fromCharCode(65 + i) // A, B, C
     response += `\n${letter}) **${product.productName}**`
 
-    if (product.specs.length > 0) {
+    // Step 4: Show best offer (cheapest available)
+    if (product.offers && product.offers.length > 0) {
+      const bestOffer = product.offers[0]
+      response += ` — ${formatPrice(bestOffer.priceExclVat)} (${bestOffer.supplierName})`
+      if (bestOffer.stockQty > 0) {
+        response += ` • במלאי`
+      } else {
+        response += ` • אין במלאי`
+      }
+    } else if (product.specs.length > 0) {
       const topSpec = product.specs[0]
       response += ` — ${topSpec.value}`
     }
