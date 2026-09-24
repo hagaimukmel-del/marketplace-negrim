@@ -946,6 +946,65 @@ export type Database = {
           },
         ]
       }
+      supplier_documents: {
+        Row: {
+          categories: string[] | null
+          description: string | null
+          document_type: string
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          indexed_at: string | null
+          is_active: boolean
+          language: string
+          supplier_id: string
+          uploaded_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          categories?: string[] | null
+          description?: string | null
+          document_type: string
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id?: string
+          indexed_at?: string | null
+          is_active?: boolean
+          language?: string
+          supplier_id: string
+          uploaded_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          categories?: string[] | null
+          description?: string | null
+          document_type?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          indexed_at?: string | null
+          is_active?: boolean
+          language?: string
+          supplier_id?: string
+          uploaded_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_documents_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       supplier_offers: {
         Row: {
           created_at: string
