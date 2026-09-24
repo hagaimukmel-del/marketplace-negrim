@@ -675,6 +675,60 @@ export type Database = {
           },
         ]
       }
+      product_specifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_verified: boolean
+          product_id: string
+          source_document_id: string | null
+          source_page_or_section: string | null
+          spec_key: string
+          spec_unit: string | null
+          spec_value: string
+          verified_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_verified?: boolean
+          product_id: string
+          source_document_id?: string | null
+          source_page_or_section?: string | null
+          spec_key: string
+          spec_unit?: string | null
+          spec_value: string
+          verified_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_verified?: boolean
+          product_id?: string
+          source_document_id?: string | null
+          source_page_or_section?: string | null
+          spec_key?: string
+          spec_unit?: string | null
+          spec_value?: string
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_specifications_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_specifications_source_document_id_fkey"
+            columns: ["source_document_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           attributes: Json
@@ -1001,6 +1055,45 @@ export type Database = {
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_documents_products: {
+        Row: {
+          created_at: string
+          document_id: string
+          id: string
+          product_id: string
+          section_reference: string | null
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          id?: string
+          product_id: string
+          section_reference?: string | null
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          id?: string
+          product_id?: string
+          section_reference?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_documents_products_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_documents_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
