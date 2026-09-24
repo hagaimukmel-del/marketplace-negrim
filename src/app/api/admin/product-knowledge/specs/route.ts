@@ -16,6 +16,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const supabase = getSupabaseAdmin()
+    const clientIp = request.headers.get('x-forwarded-for') || 'unknown'
+    await supabase
+      .from('admin_login_attempts')
+      .insert({ ip: clientIp, succeeded: true })
+      .throwOnError()
+
     const {
       product_id,
       spec_key,
@@ -32,8 +39,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-
-    const supabase = getSupabaseAdmin()
 
     // Verify product exists
     const { data: product } = await supabase
@@ -150,6 +155,13 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const supabase = getSupabaseAdmin()
+    const clientIp = request.headers.get('x-forwarded-for') || 'unknown'
+    await supabase
+      .from('admin_login_attempts')
+      .insert({ ip: clientIp, succeeded: true })
+      .throwOnError()
+
     const url = new URL(request.url)
     const pathParts = url.pathname.split('/')
     const specId = pathParts[pathParts.length - 1]
@@ -159,8 +171,6 @@ export async function PATCH(request: NextRequest) {
     }
 
     const updates = await request.json()
-
-    const supabase = getSupabaseAdmin()
 
     // Only allow updating is_verified and spec_value
     interface SpecUpdate {
@@ -229,6 +239,13 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const supabase = getSupabaseAdmin()
+    const clientIp = request.headers.get('x-forwarded-for') || 'unknown'
+    await supabase
+      .from('admin_login_attempts')
+      .insert({ ip: clientIp, succeeded: true })
+      .throwOnError()
+
     const url = new URL(request.url)
     const pathParts = url.pathname.split('/')
     const specId = pathParts[pathParts.length - 1]
@@ -236,8 +253,6 @@ export async function DELETE(request: NextRequest) {
     if (!specId) {
       return NextResponse.json({ error: 'spec_id required' }, { status: 400 })
     }
-
-    const supabase = getSupabaseAdmin()
 
     const { error } = await supabase
       .from('product_specifications')

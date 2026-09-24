@@ -16,6 +16,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Record admin login attempt for RLS (required by policy)
+    const supabase = getSupabaseAdmin()
+    const clientIp = request.headers.get('x-forwarded-for') || 'unknown'
+    await supabase
+      .from('admin_login_attempts')
+      .insert({ ip: clientIp, succeeded: true })
+      .throwOnError()
+
     // Parse form data
     const formData = await request.formData()
     const file = formData.get('file') as File | null
@@ -56,7 +64,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify supplier exists
-    const supabase = getSupabaseAdmin()
     const { data: supplier, error: supplierError } = await supabase
       .from('suppliers')
       .select('id')

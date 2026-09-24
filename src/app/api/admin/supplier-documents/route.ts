@@ -16,6 +16,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Record admin login attempt for RLS (required by policy)
+    const supabase = getSupabaseAdmin()
+    const clientIp = request.headers.get('x-forwarded-for') || 'unknown'
+    await supabase
+      .from('admin_login_attempts')
+      .insert({ ip: clientIp, succeeded: true })
+      .throwOnError()
+
     // Get supplier_id from query
     const supplierId = request.nextUrl.searchParams.get('supplier_id')
     if (!supplierId) {
@@ -26,7 +34,6 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify supplier exists
-    const supabase = getSupabaseAdmin()
     const { data: supplier, error: supplierError } = await supabase
       .from('suppliers')
       .select('id')
@@ -78,6 +85,14 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Record admin login attempt for RLS (required by policy)
+    const supabase = getSupabaseAdmin()
+    const clientIp = request.headers.get('x-forwarded-for') || 'unknown'
+    await supabase
+      .from('admin_login_attempts')
+      .insert({ ip: clientIp, succeeded: true })
+      .throwOnError()
+
     // Get document_id from URL
     const url = new URL(request.url)
     const pathParts = url.pathname.split('/')
@@ -86,8 +101,6 @@ export async function DELETE(request: NextRequest) {
     if (!documentId) {
       return NextResponse.json({ error: 'document_id required' }, { status: 400 })
     }
-
-    const supabase = getSupabaseAdmin()
 
     // Get document to find file path
     const { data: document, error: getError } = await supabase

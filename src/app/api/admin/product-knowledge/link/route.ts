@@ -16,6 +16,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const supabase = getSupabaseAdmin()
+    const clientIp = request.headers.get('x-forwarded-for') || 'unknown'
+    await supabase
+      .from('admin_login_attempts')
+      .insert({ ip: clientIp, succeeded: true })
+      .throwOnError()
+
     const { document_id, product_id, section_reference } = await request.json()
 
     // Validation
@@ -25,8 +32,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-
-    const supabase = getSupabaseAdmin()
 
     // Verify document exists
     const { data: doc } = await supabase
@@ -160,6 +165,13 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const supabase = getSupabaseAdmin()
+    const clientIp = request.headers.get('x-forwarded-for') || 'unknown'
+    await supabase
+      .from('admin_login_attempts')
+      .insert({ ip: clientIp, succeeded: true })
+      .throwOnError()
+
     const url = new URL(request.url)
     const pathParts = url.pathname.split('/')
     const linkId = pathParts[pathParts.length - 1]
@@ -167,8 +179,6 @@ export async function DELETE(request: NextRequest) {
     if (!linkId) {
       return NextResponse.json({ error: 'link_id required' }, { status: 400 })
     }
-
-    const supabase = getSupabaseAdmin()
 
     const { error } = await supabase
       .from('supplier_documents_products')
