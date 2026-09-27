@@ -5,6 +5,10 @@ import { usePathname } from 'next/navigation'
 import { ClipboardList, Home, LayoutGrid, Recycle, Search, ShoppingBag, UserRound } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { LogoMark } from '@/components/brand/Logo'
+import { ChatContainer } from '@/components/chat/ChatContainer'
+import { useChat } from '@/hooks/useChat'
+import { getSessionCarpenter } from '@/lib/carpenter-auth'
+import { useEffect, useState } from 'react'
 
 function Wordmark({ onDark = false }: { onDark?: boolean }) {
   return (
@@ -42,6 +46,8 @@ export default function AppShell({
   children: React.ReactNode
 }) {
   const pathname = usePathname() ?? '/app'
+  const { isOpen, setIsOpen, messages } = useChat('demo')
+  const [carpenterId, setCarpenterId] = useState('demo')
   const cart = useCart()
   const lines = cart.items.length
 
@@ -137,8 +143,8 @@ export default function AppShell({
       </div>
 
       {/* FAB Agent Button - Phone only */}
-      <Link
-        href="/app/order"
+      <button
+        onClick={() => setIsOpen(true)}
         className="fixed bottom-24 start-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-blue-600 text-white shadow-[0_8px_24px_rgba(88,28,135,.4)] hover:shadow-[0_12px_32px_rgba(88,28,135,.5)] transition-shadow active:scale-95 md:hidden"
         aria-label="סוכן חכם"
       >
@@ -147,7 +153,14 @@ export default function AppShell({
           <path d="m21 21-4.35-4.35" />
         </svg>
         <span className="absolute text-lg">🧠</span>
-      </Link>
+      </button>
+
+      {/* Chat Modal */}
+      <ChatContainer
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        carpenterId={carpenterId}
+      />
 
       {/* Phone bottom navigation */}
       <nav
