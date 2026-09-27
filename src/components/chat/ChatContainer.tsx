@@ -73,12 +73,20 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
         }),
       })
 
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`)
+      }
+
       const data = await response.json()
+
+      if (!data.success) {
+        throw new Error(data.message || 'חיפוש נכשל')
+      }
 
       const agentMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'agent',
-        content: data.message || 'עמוק, חיפוש נכשל',
+        content: data.message,
         timestamp: Date.now(),
         actions: [
           { label: '➕ הוסף לעגלה', action: 'add-cart' },
@@ -89,6 +97,13 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
       setMessages((prev) => [...prev, agentMessage])
     } catch (error) {
       console.error('Chat error:', error)
+      const errorMessage: Message = {
+        id: (Date.now() + 2).toString(),
+        role: 'agent',
+        content: error instanceof Error ? error.message : 'קרתה שגיאה בחיפוש',
+        timestamp: Date.now(),
+      }
+      setMessages((prev) => [...prev, errorMessage])
     } finally {
       setIsLoading(false)
     }
