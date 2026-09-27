@@ -46,6 +46,62 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  const handleOptionSelect = async (option: string) => {
+    // User selected an option (1, 2, 3, etc)
+
+    // Add selection as user message
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: option,
+      timestamp: Date.now(),
+    }
+
+    setMessages((prev) => [...prev, userMessage])
+    setIsLoading(true)
+
+    try {
+      // Call agent API with selected option
+      const response = await fetch('/api/carpenter/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: option,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`)
+      }
+
+      const data = await response.json()
+
+      if (!data.success) {
+        throw new Error(data.message || 'חיפוש נכשל')
+      }
+
+      const agentMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'agent',
+        content: data.message,
+        timestamp: Date.now(),
+      }
+
+      setMessages((prev) => [...prev, agentMessage])
+    } catch (error) {
+      console.error('Chat error:', error)
+      const errorMessage: Message = {
+        id: (Date.now() + 2).toString(),
+        role: 'agent',
+        content: error instanceof Error ? error.message : 'קרתה שגיאה בחיפוש',
+        timestamp: Date.now(),
+      }
+      setMessages((prev) => [...prev, errorMessage])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handleSend = async () => {
     if (!input.trim()) return
 
@@ -142,7 +198,13 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
               <p className="text-sm">👋 שלום! מה אתה מחפש היום?</p>
             </div>
           ) : (
-            messages.map((msg) => <ChatMessage key={msg.id} message={msg} />)
+            messages.map((msg) => (
+              <ChatMessage
+                key={msg.id}
+                message={msg}
+                onOptionSelect={handleOptionSelect}
+              />
+            ))
           )}
           <div ref={messagesEndRef} />
         </div>

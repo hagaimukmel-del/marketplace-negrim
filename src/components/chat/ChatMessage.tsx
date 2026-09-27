@@ -14,8 +14,21 @@ export interface Message {
   }>
 }
 
-export function ChatMessage({ message }: { message: Message }) {
+interface ChatMessageProps {
+  message: Message
+  onOptionSelect?: (option: string) => void
+}
+
+// Extract selection options from message (e.g., "בחר (1/2/3)" -> ['1', '2', '3'])
+function extractSelectionOptions(content: string): string[] {
+  const match = content.match(/בחר\s*\(([0-9/]+)\)/)
+  if (!match) return []
+  return match[1].split('/').filter(Boolean)
+}
+
+export function ChatMessage({ message, onOptionSelect }: ChatMessageProps) {
   const isUser = message.role === 'user'
+  const selectionOptions = !isUser ? extractSelectionOptions(message.content) : []
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-3`}>
@@ -33,7 +46,24 @@ export function ChatMessage({ message }: { message: Message }) {
           </div>
         ) : (
           <>
-            <p className="text-sm leading-relaxed">{message.content}</p>
+            <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+
+            {/* Selection options - numbered buttons for choosing products */}
+            {selectionOptions.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {selectionOptions.map((option) => (
+                  <button
+                    key={option}
+                    onClick={() => onOptionSelect?.(option)}
+                    className="px-3 py-1.5 bg-gradient-to-r from-purple-500 to-blue-600 text-white text-sm font-semibold rounded-lg hover:from-purple-600 hover:to-blue-700 transition-all active:scale-95"
+                  >
+                    {option}️⃣
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Action buttons for product details */}
             {message.actions && message.actions.length > 0 && (
               <div className="mt-2 flex flex-col gap-1">
                 {message.actions.map((action, i) => (
