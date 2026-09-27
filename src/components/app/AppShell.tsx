@@ -136,6 +136,19 @@ export default function AppShell({
         </main>
       </div>
 
+      {/* FAB Agent Button - Phone only */}
+      <Link
+        href="/(app)/order"
+        className="fixed bottom-24 start-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-blue-600 text-white shadow-[0_8px_24px_rgba(88,28,135,.4)] hover:shadow-[0_12px_32px_rgba(88,28,135,.5)] transition-shadow active:scale-95 md:hidden"
+        aria-label="סוכן חכם"
+      >
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.35-4.35" />
+        </svg>
+        <span className="absolute text-lg">🧠</span>
+      </Link>
+
       {/* Phone bottom navigation */}
       <nav
         className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-hair bg-white/[.98] px-1 pb-[max(14px,env(safe-area-inset-bottom))] pt-1.5 md:hidden"
