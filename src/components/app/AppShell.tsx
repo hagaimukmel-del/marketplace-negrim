@@ -138,7 +138,7 @@ export default function AppShell({
 
       {/* FAB Agent Button - Phone only */}
       <Link
-        href="/(app)/order"
+        href="/app/order"
         className="fixed bottom-24 start-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-blue-600 text-white shadow-[0_8px_24px_rgba(88,28,135,.4)] hover:shadow-[0_12px_32px_rgba(88,28,135,.5)] transition-shadow active:scale-95 md:hidden"
         aria-label="סוכן חכם"
       >
