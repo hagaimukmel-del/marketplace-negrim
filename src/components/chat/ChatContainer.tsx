@@ -83,6 +83,7 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
       // Extract selection options if they exist
       const selectionMatch = data.message.match(/בחר\s*\(([0-9/]+)\)/)
       const selectionOptions = selectionMatch ? selectionMatch[1].split('/').filter(Boolean) : []
+      console.log('Selection match:', selectionMatch?.[1], 'options:', selectionOptions)
 
       const agentMessage: Message = {
         id: (Date.now() + 1).toString(),
