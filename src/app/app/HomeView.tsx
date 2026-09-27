@@ -334,7 +334,7 @@ function SearchBlock() {
   return (
     <section>
       <SectionTitle title="מה אתה מחפש?" />
-      <form action="/app/catalog" className="relative">
+      <form action="/app/order" className="relative">
         <Search size={20} className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 text-muted" />
         <input
           name="q"
