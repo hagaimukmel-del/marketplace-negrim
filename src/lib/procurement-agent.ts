@@ -133,96 +133,80 @@ function parseIntent(userMessage: string): ParsedIntent {
 }
 
 /**
- * Search product_specifications for matches
+ * Search products by name and description for matches
  */
 async function findMatchingProducts(
   intent: ParsedIntent
 ): Promise<MatchedProduct[]> {
   const supabase = getSupabaseAdmin()
 
-  // Build search query
-  let query = supabase
-    .from('product_specifications')
+  // Search products by name matching category/material keywords
+  const { data: products, error: productsError } = await supabase
+    .from('products')
     .select(
       `
       id,
-      product_id,
-      spec_key,
-      spec_value,
-      spec_unit,
-      is_verified,
-      source_document_id,
-      created_at,
-      products (
-        id,
-        name_he,
-        name_en,
-        brand,
-        mpn
-      )
+      name_he,
+      name_en,
+      description_he,
+      brand,
+      mpn,
+      base_unit
     `
     )
-    .eq('is_verified', true)
+    .limit(100)
 
-  // Filter by spec matches
-  const specQueries: string[] = []
-
-  if (intent.material) {
-    specQueries.push(`spec_key.eq.material,spec_value.ilike.%${intent.material}%`)
-  }
-
-  if (intent.application) {
-    specQueries.push(`spec_key.eq.application,spec_value.ilike.%${intent.application}%`)
-  }
-
-  if (intent.category) {
-    specQueries.push(`spec_key.eq.category,spec_value.ilike.%${intent.category}%`)
-  }
-
-  // Execute query
-  const { data: specs, error } = await query.order('created_at', { ascending: false })
-
-  if (error || !specs) {
-    console.error('Spec query error:', error)
+  if (productsError || !products) {
+    console.error('Products query error:', productsError)
     return []
   }
 
-  // Group by product
+  // Score products based on intent matches
   const productMap = new Map<string, MatchedProduct>()
 
-  for (const spec of specs) {
-    if (!spec.product_id || !spec.products) continue
+  for (const product of products) {
+    const productName = (product.name_he || product.name_en || '').toLowerCase()
+    const description = (product.description_he || '').toLowerCase()
+    const combined = `${productName} ${description}`.toLowerCase()
 
-    const productId = spec.product_id
-    if (!productMap.has(productId)) {
-      const product = spec.products as any
-      productMap.set(productId, {
-        productId,
+    let confidence = 0
+
+    // Match category keywords
+    if (intent.category) {
+      if (productName.includes(intent.category) || description.includes(intent.category)) {
+        confidence += 0.4
+      }
+    }
+
+    // Match material keywords
+    if (intent.material) {
+      if (combined.includes(intent.material)) {
+        confidence += 0.3
+      }
+    }
+
+    // Match application keywords
+    if (intent.application) {
+      if (combined.includes(intent.application)) {
+        confidence += 0.2
+      }
+    }
+
+    // Only keep products with some match
+    if (confidence > 0) {
+      productMap.set(product.id, {
+        productId: product.id,
         productName: product.name_he || product.name_en || 'Unknown',
-        specs: [],
+        specs: [
+          {
+            key: 'יחידת בסיס',
+            value: product.base_unit || 'יחידה',
+          },
+        ],
         sourceDocuments: [],
-        confidence: 0,
+        confidence,
         offers: [],
       })
-    }
-
-    const matched = productMap.get(productId)!
-    matched.specs.push({
-      key: spec.spec_key,
-      value: spec.spec_value,
-      unit: spec.spec_unit,
-    })
-
-    if (spec.source_document_id && !matched.sourceDocuments.includes(spec.source_document_id)) {
-      matched.sourceDocuments.push(spec.source_document_id)
-    }
-
-    // Calculate confidence based on matches
-    if (intent.material && spec.spec_value.toLowerCase().includes(intent.material)) {
-      matched.confidence += 0.3
-    }
-    if (intent.application && spec.spec_value.toLowerCase().includes(intent.application)) {
-      matched.confidence += 0.3
     }
   }
 
