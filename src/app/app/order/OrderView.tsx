@@ -10,6 +10,7 @@ import { VAT_RATE } from '@/lib/vat'
 import CategoryGlyph from '@/components/app/CategoryGlyph'
 import Stepper from '@/components/app/Stepper'
 import { AttentionLine } from '@/components/app/ui'
+import SearchInput from '@/app/(app)/order/search-input'
 
 interface Quote {
   products: AppProduct[]
@@ -99,16 +100,12 @@ export default function OrderView({ profile }: { profile: { address: string; cit
         <h1 className="m-0 text-2xl font-extrabold">הזמנה חדשה</h1>
         <div className="rounded-xl border-[1.5px] border-dashed border-[#D9CFC1] p-3.5 text-sm text-muted">
           <b className="block text-ink">ההזמנה ריקה</b>
-          מוסיפים מוצרים מהקטלוג או מ&quot;הזמן שוב&quot; — והם מתקבצים כאן לפי ספק.
+          מחפשים מוצרים? השתמש בחיפוש למטה או בדיוק בקטלוג.
         </div>
-        <div className="flex gap-2">
-          <Link href="/app/catalog" className="inline-flex h-12 flex-1 items-center justify-center gap-1.5 rounded-[11px] bg-brand font-bold text-navy">
-            <LayoutGrid size={18} /> לקטלוג
-          </Link>
-          <Link href="/app/catalog?focus=search" className="inline-flex h-12 flex-1 items-center justify-center gap-1.5 rounded-[11px] border-[1.5px] border-hair bg-white font-bold">
-            <Search size={18} /> חיפוש
-          </Link>
-        </div>
+        <SearchInput onSearch={() => {}} loading={false} />
+        <Link href="/app/catalog" className="inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-[11px] border-[1.5px] border-hair bg-white font-bold text-navy">
+          <LayoutGrid size={18} /> או עיין בקטלוג
+        </Link>
       </div>
     )
   }
