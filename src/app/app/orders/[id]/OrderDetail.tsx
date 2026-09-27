@@ -26,7 +26,7 @@ export default function OrderDetail({ order, siblings, now }: { order: AppOrder;
   const supplier = order.supplier
   const diff = order.confirmed != null ? order.confirmed - order.submitted : 0
   const at = (iso: string) => when(iso, now)
-  const whatsapp = whatsappHref(supplier?.phone, `שלום, לגבי הזמנה #${order.shortNumber} מנגרימ`)
+  const whatsapp = whatsappHref(supplier?.phone, `שלום, לגבי הזמנה #${order.shortNumber} מנגרים B2B`)
 
   const act = async (action: 'seen' | 'received') => {
     setActing(true)

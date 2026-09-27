@@ -6,7 +6,7 @@ import AppFrame from '@/components/app/AppFrame'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'נגרימ — מרכז הרכש',
+  title: 'נגרים B2B — מרכז הרכש',
 }
 
 /** The purchasing app. APP_LIVE decides whether anyone but the operator may use it. */

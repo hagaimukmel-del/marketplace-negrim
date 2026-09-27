@@ -87,7 +87,7 @@ export default function JoinClient() {
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5 pt-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] md:items-start md:gap-8">
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
         <section>
-          <div className="text-[15px] font-medium text-muted">הצטרפות לנגרימ</div>
+          <div className="text-[15px] font-medium text-muted">הצטרפות לנגרים B2B</div>
           <h1 className="m-0 mt-0.5 text-[28px] font-extrabold leading-tight text-navy text-balance md:text-[34px]">רכש הנגרייה שלך. בשליטה.</h1>
           <ul className="m-0 mt-3 grid list-none gap-1.5 p-0 text-[15px]">
             {BENEFITS.map((line) => (

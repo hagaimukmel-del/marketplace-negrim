@@ -229,7 +229,7 @@ export function whatsappHref(phone: string | null | undefined, text: string): st
 }
 
 function WhatsAppReminder({ order }: { order: AppOrder }) {
-  const href = whatsappHref(order.supplier?.phone, `שלום, לגבי הזמנה #${order.shortNumber} מנגרימ — אשמח לאישור. תודה!`)
+  const href = whatsappHref(order.supplier?.phone, `שלום, לגבי הזמנה #${order.shortNumber} מנגרים B2B — אשמח לאישור. תודה!`)
   if (!href) {
     return (
       <Link href={`/app/orders/${order.id}`} className="mt-3.5 flex h-12 w-full items-center justify-center rounded-[11px] bg-brand font-bold text-navy">

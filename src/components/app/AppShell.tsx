@@ -52,7 +52,7 @@ export default function AppShell({
     <div className="min-h-dvh bg-warm text-ink md:grid md:grid-cols-[236px_minmax(0,1fr)]">
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-dvh flex-col gap-5 bg-navy px-3.5 py-5 text-slate-200 md:flex">
-        <Link href="/app" className="flex items-center gap-2.5 px-1" aria-label="נגרימ — בית">
+        <Link href="/app" className="flex items-center gap-2.5 px-1" aria-label="נגרים B2B — בית">
           <LogoMark size={36} tile />
           <Wordmark onDark />
         </Link>
@@ -69,7 +69,7 @@ export default function AppShell({
       <div className="min-w-0">
         {/* Phone top bar */}
         <header className="sticky top-0 z-30 flex h-[60px] items-center gap-2.5 bg-warm/95 px-4 backdrop-blur md:hidden">
-          <Link href="/app" className="flex items-center gap-2.5" aria-label="נגרימ — בית">
+          <Link href="/app" className="flex items-center gap-2.5" aria-label="נגרים B2B — בית">
             <LogoMark size={32} tile />
             <Wordmark />
           </Link>
@@ -127,7 +127,7 @@ export default function AppShell({
           {/* What every public page owes its visitors, kept quiet at the end. */}
           <footer className="mt-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border-t border-hair pt-4 text-xs text-faint">
             <span className="flex items-center gap-1.5">
-              <LogoMark size={16} tile /> © נגרימ · שוק הנגרים
+              <LogoMark size={16} tile /> © נגרים B2B · שוק הנגרים
             </span>
             <Link href="/terms" className="hover:text-ink">תקנון ותנאי שימוש</Link>
             <Link href="/terms#privacy" className="hover:text-ink">מדיניות פרטיות</Link>
