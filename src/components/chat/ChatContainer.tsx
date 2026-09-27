@@ -80,11 +80,24 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
         throw new Error(data.message || 'חיפוש נכשל')
       }
 
+      // Extract selection options if they exist
+      const selectionMatch = data.message.match(/בחר\s*\(([0-9/]+)\)/)
+      const selectionOptions = selectionMatch ? selectionMatch[1].split('/').filter(Boolean) : []
+
       const agentMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'agent',
         content: data.message,
         timestamp: Date.now(),
+        actions: selectionOptions.length > 0
+          ? selectionOptions.map((opt) => ({
+              label: `בחר אפשרות ${opt} ${opt === '1' ? '🟢' : opt === '2' ? '🟡' : opt === '3' ? '🔵' : '🟣'}`,
+              action: `select-${opt}`,
+            }))
+          : [
+              { label: '➕ הוסף לעגלה', action: 'add-cart' },
+              { label: '💾 שמור', action: 'save' },
+            ],
       }
 
       setMessages((prev) => [...prev, agentMessage])

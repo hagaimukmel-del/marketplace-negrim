@@ -49,29 +49,18 @@ export function ChatMessage({ message, onOptionSelect }: ChatMessageProps) {
           <>
             <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
 
-            {/* Selection options - numbered buttons for choosing products */}
-            {selectionOptions && selectionOptions.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {selectionOptions.map((option: string) => (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => onOptionSelect?.(option)}
-                    className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold rounded-md transition-colors"
-                    style={{ display: 'inline-block' }}
-                  >
-                    {option}️⃣
-                  </button>
-                ))}
-              </div>
-            )}
-
             {/* Action buttons for product details */}
             {message.actions && message.actions.length > 0 && (
               <div className="mt-2 flex flex-col gap-1">
                 {message.actions.map((action, i) => (
                   <button
                     key={i}
+                    onClick={() => {
+                      if (action.action.startsWith('select-')) {
+                        const option = action.action.replace('select-', '')
+                        onOptionSelect?.(option)
+                      }
+                    }}
                     className={`text-xs px-2 py-1 rounded ${
                       isUser
                         ? 'bg-blue-700 hover:bg-blue-800'
