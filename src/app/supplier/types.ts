@@ -4,9 +4,9 @@
  * tabs can read it.
  */
 
-export type Tab = 'orders' | 'products' | 'business' | 'terms'
+export type Tab = 'orders' | 'products' | 'business' | 'terms' | 'documents'
 
-export const TABS: readonly Tab[] = ['orders', 'products', 'business', 'terms']
+export const TABS: readonly Tab[] = ['orders', 'products', 'business', 'terms', 'documents']
 
 export function isTab(value: unknown): value is Tab {
   return typeof value === 'string' && (TABS as readonly string[]).includes(value)

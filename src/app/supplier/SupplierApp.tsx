@@ -1,11 +1,12 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { Truck, Package, Building2, Handshake, CheckCircle2, Circle, ChevronLeft } from 'lucide-react'
+import { Truck, Package, Building2, Handshake, FileText, CheckCircle2, Circle, ChevronLeft } from 'lucide-react'
 import OrdersTab from './tabs/OrdersTab'
 import ProductsTab from './tabs/ProductsTab'
 import BusinessTab from './tabs/BusinessTab'
 import TermsTab from './tabs/TermsTab'
+import UploadDocuments from './UploadDocuments'
 import type { CatalogPick, CategoryOption, ProductItem, SupplierOrder, SupplierProfile, Tab } from './types'
 
 export type Notify = (text: string, kind?: 'ok' | 'error') => void
@@ -13,11 +14,12 @@ export type Notify = (text: string, kind?: 'ok' | 'error') => void
 const TAB_META: Record<Tab, { label: string; Icon: typeof Truck }> = {
   orders: { label: 'הזמנות נכנסות', Icon: Truck },
   products: { label: 'מוצרים', Icon: Package },
+  documents: { label: 'דפים טכניים', Icon: FileText },
   business: { label: 'פרטי העסק', Icon: Building2 },
   terms: { label: 'תנאי סחר', Icon: Handshake },
 }
 
-const ORDER: Tab[] = ['orders', 'products', 'business', 'terms']
+const ORDER: Tab[] = ['orders', 'products', 'documents', 'business', 'terms']
 
 interface ChecklistItem {
   label: string
@@ -189,6 +191,7 @@ export default function SupplierApp({
         {tab === 'products' && (
           <ProductsTab products={products} categories={categories} catalog={catalog} notify={notify} />
         )}
+        {tab === 'documents' && <UploadDocuments products={products} />}
         {tab === 'business' && <BusinessTab profile={profile} notify={notify} />}
         {tab === 'terms' && <TermsTab profile={profile} notify={notify} />}
       </div>
