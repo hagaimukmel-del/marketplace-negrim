@@ -103,9 +103,19 @@ export default function OrderView({ profile }: { profile: { address: string; cit
           מחפשים מוצרים? השתמש בחיפוש למטה או בדיוק בקטלוג.
         </div>
         <SearchInput onSearch={() => {}} loading={false} />
-        <Link href="/app/catalog" className="inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-[11px] border-[1.5px] border-hair bg-white font-bold text-navy">
-          <LayoutGrid size={18} /> או עיין בקטלוג
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/(app)/order" className="inline-flex h-12 flex-1 items-center justify-center gap-1.5 rounded-[11px] bg-gradient-to-br from-purple-500 to-blue-600 font-bold text-white shadow-lg hover:shadow-xl transition-shadow">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+              <text x="12" y="14" fontSize="8" fill="currentColor" textAnchor="middle" fontWeight="bold">🧠</text>
+            </svg>
+            סוכן חכם
+          </Link>
+          <Link href="/app/catalog" className="inline-flex h-12 flex-1 items-center justify-center gap-1.5 rounded-[11px] border-[1.5px] border-hair bg-white font-bold text-navy">
+            <LayoutGrid size={18} /> קטלוג
+          </Link>
+        </div>
       </div>
     )
   }
