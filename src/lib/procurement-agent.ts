@@ -10,9 +10,35 @@ type ProductSpec = Database['public']['Tables']['product_specifications']['Row']
  *
  * Flow:
  * 1. Parse intent from user request (Hebrew text)
- * 2. Search product_specifications for matches
- * 3. Generate natural Hebrew response with options
+ * 2. Search products for matches
+ * 3. Select response type based on matches
+ * 4. Generate natural Hebrew response with options
  */
+
+type ConversationState =
+  | 'greeting'
+  | 'clarifying'
+  | 'searching'
+  | 'results_single'
+  | 'results_multiple'
+  | 'comparing'
+  | 'no_results'
+  | 'refining'
+  | 'done'
+
+type ResponseType =
+  | 'simple_result'
+  | 'multiple_results'
+  | 'clarifying'
+  | 'no_results'
+  | 'recommendation'
+  | 'dont_know'
+  | 'comparison'
+
+interface ActionButton {
+  label: string
+  action: 'add-cart' | 'save' | 'compare' | 'refine-search' | 'learn-more'
+}
 
 export interface ProcurementRequest {
   userMessage: string
@@ -22,8 +48,13 @@ export interface ProcurementRequest {
 export interface ProcurementResponse {
   success: boolean
   message: string
+  state: ConversationState
   matchedProducts?: MatchedProduct[]
-  followUp?: string
+  followUp?: {
+    type: 'selection' | 'clarification' | 'comparison' | 'none'
+    options?: string[]
+  }
+  actions?: ActionButton[]
 }
 
 export interface MatchedProduct {
@@ -301,6 +332,25 @@ async function findMatchingProducts(
 }
 
 /**
+ * Select response type based on search results and intent
+ */
+function selectResponseType(intent: ParsedIntent, results: MatchedProduct[]): ResponseType {
+  if (results.length === 0) {
+    return intent.confidence < 0.5 ? 'clarifying' : 'no_results'
+  }
+
+  if (results.length === 1) {
+    return 'simple_result'
+  }
+
+  if (results.length > 1 && results.length <= 4) {
+    return 'multiple_results'
+  }
+
+  return 'multiple_results'
+}
+
+/**
  * Format price in Hebrew
  */
 function formatPrice(price: number): string {
@@ -336,22 +386,47 @@ function getDocTypeLabel(docType: string): string {
  */
 function generateResponse(intent: ParsedIntent, matches: MatchedProduct[]): string {
   if (matches.length === 0) {
-    // No matches found
-    let response = 'לא מצאתי תיעוד שמתאים בדיוק.'
-
+    // No matches found - clarify or suggest alternatives
     if (intent.confidence < 0.5) {
-      response += '\n\nבואי נבהיר את הצורך שלך:'
-      if (!intent.category) {
-        response += '\n- איזה סוג מוצר אתה צריך? (דבק, צבע, כלי, וכו\')'
-      }
-      if (!intent.material) {
-        response += '\n- עם איזה עץ אתה עובד?'
-      }
-    } else {
-      response += '\n\nתוכל לפנות לספק כדי לשאול על המוצר שלך, או לחפש משהו אחר.'
-    }
+      // Need more information
+      let response = '🤔 כדי למצוא לך בדיוק מה שצריך:\n'
 
-    return response
+      if (!intent.category) {
+        response += '\n• איזה סוג מוצר? (דבק, צבע, כלי, וכו\')'
+      } else {
+        response += `\n✅ מחפש: ${intent.category}`
+      }
+
+      if (!intent.material) {
+        response += '\n• עם איזה עץ אתה עובד? (בירץ, אורן, אלון, וכו\')'
+      } else if (intent.material) {
+        response += `\n✅ חומר: ${intent.material}`
+      }
+
+      if (!intent.quantity) {
+        response += '\n• כמה אתה צריך? (ק"ג/ליטר)'
+      }
+
+      response += '\n\nתן לי עוד פרטים 👇'
+      return response
+    } else {
+      // High confidence but no exact match
+      let response = `❌ לא מצאתי ${intent.category || 'מוצר'} בשם המדויק.\n\n`
+      response += '🤷 אבל אני מנחש שחיפשת:\n'
+
+      if (intent.category) {
+        response += `• סוג: ${intent.category}\n`
+      }
+      if (intent.material) {
+        response += `• חומר: ${intent.material}\n`
+      }
+      if (intent.quantity) {
+        response += `• כמות: ${intent.quantity}\n`
+      }
+
+      response += '\nתוכל להסביר קצת יותר או לחפש משהו אחר?'
+      return response
+    }
   }
 
   if (matches.length === 1) {
@@ -402,35 +477,39 @@ function generateResponse(intent: ParsedIntent, matches: MatchedProduct[]): stri
     return response
   }
 
-  // Multiple matches
-  let response = `מצאתי ${matches.length} מוצרים שמתאימים:\n`
+  // Multiple matches - show up to 4 options with numbers
+  const showLimit = Math.min(4, matches.length)
+  let response = `🔍 מצאתי ${matches.length} מוצרים שמתאימים. בואי נצמצם:\n`
 
-  for (let i = 0; i < Math.min(3, matches.length); i++) {
+  const emojis = ['🟢', '🟡', '🔵', '🟣']
+
+  for (let i = 0; i < showLimit; i++) {
     const product = matches[i]
-    const letter = String.fromCharCode(65 + i) // A, B, C
-    response += `\n${letter}) **${product.productName}**`
+    const number = i + 1
+    const emoji = emojis[i] || '⚪'
+    response += `\n${number}) ${emoji} **${product.productName}**`
 
-    // Step 5: Show if documents exist
+    // Show price and supplier as main info
+    if (product.offers && product.offers.length > 0) {
+      const bestOffer = product.offers[0]
+      response += ` — ${formatPrice(bestOffer.priceExclVat)}`
+      response += ` (${bestOffer.supplierName})`
+
+      // Stock status
+      if (bestOffer.stockQty > 0) {
+        response += ` • ✅ במלאי`
+      } else {
+        response += ` • ⏳ אזל`
+      }
+    }
+
+    // Show if has documents
     if (product.documents && product.documents.length > 0) {
       response += ` 📄`
     }
-
-    // Step 4: Show best offer (cheapest available)
-    if (product.offers && product.offers.length > 0) {
-      const bestOffer = product.offers[0]
-      response += ` — ${formatPrice(bestOffer.priceExclVat)} (${bestOffer.supplierName})`
-      if (bestOffer.stockQty > 0) {
-        response += ` • במלאי`
-      } else {
-        response += ` • אין במלאי`
-      }
-    } else if (product.specs.length > 0) {
-      const topSpec = product.specs[0]
-      response += ` — ${topSpec.value}`
-    }
   }
 
-  response += '\n\nבחר אחד, או תן לי עוד פרטים.'
+  response += `\n\nבחר (${Array.from({length: showLimit}, (_, i) => i + 1).join('/')}) או תן לי עוד פרטים.`
   return response
 }
 
@@ -447,20 +526,65 @@ export async function processProcurementRequest(
     // 2. Find matching products
     const matches = await findMatchingProducts(intent)
 
-    // 3. Generate response
+    // 3. Select response type
+    const responseType = selectResponseType(intent, matches)
+
+    // 4. Map to conversation state
+    let state: ConversationState = 'searching'
+    let followUpType: 'selection' | 'clarification' | 'comparison' | 'none' = 'none'
+
+    switch (responseType) {
+      case 'simple_result':
+        state = 'results_single'
+        followUpType = 'none'
+        break
+      case 'multiple_results':
+        state = 'results_multiple'
+        followUpType = 'selection'
+        break
+      case 'clarifying':
+        state = 'clarifying'
+        followUpType = 'clarification'
+        break
+      case 'no_results':
+        state = 'no_results'
+        followUpType = 'none'
+        break
+    }
+
+    // 5. Generate response
     const message = generateResponse(intent, matches)
+
+    // 6. Prepare action buttons based on result type
+    const actions: ActionButton[] = []
+    if (matches.length === 1) {
+      actions.push({
+        label: '➕ הוסף לעגלה',
+        action: 'add-cart',
+      })
+      actions.push({
+        label: '🔍 חיפוש דומה',
+        action: 'refine-search',
+      })
+    }
 
     return {
       success: true,
       message,
+      state,
       matchedProducts: matches,
-      followUp: matches.length === 0 ? 'clarification' : 'selection',
+      followUp: {
+        type: followUpType,
+        options: followUpType === 'selection' ? Array.from({ length: Math.min(4, matches.length) }, (_, i) => (i + 1).toString()) : undefined,
+      },
+      actions: actions.length > 0 ? actions : undefined,
     }
   } catch (err) {
     console.error('Agent error:', err)
     return {
       success: false,
-      message: 'קרתה שגיאה. בואי נסתכל לך שוב.',
+      message: 'קרתה שגיאה. בואי ננסה שוב.',
+      state: 'done',
     }
   }
 }
