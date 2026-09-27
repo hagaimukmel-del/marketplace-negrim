@@ -28,8 +28,6 @@ function extractSelectionOptions(content: string): string[] {
 
 export function ChatMessage({ message, onOptionSelect }: ChatMessageProps) {
   const isUser = message.role === 'user'
-  const selectionOptions = !isUser ? extractSelectionOptions(message.content) : []
-
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-3`}>
@@ -49,7 +47,7 @@ export function ChatMessage({ message, onOptionSelect }: ChatMessageProps) {
           <>
             <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
 
-            {/* Action buttons for product details */}
+            {/* Action buttons from backend */}
             {message.actions && message.actions.length > 0 && (
               <div className="mt-2 flex flex-col gap-1">
                 {message.actions.map((action, i) => (

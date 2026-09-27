@@ -37,7 +37,8 @@ type ResponseType =
 
 interface ActionButton {
   label: string
-  action: 'add-cart' | 'save' | 'compare' | 'refine-search' | 'learn-more'
+  action: string
+  value?: string
 }
 
 export interface ProcurementRequest {
@@ -557,10 +558,25 @@ export async function processProcurementRequest(
 
     // 6. Prepare action buttons based on result type
     const actions: ActionButton[] = []
-    if (matches.length === 1) {
+
+    if (followUpType === 'selection') {
+      // Multiple results - show numbered selection buttons
+      const optionCount = Math.min(4, matches.length)
+      const emojis = ['🟢', '🟡', '🔵', '🟣']
+      for (let i = 0; i < optionCount; i++) {
+        const number = i + 1
+        actions.push({
+          label: `בחר אפשרות ${number} ${emojis[i]}`,
+          action: `select-${number}`,
+          value: number.toString(),
+        })
+      }
+    } else if (matches.length === 1) {
+      // Single result - show action buttons
       actions.push({
         label: '➕ הוסף לעגלה',
-        action: 'add-cart',
+        action: 'add-to-cart',
+        value: matches[0].productId,
       })
       actions.push({
         label: '🔍 חיפוש דומה',

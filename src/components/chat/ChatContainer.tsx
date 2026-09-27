@@ -80,25 +80,18 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
         throw new Error(data.message || 'חיפוש נכשל')
       }
 
-      // Extract selection options if they exist
-      const selectionMatch = data.message.match(/בחר\s*\(([0-9/]+)\)/)
-      const selectionOptions = selectionMatch ? selectionMatch[1].split('/').filter(Boolean) : []
-      console.log('Selection match:', selectionMatch?.[1], 'options:', selectionOptions)
-
+      // Use structured actions from backend
       const agentMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'agent',
         content: data.message,
         timestamp: Date.now(),
-        actions: selectionOptions.length > 0
-          ? selectionOptions.map((opt) => ({
-              label: `בחר אפשרות ${opt} ${opt === '1' ? '🟢' : opt === '2' ? '🟡' : opt === '3' ? '🔵' : '🟣'}`,
-              action: `select-${opt}`,
+        actions: data.actions && data.actions.length > 0
+          ? data.actions.map((act: any) => ({
+              label: act.label,
+              action: act.action,
             }))
-          : [
-              { label: '➕ הוסף לעגלה', action: 'add-cart' },
-              { label: '💾 שמור', action: 'save' },
-            ],
+          : [],
       }
 
       setMessages((prev) => [...prev, agentMessage])
@@ -151,15 +144,18 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
         throw new Error(data.message || 'חיפוש נכשל')
       }
 
+      // Use structured actions from backend
       const agentMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'agent',
         content: data.message,
         timestamp: Date.now(),
-        actions: [
-          { label: '➕ הוסף לעגלה', action: 'add-cart' },
-          { label: '💾 שמור', action: 'save' },
-        ],
+        actions: data.actions && data.actions.length > 0
+          ? data.actions.map((act: any) => ({
+              label: act.label,
+              action: act.action,
+            }))
+          : [],
       }
 
       setMessages((prev) => [...prev, agentMessage])
