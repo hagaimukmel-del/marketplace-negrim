@@ -30,6 +30,7 @@ export function ChatMessage({ message, onOptionSelect }: ChatMessageProps) {
   const isUser = message.role === 'user'
   const selectionOptions = !isUser ? extractSelectionOptions(message.content) : []
 
+
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-3`}>
       <div
@@ -49,13 +50,15 @@ export function ChatMessage({ message, onOptionSelect }: ChatMessageProps) {
             <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
 
             {/* Selection options - numbered buttons for choosing products */}
-            {selectionOptions.length > 0 && (
+            {selectionOptions && selectionOptions.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2">
-                {selectionOptions.map((option) => (
+                {selectionOptions.map((option: string) => (
                   <button
                     key={option}
+                    type="button"
                     onClick={() => onOptionSelect?.(option)}
-                    className="px-3 py-1.5 bg-gradient-to-r from-purple-500 to-blue-600 text-white text-sm font-semibold rounded-lg hover:from-purple-600 hover:to-blue-700 transition-all active:scale-95"
+                    className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold rounded-md transition-colors"
+                    style={{ display: 'inline-block' }}
                   >
                     {option}️⃣
                   </button>
