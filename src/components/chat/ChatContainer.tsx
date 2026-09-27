@@ -67,9 +67,7 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userMessage: input,
-          carpenterId,
-          history: messages.slice(-20), // Send last 20 messages
+          message: input, // API expects 'message' not 'userMessage'
         }),
       })
 
