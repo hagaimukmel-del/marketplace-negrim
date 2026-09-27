@@ -72,7 +72,7 @@ interface ParsedIntent {
  * Parse user request to extract intent
  *
  * Example: "אני צריך דבק לבירץ׳"
- * Output: { category: 'adhesive', material: 'birch', confidence: 0.9 }
+ * Output: { category: 'דבק', material: 'birch', confidence: 0.9 }
  */
 function parseIntent(userMessage: string): ParsedIntent {
   const hebrew = userMessage.toLowerCase()
@@ -85,9 +85,9 @@ function parseIntent(userMessage: string): ParsedIntent {
     confidence: 0.5,
   }
 
-  // Category keywords
+  // Category keywords - use Hebrew words instead of English
   if (hebrew.includes('דבק') || hebrew.includes('glue') || hebrew.includes('adhesive') || hebrew.includes('דבקים') || hebrew.includes('דביק')) {
-    intent.category = 'adhesive'
+    intent.category = 'דבק'
     intent.confidence += 0.2
   } else if (
     hebrew.includes('צבע') ||
@@ -97,18 +97,22 @@ function parseIntent(userMessage: string): ParsedIntent {
     hebrew.includes('צביעה') ||
     hebrew.includes('לכה')
   ) {
-    intent.category = 'finishing'
+    intent.category = 'צבע'
     intent.confidence += 0.2
   } else if (hebrew.includes('כלי') || hebrew.includes('tool') || hebrew.includes('כלים')) {
-    intent.category = 'tool'
+    intent.category = 'כלי'
     intent.confidence += 0.2
   }
 
-  // Product types (קנקוטיים, לוחות, וכו')
-  if (hebrew.includes('קנקוט') || hebrew.includes('canister')) {
-    intent.category = 'adhesive'
-    intent.confidence += 0.15
-  } else if (hebrew.includes('לוח') || hebrew.includes('board')) {
+  // Product types or use cases (קנקוטיים/קנטים = edge banding machines, לוחות = boards)
+  if (hebrew.includes('קנקוט') || hebrew.includes('קנט') || hebrew.includes('canister') || hebrew.includes('edge')) {
+    // User is asking about glue for edge banding machines (קנטים)
+    // Don't change category, just boost confidence for adhesive matches
+    if (intent.category === 'adhesive') {
+      intent.confidence += 0.1
+    }
+  }
+  if (hebrew.includes('לוח') || hebrew.includes('board')) {
     intent.category = 'finishing'
     intent.confidence += 0.15
   }
