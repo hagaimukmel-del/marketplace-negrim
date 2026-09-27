@@ -675,6 +675,69 @@ export type Database = {
           },
         ]
       }
+      product_documents: {
+        Row: {
+          content_type: string | null
+          created_at: string | null
+          doc_type: string
+          extracted_text: string | null
+          file_name: string
+          file_size_kb: number | null
+          file_url: string
+          id: string
+          product_id: string
+          supplier_id: string
+          title_he: string
+          uploaded_at: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          content_type?: string | null
+          created_at?: string | null
+          doc_type: string
+          extracted_text?: string | null
+          file_name: string
+          file_size_kb?: number | null
+          file_url: string
+          id?: string
+          product_id: string
+          supplier_id: string
+          title_he: string
+          uploaded_at?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          content_type?: string | null
+          created_at?: string | null
+          doc_type?: string
+          extracted_text?: string | null
+          file_name?: string
+          file_size_kb?: number | null
+          file_url?: string
+          id?: string
+          product_id?: string
+          supplier_id?: string
+          title_he?: string
+          uploaded_at?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_documents_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_documents_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_specifications: {
         Row: {
           created_at: string

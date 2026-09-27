@@ -46,6 +46,14 @@ export interface MatchedProduct {
     leadTimeDays?: number | null
     isActive: boolean
   }>
+  // Step 5: Document citations
+  documents?: Array<{
+    id: string
+    title_he: string
+    doc_type: string
+    file_url: string
+    extracted_text?: string | null
+  }>
 }
 
 /**
@@ -224,6 +232,7 @@ async function findMatchingProducts(
     .slice(0, 5) // Top 5 matches
 
   for (const product of topProducts) {
+    // Fetch live offer data
     const { data: offers, error: offersError } = await supabase
       .from('supplier_offers')
       .select(
@@ -268,6 +277,24 @@ async function findMatchingProducts(
         }))
         .slice(0, 3) // Top 3 suppliers per product
     }
+
+    // Step 5: Fetch supplier documents for citations
+    const { data: docs, error: docsError } = await supabase
+      .from('product_documents')
+      .select('id, title_he, doc_type, file_url, extracted_text')
+      .eq('product_id', product.productId)
+      .order('uploaded_at', { ascending: false })
+      .limit(3) // Top 3 documents per product
+
+    if (!docsError && docs && docs.length > 0) {
+      product.documents = docs.map((doc: any) => ({
+        id: doc.id,
+        title_he: doc.title_he,
+        doc_type: doc.doc_type,
+        file_url: doc.file_url,
+        extracted_text: doc.extracted_text,
+      }))
+    }
   }
 
   return topProducts
@@ -288,6 +315,20 @@ function formatLeadTime(days?: number | null): string {
   if (days === 0) return 'היום'
   if (days === 1) return 'מחר'
   return `${days} ימים`
+}
+
+/**
+ * Map doc type to Hebrew label
+ */
+function getDocTypeLabel(docType: string): string {
+  const labels: Record<string, string> = {
+    spec_sheet: 'דף טכני',
+    usage_guide: 'הנחיות שימוש',
+    image: 'תמונה',
+    datasheet: 'דטאשיט',
+    other: 'מסמך',
+  }
+  return labels[docType] || 'מסמך'
 }
 
 /**
@@ -316,6 +357,15 @@ function generateResponse(intent: ParsedIntent, matches: MatchedProduct[]): stri
   if (matches.length === 1) {
     const product = matches[0]
     let response = `מצאתי מוצר שמתאים:\n\n**${product.productName}**`
+
+    // Step 5: Show document evidence
+    if (product.documents && product.documents.length > 0) {
+      response += '\n\n📄 **מסמכים טכניים:**'
+      for (const doc of product.documents.slice(0, 2)) {
+        const label = getDocTypeLabel(doc.doc_type)
+        response += `\n- ${label}: [${doc.title_he}](${doc.file_url})`
+      }
+    }
 
     if (product.specs.length > 0) {
       response += '\n\nמפרטים:'
@@ -359,6 +409,11 @@ function generateResponse(intent: ParsedIntent, matches: MatchedProduct[]): stri
     const product = matches[i]
     const letter = String.fromCharCode(65 + i) // A, B, C
     response += `\n${letter}) **${product.productName}**`
+
+    // Step 5: Show if documents exist
+    if (product.documents && product.documents.length > 0) {
+      response += ` 📄`
+    }
 
     // Step 4: Show best offer (cheapest available)
     if (product.offers && product.offers.length > 0) {
