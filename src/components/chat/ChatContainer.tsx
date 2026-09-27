@@ -144,14 +144,6 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
         throw new Error(data.message || 'חיפוש נכשל')
       }
 
-      // Debug: log response data
-      console.log('🔍 API Response (handleSend):', {
-        message: data.message?.substring(0, 50),
-        hasActions: !!data.actions,
-        actionsLength: data.actions?.length || 0,
-        actions: data.actions,
-      })
-
       // Use structured actions from backend
       const agentMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -165,13 +157,6 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
             }))
           : [],
       }
-
-      console.log('📝 Agent Message:', {
-        id: agentMessage.id,
-        hasActions: !!agentMessage.actions,
-        actionsLength: agentMessage.actions?.length || 0,
-        actions: agentMessage.actions,
-      })
 
       setMessages((prev) => [...prev, agentMessage])
     } catch (error) {
