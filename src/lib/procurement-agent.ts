@@ -86,19 +86,31 @@ function parseIntent(userMessage: string): ParsedIntent {
   }
 
   // Category keywords
-  if (hebrew.includes('דבק') || hebrew.includes('glue') || hebrew.includes('adhesive')) {
+  if (hebrew.includes('דבק') || hebrew.includes('glue') || hebrew.includes('adhesive') || hebrew.includes('דבקים') || hebrew.includes('דביק')) {
     intent.category = 'adhesive'
     intent.confidence += 0.2
   } else if (
     hebrew.includes('צבע') ||
     hebrew.includes('פוליש') ||
-    hebrew.includes('varnish')
+    hebrew.includes('varnish') ||
+    hebrew.includes('צבעים') ||
+    hebrew.includes('צביעה') ||
+    hebrew.includes('לכה')
   ) {
     intent.category = 'finishing'
     intent.confidence += 0.2
-  } else if (hebrew.includes('כלי') || hebrew.includes('tool')) {
+  } else if (hebrew.includes('כלי') || hebrew.includes('tool') || hebrew.includes('כלים')) {
     intent.category = 'tool'
     intent.confidence += 0.2
+  }
+
+  // Product types (קנקוטיים, לוחות, וכו')
+  if (hebrew.includes('קנקוט') || hebrew.includes('canister')) {
+    intent.category = 'adhesive'
+    intent.confidence += 0.15
+  } else if (hebrew.includes('לוח') || hebrew.includes('board')) {
+    intent.category = 'finishing'
+    intent.confidence += 0.15
   }
 
   // Material keywords
