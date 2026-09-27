@@ -38,6 +38,7 @@ const nextConfig: NextConfig = {
       moved("/carpenter/account", "/app/account"),
       moved("/carpenter/metzion", "/app/metzion"),
       moved("/carpenter/metzion/:path*", "/app/metzion/:path*"),
+      moved("/demo", "/app/demo"),
     ];
   },
 };
