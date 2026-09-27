@@ -221,21 +221,24 @@ async function findMatchingProducts(
 
     // Match category keywords
     if (intent.category) {
-      if (productName.includes(intent.category) || description.includes(intent.category)) {
+      const categoryLower = intent.category.toLowerCase()
+      if (productName.includes(categoryLower) || description.includes(categoryLower)) {
         confidence += 0.4
       }
     }
 
     // Match material keywords
     if (intent.material) {
-      if (combined.includes(intent.material)) {
+      const materialLower = intent.material.toLowerCase()
+      if (combined.includes(materialLower)) {
         confidence += 0.3
       }
     }
 
     // Match application keywords
     if (intent.application) {
-      if (combined.includes(intent.application)) {
+      const applicationLower = intent.application.toLowerCase()
+      if (combined.includes(applicationLower)) {
         confidence += 0.2
       }
     }
