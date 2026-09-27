@@ -29,15 +29,6 @@ function extractSelectionOptions(content: string): string[] {
 export function ChatMessage({ message, onOptionSelect }: ChatMessageProps) {
   const isUser = message.role === 'user'
 
-  // Debug: log actions rendering
-  if (!isUser && message.actions?.length) {
-    console.log('🎨 Rendering actions in ChatMessage:', {
-      hasActions: !!message.actions,
-      actionsLength: message.actions.length,
-      actions: message.actions,
-    })
-  }
-
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-3`}>
       <div
