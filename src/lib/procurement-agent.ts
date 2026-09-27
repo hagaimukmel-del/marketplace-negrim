@@ -593,7 +593,7 @@ export async function processProcurementRequest(
         type: followUpType,
         options: followUpType === 'selection' ? Array.from({ length: Math.min(4, matches.length) }, (_, i) => (i + 1).toString()) : undefined,
       },
-      actions: actions.length > 0 ? actions : undefined,
+      actions: actions.length > 0 ? actions : [],
     }
   } catch (err) {
     console.error('Agent error:', err)
