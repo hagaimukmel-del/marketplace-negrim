@@ -155,8 +155,9 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
     setIsLoading(true)
 
     try {
-      // Check if user is asking for order history
-      const isOrderHistoryQuery = /הזמנ|order|history|קודם/i.test(userMessageText)
+      // Check if user is asking for order history or previous products
+      const isOrderHistoryQuery = /הזמנ|order|history/i.test(userMessageText)
+      const isPreviousProductQuery = /כמו.*בפעם|פעם.*שעברה|זה שקניתי|קודם|לפני/i.test(userMessageText)
 
       if (isOrderHistoryQuery) {
         // Fetch order history
@@ -180,6 +181,33 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
               id: (Date.now() + 1).toString(),
               role: 'agent',
               content: `הנה ההזמנות האחרונות שלך:\n\n${ordersText}`,
+              timestamp: Date.now(),
+            }
+
+            setMessages((prev) => [...prev, agentMessage])
+            return
+          }
+        }
+      }
+
+      if (isPreviousProductQuery) {
+        // Fetch previous products
+        const prevResponse = await fetch('/api/carpenter/previous-products', {
+          method: 'GET',
+        })
+
+        if (prevResponse.ok) {
+          const { products } = await prevResponse.json()
+
+          if (products.length > 0) {
+            const productsText = products
+              .map((product: any) => `• ${product.product_name_he}`)
+              .join('\n')
+
+            const agentMessage: Message = {
+              id: (Date.now() + 1).toString(),
+              role: 'agent',
+              content: `הנה המוצרים שקניתם קודם:\n\n${productsText}\n\nרוצה לחפש אחד מהם?`,
               timestamp: Date.now(),
             }
 

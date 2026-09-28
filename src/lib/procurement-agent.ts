@@ -570,6 +570,43 @@ export async function getOrderHistory(carpenterId: string) {
 }
 
 /**
+ * Find products from carpenter's previous orders
+ * Used for "כמו בפעם שעברה" queries
+ */
+export async function getPreviousProducts(carpenterId: string, limit = 5) {
+  const supabase = getSupabaseAdmin()
+
+  const { data: orders, error: ordersError } = await supabase
+    .from('orders')
+    .select(
+      `
+      order_items (
+        product_id,
+        product_name_he,
+        quantity
+      )
+    `
+    )
+    .eq('carpenter_id', carpenterId)
+    .order('created_at', { ascending: false })
+    .limit(5)
+
+  if (ordersError || !orders) {
+    return []
+  }
+
+  // Flatten order items from all orders
+  const allItems = orders.flatMap((order: any) => order.order_items || [])
+
+  // Deduplicate by product_id and take most recent
+  const uniqueItems = Array.from(
+    new Map(allItems.map((item: any) => [item.product_id, item])).values()
+  )
+
+  return uniqueItems.slice(0, limit)
+}
+
+/**
  * Main agent function
  */
 export async function processProcurementRequest(
