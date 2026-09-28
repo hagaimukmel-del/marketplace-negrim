@@ -46,16 +46,30 @@ export interface ProcurementRequest {
   carpenterId: string
 }
 
+export interface OrderPreview {
+  productId: string
+  productName: string
+  quantity: number
+  unitPrice: number
+  lineTotal: number
+}
+
 export interface ProcurementResponse {
   success: boolean
   message: string
   state: ConversationState
   matchedProducts?: MatchedProduct[]
   followUp?: {
-    type: 'selection' | 'clarification' | 'comparison' | 'none'
+    type: 'selection' | 'clarification' | 'comparison' | 'order_confirmation' | 'none'
     options?: string[]
   }
   actions?: ActionButton[]
+  orderPreview?: {
+    items: OrderPreview[]
+    subtotalExclVat: number
+    vatAmount: number
+    totalInclVat: number
+  }
 }
 
 export interface MatchedProduct {
