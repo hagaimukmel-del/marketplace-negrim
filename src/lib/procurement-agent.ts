@@ -484,6 +484,8 @@ function generateResponse(intent: ParsedIntent, matches: MatchedProduct[]): stri
         const label = getDocTypeLabel(doc.doc_type)
         response += `\n- ${label}: [${doc.title_he}](${doc.file_url})`
       }
+    } else {
+      response += '\n\n⚠️ אין מסמכים טכניים (datasheet/spec sheet) לפרסם כרגע.'
     }
 
     if (product.specs.length > 0) {
@@ -492,6 +494,8 @@ function generateResponse(intent: ParsedIntent, matches: MatchedProduct[]): stri
         const unit = spec.unit ? ` ${spec.unit}` : ''
         response += `\n- ${spec.key}: ${spec.value}${unit}`
       }
+    } else {
+      response += '\n\n⚠️ אין מפרטים טכניים זמינים בקטלוג כרגע.'
     }
 
     // Step 4: Show live offer data
@@ -501,20 +505,20 @@ function generateResponse(intent: ParsedIntent, matches: MatchedProduct[]): stri
         response += `\n- **${offer.supplierName}**`
         response += ` • מחיר: ${formatPrice(offer.priceExclVat, product.baseUnit, offer.packQty)}`
 
-        if (offer.stockQty > 0) {
-          response += ` • מלאי: ${offer.stockQty} יחידות`
-        } else {
-          response += ` • אין במלאי כרגע`
-        }
+        // NOTE: stock_qty is not reliable (sheet import placeholder = 100)
+        // Do not display it — carpenter must verify with supplier
+        response += ` • ⚠️ בדוק מלאי עם הספק`
 
         response += ` • הסעה: ${formatLeadTime(offer.leadTimeDays)}`
       }
     } else {
-      response += '\n\nלא מצאתי ספקים עם מלאי בזמן זה.'
+      response += '\n\n❌ אין מחירים זמינים מספקים לפרסם כרגע.'
     }
 
     if (product.sourceDocuments.length > 0) {
-      response += `\n\n(מידע מתוך ${product.sourceDocuments.length} מסמך/ים מאושר/ים)`
+      response += `\n\n✓ מידע מתוך ${product.sourceDocuments.length} מסמך/ים מאושרים`
+    } else {
+      response += '\n\n⚠️ מידע זה לא מסמך מאושר. אימת ישירות עם הספק.'
     }
 
     response += '\n\nרוצה שנמצא לך עוד אפשרויות?'
