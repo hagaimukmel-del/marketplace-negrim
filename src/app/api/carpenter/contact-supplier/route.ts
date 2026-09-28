@@ -1,0 +1,69 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getSessionCarpenter } from '@/lib/carpenter-auth'
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
+
+/**
+ * POST /api/carpenter/contact-supplier
+ *
+ * Send a message/request to a supplier
+ * Types: quote_request, inquiry, support
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const carpenter = await getSessionCarpenter()
+    if (!carpenter) {
+      return NextResponse.json({ error: 'חייב להיות מחובר' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { supplierId, action, message, productId } = body
+
+    if (!supplierId || !action || !message) {
+      return NextResponse.json(
+        { error: 'supplierId, action, and message required' },
+        { status: 400 }
+      )
+    }
+
+    const supabase = getSupabaseAdmin()
+
+    // Log the supplier contact request
+    const { error: logError } = await supabase.from('supplier_contact_requests').insert({
+      carpenter_id: carpenter.id,
+      supplier_id: supplierId,
+      action_type: action,
+      message: message.slice(0, 1000),
+      product_id: productId || null,
+    })
+
+    if (logError) {
+      console.error('Failed to log contact request:', logError)
+      return NextResponse.json({ error: logError.message }, { status: 500 })
+    }
+
+    // TODO: Send email notification to supplier
+    // const { data: supplier } = await supabase
+    //   .from('suppliers')
+    //   .select('email')
+    //   .eq('id', supplierId)
+    //   .maybeSingle()
+    //
+    // if (supplier?.email) {
+    //   await sendEmailToSupplier(supplier.email, carpenter, action, message)
+    // }
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: 'הודעתך נשלחה לספק',
+      },
+      { status: 201 }
+    )
+  } catch (err) {
+    console.error('Contact supplier error:', err)
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}

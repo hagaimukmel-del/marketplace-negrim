@@ -60,7 +60,7 @@ export interface ProcurementResponse {
   state: ConversationState
   matchedProducts?: MatchedProduct[]
   followUp?: {
-    type: 'selection' | 'clarification' | 'comparison' | 'order_confirmation' | 'none'
+    type: 'selection' | 'clarification' | 'comparison' | 'order_confirmation' | 'supplier_contact' | 'none'
     options?: string[]
   }
   actions?: ActionButton[]
@@ -69,6 +69,11 @@ export interface ProcurementResponse {
     subtotalExclVat: number
     vatAmount: number
     totalInclVat: number
+  }
+  supplierContact?: {
+    supplierId: string
+    supplierName: string
+    action: 'quote_request' | 'inquiry' | 'support'
   }
 }
 

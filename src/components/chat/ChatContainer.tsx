@@ -137,6 +137,45 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
     }
   }
 
+  const handleContactSupplier = async (supplierId: string, details?: Record<string, any>) => {
+    try {
+      // Build message based on action type
+      let message = ''
+      const action = details?.action || 'inquiry'
+
+      if (action === 'quote_request') {
+        message = `בקשה להצעת מחיר למוצר ${details?.productName || ''}`
+      } else if (action === 'inquiry') {
+        message = `שאלה לגבי ${details?.productName || 'מוצר'}`
+      } else {
+        message = 'שאלה כללית'
+      }
+
+      const response = await fetch('/api/carpenter/contact-supplier', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplierId,
+          action,
+          message,
+          productId: details?.productId,
+        }),
+      })
+
+      if (response.ok) {
+        const confirmMessage: Message = {
+          id: Date.now().toString(),
+          role: 'agent',
+          content: '✅ הודעתך נשלחה לספק. הם יחזרו אלייך בקרוב.',
+          timestamp: Date.now(),
+        }
+        setMessages((prev) => [...prev, confirmMessage])
+      }
+    } catch (error) {
+      console.error('Failed to contact supplier:', error)
+    }
+  }
+
   const handleSend = async () => {
     if (!input.trim()) return
 
@@ -306,6 +345,7 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
                 message={msg}
                 onOptionSelect={handleOptionSelect}
                 onAddToCart={handleAddToCart}
+                onContactSupplier={handleContactSupplier}
               />
             ))
           )}
