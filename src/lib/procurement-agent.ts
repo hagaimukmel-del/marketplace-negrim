@@ -80,6 +80,7 @@ export interface ProcurementResponse {
 export interface MatchedProduct {
   productId: string
   productName: string
+  baseUnit: string // יחידה אטומית: unit/kg/liter/meter/sqm
   specs: Array<{
     key: string
     value: string
@@ -92,6 +93,7 @@ export interface MatchedProduct {
     supplierId: string
     supplierName: string
     priceExclVat: number
+    packQty?: number | null // כמה base_units בחבילה
     stockQty: number
     minOrderQty: number
     leadTimeDays?: number | null
@@ -267,6 +269,7 @@ async function findMatchingProducts(
       productMap.set(product.id, {
         productId: product.id,
         productName: product.name_he || product.name_en || 'Unknown',
+        baseUnit: product.base_unit || 'unit',
         specs: [
           {
             key: 'יחידת בסיס',
@@ -294,6 +297,7 @@ async function findMatchingProducts(
         id,
         supplier_id,
         price_excl_vat,
+        pack_qty,
         stock_qty,
         min_order_qty,
         lead_time_days,
@@ -324,6 +328,7 @@ async function findMatchingProducts(
           supplierId: offer.supplier_id,
           supplierName: offer.suppliers?.company_name || 'Unknown Supplier',
           priceExclVat: offer.price_excl_vat,
+          packQty: offer.pack_qty,
           stockQty: offer.stock_qty,
           minOrderQty: offer.min_order_qty,
           leadTimeDays: offer.lead_time_days,
@@ -378,8 +383,22 @@ function selectResponseType(intent: ParsedIntent, results: MatchedProduct[]): Re
 /**
  * Format price in Hebrew
  */
-function formatPrice(price: number): string {
-  return `₪${price.toFixed(0)}`
+function formatPrice(price: number, baseUnit?: string, packQty?: number | null): string {
+  const unitLabel = baseUnit ? ` / ${getUnitLabel(baseUnit)}` : ''
+  const pricePerUnit = packQty && packQty > 1 ? (price / packQty).toFixed(2) : price.toFixed(0)
+  const packInfo = packQty && packQty > 1 ? ` (חבילה: ${packQty} ${baseUnit})` : ''
+  return `₪${pricePerUnit}${unitLabel}${packInfo}`
+}
+
+function getUnitLabel(baseUnit: string): string {
+  const labels: Record<string, string> = {
+    unit: 'יח׳',
+    kg: 'ק״ג',
+    liter: 'ליטר',
+    meter: 'מטר',
+    sqm: 'מ״ר',
+  }
+  return labels[baseUnit] || baseUnit
 }
 
 /**
@@ -480,7 +499,7 @@ function generateResponse(intent: ParsedIntent, matches: MatchedProduct[]): stri
       response += '\n\nאפשרויות רכש:'
       for (const offer of product.offers.slice(0, 2)) {
         response += `\n- **${offer.supplierName}**`
-        response += ` • מחיר: ${formatPrice(offer.priceExclVat)}`
+        response += ` • מחיר: ${formatPrice(offer.priceExclVat, product.baseUnit, offer.packQty)}`
 
         if (offer.stockQty > 0) {
           response += ` • מלאי: ${offer.stockQty} יחידות`
@@ -517,7 +536,7 @@ function generateResponse(intent: ParsedIntent, matches: MatchedProduct[]): stri
     // Show price and supplier as main info
     if (product.offers && product.offers.length > 0) {
       const bestOffer = product.offers[0]
-      response += ` — ${formatPrice(bestOffer.priceExclVat)}`
+      response += ` — ${formatPrice(bestOffer.priceExclVat, product.baseUnit, bestOffer.packQty)}`
       response += ` (${bestOffer.supplierName})`
 
       // Stock status
