@@ -534,6 +534,42 @@ function generateResponse(intent: ParsedIntent, matches: MatchedProduct[]): stri
 }
 
 /**
+ * Retrieve carpenter's recent orders
+ */
+export async function getOrderHistory(carpenterId: string) {
+  const supabase = getSupabaseAdmin()
+
+  const { data: orders, error: ordersError } = await supabase
+    .from('orders')
+    .select(
+      `
+      id,
+      order_number,
+      short_number,
+      status,
+      subtotal_excl_vat,
+      total_amount,
+      created_at,
+      order_items (
+        product_id,
+        product_name_he,
+        quantity
+      )
+    `
+    )
+    .eq('carpenter_id', carpenterId)
+    .order('created_at', { ascending: false })
+    .limit(10)
+
+  if (ordersError) {
+    console.error('Order history error:', ordersError)
+    return []
+  }
+
+  return orders || []
+}
+
+/**
  * Main agent function
  */
 export async function processProcurementRequest(

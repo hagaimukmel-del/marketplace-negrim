@@ -140,11 +140,13 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
   const handleSend = async () => {
     if (!input.trim()) return
 
+    const userMessageText = input.trim()
+
     // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: input,
+      content: userMessageText,
       timestamp: Date.now(),
     }
 
@@ -153,12 +155,46 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
     setIsLoading(true)
 
     try {
-      // Call agent API
+      // Check if user is asking for order history
+      const isOrderHistoryQuery = /הזמנ|order|history|קודם/i.test(userMessageText)
+
+      if (isOrderHistoryQuery) {
+        // Fetch order history
+        const orderResponse = await fetch('/api/carpenter/orders', {
+          method: 'GET',
+        })
+
+        if (orderResponse.ok) {
+          const { orders } = await orderResponse.json()
+
+          if (orders.length > 0) {
+            const ordersText = orders
+              .slice(0, 5)
+              .map(
+                (order: any) =>
+                  `📦 ${order.order_number} (${order.status})\n   ${order.order_items.map((item: any) => `${item.product_name_he} ×${item.quantity}`).join(', ')}`
+              )
+              .join('\n\n')
+
+            const agentMessage: Message = {
+              id: (Date.now() + 1).toString(),
+              role: 'agent',
+              content: `הנה ההזמנות האחרונות שלך:\n\n${ordersText}`,
+              timestamp: Date.now(),
+            }
+
+            setMessages((prev) => [...prev, agentMessage])
+            return
+          }
+        }
+      }
+
+      // Call agent API for product search
       const response = await fetch('/api/carpenter/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: input, // API expects 'message' not 'userMessage'
+          message: userMessageText,
         }),
       })
 
