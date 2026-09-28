@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { confirmOrder } from '@/lib/order-agent'
 
 /**
@@ -8,24 +9,32 @@ import { confirmOrder } from '@/lib/order-agent'
  * - Revalidates live data
  * - Creates order
  * - Returns confirmation
+ *
+ * ⚠️ REQUIRES AUTHENTICATION — carpenterId must match session
  */
 export async function POST(request: NextRequest) {
   try {
-    const { carpenterId, productId, supplierId, quantity } = await request.json()
+    // VERIFY SESSION FIRST
+    const carpenter = await getSessionCarpenter()
+    if (!carpenter) {
+      return NextResponse.json({ error: 'חייב להיות מחובר' }, { status: 401 })
+    }
+
+    const { productId, supplierId, quantity } = await request.json()
 
     // Validation
-    if (!carpenterId || !productId || !supplierId) {
+    if (!productId || !supplierId) {
       return NextResponse.json(
         {
-          error: 'carpenterId, productId, and supplierId required',
+          error: 'productId and supplierId required',
         },
         { status: 400 }
       )
     }
 
-    // Process order confirmation
+    // Process order confirmation (carpenterId from authenticated session)
     const result = await confirmOrder({
-      carpenterId,
+      carpenterId: carpenter.id,
       productId,
       supplierId,
       quantity: quantity || 1,
