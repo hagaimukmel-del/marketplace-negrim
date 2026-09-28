@@ -10,6 +10,7 @@ interface ChatContainerProps {
   onClose: () => void
   carpenterId: string
   onSearch?: (query: string) => void
+  onNavigate?: (path: string) => void
 }
 
 export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatContainerProps) {
@@ -194,9 +195,10 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
     setIsLoading(true)
 
     try {
-      // Check if user is asking for order history or previous products
+      // Check if user is asking for order history, previous products, or navigation
       const isOrderHistoryQuery = /הזמנ|order|history/i.test(userMessageText)
       const isPreviousProductQuery = /כמו.*בפעם|פעם.*שעברה|זה שקניתי|קודם|לפני/i.test(userMessageText)
+      const isNavigationQuery = /איפה|קטלוג|מציאון|עגלה|פרופיל|פרטיים|how|where|go to/i.test(userMessageText)
 
       if (isOrderHistoryQuery) {
         // Fetch order history
@@ -253,6 +255,24 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
             setMessages((prev) => [...prev, agentMessage])
             return
           }
+        }
+      }
+
+      if (isNavigationQuery) {
+        let targetPath = ''
+        if (/קטלוג|מציאון/i.test(userMessageText)) {
+          targetPath = '/app'
+        } else if (/עגלה|shopping/i.test(userMessageText)) {
+          targetPath = '/app/cart'
+        } else if (/פרופיל|פרטיים|חשבון/i.test(userMessageText)) {
+          targetPath = '/app/profile'
+        } else if (/הזמנות|orders/i.test(userMessageText)) {
+          targetPath = '/app/orders'
+        }
+
+        if (targetPath) {
+          window.location.href = targetPath
+          return
         }
       }
 
