@@ -43,7 +43,7 @@ interface ActionButton {
 
 export interface ProcurementRequest {
   userMessage: string
-  carpenterId?: string
+  carpenterId: string
 }
 
 export interface ProcurementResponse {

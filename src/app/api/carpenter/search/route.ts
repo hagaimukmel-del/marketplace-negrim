@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { processProcurementRequest } from '@/lib/procurement-agent'
 
 /**
@@ -8,10 +9,19 @@ import { processProcurementRequest } from '@/lib/procurement-agent'
  * Input: { message: "אני צריך דבק לבירץ׳" }
  * Output: Natural language response with product recommendations
  *
- * Public endpoint (no auth for now — carpenter identified by token in session)
+ * Requires valid carpenter session
  */
 export async function POST(request: NextRequest) {
   try {
+    // Verify carpenter session
+    const carpenter = await getSessionCarpenter()
+    if (!carpenter) {
+      return NextResponse.json(
+        { error: 'חייב להיות מחובר' },
+        { status: 401 }
+      )
+    }
+
     const { message } = await request.json()
 
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
@@ -21,9 +31,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Process request through agent
+    // Process request through agent with carpenter context
     const response = await processProcurementRequest({
       userMessage: message.trim(),
+      carpenterId: carpenter.id,
     })
 
     return NextResponse.json(response, { status: 200 })
