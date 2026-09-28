@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { X, Send, Mic } from 'lucide-react'
+import { useCart } from '@/lib/cart-context'
 import { ChatMessage, Message } from './ChatMessage'
 
 interface ChatContainerProps {
@@ -12,6 +13,7 @@ interface ChatContainerProps {
 }
 
 export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatContainerProps) {
+  const cart = useCart()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -106,6 +108,32 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
       setMessages((prev) => [...prev, errorMessage])
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleAddToCart = (productId: string, details?: Record<string, any>) => {
+    try {
+      cart.addItem(
+        {
+          id: productId,
+          name_he: details?.label || 'מוצר',
+          name_en: '',
+          base_price_excl_vat: Number(details?.price) || 0,
+          supplier_id: details?.supplier_id,
+          supplier_name: details?.supplier_name,
+        },
+        Number(details?.quantity) || 1
+      )
+      // Show confirmation
+      const confirmMessage: Message = {
+        id: Date.now().toString(),
+        role: 'agent',
+        content: '✅ הוספתי לעגלה!',
+        timestamp: Date.now(),
+      }
+      setMessages((prev) => [...prev, confirmMessage])
+    } catch (error) {
+      console.error('Failed to add to cart:', error)
     }
   }
 
@@ -213,6 +241,7 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
                 key={msg.id}
                 message={msg}
                 onOptionSelect={handleOptionSelect}
+                onAddToCart={handleAddToCart}
               />
             ))
           )}

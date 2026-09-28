@@ -11,12 +11,14 @@ export interface Message {
   actions?: Array<{
     label: string
     action: string
+    value?: string
   }>
 }
 
 interface ChatMessageProps {
   message: Message
   onOptionSelect?: (option: string) => void
+  onAddToCart?: (productId: string, details?: Record<string, any>) => void
 }
 
 // Extract selection options from message (e.g., "בחר (1/2/3)" -> ['1', '2', '3'])
@@ -57,6 +59,8 @@ export function ChatMessage({ message, onOptionSelect }: ChatMessageProps) {
                       if (action.action.startsWith('select-')) {
                         const option = action.action.replace('select-', '')
                         onOptionSelect?.(option)
+                      } else if (action.action === 'add-to-cart' && action.value) {
+                        onAddToCart?.(action.value, action)
                       }
                     }}
                     className={`text-xs px-2 py-1 rounded ${
