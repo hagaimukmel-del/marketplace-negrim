@@ -327,7 +327,9 @@ async function findMatchingProducts(
         .slice(0, 3) // Top 3 suppliers per product
     }
 
-    // Step 5: Fetch supplier documents for citations
+    // Step 5: Fetch product documents for citations
+    // TODO: Add access control layer — currently all documents are shown to all carpenters.
+    // Future: check document visibility settings and supplier-carpenter relationship.
     const { data: docs, error: docsError } = await supabase
       .from('product_documents')
       .select('id, title_he, doc_type, file_url, extracted_text')
