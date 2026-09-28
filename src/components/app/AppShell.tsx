@@ -7,7 +7,7 @@ import { useCart } from '@/lib/cart-context'
 import { LogoMark } from '@/components/brand/Logo'
 import { ChatContainer } from '@/components/chat/ChatContainer'
 import { useChat } from '@/hooks/useChat'
-import { getSessionCarpenter } from '@/lib/carpenter-auth'
+import { getCarpenterToken } from '@/lib/carpenter-session'
 import { useEffect, useState } from 'react'
 
 function Wordmark({ onDark = false }: { onDark?: boolean }) {
@@ -50,6 +50,14 @@ export default function AppShell({
   const [carpenterId, setCarpenterId] = useState('demo')
   const cart = useCart()
   const lines = cart.items.length
+
+  // Load carpenter token from localStorage if available
+  useEffect(() => {
+    const token = getCarpenterToken()
+    if (token) {
+      setCarpenterId(token)
+    }
+  }, [])
 
   const is = (href: string) => (href === '/app' ? pathname === '/app' : pathname.startsWith(href))
   const catalogActive = is('/app/catalog') || is('/app/product')
