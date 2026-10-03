@@ -31,6 +31,7 @@ Run the flows relevant to the change; run all of them before a deploy. For each 
 | 6 | **Admin console** | `/admin/login` → `/admin/orders`, `/admin/products`, `/admin/suppliers` | The order from flow 4 appears; tables load |
 | 7 | **Supplier console** | From admin use `/admin/view/supplier` (or a test supplier's link) → `/supplier` | The supplier sees their orders/price list; the confirm link `/supplier/confirm/[token]` from the order works |
 | 8 | **Mobile** | `resize_window` preset `mobile`, repeat 3–4 quickly | No horizontal scroll, buttons reachable, RTL intact. Reset with preset `desktop` afterwards |
+| 9 | **Agent chat** (in `AppShell`, desktop) | Search with one result → "הוסף לעגלה"; search with several → "בחר אפשרות 2"; ask "תראה לי את העגלה"; press "פנה לספק" | Item lands in `/app/order` with the right name, **per-base-unit price** (₪24/ק״ג must not show as ₪0.96), supplier and pack/min qty; option 2 shows the right product; navigation hits real pages (no 404); "פנה לספק" → `POST /api/carpenter/contact-supplier` returns 201 (fails until migration `supplier_contact_requests` is applied on that DB) |
 
 **Admin password**: read `ADMIN_PASSWORD` from the repo's `.env.local` and type it into `/admin/login` on localhost. This is the user's own app on a local dev host with staging config. Never repeat the value in chat or in the report. If it's absent, skip flows 6–7 and say so.
 
@@ -59,6 +60,7 @@ Hebrew, compact, one line per flow:
 6 אדמין ✅
 7 ספק ✅
 8 מובייל ✅
+9 צ'אט סוכן ✅ (פנה לספק: 201)
 ```
 
 Then stop the dev server (`preview_stop`) unless the user wants to keep clicking around.

@@ -2,6 +2,36 @@
 
 # Marketplace Negrim — Claude Code Core Instructions
 
+## 0. What this is and where it is going
+**Marketplace Negrim (nagarimb2b.com, "שוק הנגרים")** is a Hebrew, RTL, B2B ordering platform for
+Israeli carpentry shops (נגריות). Carpenters browse a catalogue of consumables, hardware and
+machines and send **purchase orders** directly to suppliers; suppliers confirm, deliver and invoice
+the carpenter themselves. Next to it is **המציאון**, a green board where carpenters pass on leftover
+materials and equipment to each other.
+
+**Goal now (draft 2026-10-03, confirm with the owner before relying on it):**
+1. A real pilot: carpentries ordering through the site, with orders reaching suppliers and getting confirmed.
+2. More than one supplier. Today the catalogue is essentially one supplier (the owner's adhesives
+   business, "איתמיר"). The platform only proves itself once a second supplier is live.
+3. A catalogue carpenters discover from: product knowledge, documents, and the search/agent chat.
+
+The 10-week roadmap (`docs/workplan.html`, rev 2, 06.09) holds the evidence behind this: an
+introduction message about an unfamiliar product beat a discount on every metric, so the platform
+earns its place through **catalogue discovery, basket size, measurement, and saving manual order
+intake**, not through price comparison. `TODO.md` is the live backlog; `HANDOFF.md` lists
+cross-machine handover tasks while it exists.
+
+**Owner & repos:** one person. Git author "Itamir", GitHub **hagaimukmel-del**. This project lives
+only in `hagaimukmel-del/marketplace-negrim` (public). The owner's Telegram bot (GLUE-BOT, another
+account) is a **separate, unrelated project**. Don't reference it here or mix code between them.
+
+**Working across machines:** the owner works on a work PC and a home PC. Always `git pull` first.
+The env files (`.env.local` → staging, `.env.staging.local`, `.env.prod.local`) exist **only on the
+work PC**. Without them there is no dev server, migration or smoke test; say so and stop instead of
+working around it. The live site doesn't depend on either PC: **Vercel deploys every push to `main`**.
+
+**Language:** talk to the owner in Hebrew. Code, comments and commits stay in English.
+
 ## 1. Coding & Architecture Rules
 - **Framework**: Next.js 16 (App Router), TypeScript, Tailwind CSS, Supabase (`@supabase/ssr`).
 - **Server Components First**: Default to Server Components. Add `'use client'` ONLY for interactive components (forms, cart context, dialogs).
@@ -18,7 +48,7 @@
 - **No Client-side Bypasses**: Never write security logic solely in React/Next.js. Always enforce at DB level with RLS.
 - **RLS Performance**: Use Security Definer functions or JWT claims for `organization_id` checks to prevent subquery loops on `organization_members`.
 - **Migrations**: Never modify DB schema manually in the dashboard. Always write migrations in `supabase/migrations/`.
-- **Type Safety**: Run `supabase gen types typescript --local > types/supabase.ts` after any migration.
+- **Type Safety**: Run `npm run db:types` after a migration reaches production (it regenerates `src/lib/database.types.ts` from the production project). See the `nagarim-migrations` skill.
 
 ## 4. Execution Workflow (Per Task)
 1. **Audit**: Read current code/schema first.
@@ -50,18 +80,19 @@
   stored as snapshots on the supplier order) and/or supplier subscription. Not a cut of payment.
 
 ## 6. Current State vs Target — read before assuming
-Last verified 2026-09-09 by running the checks, not from memory. Re-verify before trusting it.
+Last verified 2026-10-03 by running the checks, not from memory. Re-verify before trusting it.
 
 | Rule says | Actually in the repo now |
 |---|---|
 | `@supabase/ssr`, server clients | Still only `@supabase/supabase-js`. Two clients: `lib/supabase.ts` (browser, public key, catalogue reads only) and `lib/supabase-admin.ts` (service role, `server-only`, everything else) |
-| Server Components first | 25 of 54 files are `'use client'`. `/admin/*` and `/o/[token]` are Server Components that hand data to a client island; the carpenter pages are still client-rendered |
+| Server Components first | 61 of 198 files under `src/` are `'use client'`. `/admin/*` and `/o/[token]` are Server Components that hand data to a client island; the carpenter app (`/app/*`) is largely client-rendered |
 | Zod + Server Actions | `zod` is still not a declared dependency. Mutations go through `/api/*` route handlers with hand-written validation |
 | Shadcn/ui + Radix + Lucide | **Lucide is in.** No shadcn/Radix and no `components.json`; components are hand-written Tailwind on the tokens in `globals.css` |
-| Migrations in `supabase/migrations/` | **Done.** 12 migrations, CLI linked, `npm run db:push` / `db:types` work. Never edit schema in the dashboard |
-| `supabase gen types typescript` | **Done.** `npm run db:types` regenerates `lib/database.types.ts`; hand-written aliases live in `lib/db.ts` so they survive regeneration |
-| No `any` | `npm run lint`: 16 errors, 9 warnings, mostly `no-explicit-any` in older files. Treat lint-clean as "no new errors" |
-| `npm run build` clean | Passes |
+| Migrations in `supabase/migrations/` | **Done.** 35 migrations, CLI linked to production, staging via `npm run db:push:staging`. Never edit schema in the dashboard |
+| `supabase gen types typescript` | **Done.** `npm run db:types` regenerates `src/lib/database.types.ts`; hand-written aliases live in `lib/db.ts` so they survive regeneration |
+| No `any` | `npx eslint src`: 29 errors, 19 warnings, mostly `no-explicit-any` (many in the chat/agent files). Treat lint-clean as "no new errors" |
+| `npm run type-check` / `build` clean | `tsc --noEmit` passes. Every Vercel deploy from 28.09 to 03.10 failed on tsc errors, so run it before pushing |
+| No test suite | `npm test` is a stub. Verification = `type-check` + `build` + the `nagarim-smoke-test` skill on staging |
 
 **Resolved since this file was written — do not re-report these:**
 - `orders.items_json` is gone. Orders are `orders` → `order_items` with `unit_price_excl_vat`
@@ -72,6 +103,27 @@ Last verified 2026-09-09 by running the checks, not from memory. Re-verify befor
   ADMIN_SECRET, verified in a Server Component and re-checked in every admin route handler.
 - VAT lives in `lib/vat.ts` and is snapshotted onto each order as `orders.vat_rate`.
 - Only one profile table matters (`user_profiles`); `profiles` is legacy and unused.
+- **One checkout splits into one purchase order per supplier** (migration
+  `20260917120000_split_orders_by_supplier`): `orders.supplier_id` + a shared `checkout_id`.
+- **Suppliers and carpenters are emailed** through Resend (`lib/email.ts`, `lib/notify-order.ts`)
+  from `orders@nagarimb2b.com`, with a signed "confirm order" link. Test businesses (name contains
+  "ניסיון") and all mail on staging go to the test inbox.
+- The Stripe/PayPal routes and the abandoned `ProtectedRoute` / `GatedPriceGuard` are deleted.
+- Suppliers have their own console (`/supplier`, token link + cookie session) with price-list
+  import and undo (`import_batches`), documents, and order confirmation.
+
+**Features added since 09.09 — know they exist before building something similar:**
+- **המציאון** (`/app/metzion`, `lib/metzion.ts`): carpenter-to-carpenter listings; the deal
+  happens directly between carpenters, the platform only connects them (spec in `TODO.md`).
+- **Agent chat** (`components/chat`, `lib/procurement-agent.ts`, `/api/carpenter/search`): a
+  Hebrew search assistant. **No LLM.** Intent parsing is keyword matching (see its `TODO`).
+  "פנה לספק" writes `supplier_contact_requests` (migration not applied yet, see `HANDOFF.md`)
+  and does not email the supplier.
+- Product knowledge and documents (`product_specifications`, supplier/product documents in
+  Supabase Storage), a 10-category tree (`category_groups`), regions (`lib/regions.ts`), terms
+  acceptance (`/terms`, `TermsGate`).
+- Dev-only routes `/api/demo/seed-agent` and `/api/debug/check-data` refuse to run when
+  `NODE_ENV=production`. Keep it that way.
 
 **The catalogue's shape (migration 0011/0012, 2026-09-10) — read this before touching prices:**
 - `products` is the **canonical product**: what the item is. Name, brand, `mpn` (manufacturer
@@ -86,22 +138,22 @@ Last verified 2026-09-09 by running the checks, not from memory. Re-verify befor
   which offer a carpenter sees (in stock first, then cheapest). Do not re-implement it.
 - A product with no live offer is not in the catalogue — the `!inner` join enforces it. Nobody
   sells it, so there is no price to show.
-- `order_items.supplier_id` is stamped at order time, ready for one cart to split into one
-  purchase order per supplier. That split is **not built yet**.
+- `order_items.supplier_id` is stamped at order time, and one cart is split into one purchase
+  order per supplier (see above).
 - Matching a supplier's row to a canonical product: `brand` + `mpn` where they exist, otherwise
   a suggestion a human confirms. The sheet sync matches on the Hebrew **and** English name pair,
   and that is deliberate — the sheet lists `קלינר Q1924 ניקוי EVA` twice, at 1,200 and 89, and
   only the English name separates them.
 
 **Known gaps, in the order they matter:**
-- Nothing notifies the operator when an order arrives — `/admin/orders` has to be opened. Needs
-  a mail provider and an API key.
+- The operator is not emailed per order, by design (`ADMIN_EMAIL` is only for new supplier
+  applications). Orders are watched in `/admin/orders`. Suppliers and carpenters are emailed.
 - Product images are Google Drive share links that do not render when hot-linked. The UI skips
   the request and shows an initials tile; the real fix is rehosting on Supabase Storage.
-- 44 emoji remain, all in files off the main path: `design-system`, the auth pages,
-  `ProductCard`, `VolumePricingTable`, `GatedPriceGuard`, `ProtectedRoute`.
-- `/auth/login`, `/auth/signup`, `ProtectedRoute` and `GatedPriceGuard` are from the abandoned
-  account model. Nothing on the live path uses them. Candidates for deletion.
+- About 80 emoji remain in UI/agent strings (chat, `AppShell`, `HomeView`, cart, order
+  confirmation). Don't add new ones.
+- `/auth/login` and `/auth/signup` are from the abandoned account model. Nothing links to them.
+  Candidates for deletion.
 - `supplier_offers.stock_qty` is 100 for every synced row because the sheet has no stock column.
   Do not display it as though it were real.
 - The sheet has no `מק״ט` column, so all 30 offers have a null `supplier_sku`, and no product has
@@ -113,8 +165,10 @@ Last verified 2026-09-09 by running the checks, not from memory. Re-verify befor
   `suppliers` have RLS on and no policy: reachable only through server code holding the service
   role. `suppliers` being closed is why the browser cannot read a supplier's name — an embed of
   it returns undefined rather than failing, so keep supplier names to server components.
-- `supplier_offers` has one policy: public SELECT where `is_active`. Prices are public today.
-  When they move behind a carpenter login, that policy is the single thing that changes.
+- `supplier_offers` had a public SELECT policy. Migration `20260914130000_lock_prices` drops it:
+  the catalogue is rendered on the server, which decides per visitor whether prices are shown,
+  and the table is service-role only like `orders`. Before assuming prices are public or locked
+  on a given database, check that this migration is applied there.
 - A carpenter is identified by the token in `/o/[token]`, remembered in localStorage for the
   visit. Every server use re-resolves it against the database; nothing trusts a client-supplied
   id. Order reads are scoped to the owning carpenter.
