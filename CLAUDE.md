@@ -120,3 +120,8 @@ Last verified 2026-09-09 by running the checks, not from memory. Re-verify befor
   id. Order reads are scoped to the owning carpenter.
 - `/api/join` is the only public endpoint that writes. It dedupes on the last 9 phone digits, so
   repeated submissions return the same link instead of creating rows.
+
+## 7. Project skills (`.claude/skills/`)
+- **nagarim-migrations** — any DB change: staging first (`db:push:staging`), production only on an explicit yes, then `db:types`.
+- **catalog-import** — supplier price lists / the `דבקים` sheet shared with GLUE-BOT. Bundles `scripts/normalize_pricelist.py`.
+- **nagarim-smoke-test** — click-through of carpenter → order → supplier → admin in the built-in browser, staging only.
