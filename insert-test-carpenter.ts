@@ -1,8 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
 
-const STAGING_URL = "https://dyueyfmuhwvpgocbypqz.supabase.co";
-const STAGING_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5dWV5Zm11aHd2cGdvY2J5cHF6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTUwOTQ0NSwiZXhwIjoyMTA1MDg1NDQ1fQ.Ntxhv_OH1hvY5mT0YKAqZ2rjZb6ZLmcsca7nH4vcm8o";
+// Never paste a key here: this repo is public. Set them in the shell, e.g. from .env.staging.local
+const STAGING_URL = process.env.STAGING_SUPABASE_URL || "https://dyueyfmuhwvpgocbypqz.supabase.co";
+const STAGING_KEY = process.env.STAGING_SERVICE_ROLE_KEY;
+if (!STAGING_KEY) {
+  throw new Error("Set STAGING_SERVICE_ROLE_KEY (see .env.staging.local)");
+}
 
 const staging = createClient(STAGING_URL, STAGING_KEY);
 
