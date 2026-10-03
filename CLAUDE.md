@@ -15,6 +15,20 @@ materials and equipment to each other.
    business, "איתמיר"). The platform only proves itself once a second supplier is live.
 3. A catalogue carpenters discover from: product knowledge, documents, and the search/agent chat.
 
+**Public promise (2026-10-03).** Marketing describes an assistant ("הסוכן של נגרים B2B") and has
+announced **voice ordering in under a minute** as coming ("בהמשך"). Safe to advertise as live
+today, and nothing more:
+- A Hebrew chat/search assistant that finds a product, shows the supplier price excl. VAT and adds it to the cart.
+- Purchase orders sent straight to the supplier, who confirms, delivers and invoices.
+- B2B prices excl. VAT, shown after free registration.
+- Reorder ("מה הזמנתי בפעם שעברה").
+- A catalogue that today is mostly adhesives and finishing.
+
+Supplier comparison exists on the product page but stays dormant until a second supplier is live.
+The agent is **keyword matching, not an LLM**, so don't call it AI in copy or UI. Everything
+promised but not built is tracked as a `promise-gap` task (see §7). Move a capability into the
+list above only after it passes `nagarim-smoke-test` on staging.
+
 The 10-week roadmap (`docs/workplan.html`, rev 2, 06.09) holds the evidence behind this: an
 introduction message about an unfamiliar product beat a discount on every metric, so the platform
 earns its place through **catalogue discovery, basket size, measurement, and saving manual order
@@ -145,19 +159,13 @@ Last verified 2026-10-03 by running the checks, not from memory. Re-verify befor
   and that is deliberate — the sheet lists `קלינר Q1924 ניקוי EVA` twice, at 1,200 and 89, and
   only the English name separates them.
 
-**Known gaps, in the order they matter:**
+**Standing facts that look like gaps but aren't bugs:**
 - The operator is not emailed per order, by design (`ADMIN_EMAIL` is only for new supplier
-  applications). Orders are watched in `/admin/orders`. Suppliers and carpenters are emailed.
-- Product images are Google Drive share links that do not render when hot-linked. The UI skips
-  the request and shows an initials tile; the real fix is rehosting on Supabase Storage.
-- About 80 emoji remain in UI/agent strings (chat, `AppShell`, `HomeView`, cart, order
-  confirmation). Don't add new ones.
-- `/auth/login` and `/auth/signup` are from the abandoned account model. Nothing links to them.
-  Candidates for deletion.
-- `supplier_offers.stock_qty` is 100 for every synced row because the sheet has no stock column.
-  Do not display it as though it were real.
-- The sheet has no `מק״ט` column, so all 30 offers have a null `supplier_sku`, and no product has
-  a `brand` or `mpn` yet. Matching stays on the weak name key until that changes.
+  applications). Orders are watched in `/admin/orders`.
+- `supplier_offers.stock_qty` is a placeholder (100) on synced rows. Never display it as real stock.
+- About 80 emoji remain in UI/agent strings. Don't add new ones.
+
+Open gaps, unfinished work and planned features live in `docs/tasks/` (see §7), not here.
 
 **Security model, so it is not re-derived each time:**
 - The public key is read-only and reaches only `products`, `categories`, `volume_pricing`.
@@ -175,7 +183,13 @@ Last verified 2026-10-03 by running the checks, not from memory. Re-verify befor
 - `/api/join` is the only public endpoint that writes. It dedupes on the last 9 phone digits, so
   repeated submissions return the same link instead of creating rows.
 
-## 7. Project skills (`.claude/skills/`)
+## 7. On-demand context: product map, tasks, skills
+Read these only when the task needs them. They are deliberately **not** imported here.
+- `docs/product-map/README.md`: every product area (routes, code, tables, rules, status), one file per area.
+- `docs/tasks/README.md`: gaps, unfinished work, decisions and planned features, one `T-###.md` each, with an index.
+
+Project skills (`.claude/skills/`):
+- **product-map** — read/maintain the map and tasks; update them in the same commit as the code.
 - **nagarim-migrations** — any DB change: staging first (`db:push:staging`), production only on an explicit yes, then `db:types`.
 - **catalog-import** — supplier price lists and the `דבקים` sheet sync. Bundles `scripts/normalize_pricelist.py`.
 - **nagarim-smoke-test** — click-through of carpenter → order → supplier → admin in the built-in browser, staging only.
