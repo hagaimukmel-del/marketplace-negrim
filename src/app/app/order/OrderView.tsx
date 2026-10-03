@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { Check, FileText, Info, LayoutGrid, Plus, Search, Trash2, Truck, X } from 'lucide-react'
+import { Check, FileText, Info, LayoutGrid, Plus, Search, Sparkles, Trash2, Truck, X } from 'lucide-react'
 import { useCart, type CartItem } from '@/lib/cart-context'
 import { money, packText, termsText } from '@/lib/app/format'
 import { sortedOffers, stepOf, suggestedOffer, type AppOffer, type AppProduct } from '@/lib/app/products'
@@ -11,6 +11,7 @@ import CategoryGlyph from '@/components/app/CategoryGlyph'
 import Stepper from '@/components/app/Stepper'
 import { AttentionLine } from '@/components/app/ui'
 import SearchInput from '@/app/(app)/order/search-input'
+import { useOpenAgent } from '@/components/chat/agent-context'
 
 interface Quote {
   products: AppProduct[]
@@ -52,6 +53,7 @@ interface SentOrder {
  */
 export default function OrderView({ profile }: { profile: { address: string; city: string; hasContact: boolean } | null }) {
   const cart = useCart()
+  const openAgent = useOpenAgent()
   const [quote, setQuote] = useState<Quote | null>(null)
   const [address, setAddress] = useState(profile?.address ?? '')
   const [city, setCity] = useState(profile?.city ?? '')
@@ -104,14 +106,10 @@ export default function OrderView({ profile }: { profile: { address: string; cit
         </div>
         <SearchInput onSearch={() => {}} loading={false} />
         <div className="flex gap-2">
-          <Link href="/(app)/order" className="inline-flex h-12 flex-1 items-center justify-center gap-1.5 rounded-[11px] bg-gradient-to-br from-purple-500 to-blue-600 font-bold text-white shadow-lg hover:shadow-xl transition-shadow">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-              <text x="12" y="14" fontSize="8" fill="currentColor" textAnchor="middle" fontWeight="bold">🧠</text>
-            </svg>
+          <button type="button" onClick={openAgent} className="inline-flex h-12 flex-1 items-center justify-center gap-1.5 rounded-[11px] bg-gradient-to-br from-purple-500 to-blue-600 font-bold text-white shadow-lg hover:shadow-xl transition-shadow">
+            <Sparkles size={18} />
             סוכן חכם
-          </Link>
+          </button>
           <Link href="/app/catalog" className="inline-flex h-12 flex-1 items-center justify-center gap-1.5 rounded-[11px] border-[1.5px] border-hair bg-white font-bold text-navy">
             <LayoutGrid size={18} /> קטלוג
           </Link>

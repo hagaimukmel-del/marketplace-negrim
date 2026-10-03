@@ -50,7 +50,15 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const say = (content: string, actions?: ActionButton[]) => {
+  // Escape closes the panel
+  useEffect(() => {
+    if (!isOpen) return
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [isOpen, onClose])
+
+  const say =(content: string, actions?: ActionButton[]) => {
     const agentMessage: Message = {
       id: `${Date.now()}-${Math.random()}`,
       role: 'agent',
@@ -278,9 +286,13 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 md:hidden" onClick={onClose}>
+    // Phone: a sheet from the bottom. Desktop: a panel on the far side from the
+    // sidebar, so the catalogue stays readable next to it
+    <div className="fixed inset-0 z-50 bg-black/40 md:bg-black/20" onClick={onClose}>
       <div
-        className="absolute bottom-0 left-0 right-0 flex flex-col bg-white rounded-t-2xl max-h-[80vh] shadow-2xl"
+        role="dialog"
+        aria-label="סוכן חכם"
+        className="absolute inset-x-0 bottom-0 flex max-h-[80vh] flex-col rounded-t-2xl bg-white shadow-2xl md:inset-x-auto md:end-0 md:top-0 md:h-dvh md:max-h-none md:w-[420px] md:rounded-none md:rounded-s-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

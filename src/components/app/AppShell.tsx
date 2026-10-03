@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ClipboardList, Home, LayoutGrid, Recycle, Search, ShoppingBag, UserRound } from 'lucide-react'
+import { ClipboardList, Home, LayoutGrid, Recycle, Search, ShoppingBag, Sparkles, UserRound } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { LogoMark } from '@/components/brand/Logo'
 import { ChatContainer } from '@/components/chat/ChatContainer'
+import { OpenAgentContext } from '@/components/chat/agent-context'
 import { useChat } from '@/hooks/useChat'
 import { getCarpenterToken } from '@/lib/carpenter-session'
 import { useEffect, useState } from 'react'
@@ -62,7 +63,10 @@ export default function AppShell({
   const is = (href: string) => (href === '/app' ? pathname === '/app' : pathname.startsWith(href))
   const catalogActive = is('/app/catalog') || is('/app/product')
 
+  const openAgent = () => setIsOpen(true)
+
   return (
+    <OpenAgentContext.Provider value={openAgent}>
     <div className="min-h-dvh bg-warm text-ink md:grid md:grid-cols-[236px_minmax(0,1fr)]">
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-dvh flex-col gap-5 bg-navy px-3.5 py-5 text-slate-200 md:flex">
@@ -74,6 +78,15 @@ export default function AppShell({
           <SideLink href="/app" label="בית" active={is('/app')} icon={<Home size={19} />} />
           <SideLink href="/app/catalog" label="קטלוג" active={catalogActive} icon={<LayoutGrid size={19} />} />
           <SideLink href="/app/order" label="הזמנה" active={is('/app/order')} icon={<ShoppingBag size={19} />} count={lines} />
+          <button
+            type="button"
+            onClick={openAgent}
+            aria-pressed={isOpen}
+            className={`flex items-center gap-2.5 rounded-[10px] px-2.5 py-2 text-start text-[15px] ${isOpen ? 'bg-white/10 font-bold text-white' : 'font-medium text-slate-300 hover:bg-white/5'}`}
+          >
+            <Sparkles size={19} />
+            סוכן חכם
+          </button>
           <SideLink href="/app/orders" label="הזמנות" active={is('/app/orders')} icon={<ClipboardList size={19} />} count={attention} />
           <SideLink href="/app/metzion" label="מציאון" active={is('/app/metzion')} icon={<Recycle size={19} />} />
           <SideLink href={signedIn ? '/app/account' : '/join'} label={signedIn ? 'הנגרייה שלי' : 'כניסה / הרשמה'} active={is('/app/account')} icon={<UserRound size={19} />} />
@@ -192,6 +205,7 @@ export default function AppShell({
         <BottomLink href={signedIn ? '/app/account' : '/join'} label={signedIn ? 'אני' : 'כניסה'} active={is('/app/account')} icon={<UserRound size={22} />} />
       </nav>
     </div>
+    </OpenAgentContext.Provider>
   )
 }
 
