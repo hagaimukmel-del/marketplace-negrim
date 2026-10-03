@@ -18,11 +18,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { supplierId, action, message, productId } = body
 
-    if (!supplierId || !action || !message) {
+    if (!supplierId || !action || typeof message !== 'string' || !message.trim()) {
       return NextResponse.json(
         { error: 'supplierId, action, and message required' },
         { status: 400 }
       )
+    }
+
+    // Mirrors the check constraint on supplier_contact_requests.action_type
+    if (!['quote_request', 'inquiry', 'support'].includes(action)) {
+      return NextResponse.json({ error: 'invalid action' }, { status: 400 })
     }
 
     const supabase = getSupabaseAdmin()
@@ -32,7 +37,7 @@ export async function POST(request: NextRequest) {
       carpenter_id: carpenter.id,
       supplier_id: supplierId,
       action_type: action,
-      message: message.slice(0, 1000),
+      message: message.trim().slice(0, 1000),
       product_id: productId || null,
     })
 

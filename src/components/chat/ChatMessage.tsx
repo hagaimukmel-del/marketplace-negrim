@@ -29,7 +29,7 @@ function extractSelectionOptions(content: string): string[] {
   return match[1].split('/').filter(Boolean)
 }
 
-export function ChatMessage({ message, onOptionSelect }: ChatMessageProps) {
+export function ChatMessage({ message, onOptionSelect, onAddToCart, onContactSupplier }: ChatMessageProps) {
   const isUser = message.role === 'user'
 
   return (

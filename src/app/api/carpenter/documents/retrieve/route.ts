@@ -1,14 +1,9 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { persistSession: false } }
-);
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 export async function GET(req: NextRequest) {
   try {
+    const supabase = getSupabaseAdmin();
     const productId = req.nextUrl.searchParams.get("product_id");
 
     if (!productId) {

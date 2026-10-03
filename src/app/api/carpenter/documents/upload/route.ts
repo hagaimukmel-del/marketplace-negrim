@@ -1,14 +1,9 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { persistSession: false } }
-);
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 export async function POST(req: NextRequest) {
   try {
+    const supabase = getSupabaseAdmin();
     const formData = await req.formData();
     const file = formData.get("file") as File;
     const productId = formData.get("product_id") as string;
@@ -100,7 +95,7 @@ export async function POST(req: NextRequest) {
       .insert({
         product_id: productId,
         supplier_id: offer.supplier_id,
-        title_he: formData.get("title_he") || file.name,
+        title_he: (formData.get("title_he") as string | null) || file.name,
         doc_type: docType,
         file_url: publicURL.publicUrl,
         file_name: file.name,

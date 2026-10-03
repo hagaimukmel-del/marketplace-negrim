@@ -1063,6 +1063,58 @@ export type Database = {
           },
         ]
       }
+      supplier_contact_requests: {
+        Row: {
+          action_type: string
+          carpenter_id: string
+          created_at: string
+          id: string
+          message: string
+          product_id: string | null
+          supplier_id: string
+        }
+        Insert: {
+          action_type: string
+          carpenter_id: string
+          created_at?: string
+          id?: string
+          message: string
+          product_id?: string | null
+          supplier_id: string
+        }
+        Update: {
+          action_type?: string
+          carpenter_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          product_id?: string | null
+          supplier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_contact_requests_carpenter_id_fkey"
+            columns: ["carpenter_id"]
+            isOneToOne: false
+            referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_contact_requests_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_contact_requests_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       supplier_documents: {
         Row: {
           categories: string[] | null
