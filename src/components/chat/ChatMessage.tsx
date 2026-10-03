@@ -1,6 +1,7 @@
 'use client'
 
-import { FileText, Loader } from 'lucide-react'
+import { Loader } from 'lucide-react'
+import type { ActionButton } from '@/lib/procurement-agent'
 
 export interface Message {
   id: string
@@ -8,25 +9,14 @@ export interface Message {
   content: string
   timestamp: number
   isLoading?: boolean
-  actions?: Array<{
-    label: string
-    action: string
-    value?: string
-  }>
+  actions?: ActionButton[]
 }
 
 interface ChatMessageProps {
   message: Message
-  onOptionSelect?: (option: string) => void
-  onAddToCart?: (productId: string, details?: Record<string, any>) => void
-  onContactSupplier?: (supplierId: string, details?: Record<string, any>) => void
-}
-
-// Extract selection options from message (e.g., "בחר (1/2/3)" -> ['1', '2', '3'])
-function extractSelectionOptions(content: string): string[] {
-  const match = content.match(/בחר\s*\(([0-9/]+)\)/)
-  if (!match) return []
-  return match[1].split('/').filter(Boolean)
+  onOptionSelect?: (action: ActionButton) => void
+  onAddToCart?: (action: ActionButton) => void
+  onContactSupplier?: (action: ActionButton) => void
 }
 
 export function ChatMessage({ message, onOptionSelect, onAddToCart, onContactSupplier }: ChatMessageProps) {
@@ -58,12 +48,11 @@ export function ChatMessage({ message, onOptionSelect, onAddToCart, onContactSup
                     key={i}
                     onClick={() => {
                       if (action.action.startsWith('select-')) {
-                        const option = action.action.replace('select-', '')
-                        onOptionSelect?.(option)
-                      } else if (action.action === 'add-to-cart' && action.value) {
-                        onAddToCart?.(action.value, action)
-                      } else if (action.action === 'contact-supplier' && action.value) {
-                        onContactSupplier?.(action.value, action)
+                        onOptionSelect?.(action)
+                      } else if (action.action === 'add-to-cart') {
+                        onAddToCart?.(action)
+                      } else if (action.action === 'contact-supplier') {
+                        onContactSupplier?.(action)
                       }
                     }}
                     className={`text-xs px-2 py-1 rounded ${

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { X, Send, Mic } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { ChatMessage, Message } from './ChatMessage'
+import type { ActionButton } from '@/lib/procurement-agent'
 
 interface ChatContainerProps {
   isOpen: boolean
@@ -49,131 +50,75 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const handleOptionSelect = async (option: string) => {
-    // User selected an option (1, 2, 3, etc)
+  const say = (content: string, actions?: ActionButton[]) => {
+    const agentMessage: Message = {
+      id: `${Date.now()}-${Math.random()}`,
+      role: 'agent',
+      content,
+      timestamp: Date.now(),
+      actions,
+    }
+    setMessages((prev) => [...prev, agentMessage])
+  }
 
-    // Add selection as user message
+  // The button carries the product the agent showed, so the choice is resolved
+  // here rather than sent back through search as the bare text "2"
+  const handleOptionSelect = (action: ActionButton) => {
+    const number = action.action.replace('select-', '')
+    const item = action.item
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: option,
+      content: item ? `${number}) ${item.name_he}` : number,
       timestamp: Date.now(),
     }
-
     setMessages((prev) => [...prev, userMessage])
-    setIsLoading(true)
 
-    try {
-      // Call agent API with selected option
-      const response = await fetch('/api/carpenter/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: option,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`)
-      }
-
-      const data = await response.json()
-
-      if (!data.success) {
-        throw new Error(data.message || 'חיפוש נכשל')
-      }
-
-      // Use structured actions from backend
-      const agentMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'agent',
-        content: data.message,
-        timestamp: Date.now(),
-        actions: data.actions && data.actions.length > 0
-          ? data.actions.map((act: any) => ({
-              label: act.label,
-              action: act.action,
-            }))
-          : [],
-      }
-
-      setMessages((prev) => [...prev, agentMessage])
-    } catch (error) {
-      console.error('Chat error:', error)
-      const errorMessage: Message = {
-        id: (Date.now() + 2).toString(),
-        role: 'agent',
-        content: error instanceof Error ? error.message : 'קרתה שגיאה בחיפוש',
-        timestamp: Date.now(),
-      }
-      setMessages((prev) => [...prev, errorMessage])
-    } finally {
-      setIsLoading(false)
+    if (!item) {
+      say('למוצר הזה אין כרגע הצעה פעילה מספק, אז אי אפשר להזמין אותו מכאן.')
+      return
     }
+
+    const pack = item.pack_qty && item.pack_qty > 1 ? ` · ${item.pack_label ?? 'חבילה'} ${item.pack_qty} ${item.unit}` : ''
+    say(
+      `${item.name_he}\n₪${item.base_price_excl_vat} ל${item.unit} לפני מע״מ${pack}\nספק: ${item.supplier_name}`,
+      [{ label: '➕ הוסף לעגלה', action: 'add-to-cart', value: item.id, item }]
+    )
   }
 
-  const handleAddToCart = (productId: string, details?: Record<string, any>) => {
-    try {
-      cart.addItem(
-        {
-          id: productId,
-          name_he: details?.label || 'מוצר',
-          name_en: '',
-          base_price_excl_vat: Number(details?.price) || 0,
-          supplier_id: details?.supplier_id,
-          supplier_name: details?.supplier_name,
-        },
-        Number(details?.quantity) || 1
-      )
-      // Show confirmation
-      const confirmMessage: Message = {
-        id: Date.now().toString(),
-        role: 'agent',
-        content: '✅ הוספתי לעגלה!',
-        timestamp: Date.now(),
-      }
-      setMessages((prev) => [...prev, confirmMessage])
-    } catch (error) {
-      console.error('Failed to add to cart:', error)
+  const handleAddToCart = (action: ActionButton) => {
+    const item = action.item
+    if (!item) {
+      say('לא הצלחתי להוסיף לעגלה — חסרים פרטי מחיר. נסה לחפש שוב.')
+      return
     }
+    const { quantity, ...line } = item
+    cart.addItem({ ...line, name_en: '' }, quantity)
+    say(`✅ הוספתי לעגלה: ${item.name_he}`)
   }
 
-  const handleContactSupplier = async (supplierId: string, details?: Record<string, any>) => {
+  const handleContactSupplier = async (action: ActionButton) => {
+    const supplierId = action.item?.supplier_id ?? action.value
+    if (!supplierId) return
+    const productName = action.item?.name_he
+
     try {
-      // Build message based on action type
-      let message = ''
-      const action = details?.action || 'inquiry'
-
-      if (action === 'quote_request') {
-        message = `בקשה להצעת מחיר למוצר ${details?.productName || ''}`
-      } else if (action === 'inquiry') {
-        message = `שאלה לגבי ${details?.productName || 'מוצר'}`
-      } else {
-        message = 'שאלה כללית'
-      }
-
       const response = await fetch('/api/carpenter/contact-supplier', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           supplierId,
-          action,
-          message,
-          productId: details?.productId,
+          action: 'inquiry',
+          message: productName ? `שאלה לגבי ${productName}` : 'שאלה כללית',
+          productId: action.item?.id,
         }),
       })
 
-      if (response.ok) {
-        const confirmMessage: Message = {
-          id: Date.now().toString(),
-          role: 'agent',
-          content: '✅ הודעתך נשלחה לספק. הם יחזרו אלייך בקרוב.',
-          timestamp: Date.now(),
-        }
-        setMessages((prev) => [...prev, confirmMessage])
-      }
+      say(response.ok ? '✅ הודעתך נשלחה לספק. הם יחזרו אלייך בקרוב.' : 'לא הצלחתי לשלוח את ההודעה לספק. נסה שוב בעוד רגע.')
     } catch (error) {
       console.error('Failed to contact supplier:', error)
+      say('לא הצלחתי לשלוח את ההודעה לספק. נסה שוב בעוד רגע.')
     }
   }
 
@@ -260,12 +205,14 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
 
       if (isNavigationQuery) {
         let targetPath = ''
-        if (/קטלוג|מציאון/i.test(userMessageText)) {
-          targetPath = '/app'
+        if (/מציאון/i.test(userMessageText)) {
+          targetPath = '/app/metzion'
+        } else if (/קטלוג/i.test(userMessageText)) {
+          targetPath = '/app/catalog'
         } else if (/עגלה|shopping/i.test(userMessageText)) {
-          targetPath = '/app/cart'
+          targetPath = '/app/order' // the open order is the cart
         } else if (/פרופיל|פרטיים|חשבון/i.test(userMessageText)) {
-          targetPath = '/app/profile'
+          targetPath = '/app/account'
         } else if (/הזמנות|orders/i.test(userMessageText)) {
           targetPath = '/app/orders'
         }
@@ -301,12 +248,7 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
         role: 'agent',
         content: data.message,
         timestamp: Date.now(),
-        actions: data.actions && data.actions.length > 0
-          ? data.actions.map((act: any) => ({
-              label: act.label,
-              action: act.action,
-            }))
-          : [],
+        actions: (data.actions ?? []) as ActionButton[],
       }
 
       setMessages((prev) => [...prev, agentMessage])

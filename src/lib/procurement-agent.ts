@@ -2,6 +2,7 @@ import 'server-only'
 
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import type { Database } from '@/lib/database.types'
+import { bestOffer, unitLabel } from '@/lib/catalog'
 
 type ProductSpec = Database['public']['Tables']['product_specifications']['Row']
 
@@ -35,10 +36,46 @@ type ResponseType =
   | 'dont_know'
   | 'comparison'
 
-interface ActionButton {
+/**
+ * A cart line, built server-side from the offer the carpenter was shown.
+ * Same fields every other add-to-cart passes; the server re-reads the price
+ * before ordering.
+ */
+export interface ChatCartItem {
+  id: string
+  name_he: string
+  base_price_excl_vat: number
+  supplier_id: string
+  supplier_name: string
+  unit: string
+  pack_label: string | null
+  pack_qty: number | null
+  /** In base units: one pack, or the supplier's minimum if larger. */
+  quantity: number
+}
+
+export interface ActionButton {
   label: string
   action: string
   value?: string
+  item?: ChatCartItem
+}
+
+function cartItemOf(product: MatchedProduct): ChatCartItem | undefined {
+  const offer = product.offers?.[0]
+  if (!offer) return undefined
+  const step = offer.packQty && offer.packQty > 0 ? offer.packQty : 1
+  return {
+    id: product.productId,
+    name_he: product.productName,
+    base_price_excl_vat: offer.priceExclVat,
+    supplier_id: offer.supplierId,
+    supplier_name: offer.supplierName,
+    unit: unitLabel(product.baseUnit),
+    pack_label: offer.packLabel ?? null,
+    pack_qty: offer.packQty ?? null,
+    quantity: Math.ceil(Math.max(offer.minOrderQty || 1, step) / step) * step,
+  }
 }
 
 export interface ProcurementRequest {
@@ -92,7 +129,8 @@ export interface MatchedProduct {
   offers?: Array<{
     supplierId: string
     supplierName: string
-    priceExclVat: number
+    priceExclVat: number // per base unit, as stored
+    packLabel?: string | null
     packQty?: number | null // כמה base_units בחבילה
     stockQty: number
     minOrderQty: number
@@ -296,7 +334,9 @@ async function findMatchingProducts(
         `
         id,
         supplier_id,
+        supplier_sku,
         price_excl_vat,
+        pack_label,
         pack_qty,
         stock_qty,
         min_order_qty,
@@ -319,15 +359,16 @@ async function findMatchingProducts(
     }
 
     if (offers && offers.length > 0) {
-      product.offers = offers
-        .filter((offer: any) => {
-          // Only include approved suppliers
-          return offer.suppliers?.status === 'approved'
-        })
-        .map((offer: any) => ({
+      // Only approved suppliers; bestOffer() decides which one leads, same as the catalogue
+      const approved = offers.filter((offer) => offer.suppliers?.status === 'approved')
+      const best = bestOffer({ supplier_offers: approved })
+      product.offers = [...approved]
+        .sort((a, b) => (a === best ? -1 : b === best ? 1 : 0))
+        .map((offer) => ({
           supplierId: offer.supplier_id,
           supplierName: offer.suppliers?.company_name || 'Unknown Supplier',
-          priceExclVat: offer.price_excl_vat,
+          priceExclVat: Number(offer.price_excl_vat),
+          packLabel: offer.pack_label,
           packQty: offer.pack_qty,
           stockQty: offer.stock_qty,
           minOrderQty: offer.min_order_qty,
@@ -383,11 +424,12 @@ function selectResponseType(intent: ParsedIntent, results: MatchedProduct[]): Re
 /**
  * Format price in Hebrew
  */
+// price_excl_vat is already per base unit (see supplier_offers) — never divide it by pack_qty
 function formatPrice(price: number, baseUnit?: string, packQty?: number | null): string {
-  const unitLabel = baseUnit ? ` / ${getUnitLabel(baseUnit)}` : ''
-  const pricePerUnit = packQty && packQty > 1 ? (price / packQty).toFixed(2) : price.toFixed(0)
-  const packInfo = packQty && packQty > 1 ? ` (חבילה: ${packQty} ${baseUnit})` : ''
-  return `₪${pricePerUnit}${unitLabel}${packInfo}`
+  const unit = getUnitLabel(baseUnit || 'unit')
+  const perUnit = Number.isInteger(price) ? price.toString() : price.toFixed(2)
+  const packInfo = packQty && packQty > 1 ? ` (חבילה: ${packQty} ${unit})` : ''
+  return `₪${perUnit} / ${unit}${packInfo}`
 }
 
 function getUnitLabel(baseUnit: string): string {
@@ -685,23 +727,27 @@ export async function processProcurementRequest(
       const emojis = ['🟢', '🟡', '🔵', '🟣']
       for (let i = 0; i < optionCount; i++) {
         const number = i + 1
+        // The chat is stateless: the button carries the product, so choosing
+        // it never goes back through search as the bare text "2"
+        const item = cartItemOf(matches[i])
         actions.push({
           label: `בחר אפשרות ${number} ${emojis[i]}`,
           action: `select-${number}`,
-          value: number.toString(),
+          value: matches[i].productId,
+          item,
         })
       }
     } else if (matches.length === 1) {
-      // Single result - show action buttons
-      actions.push({
-        label: '➕ הוסף לעגלה',
-        action: 'add-to-cart',
-        value: matches[0].productId,
-      })
-      actions.push({
-        label: '🔍 חיפוש דומה',
-        action: 'refine-search',
-      })
+      // Single result - add to cart, only when there is an offer to buy
+      const item = cartItemOf(matches[0])
+      if (item) {
+        actions.push({
+          label: '➕ הוסף לעגלה',
+          action: 'add-to-cart',
+          value: matches[0].productId,
+          item,
+        })
+      }
     }
 
     return {

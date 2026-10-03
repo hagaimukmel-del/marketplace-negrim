@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { getSessionCarpenter } from "@/lib/carpenter-auth";
 
 export async function GET(req: NextRequest) {
   try {
+    // Same gate as the rest of /api/carpenter: signed-in carpenters only
+    const carpenter = await getSessionCarpenter();
+    if (!carpenter) {
+      return NextResponse.json({ error: "חייב להיות מחובר" }, { status: 401 });
+    }
+
     const supabase = getSupabaseAdmin();
     const productId = req.nextUrl.searchParams.get("product_id");
 
