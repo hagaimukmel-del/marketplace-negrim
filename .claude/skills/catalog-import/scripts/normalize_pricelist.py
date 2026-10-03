@@ -22,7 +22,7 @@ import re
 import sys
 from pathlib import Path
 
-# Aliases mirror IMPORT_FIELDS in price-import.ts, plus the headers the GLUE-BOT
+# Aliases mirror IMPORT_FIELDS in price-import.ts, plus the headers the Google
 # sheet ("דבקים") and itamir-products.csv use.
 ALIASES = {
     "name": ["שם", "שם מוצר", "שם המוצר", "שם (he)", "תיאור", "תאור", "מוצר", "פריט", "name", "name (en)", "product", "description"],

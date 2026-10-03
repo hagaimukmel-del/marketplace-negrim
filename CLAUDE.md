@@ -123,5 +123,5 @@ Last verified 2026-09-09 by running the checks, not from memory. Re-verify befor
 
 ## 7. Project skills (`.claude/skills/`)
 - **nagarim-migrations** — any DB change: staging first (`db:push:staging`), production only on an explicit yes, then `db:types`.
-- **catalog-import** — supplier price lists / the `דבקים` sheet shared with GLUE-BOT. Bundles `scripts/normalize_pricelist.py`.
+- **catalog-import** — supplier price lists and the `דבקים` sheet sync. Bundles `scripts/normalize_pricelist.py`.
 - **nagarim-smoke-test** — click-through of carpenter → order → supplier → admin in the built-in browser, staging only.
