@@ -6,13 +6,15 @@ import { loadCategoryTree, loadProducts } from '@/lib/app/catalog-server'
 import ProductList from '@/components/app/ProductList'
 import { SectionTitle } from '@/components/app/ui'
 import { CategoryList } from '../HomeView'
+import { searchProducts } from '@/lib/catalog-search'
+import AskAgentButton from '@/components/chat/AskAgentButton'
 
 export const dynamic = 'force-dynamic'
 
 /**
  * The catalogue: every category the same size and clickable, in the tree's own
  * order — or, with ?q=, what matches a search across names, brands, part
- * numbers and suppliers.
+ * numbers and suppliers. The agent chat runs the same search (lib/catalog-search).
  */
 export default async function AppCatalog({ searchParams }: { searchParams: Promise<{ q?: string; focus?: string }> }) {
   const [{ q, focus }, carpenter, admin] = await Promise.all([searchParams, getSessionCarpenter(), isAdmin()])
@@ -36,25 +38,24 @@ export default async function AppCatalog({ searchParams }: { searchParams: Promi
   )
 
   if (query) {
-    const needle = query.toLowerCase()
-    const hits = products.filter((p) =>
-      [p.name, p.brand, p.mpn, ...p.offers.map((o) => o.supplierName)].some((field) => field?.toLowerCase().includes(needle))
-    )
+    const { products: hits, partial } = searchProducts(products, query)
     return (
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
         {search}
         <div>
           <h1 className="m-0 text-2xl font-extrabold md:text-[28px]">תוצאות עבור ״{query}״</h1>
           <div className="text-[14.5px] text-muted">
-            <span className="tnum">{hits.length}</span> מוצרים · <Link href="/app/catalog" className="font-semibold text-brand-ink">לכל הקטגוריות</Link>
+            <span className="tnum">{hits.length}</span> מוצרים{partial ? ' שמתאימים לחלק מהמילים' : ''} ·{' '}
+            <Link href="/app/catalog" className="font-semibold text-brand-ink">לכל הקטגוריות</Link>
           </div>
+          {carpenter && <AskAgentButton query={query} />}
         </div>
         {hits.length ? (
           <ProductList products={hits} showPrices={showPrices} />
         ) : (
           <div className="rounded-xl border-[1.5px] border-dashed border-[#D9CFC1] p-3.5 text-sm text-muted">
             <b className="block text-ink">לא נמצא</b>
-            נסה שם מוצר, מותג, מק״ט או שם ספק.
+            נסה שם מוצר, מותג, מק״ט או שם ספק, או תאר לסוכן מה אתה צריך.
           </div>
         )}
       </div>

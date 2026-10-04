@@ -15,7 +15,8 @@ categories, product knowledge and documents, and the ways prices get in.
 | `/api/admin/product-knowledge/{specs,link}`, `/api/admin/supplier-documents(/upload)` | Specs and documents per product |
 
 ## Code
-`lib/catalog.ts` (`bestOffer()`, `BASE_UNITS`), `lib/app/catalog-server.ts`,
+`lib/catalog.ts` (`bestOffer()`, `BASE_UNITS`), `lib/app/catalog-server.ts`, `lib/catalog-search.ts`
+(the one search, shared with the agent chat),
 `lib/price-import.ts` + `price-import-server.ts`, `components/import/*`,
 `lib/sync-from-production.ts` (prod → staging copy script). Skill: `catalog-import`.
 

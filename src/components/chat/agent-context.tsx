@@ -4,11 +4,14 @@ import { createContext, useContext } from 'react'
 
 /**
  * Opens the agent chat from anywhere inside AppShell, which owns the chat and
- * provides this. Outside the shell it is a no-op rather than an error, so a
- * button rendered elsewhere simply does nothing.
+ * provides this. Given a query, the chat opens already asking it. Outside the
+ * shell it is a no-op rather than an error, so a button rendered elsewhere
+ * simply does nothing.
  */
-export const OpenAgentContext = createContext<() => void>(() => {})
+export type OpenAgent = (query?: string) => void
 
-export function useOpenAgent(): () => void {
+export const OpenAgentContext = createContext<OpenAgent>(() => {})
+
+export function useOpenAgent(): OpenAgent {
   return useContext(OpenAgentContext)
 }

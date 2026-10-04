@@ -9,7 +9,7 @@ import { ChatContainer } from '@/components/chat/ChatContainer'
 import { OpenAgentContext } from '@/components/chat/agent-context'
 import { useChat } from '@/hooks/useChat'
 import { getCarpenterToken } from '@/lib/carpenter-session'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 function Wordmark({ onDark = false }: { onDark?: boolean }) {
   return (
@@ -65,7 +65,12 @@ export default function AppShell({
   // Exact match: a prefix test would also light up on /app/orders
   const cartActive = pathname === '/app/order'
 
-  const openAgent = () => setIsOpen(true)
+  // A query handed over from the search bar is asked as soon as the chat opens
+  const askAgent = useRef<((query: string) => void) | null>(null)
+  const openAgent = (query?: string) => {
+    setIsOpen(true)
+    if (query?.trim()) askAgent.current?.(query)
+  }
 
   return (
     <OpenAgentContext.Provider value={openAgent}>
@@ -82,7 +87,7 @@ export default function AppShell({
           <SideLink href="/app/order" label="עגלה" active={cartActive} icon={<ShoppingBag size={19} />} count={lines} />
           <button
             type="button"
-            onClick={openAgent}
+            onClick={() => openAgent()}
             aria-pressed={isOpen}
             className={`flex items-center gap-2.5 rounded-[10px] px-2.5 py-2 text-start text-[15px] ${isOpen ? 'bg-white/10 font-bold text-white' : 'font-medium text-slate-300 hover:bg-white/5'}`}
           >
@@ -124,7 +129,7 @@ export default function AppShell({
             <input
               name="q"
               type="search"
-              placeholder="מה אתה צריך? מוצר, ספק או מספר הזמנה"
+              placeholder="מה אתה צריך? מוצר, מותג, מק״ט או ספק"
               aria-label="חיפוש"
               className="h-11 w-full rounded-xl border-[1.5px] border-hair bg-white ps-11 pe-3.5 text-[15px] placeholder:text-faint"
             />
@@ -185,6 +190,7 @@ export default function AppShell({
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         carpenterId={carpenterId}
+        askRef={askAgent}
       />
 
       {/* Phone bottom navigation */}

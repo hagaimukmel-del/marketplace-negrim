@@ -3,6 +3,8 @@ import 'server-only'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import type { Database } from '@/lib/database.types'
 import { bestOffer, unitLabel } from '@/lib/catalog'
+import { loadProducts } from '@/lib/app/catalog-server'
+import { searchProducts } from '@/lib/catalog-search'
 
 type ProductSpec = Database['public']['Tables']['product_specifications']['Row']
 
@@ -240,86 +242,30 @@ function parseIntent(userMessage: string): ParsedIntent {
 }
 
 /**
- * Search products by name and description for matches
+ * Find products with the catalogue's own search (lib/catalog-search), so the
+ * chat and the search bar return the same products for the same words. Only
+ * live products: an active offer from an approved supplier.
  */
 async function findMatchingProducts(
   intent: ParsedIntent
 ): Promise<MatchedProduct[]> {
   const supabase = getSupabaseAdmin()
+  const live = await loadProducts({ showPrices: true })
+  const { products: hits, partial } = searchProducts(live, intent.rawText)
 
-  // Search products by name matching category/material keywords
-  const { data: products, error: productsError } = await supabase
-    .from('products')
-    .select(
-      `
-      id,
-      name_he,
-      name_en,
-      description_he,
-      brand,
-      mpn,
-      base_unit
-    `
-    )
-    .limit(100)
-
-  if (productsError || !products) {
-    console.error('Products query error:', productsError)
-    return []
-  }
-
-  // Score products based on intent matches
   const productMap = new Map<string, MatchedProduct>()
-
-  for (const product of products) {
-    const productName = (product.name_he || product.name_en || '').toLowerCase()
-    const description = (product.description_he || '').toLowerCase()
-    const combined = `${productName} ${description}`.toLowerCase()
-
-    let confidence = 0
-
-    // Match category keywords
-    if (intent.category) {
-      const categoryLower = intent.category.toLowerCase()
-      if (productName.includes(categoryLower) || description.includes(categoryLower)) {
-        confidence += 0.4
-      }
-    }
-
-    // Match material keywords
-    if (intent.material) {
-      const materialLower = intent.material.toLowerCase()
-      if (combined.includes(materialLower)) {
-        confidence += 0.3
-      }
-    }
-
-    // Match application keywords
-    if (intent.application) {
-      const applicationLower = intent.application.toLowerCase()
-      if (combined.includes(applicationLower)) {
-        confidence += 0.2
-      }
-    }
-
-    // Only keep products with some match
-    if (confidence > 0) {
-      productMap.set(product.id, {
-        productId: product.id,
-        productName: product.name_he || product.name_en || 'Unknown',
-        baseUnit: product.base_unit || 'unit',
-        specs: [
-          {
-            key: 'יחידת בסיס',
-            value: product.base_unit || 'יחידה',
-          },
-        ],
-        sourceDocuments: [],
-        confidence,
-        offers: [],
-      })
-    }
-  }
+  hits.slice(0, 5).forEach((product, i) => {
+    productMap.set(product.id, {
+      productId: product.id,
+      productName: product.name,
+      baseUnit: product.baseUnit,
+      specs: [{ key: 'יחידת בסיס', value: product.unit }],
+      sourceDocuments: [],
+      // Search order is the ranking; a partial match is never a confident one
+      confidence: (partial ? 0.5 : 1) - i * 0.05,
+      offers: [],
+    })
+  })
 
   // Step 4: Fetch live offer data for each matched product
   const topProducts = Array.from(productMap.values())
@@ -748,6 +694,11 @@ export async function processProcurementRequest(
           item,
         })
       }
+    }
+
+    // The same words in the search bar show the full list
+    if (matches.length > 0) {
+      actions.push({ label: 'כל התוצאות בקטלוג', action: 'open-catalog', value: request.userMessage })
     }
 
     return {

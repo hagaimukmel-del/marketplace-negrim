@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
+import { useRouter } from 'next/navigation'
 import { X, Send, Mic } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { ChatMessage, Message } from './ChatMessage'
@@ -12,10 +13,13 @@ interface ChatContainerProps {
   carpenterId: string
   onSearch?: (query: string) => void
   onNavigate?: (path: string) => void
+  /** Filled with a way to ask the chat a question, for a search handed over from the search bar. */
+  askRef?: RefObject<((query: string) => void) | null>
 }
 
-export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatContainerProps) {
+export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }: ChatContainerProps) {
   const cart = useCart()
+  const router = useRouter()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -130,10 +134,16 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
     }
   }
 
-  const handleSend = async () => {
-    if (!input.trim()) return
+  // The search bar and the chat run the same search; this shows it in the catalogue
+  const handleOpenCatalog = (action: ActionButton) => {
+    if (!action.value) return
+    onClose()
+    router.push(`/app/catalog?q=${encodeURIComponent(action.value)}`)
+  }
 
-    const userMessageText = input.trim()
+  const handleSend = async (text?: string) => {
+    const userMessageText = (text ?? input).trim()
+    if (!userMessageText) return
 
     // Add user message
     const userMessage: Message = {
@@ -274,6 +284,12 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
     }
   }
 
+  // Lets the shell hand over a search from the search bar, asked like a typed message
+  useEffect(() => {
+    if (!askRef) return
+    askRef.current = (query) => void handleSend(query)
+  })
+
   const toggleVoice = () => {
     if (!recognitionRef.current) return
     if (isListening) {
@@ -320,6 +336,7 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
                 onOptionSelect={handleOptionSelect}
                 onAddToCart={handleAddToCart}
                 onContactSupplier={handleContactSupplier}
+                onOpenCatalog={handleOpenCatalog}
               />
             ))
           )}
@@ -348,7 +365,7 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch }: ChatCo
               <Mic size={20} />
             </button>
             <button
-              onClick={handleSend}
+              onClick={() => handleSend()}
               disabled={!input.trim() || isLoading}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition"
             >

@@ -17,9 +17,10 @@ interface ChatMessageProps {
   onOptionSelect?: (action: ActionButton) => void
   onAddToCart?: (action: ActionButton) => void
   onContactSupplier?: (action: ActionButton) => void
+  onOpenCatalog?: (action: ActionButton) => void
 }
 
-export function ChatMessage({ message, onOptionSelect, onAddToCart, onContactSupplier }: ChatMessageProps) {
+export function ChatMessage({ message, onOptionSelect, onAddToCart, onContactSupplier, onOpenCatalog }: ChatMessageProps) {
   const isUser = message.role === 'user'
 
   return (
@@ -53,6 +54,8 @@ export function ChatMessage({ message, onOptionSelect, onAddToCart, onContactSup
                         onAddToCart?.(action)
                       } else if (action.action === 'contact-supplier') {
                         onContactSupplier?.(action)
+                      } else if (action.action === 'open-catalog') {
+                        onOpenCatalog?.(action)
                       }
                     }}
                     className={`text-xs px-2 py-1 rounded ${

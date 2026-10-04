@@ -1,5 +1,5 @@
 # 3 · Agent chat (search assistant)
-Verified: 2026-10-03
+Verified: 2026-10-04
 
 ## Purpose
 A Hebrew chat inside the carpenter app: the carpenter writes what they need, the assistant finds
@@ -18,6 +18,10 @@ request. Marketed publicly as "הסוכן של נגרים B2B" (see CLAUDE.md §
 ## Code
 `lib/procurement-agent.ts` (intent → search → response type: selection / clarification /
 comparison / order_confirmation / supplier_contact), `components/chat/*`. The agent adds to the cart and sends the carpenter to `/app/order`; it never creates orders itself.
+Product matching is `searchProducts()` in `lib/catalog-search.ts`, the same function the
+catalogue search bar uses (Hebrew normalization, prefixes, plurals, a seed synonym list), over
+live products only. The catalogue results page has "שאל את הסוכן" (`AskAgentButton`, which opens
+the chat already asking the query), and every agent answer with results has "כל התוצאות בקטלוג".
 
 ## Data
 `products`, `supplier_offers`, `product_specifications`, `product_documents`,
@@ -27,6 +31,8 @@ comparison / order_confirmation / supplier_contact), `components/chat/*`. The ag
 - **No LLM.** Intent parsing is keyword matching. Don't call it AI in UI or copy until that changes.
 - Prices shown by the agent must match the catalogue, per base unit (a bug once showed ₪24/kg as ₪0.96).
 - Answers come only from the catalogue, never from the internet (TODO.md "יועץ").
+- The chat and the search bar search through one function (`lib/catalog-search.ts`). Don't add a
+  second matcher; extend that one, synonyms included.
 
 ## Status
 Partial. Add-to-cart, option selection and navigation were fixed on 03.10 but **not yet tested
