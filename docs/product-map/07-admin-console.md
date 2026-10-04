@@ -1,5 +1,5 @@
 # 7 · Admin console (`/admin`)
-Verified: 2026-10-03
+Verified: 2026-10-04
 
 ## Purpose
 The operator's (owner's) back office: approve suppliers, manage the catalogue, watch orders and
@@ -32,4 +32,4 @@ Everything, through the service role.
 Live.
 
 ## Open tasks
-(none specific)
+T-020

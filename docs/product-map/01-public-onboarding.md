@@ -1,5 +1,5 @@
 # 1 · Public site & onboarding
-Verified: 2026-10-03
+Verified: 2026-10-04
 
 ## Purpose
 The front door: explains the marketplace, registers carpenters (free) and takes supplier
@@ -11,6 +11,7 @@ applications. A visitor can browse products without prices; prices appear after 
 | `/` | Landing page |
 | `/join` → `POST /api/join` | Carpenter registration. The only public endpoint that writes. Dedupes on the last 9 phone digits and returns the same personal link |
 | `/o/[token]` | A carpenter's personal link. The token **is** the identity; resolved on the server every time |
+| `/carpenter/enter/[token]` + `/api/carpenter/session` | Link → carpenter cookie session, the carpenter counterpart of `/supplier/enter` |
 | `/supplier/join` → `POST /api/supplier-join` | Supplier application; the operator approves it in `/admin/suppliers` |
 | `/terms` → `POST /api/terms/accept` | Terms; acceptance is mandatory at registration (`TermsGate`, `lib/terms.ts` version) |
 | `/auth/login`, `/auth/signup` | **Legacy** pages from an abandoned account model. Nothing links to them |
