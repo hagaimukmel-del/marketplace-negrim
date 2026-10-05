@@ -77,12 +77,24 @@ export async function POST(request: NextRequest) {
     if (body.token && !carpenter) {
       return NextResponse.json({ error: 'Unknown link' }, { status: 404 })
     }
+    // A purchase order goes to a real supplier, so it has to come from a
+    // registered carpentry whose email we know reaches them. This used to
+    // accept an anonymous request carrying only a name, phone and email.
+    if (!carpenter) {
+      return NextResponse.json({ error: 'צריך להיות מחוברים כדי לשלוח הזמנה' }, { status: 401 })
+    }
+    if (!carpenter.email_verified_at) {
+      return NextResponse.json(
+        { error: 'לפני ההזמנה הראשונה צריך לאשר את המייל: לחצו על הקישור ששלחנו אליכם.', code: 'email_unverified', email: carpenter.email },
+        { status: 403 }
+      )
+    }
 
     // The purchasing app does not ask a signed-in carpentry to retype who it is:
     // what the request leaves out comes from the carpentry's own record.
-    const customer_name = body.customer_name || carpenter?.contact_name || carpenter?.business_name
-    const customer_email = body.customer_email || carpenter?.email
-    const customer_phone = body.customer_phone || carpenter?.phone
+    const customer_name = body.customer_name || carpenter.contact_name || carpenter.business_name
+    const customer_email = body.customer_email || carpenter.email
+    const customer_phone = body.customer_phone || carpenter.phone
     if (!customer_name || !customer_email || !customer_phone) {
       return NextResponse.json({ error: 'חסרים פרטי קשר — שם, טלפון ומייל' }, { status: 400 })
     }

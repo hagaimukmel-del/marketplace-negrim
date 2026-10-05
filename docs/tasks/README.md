@@ -15,7 +15,7 @@ or found to be misaligned, it gets a task here.
 
 ```markdown
 ---
-id: T-020                 # next free number, same as the file name
+id: T-022                 # next free number, same as the file name
 title: Short imperative title
 area: 03-agent-chat       # product-map file name without .md
 type: promise-gap | incomplete | future | debt | ops | decision
@@ -67,13 +67,14 @@ python .claude/skills/product-map/scripts/task_index.py
 | [T-007](T-007.md) | P2 | open | decision | 03-agent-chat | Decide: keyword agent vs LLM |  |
 | [T-010](T-010.md) | P2 | open | incomplete | 03-agent-chat | "פנה לספק" should notify the supplier | T-008 |
 | [T-014](T-014.md) | P2 | open | debt | 05-catalogue-pricing | Supplier SKU, brand and mpn data |  |
-| [T-020](T-020.md) | P2 | open | debt | 07-admin-console | Admin supplier-document upload always fails |  |
+| [T-021](T-021.md) | P2 | open | debt | 07-admin-console | Admin supplier-document upload always fails |  |
 | [T-013](T-013.md) | P3 | open | debt | 05-catalogue-pricing | Product images: rehost from Google Drive |  |
 | [T-015](T-015.md) | P3 | open | debt | 01-public-onboarding | Delete legacy /auth/login and /auth/signup |  |
 | [T-016](T-016.md) | P3 | open | debt | 10-platform | Lint errors |  |
 | [T-017](T-017.md) | P3 | open | incomplete | 03-agent-chat | Product documents visible to all carpenters |  |
-| [T-018](T-018.md) | P3 | open | debt | 02-carpenter-app | Legacy /order search page | T-001 |
+| [T-018](T-018.md) | P3 | done | debt | 02-carpenter-app | Legacy /order search page | T-001 |
 | [T-019](T-019.md) | P3 | open | decision | 10-platform | CLAUDE.md rules vs reality: Zod, @supabase/ssr, Server Components |  |
+| [T-020](T-020.md) | P2 | done | future | 01-public-onboarding | Email the account owner when a new device signs in |  |
 | [T-008](T-008.md) | P0 | blocked | ops | 03-agent-chat | Apply migration supplier_contact_requests | env files (work PC) |
 | [T-011](T-011.md) | P1 | blocked | ops | 03-agent-chat | End-to-end test of the agent chat on staging | env files (work PC) |
 <!-- INDEX:END -->

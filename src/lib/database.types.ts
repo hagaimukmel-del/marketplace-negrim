@@ -118,6 +118,7 @@ export type Database = {
           contact_name: string | null
           created_at: string
           email: string | null
+          email_verified_at: string | null
           first_seen_at: string | null
           id: string
           is_active: boolean
@@ -138,6 +139,7 @@ export type Database = {
           contact_name?: string | null
           created_at?: string
           email?: string | null
+          email_verified_at?: string | null
           first_seen_at?: string | null
           id?: string
           is_active?: boolean
@@ -158,6 +160,7 @@ export type Database = {
           contact_name?: string | null
           created_at?: string
           email?: string | null
+          email_verified_at?: string | null
           first_seen_at?: string | null
           id?: string
           is_active?: boolean

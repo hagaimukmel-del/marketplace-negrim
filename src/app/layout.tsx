@@ -17,7 +17,7 @@ function siteOrigin(): string {
   return "http://localhost:3000";
 }
 
-const description = "הזמנת חומרים, פרזול וציוד לנגריות — ישירות מהספק.";
+const description = "הזמנת חומרים, פרזול וציוד לנגריות, הכל במקום אחד.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin()),
