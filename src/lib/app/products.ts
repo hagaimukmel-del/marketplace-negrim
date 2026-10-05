@@ -22,6 +22,8 @@ export interface AppProduct {
   name: string
   brand: string | null
   mpn: string | null
+  /** The platform's base unit key (unit/kg/liter/meter/sqm); `unit` is its Hebrew label. */
+  baseUnit: string
   unit: string
   imageUrl: string | null
   attributes: [string, string][]

@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     console.error('Previous products error:', err)
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Internal server error' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

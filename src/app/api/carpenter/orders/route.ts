@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
 
     if (ordersError) {
       console.error('Orders query error:', ordersError)
-      return NextResponse.json({ error: ordersError.message }, { status: 500 })
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
     return NextResponse.json(
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     console.error('Get orders error:', err)
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Internal server error' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

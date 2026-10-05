@@ -90,6 +90,7 @@ export async function loadProducts(opts: { showPrices: boolean; ids?: string[] }
       name: row.name_he,
       brand: row.brand,
       mpn: row.mpn,
+      baseUnit: row.base_unit,
       unit: unitLabel(row.base_unit),
       imageUrl: row.image_url,
       attributes: attributesOf(row.attributes),
