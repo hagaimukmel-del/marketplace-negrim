@@ -8,8 +8,8 @@ applications. A visitor can browse products without prices; prices appear after 
 ## Entry points
 | Route | What |
 |---|---|
-| `/` | Landing page (`app/Landing.tsx`, static, no DB read) for visitors; a signed-in carpenter is redirected to `/app`. Copy must stay within CLAUDE.md §0's "safe to advertise" list |
-| `/join` → `POST /api/join` | Carpenter registration. The only public endpoint that writes. Dedupes on the last 9 phone digits and returns the same personal link |
+| `/` | Landing page (`app/Landing.tsx`, static, no DB read) for visitors; a signed-in carpenter is redirected to `/app`. A visitor who opens `/app`, signs out, or leaves the terms gate lands back here. Copy must stay within CLAUDE.md §0's "safe to advertise" list |
+| `/join` → `POST /api/join` | Carpenter registration. The only public endpoint that writes. Dedupes on the last 9 phone digits and emails a login link to the address on file. Rate-limited in memory: 3 per phone and 10 per IP per hour |
 | `/o/[token]` | A carpenter's personal link. The token **is** the identity; resolved on the server every time |
 | `/supplier/join` → `POST /api/supplier-join` | Supplier application; the operator approves it in `/admin/suppliers` |
 | `/terms` → `POST /api/terms/accept` | Terms; acceptance is mandatory at registration (`TermsGate`, `lib/terms.ts` version) |

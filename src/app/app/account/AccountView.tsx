@@ -100,7 +100,7 @@ export default function AccountView({ carpenter, origin }: { carpenter: AccountC
     }
     forgetCarpenter()
     cart.clearCart()
-    router.replace('/app/catalog')
+    router.replace('/')
     router.refresh()
   }
 

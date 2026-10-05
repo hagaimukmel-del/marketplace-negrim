@@ -21,8 +21,8 @@ function nowMs(): number {
  */
 export default async function AppHome({ searchParams }: { searchParams: Promise<{ verified?: string }> }) {
   const [carpenter, { verified }] = await Promise.all([getSessionCarpenter(), searchParams])
-  // Home is a carpentry's own screen; a visitor starts on the catalogue.
-  if (!carpenter) redirect('/app/catalog')
+  // Home is a carpentry's own screen; a visitor starts on the landing page.
+  if (!carpenter) redirect('/')
 
   const [orders, reorder, products, { data: suppliers }] = await Promise.all([
     loadCarpenterOrders(carpenter.id),
