@@ -9,7 +9,7 @@ request. Marketed publicly as "הסוכן של נגרים B2B" (see CLAUDE.md §
 ## Entry points
 | Where | What |
 |---|---|
-| Chat panel in `AppShell` (desktop) | `components/chat/ChatContainer.tsx`, `ChatMessage.tsx` |
+| Chat panel in `AppShell` (desktop sidebar; floating button on mobile) | `components/chat/ChatContainer.tsx`, `ChatMessage.tsx` |
 | `POST /api/carpenter/search` | Runs the procurement agent on a message |
 | `GET /api/carpenter/previous-products` | "What did I order last time" |
 | `POST /api/carpenter/contact-supplier` | Stores a `supplier_contact_requests` row |

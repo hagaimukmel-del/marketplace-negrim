@@ -1,5 +1,5 @@
 # 6 · Supplier console (`/supplier`)
-Verified: 2026-10-03
+Verified: 2026-10-04
 
 ## Purpose
 Self-service for an approved supplier: their orders, price list, products, business details,
@@ -8,7 +8,8 @@ terms and documents. No password needed.
 ## Entry points
 | Route | What |
 |---|---|
-| `/supplier` | Console with tabs: Orders, Products, Business, Terms (`src/app/supplier/tabs/*`) |
+| `/supplier` | Console with tabs: Orders, Products, Documents (דפים טכניים), Business, Terms (`src/app/supplier/tabs/*`, `UploadDocuments.tsx`) |
+| `POST /api/supplier/documents/upload` | Documents tab: attach a spec sheet/guide to a product the supplier has an offer on (`product_documents`, bucket `product_documents`) |
 | `/supplier/enter` + `/api/supplier/session` | Link → cookie session (six months); approval is re-checked on every request |
 | `/api/supplier/login-link` | Re-sends the link to the address on file only |
 | `/supplier/confirm/[token]` | One-order confirmation link (see area 4) |

@@ -1,5 +1,5 @@
 # 5 · Catalogue & pricing
-Verified: 2026-10-03
+Verified: 2026-10-04
 
 ## Purpose
 What can be bought and at what price: canonical products, each supplier's offer on them,
@@ -22,7 +22,7 @@ categories, product knowledge and documents, and the ways prices get in.
 
 ## Data
 `products` (canonical, no price), `supplier_offers` (price excl. VAT per base unit, stock, pack,
-MOQ, lead time), `categories` (10 roots + subcategories, `category_groups`), `volume_pricing`,
+MOQ, lead time), `categories` (10 roots + subcategories; the roots were seeded by migration `20260914160000_category_groups`, there is no `category_groups` table), `volume_pricing`,
 `import_batches`, `product_specifications`, `product_documents`, `supplier_documents(_products)`,
 `supplier_products` (verify use).
 

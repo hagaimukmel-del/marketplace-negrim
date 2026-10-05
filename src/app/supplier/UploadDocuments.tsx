@@ -37,19 +37,14 @@ export default function UploadDocuments({ products }: UploadDocumentsProps) {
       formData.append('doc_type', docType)
       formData.append('title_he', `${docType === 'spec_sheet' ? 'דף טכני' : docType}: ${file.name}`)
 
-      // Get token from localStorage (carpenter visit token)
-      const token = localStorage.getItem('carpenter_token')
-      if (token) {
-        formData.append('token', token)
-      }
-
-      const res = await fetch('/api/carpenter/documents/upload', {
+      const res = await fetch('/api/supplier/documents/upload', {
         method: 'POST',
         body: formData,
       })
 
       if (!res.ok) {
-        throw new Error(await res.text())
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.error ?? 'ההעלאה נכשלה')
       }
 
       const data = await res.json()
@@ -61,7 +56,7 @@ export default function UploadDocuments({ products }: UploadDocumentsProps) {
       setSelectedProduct('')
     } catch (err) {
       setMessage({
-        text: `שגיאה: ${err instanceof Error ? err.message : 'הנסה שוב'}`,
+        text: `שגיאה: ${err instanceof Error ? err.message : 'נסה שוב'}`,
         type: 'error',
       })
     } finally {
