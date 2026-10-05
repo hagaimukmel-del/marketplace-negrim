@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     if (logError) {
       console.error('Failed to log contact request:', logError)
-      return NextResponse.json({ error: logError.message }, { status: 500 })
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
     // TODO: Send email notification to supplier
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error('Contact supplier error:', err)
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Internal server error' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

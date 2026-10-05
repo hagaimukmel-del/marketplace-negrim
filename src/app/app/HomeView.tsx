@@ -79,7 +79,7 @@ export default function HomeView({
   if (isNew) {
     return (
       <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
-        <Hello greeting={greeting} anchor="בוא נמצא את מה שצריך">
+        <Hello greeting={greeting}>
           <p className="mt-1 mb-0 text-[15px] text-muted">חיפוש, קטגוריות, והזמנה ראשונה ישירות מהספק.</p>
         </Hello>
         <SearchBlock />
@@ -96,7 +96,7 @@ export default function HomeView({
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
-      <Hello greeting={greeting} anchor="הנגרייה שלך בשליטה">
+      <Hello greeting={greeting}>
         <AttentionLine count={actions.length} calmText="אין כרגע משהו שמחכה לך">
           {actions.length === 1 ? 'דבר אחד דורש את תשומת לבך' : 'דברים דורשים את תשומת לבך'}
         </AttentionLine>
@@ -132,11 +132,11 @@ export default function HomeView({
   )
 }
 
-function Hello({ greeting, anchor, children }: { greeting: string; anchor: string; children: React.ReactNode }) {
+/** The greeting is the headline: the carpentry's own name, then what (if anything) needs them. */
+function Hello({ greeting, children }: { greeting: string; children: React.ReactNode }) {
   return (
     <section className="pt-1">
-      <div className="text-[15px] font-medium text-muted">{greeting}</div>
-      <h1 className="m-0 mt-0.5 text-[28px] font-extrabold leading-tight tracking-tight text-navy text-balance md:text-[34px]">{anchor}</h1>
+      <h1 className="m-0 text-[28px] font-extrabold leading-tight tracking-tight text-navy text-balance md:text-[34px]">{greeting}</h1>
       {children}
     </section>
   )
@@ -334,7 +334,7 @@ function SearchBlock() {
   return (
     <section>
       <SectionTitle title="מה אתה מחפש?" />
-      <form action="/app/order" className="relative">
+      <form action="/app/catalog" className="relative">
         <Search size={20} className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 text-muted" />
         <input
           name="q"

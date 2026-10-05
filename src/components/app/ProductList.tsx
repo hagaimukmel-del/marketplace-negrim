@@ -6,7 +6,7 @@ import { Plus } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { money, packText } from '@/lib/app/format'
 import { stepOf, suggestedOffer, type AppOffer, type AppProduct } from '@/lib/app/products'
-import CategoryGlyph from './CategoryGlyph'
+import ProductImage from './ProductImage'
 import Stepper from './Stepper'
 
 /**
@@ -19,22 +19,34 @@ export default function ProductList({ products, showPrices, filters = true }: { 
   const [inStockOnly, setInStockOnly] = useState(false)
   const [sort, setSort] = useState<'best' | 'price'>('best')
 
+  // Only worth offering when some product is actually out of stock
+  const anyOut = products.some((p) => !suggestedOffer(p)?.inStock)
   let items = products
   if (inStockOnly) items = items.filter((p) => suggestedOffer(p)?.inStock)
   if (sort === 'price') items = [...items].sort((a, b) => (suggestedOffer(a)?.price ?? 0) - (suggestedOffer(b)?.price ?? 0))
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
+      {!showPrices && (
+        <Link href="/join" className="flex items-center justify-between gap-3 rounded-xl bg-navy-soft px-3.5 py-2.5 text-[14.5px] text-navy">
+          <span>
+            <b>מחירי ספקים לפני מע״מ</b> מוצגים לנגריות רשומות. ההרשמה חינם.
+          </span>
+          <span className="shrink-0 font-bold underline underline-offset-2">להרשמה</span>
+        </Link>
+      )}
       {filters && (
         <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
-          <button
-            type="button"
-            aria-pressed={inStockOnly}
-            onClick={() => setInStockOnly((v) => !v)}
-            className={`rounded-full border px-3 py-1 text-[13.5px] font-semibold ${inStockOnly ? 'border-navy bg-navy text-white' : 'border-hair bg-white text-ink'}`}
-          >
-            רק במלאי
-          </button>
+          {anyOut && (
+            <button
+              type="button"
+              aria-pressed={inStockOnly}
+              onClick={() => setInStockOnly((v) => !v)}
+              className={`rounded-full border px-3 py-1 text-[13.5px] font-semibold ${inStockOnly ? 'border-navy bg-navy text-white' : 'border-hair bg-white text-ink'}`}
+            >
+              רק במלאי
+            </button>
+          )}
           <span className="flex-1" />
           {showPrices && (
             <label className="inline-flex items-center gap-1.5 text-[13.5px]">
@@ -119,9 +131,9 @@ function Row({ product, showPrices }: { product: AppProduct; showPrices: boolean
   const { line, packs, add, setPacks } = useLine(product, offer)
   return (
     <div className="grid grid-cols-[48px_minmax(0,1fr)_auto] items-center gap-3 border-t border-hair px-3.5 py-3 first:border-t-0">
-      <span className="grid h-12 w-12 place-items-center rounded-[10px] bg-wood-soft text-[#7A5A3A]">
-        <CategoryGlyph icon={product.icon} size={22} />
-      </span>
+      <Link href={`/app/product/${product.id}`} tabIndex={-1} aria-hidden>
+        <ProductImage src={product.imageUrl} icon={product.icon} size="h-12 w-12 rounded-[10px]" glyph={22} />
+      </Link>
       <Link href={`/app/product/${product.id}`} className="grid min-w-0 gap-px">
         <b className="text-[15px] leading-snug">{product.name}</b>
         <span className="truncate text-[13px] text-muted">
@@ -176,9 +188,7 @@ function TableRow({ product, showPrices }: { product: AppProduct; showPrices: bo
     <tr className="border-t border-hair hover:bg-[#FDFBF8]">
       <td className="px-3 py-2.5">
         <Link href={`/app/product/${product.id}`} className="flex items-center gap-2.5">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[9px] bg-wood-soft text-[#7A5A3A]">
-            <CategoryGlyph icon={product.icon} size={18} />
-          </span>
+          <ProductImage src={product.imageUrl} icon={product.icon} size="h-9 w-9 rounded-[9px]" glyph={18} />
           <b>{product.name}</b>
         </Link>
       </td>

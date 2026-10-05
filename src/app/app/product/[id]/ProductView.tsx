@@ -6,7 +6,7 @@ import { Building2, Check, Info, Plus, Repeat, X } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { money, packText, termsText, when } from '@/lib/app/format'
 import { sortedOffers, stepOf, suggestedOffer, type AppOffer, type AppProduct } from '@/lib/app/products'
-import CategoryGlyph from '@/components/app/CategoryGlyph'
+import ProductImage from '@/components/app/ProductImage'
 import Stepper from '@/components/app/Stepper'
 import { BackLink } from '@/components/app/ui'
 
@@ -147,6 +147,13 @@ export default function ProductView({
     </div>
   )
 
+  const about = product.description && (
+    <section>
+      <h3 className="mb-2 text-base font-bold">על המוצר</h3>
+      <p className="m-0 whitespace-pre-line rounded-2xl border border-hair bg-white p-3.5 text-[14.5px] leading-relaxed">{product.description}</p>
+    </section>
+  )
+
   const details = (product.attributes.length > 0 || product.brand) && (
     <section>
       <h3 className="mb-2 text-base font-bold">פרטי המוצר</h3>
@@ -194,9 +201,7 @@ export default function ProductView({
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4 pb-24 md:pb-0">
       <BackLink href={crumbs.topId ? `/app/catalog/${crumbs.topId}` : '/app/catalog'} label={crumbs.sub ? `${crumbs.top} › ${crumbs.sub}` : crumbs.top} />
       <div className="flex items-center gap-3">
-        <span className="grid h-[60px] w-[60px] shrink-0 place-items-center rounded-[14px] bg-wood-soft text-[#7A5A3A]">
-          <CategoryGlyph icon={product.icon} size={30} />
-        </span>
+        <ProductImage src={product.imageUrl} icon={product.icon} size="h-[72px] w-[72px] rounded-[14px] md:h-24 md:w-24" glyph={30} />
         <div className="min-w-0">
           <h1 className="m-0 text-2xl font-extrabold leading-tight md:text-[28px]">{product.name}</h1>
           {product.mpn && <div className="text-sm text-muted">דגם {product.mpn}</div>}
@@ -251,6 +256,7 @@ export default function ProductView({
               </div>
             </section>
           )}
+          {about}
           {details}
         </div>
 

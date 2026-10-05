@@ -64,6 +64,26 @@ function safeEqual(a: string, b: string): boolean {
   return timingSafeEqual(left, right)
 }
 
+/**
+ * Proof that a link was opened from the carpentry's inbox. Bound to the token
+ * and the address it was mailed to, so changing the email on file makes every
+ * older code stop counting. Its own label, so it can never pass as a cookie.
+ */
+export function emailProof(token: string, email: string): string {
+  const value = process.env.ADMIN_SECRET
+  if (!value || value.length < 16) throw new Error('ADMIN_SECRET is missing or too short (needs 16+ characters).')
+  const proofKey = createHmac('sha256', value).update('carpenter-email-proof.v1').digest()
+  return createHmac('sha256', proofKey).update(`${token}:${email.toLowerCase()}`).digest('base64url').slice(0, 32)
+}
+
+export function isEmailProof(token: string, email: string, code: string): boolean {
+  try {
+    return safeEqual(code, emailProof(token, email))
+  } catch {
+    return false
+  }
+}
+
 export function buildCarpenterCookie(carpenterId: string) {
   const expiresAt = Date.now() + MAX_AGE_SECONDS * 1000
   const payload = `${carpenterId}.${expiresAt}`

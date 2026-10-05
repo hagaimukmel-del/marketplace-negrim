@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       await sendEmail({
         to: carpenter.email,
         subject: carpenterLoginSubject(),
-        html: carpenterLoginHtml({ businessName: carpenter.business_name, token: carpenter.token }),
+        html: carpenterLoginHtml({ businessName: carpenter.business_name, token: carpenter.token, email: carpenter.email }),
         isTest: isTestName(carpenter.business_name),
       })
     }

@@ -65,9 +65,27 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
+    if (email) {
+      const { data: emailClash } = await supabase
+        .from('carpenters')
+        .select('id')
+        .ilike('email', email.replace(/[\\%_]/g, (char: string) => `\\${char}`))
+        .neq('id', carpenterId)
+        .limit(1)
+        .maybeSingle()
+      if (emailClash) {
+        return NextResponse.json({ error: 'המייל הזה כבר רשום אצל נגרייה אחרת' }, { status: 409 })
+      }
+    }
+
+    // A different address has not been shown to reach anyone yet.
+    const { data: current } = await supabase.from('carpenters').select('email').eq('id', carpenterId).maybeSingle()
+    const emailChanged = (current?.email ?? null) !== email
+
     const { error } = await supabase
       .from('carpenters')
       .update({
+        ...(emailChanged ? { email_verified_at: null } : {}),
         business_name: businessName,
         contact_name: text(body.contact_name, 120),
         phone,
