@@ -481,7 +481,7 @@ function Sent({ orders }: { orders: SentOrder[] }) {
           <Check size={32} strokeWidth={2.4} />
         </span>
         <h1 className="m-0 text-2xl font-extrabold">{orders.length > 1 ? `נשלחו ${orders.length} הזמנות רכש` : 'הזמנת הרכש נשלחה'}</h1>
-        <p className="m-0 max-w-[40ch] text-muted">כל ספק קיבל במייל את ההזמנה שלו. כשהספק יאשר תקבל מייל, וזה יופיע כאן. בדוק בהזמנה המאושרת את המחירים הסופיים.</p>
+        <p className="m-0 max-w-[40ch] text-muted">כל ספק קיבל במייל את ההזמנה שלו. כשהספק יאשר — תקבל מייל, וזה יופיע כאן.</p>
       </div>
       <div className="overflow-hidden rounded-2xl border border-hair bg-white">
         {orders.map((order) => (
