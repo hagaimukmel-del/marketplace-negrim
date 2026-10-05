@@ -20,6 +20,11 @@ interface ChatMessageProps {
   onOpenCatalog?: (action: ActionButton) => void
 }
 
+/** The agent marks names with **bold**; render those as <strong> instead of showing the asterisks. */
+function withBold(text: string) {
+  return text.split(/\*\*(.+?)\*\*/g).map((part, i) => (i % 2 ? <strong key={i}>{part}</strong> : part))
+}
+
 export function ChatMessage({ message, onOptionSelect, onAddToCart, onContactSupplier, onOpenCatalog }: ChatMessageProps) {
   const isUser = message.role === 'user'
 
@@ -39,7 +44,7 @@ export function ChatMessage({ message, onOptionSelect, onAddToCart, onContactSup
           </div>
         ) : (
           <>
-            <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+            <p className="text-sm leading-relaxed whitespace-pre-wrap">{withBold(message.content)}</p>
 
             {/* Action buttons from backend */}
             {message.actions && message.actions.length > 0 && (
