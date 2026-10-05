@@ -16,6 +16,7 @@ interface CategoryRow {
 interface ProductRow {
   id: string
   name_he: string
+  description_he: string | null
   brand: string | null
   mpn: string | null
   base_unit: string
@@ -34,7 +35,7 @@ interface ProductRow {
 }
 
 const PRODUCT_COLUMNS =
-  'id, name_he, brand, mpn, base_unit, image_url, attributes, category_id, ' +
+  'id, name_he, description_he, brand, mpn, base_unit, image_url, attributes, category_id, ' +
   'supplier_offers!inner(id, supplier_id, supplier_sku, price_excl_vat, stock_qty, pack_label, pack_qty, min_order_qty, lead_time_days, ' +
   'suppliers!inner(status, company_name, payment_terms, min_order_value_excl_vat, default_lead_time_days))'
 
@@ -51,6 +52,15 @@ function attributesOf(raw: unknown): [string, string][] {
     .filter(([, value]) => typeof value === 'string' || typeof value === 'number')
     .map(([key, value]) => [key, String(value)])
 }
+
+/**
+ * No supplier keeps stock_qty current yet: the sheet sync writes a placeholder
+ * 100 and a price list without a stock column writes 0 (CLAUDE.md §6: never
+ * show it as real stock). Until a supplier does, nothing reads as "אזל" and
+ * nothing is blocked from ordering; the supplier confirms availability on the
+ * purchase order. bestOffer() still prefers a positive stock among suppliers.
+ */
+const STOCK_IS_TRACKED = false
 
 /**
  * Live products — at least one active offer from an approved supplier — with
@@ -87,13 +97,14 @@ export async function loadProducts(opts: { showPrices: boolean; ids?: string[] }
       icon: topId ? byId.get(topId)?.icon ?? null : null,
       topId,
       subId: category && topId !== category.id ? category.id : null,
+      description: row.description_he?.trim() || null,
       offers: row.supplier_offers.map((offer) => ({
         supplierId: offer.supplier_id,
         supplierName: offer.suppliers.company_name,
         price: opts.showPrices ? Number(offer.price_excl_vat) : null,
         packLabel: offer.pack_label,
         packQty: offer.pack_qty == null ? null : Number(offer.pack_qty),
-        inStock: offer.stock_qty > 0,
+        inStock: STOCK_IS_TRACKED ? offer.stock_qty > 0 : true,
         leadDays: offer.lead_time_days ?? offer.suppliers.default_lead_time_days,
         terms: offer.suppliers.payment_terms ?? [],
         minOrder: offer.suppliers.min_order_value_excl_vat == null ? null : Number(offer.suppliers.min_order_value_excl_vat),
