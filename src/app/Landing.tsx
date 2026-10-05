@@ -86,9 +86,9 @@ export default function Landing() {
   return (
     <div className="min-h-dvh bg-warm text-ink">
       <header className="sticky top-0 z-30 border-b border-hair/70 bg-warm/95 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-[1120px] items-center gap-3 px-4 md:px-7">
+        <div className="mx-auto flex h-[72px] max-w-[1120px] items-center gap-3 px-4 md:h-20 md:px-7">
           <Link href="/" aria-label="נגרים B2B — דף הבית">
-            <Logo size="sm" compact />
+            <Logo size="md" tagline="always" />
           </Link>
           <span className="flex-1" />
           <nav className="hidden items-center gap-5 text-[15px] font-semibold text-muted md:flex" aria-label="ניווט">
