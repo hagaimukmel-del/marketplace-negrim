@@ -400,6 +400,10 @@ export default function OrderView({ profile }: { profile: { address: string; cit
             <Info size={16} className="mt-0.5 shrink-0 text-navy" />
             אין תשלום באתר. כל ספק מאשר, מספק ומוציא לך חשבונית לפי התנאים שלו.
           </p>
+          <p className="m-0 flex items-start gap-2 text-[13.5px] text-muted">
+            <Info size={16} className="mt-0.5 shrink-0 text-navy" />
+            המחירים לפי המחירון של הספק, והוא רשאי לעדכן אותם עד שהוא מאשר את ההזמנה. כדאי לבדוק היטב את ההזמנה המאושרת שתגיע ממנו.
+          </p>
           {!profile.hasContact && <p className="m-0 text-[13.5px] text-attn">חסרים טלפון או מייל בפרטי הנגרייה — אפשר להשלים באזור האישי.</p>}
           {error && <p role="alert" className="m-0 rounded-lg bg-red-50 p-2.5 text-sm text-red-800">{error}</p>}
           <div className="hidden md:block">{sendButton}</div>
@@ -477,7 +481,7 @@ function Sent({ orders }: { orders: SentOrder[] }) {
           <Check size={32} strokeWidth={2.4} />
         </span>
         <h1 className="m-0 text-2xl font-extrabold">{orders.length > 1 ? `נשלחו ${orders.length} הזמנות רכש` : 'הזמנת הרכש נשלחה'}</h1>
-        <p className="m-0 max-w-[40ch] text-muted">כל ספק קיבל במייל את ההזמנה שלו. כשהספק יאשר — תקבל מייל, וזה יופיע כאן.</p>
+        <p className="m-0 max-w-[40ch] text-muted">כל ספק קיבל במייל את ההזמנה שלו. כשהספק יאשר תקבל מייל, וזה יופיע כאן. בדוק בהזמנה המאושרת את המחירים הסופיים.</p>
       </div>
       <div className="overflow-hidden rounded-2xl border border-hair bg-white">
         {orders.map((order) => (
