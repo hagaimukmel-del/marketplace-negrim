@@ -22,7 +22,10 @@ The plumbing every area relies on.
 
 ## Rules & invariants
 CLAUDE.md §3 and §6 (security model). RLS is on everywhere; most tables have no policy and are
-service-role only.
+service-role only. `product_documents` had RLS off and the spec tables had write policies anyone
+passed, until `20261005090000_lock_product_knowledge` (applied to staging and production
+2026-10-05). The read policies on `product_specifications` and `supplier_documents_products` are
+the only public ones besides the catalogue.
 
 ## Open tasks
 T-009, T-012, T-016, T-019
