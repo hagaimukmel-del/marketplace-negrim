@@ -6,6 +6,25 @@ import { X, Send, Mic } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { ChatMessage, Message } from './ChatMessage'
 import type { ActionButton } from '@/lib/procurement-agent'
+import { STATUS_LABEL, type OrderStatus } from '@/lib/app/orders'
+
+// Shortcuts the chat answers itself. Kept narrow on purpose: "הזמנה של דבק" or
+// "יש בקטלוג דבק PUR?" are product searches and must reach the agent.
+const PREVIOUS_PRODUCTS = /בפעם שעברה|כמו בפעם|זה שקניתי|מה קניתי/
+const ORDER_HISTORY = /ההזמנות שלי|הזמנות קודמות|היסטוריית הזמנות|מה הזמנתי|my orders|order history/i
+const PAGES: [RegExp, string][] = [
+  [/מציאון/, '/app/metzion'],
+  [/עגלה/, '/app/order'],
+  [/פרופיל|הפרטים שלי|החשבון שלי/, '/app/account'],
+  [/הזמנות/, '/app/orders'],
+  [/קטלוג/, '/app/catalog'],
+]
+/** "קח אותי לעגלה", "איפה המציאון?", or just "עגלה": a request to go somewhere, not a search. */
+function pageFor(text: string): string | null {
+  const isGoTo = /^(איפה|קח אותי|תעביר אותי|פתח|עבור ל|go to|where)/i.test(text) || text.split(/\s+/).length <= 2
+  if (!isGoTo) return null
+  return PAGES.find(([pattern]) => pattern.test(text))?.[1] ?? null
+}
 
 interface ChatContainerProps {
   isOpen: boolean
@@ -26,6 +45,8 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
   const [isListening, setIsListening] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<any>(null)
+  // The panel only renders once opened, so this never runs during server rendering
+  const [canListen] = useState(() => typeof window !== 'undefined' && Boolean((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition))
 
   // Initialize Web Speech API
   useEffect(() => {
@@ -87,15 +108,17 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
     }
     setMessages((prev) => [...prev, userMessage])
 
+    const productPage: ActionButton = { label: 'לדף המוצר', action: 'open-page', value: `/app/product/${item?.id ?? action.value}` }
+
     if (!item) {
-      say('למוצר הזה אין כרגע הצעה פעילה מספק, אז אי אפשר להזמין אותו מכאן.')
+      say('למוצר הזה אין כרגע הצעה פעילה מספק, אז אי אפשר להזמין אותו מכאן.', action.value ? [productPage] : undefined)
       return
     }
 
     const pack = item.pack_qty && item.pack_qty > 1 ? ` · ${item.pack_label ?? 'חבילה'} ${item.pack_qty} ${item.unit}` : ''
     say(
       `${item.name_he}\n₪${item.base_price_excl_vat} ל${item.unit} לפני מע״מ${pack}\nספק: ${item.supplier_name}`,
-      [{ label: '➕ הוסף לעגלה', action: 'add-to-cart', value: item.id, item }]
+      [{ label: '➕ הוסף לעגלה', action: 'add-to-cart', value: item.id, item }, productPage]
     )
   }
 
@@ -127,22 +150,26 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
         }),
       })
 
-      say(response.ok ? '✅ הודעתך נשלחה לספק. הם יחזרו אלייך בקרוב.' : 'לא הצלחתי לשלוח את ההודעה לספק. נסה שוב בעוד רגע.')
+      say(response.ok ? '✅ הבקשה נשמרה ותועבר לספק.' : 'לא הצלחתי לשלוח את ההודעה לספק. נסה שוב בעוד רגע.')
     } catch (error) {
       console.error('Failed to contact supplier:', error)
       say('לא הצלחתי לשלוח את ההודעה לספק. נסה שוב בעוד רגע.')
     }
   }
 
-  // The search bar and the chat run the same search; this shows it in the catalogue
-  const handleOpenPage = (action: ActionButton) => {
-    if (action.value) router.push(action.value)
+  const goTo = (path: string) => {
+    onClose()
+    router.push(path)
   }
 
+  const handleOpenPage = (action: ActionButton) => {
+    if (action.value) goTo(action.value)
+  }
+
+  // The search bar and the chat run the same search; this shows it in the catalogue
   const handleOpenCatalog = (action: ActionButton) => {
     if (!action.value) return
-    onClose()
-    router.push(`/app/catalog?q=${encodeURIComponent(action.value)}`)
+    goTo(`/app/catalog?q=${encodeURIComponent(action.value)}`)
   }
 
   const handleSend = async (text?: string) => {
@@ -162,87 +189,40 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
     setIsLoading(true)
 
     try {
-      // Check if user is asking for order history, previous products, or navigation
-      const isOrderHistoryQuery = /הזמנ|order|history/i.test(userMessageText)
-      const isPreviousProductQuery = /כמו.*בפעם|פעם.*שעברה|זה שקניתי|קודם|לפני/i.test(userMessageText)
-      const isNavigationQuery = /איפה|קטלוג|מציאון|עגלה|פרופיל|פרטיים|how|where|go to/i.test(userMessageText)
-
-      if (isOrderHistoryQuery) {
-        // Fetch order history
-        const orderResponse = await fetch('/api/carpenter/orders', {
-          method: 'GET',
-        })
-
-        if (orderResponse.ok) {
-          const { orders } = await orderResponse.json()
-
-          if (orders.length > 0) {
-            const ordersText = orders
-              .slice(0, 5)
-              .map(
-                (order: any) =>
-                  `📦 ${order.order_number} (${order.status})\n   ${order.order_items.map((item: any) => `${item.product_name_he} ×${item.quantity}`).join(', ')}`
-              )
-              .join('\n\n')
-
-            const agentMessage: Message = {
-              id: (Date.now() + 1).toString(),
-              role: 'agent',
-              content: `הנה ההזמנות האחרונות שלך:\n\n${ordersText}`,
-              timestamp: Date.now(),
-            }
-
-            setMessages((prev) => [...prev, agentMessage])
-            return
-          }
-        }
-      }
-
-      if (isPreviousProductQuery) {
-        // Fetch previous products
-        const prevResponse = await fetch('/api/carpenter/previous-products', {
-          method: 'GET',
-        })
-
+      if (PREVIOUS_PRODUCTS.test(userMessageText)) {
+        const prevResponse = await fetch('/api/carpenter/previous-products')
         if (prevResponse.ok) {
-          const { products } = await prevResponse.json()
-
-          if (products.length > 0) {
-            const productsText = products
-              .map((product: any) => `• ${product.product_name_he}`)
-              .join('\n')
-
-            const agentMessage: Message = {
-              id: (Date.now() + 1).toString(),
-              role: 'agent',
-              content: `הנה המוצרים שקניתם קודם:\n\n${productsText}\n\nרוצה לחפש אחד מהם?`,
-              timestamp: Date.now(),
-            }
-
-            setMessages((prev) => [...prev, agentMessage])
-            return
-          }
-        }
-      }
-
-      if (isNavigationQuery) {
-        let targetPath = ''
-        if (/מציאון/i.test(userMessageText)) {
-          targetPath = '/app/metzion'
-        } else if (/קטלוג/i.test(userMessageText)) {
-          targetPath = '/app/catalog'
-        } else if (/עגלה|shopping/i.test(userMessageText)) {
-          targetPath = '/app/order' // the open order is the cart
-        } else if (/פרופיל|פרטיים|חשבון/i.test(userMessageText)) {
-          targetPath = '/app/account'
-        } else if (/הזמנות|orders/i.test(userMessageText)) {
-          targetPath = '/app/orders'
-        }
-
-        if (targetPath) {
-          window.location.href = targetPath
+          const { products } = (await prevResponse.json()) as { products: { product_id: string; product_name_he: string }[] }
+          say(
+            products.length > 0 ? 'אלה המוצרים מההזמנות האחרונות שלך:' : 'עוד לא שלחת הזמנות, אז אין לי מה להציע מפעם שעברה.',
+            products.map((p) => ({ label: p.product_name_he, action: 'open-page', value: `/app/product/${p.product_id}` }))
+          )
           return
         }
+      }
+
+      if (ORDER_HISTORY.test(userMessageText)) {
+        const orderResponse = await fetch('/api/carpenter/orders')
+        if (orderResponse.ok) {
+          const { orders } = (await orderResponse.json()) as {
+            orders: { order_number: string; status: OrderStatus; order_items: { product_name_he: string; quantity: number }[] }[]
+          }
+          const ordersText = orders
+            .slice(0, 5)
+            .map((order) => `${order.order_number} · ${STATUS_LABEL[order.status] ?? order.status}\n${order.order_items.map((item) => `${item.product_name_he} ×${item.quantity}`).join(', ')}`)
+            .join('\n\n')
+          say(
+            orders.length > 0 ? `ההזמנות האחרונות שלך:\n\n${ordersText}` : 'עוד לא שלחת הזמנות.',
+            [{ label: 'לכל ההזמנות', action: 'open-page', value: '/app/orders' }]
+          )
+          return
+        }
+      }
+
+      const page = pageFor(userMessageText)
+      if (page) {
+        goTo(page)
+        return
       }
 
       // Call agent API for product search
@@ -335,6 +315,7 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
           <h2 className="font-bold text-slate-900">🧠 סוכן חכם</h2>
           <button
             onClick={onClose}
+            aria-label="סגור"
             className="p-1 hover:bg-slate-100 rounded-lg transition"
           >
             <X size={20} />
@@ -375,8 +356,10 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
               className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={isLoading}
             />
+            {canListen && (
             <button
               onClick={toggleVoice}
+              aria-label={isListening ? 'עצור הקלטה' : 'דבר במקום להקליד'}
               className={`p-2 rounded-lg transition ${
                 isListening ? 'bg-red-500 text-white' : 'bg-slate-200 text-slate-700'
               }`}
@@ -384,8 +367,10 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
             >
               <Mic size={20} />
             </button>
+            )}
             <button
               onClick={() => handleSend()}
+              aria-label="שלח"
               disabled={!input.trim() || isLoading}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition"
             >

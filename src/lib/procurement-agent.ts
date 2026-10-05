@@ -393,7 +393,7 @@ function getUnitLabel(baseUnit: string): string {
  * Format lead time in Hebrew
  */
 function formatLeadTime(days?: number | null): string {
-  if (!days) return 'זמן הסעה לא ידוע'
+  if (days == null) return ''
   if (days === 0) return 'היום'
   if (days === 1) return 'מחר'
   return `${days} ימים`
@@ -472,8 +472,6 @@ function generateResponse(intent: ParsedIntent, matches: MatchedProduct[]): stri
         const label = getDocTypeLabel(doc.doc_type)
         response += `\n- ${label}: [${doc.title_he}](${doc.file_url})`
       }
-    } else {
-      response += '\n\n⚠️ אין מסמכים טכניים (datasheet/spec sheet) לפרסם כרגע.'
     }
 
     if (product.specs.length > 0) {
@@ -482,8 +480,6 @@ function generateResponse(intent: ParsedIntent, matches: MatchedProduct[]): stri
         const unit = spec.unit ? ` ${spec.unit}` : ''
         response += `\n- ${spec.key}: ${spec.value}${unit}`
       }
-    } else {
-      response += '\n\n⚠️ אין מפרטים טכניים זמינים בקטלוג כרגע.'
     }
 
     // Step 4: Show live offer data
@@ -491,52 +487,37 @@ function generateResponse(intent: ParsedIntent, matches: MatchedProduct[]): stri
       response += '\n\nאפשרויות רכש:'
       for (const offer of product.offers.slice(0, 2)) {
         response += `\n- **${offer.supplierName}**`
-        response += ` • מחיר: ${formatPrice(offer.priceExclVat, product.baseUnit, offer.packQty)}`
+        response += ` • ${formatPrice(offer.priceExclVat, product.baseUnit, offer.packQty)} לפני מע״מ`
 
-        // NOTE: stock_qty is not reliable (sheet import placeholder = 100)
-        // Do not display it — carpenter must verify with supplier
-        response += ` • ⚠️ בדוק מלאי עם הספק`
-
-        response += ` • הסעה: ${formatLeadTime(offer.leadTimeDays)}`
+        // stock_qty is a placeholder on synced rows, so stock is never shown
+        const lead = formatLeadTime(offer.leadTimeDays)
+        if (lead) response += ` • אספקה: ${lead}`
       }
     } else {
-      response += '\n\n❌ אין מחירים זמינים מספקים לפרסם כרגע.'
+      response += '\n\nאין כרגע ספק שמציע את המוצר הזה.'
     }
 
     if (product.sourceDocuments.length > 0) {
-      response += `\n\n✓ מידע מתוך ${product.sourceDocuments.length} מסמך/ים מאושרים`
-    } else {
-      response += '\n\n⚠️ מידע זה לא מסמך מאושר. אימת ישירות עם הספק.'
+      response += `\n\nהמידע מתוך ${product.sourceDocuments.length} מסמכי ספק`
     }
-
-    response += '\n\nרוצה שנמצא לך עוד אפשרויות?'
     return response
   }
 
   // Multiple matches - show up to 4 options with numbers
   const showLimit = Math.min(4, matches.length)
-  let response = `🔍 מצאתי ${matches.length} מוצרים שמתאימים. בואי נצמצם:\n`
-
-  const emojis = ['🟢', '🟡', '🔵', '🟣']
+  let response = `מצאתי ${matches.length} מוצרים שמתאימים:\n`
 
   for (let i = 0; i < showLimit; i++) {
     const product = matches[i]
     const number = i + 1
-    const emoji = emojis[i] || '⚪'
-    response += `\n${number}) ${emoji} **${product.productName}**`
+    response += `\n${number}) **${product.productName}**`
 
     // Show price and supplier as main info
     if (product.offers && product.offers.length > 0) {
       const bestOffer = product.offers[0]
       response += ` — ${formatPrice(bestOffer.priceExclVat, product.baseUnit, bestOffer.packQty)}`
       response += ` (${bestOffer.supplierName})`
-
-      // Stock status
-      if (bestOffer.stockQty > 0) {
-        response += ` • ✅ במלאי`
-      } else {
-        response += ` • ⏳ אזל`
-      }
+      // No stock badge: stock_qty is a placeholder on synced rows
     }
 
     // Show if has documents
@@ -545,7 +526,7 @@ function generateResponse(intent: ParsedIntent, matches: MatchedProduct[]): stri
     }
   }
 
-  response += `\n\nבחר (${Array.from({length: showLimit}, (_, i) => i + 1).join('/')}) או תן לי עוד פרטים.`
+  response += `\n\nבחר מוצר מהרשימה, או כתוב עוד פרטים כדי לצמצם.`
   return response
 }
 
@@ -670,14 +651,13 @@ export async function processProcurementRequest(
     if (followUpType === 'selection') {
       // Multiple results - show numbered selection buttons
       const optionCount = Math.min(4, matches.length)
-      const emojis = ['🟢', '🟡', '🔵', '🟣']
       for (let i = 0; i < optionCount; i++) {
         const number = i + 1
         // The chat is stateless: the button carries the product, so choosing
         // it never goes back through search as the bare text "2"
         const item = cartItemOf(matches[i])
         actions.push({
-          label: `בחר אפשרות ${number} ${emojis[i]}`,
+          label: `${number}) ${matches[i].productName}`,
           action: `select-${number}`,
           value: matches[i].productId,
           item,
@@ -717,7 +697,7 @@ export async function processProcurementRequest(
     console.error('Agent error:', err)
     return {
       success: false,
-      message: 'קרתה שגיאה. בואי ננסה שוב.',
+      message: 'קרתה שגיאה. נסה שוב בעוד רגע.',
       state: 'done',
     }
   }

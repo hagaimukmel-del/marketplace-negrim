@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { processProcurementRequest } from '@/lib/procurement-agent'
 
+/** A question, not a document: longer input is cut before it reaches the agent. */
+const MAX_MESSAGE = 300
+
 /**
  * POST /api/carpenter/search
  *
@@ -32,16 +35,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Process request through agent with carpenter context
+    const userMessage = message.trim().slice(0, MAX_MESSAGE)
     const response = await processProcurementRequest({
-      userMessage: message.trim(),
+      userMessage,
       carpenterId: carpenter.id,
     })
+
+    // One line per question, so the Vercel logs show what carpenters ask and what they got
+    console.info(
+      'agent.search',
+      JSON.stringify({ carpenter: carpenter.id, message: userMessage, state: response.state, matches: response.matchedProducts?.length ?? 0 })
+    )
 
     return NextResponse.json(response, { status: 200 })
   } catch (err) {
     console.error('Search error:', err)
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Internal server error' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

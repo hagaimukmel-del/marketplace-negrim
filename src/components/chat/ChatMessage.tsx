@@ -21,9 +21,24 @@ interface ChatMessageProps {
   onOpenPage?: (action: ActionButton) => void
 }
 
-/** The agent marks names with **bold**; render those as <strong> instead of showing the asterisks. */
-function withBold(text: string) {
-  return text.split(/\*\*(.+?)\*\*/g).map((part, i) => (i % 2 ? <strong key={i}>{part}</strong> : part))
+/**
+ * The agent marks names with **bold** and documents with [title](https://...);
+ * render those instead of showing the markup. Only https links become links.
+ */
+function withMarkup(text: string) {
+  return text.split(/(\*\*.+?\*\*|\[[^\]]+\]\(https:\/\/[^)\s]+\))/g).map((part, i) => {
+    const bold = part.match(/^\*\*(.+)\*\*$/)
+    if (bold) return <strong key={i}>{bold[1]}</strong>
+    const link = part.match(/^\[([^\]]+)\]\((https:\/\/[^)\s]+)\)$/)
+    if (link) {
+      return (
+        <a key={i} href={link[2]} target="_blank" rel="noopener noreferrer" className="underline">
+          {link[1]}
+        </a>
+      )
+    }
+    return part
+  })
 }
 
 export function ChatMessage({ message, onOptionSelect, onAddToCart, onContactSupplier, onOpenCatalog, onOpenPage }: ChatMessageProps) {
@@ -45,7 +60,7 @@ export function ChatMessage({ message, onOptionSelect, onAddToCart, onContactSup
           </div>
         ) : (
           <>
-            <p className="text-sm leading-relaxed whitespace-pre-wrap">{withBold(message.content)}</p>
+            <p className="text-sm leading-relaxed whitespace-pre-wrap">{withMarkup(message.content)}</p>
 
             {/* Action buttons from backend */}
             {message.actions && message.actions.length > 0 && (
