@@ -694,6 +694,7 @@ export async function processProcurementRequest(
           item,
         })
       }
+      actions.push({ label: 'לדף המוצר', action: 'open-page', value: `/app/product/${matches[0].productId}` })
     }
 
     // The same words in the search bar show the full list

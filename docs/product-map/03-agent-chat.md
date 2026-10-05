@@ -21,7 +21,8 @@ comparison / order_confirmation / supplier_contact), `components/chat/*`. The ag
 Product matching is `searchProducts()` in `lib/catalog-search.ts`, the same function the
 catalogue search bar uses (Hebrew normalization, prefixes, plurals, a seed synonym list), over
 live products only. The catalogue results page has "שאל את הסוכן" (`AskAgentButton`, which opens
-the chat already asking the query), and every agent answer with results has "כל התוצאות בקטלוג".
+the chat already asking the query), and every agent answer with results has "כל התוצאות בקטלוג". A single match also gets "לדף המוצר".
+A signed-out visitor who asks the chat gets an invitation to /join instead of the 401.
 
 ## Data
 `products`, `supplier_offers`, `product_specifications`, `product_documents`,

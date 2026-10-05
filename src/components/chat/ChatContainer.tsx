@@ -135,6 +135,10 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
   }
 
   // The search bar and the chat run the same search; this shows it in the catalogue
+  const handleOpenPage = (action: ActionButton) => {
+    if (action.value) router.push(action.value)
+  }
+
   const handleOpenCatalog = (action: ActionButton) => {
     if (!action.value) return
     onClose()
@@ -250,8 +254,23 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
         }),
       })
 
+      // Signed out: the agent is for registered carpenters, so invite them in
+      if (response.status === 401) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            role: 'agent',
+            content: 'כדי לחפש עם הסוכן ולראות מחירים צריך להירשם. ההרשמה חינמית ולוקחת דקה.',
+            timestamp: Date.now(),
+            actions: [{ label: 'כניסה / הרשמה', action: 'open-page', value: '/join' }],
+          },
+        ])
+        return
+      }
+
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`)
+        throw new Error('החיפוש לא הצליח כרגע. נסה שוב בעוד רגע.')
       }
 
       const data = await response.json()
@@ -337,6 +356,7 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
                 onAddToCart={handleAddToCart}
                 onContactSupplier={handleContactSupplier}
                 onOpenCatalog={handleOpenCatalog}
+                onOpenPage={handleOpenPage}
               />
             ))
           )}

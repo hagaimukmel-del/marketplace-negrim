@@ -18,6 +18,7 @@ interface ChatMessageProps {
   onAddToCart?: (action: ActionButton) => void
   onContactSupplier?: (action: ActionButton) => void
   onOpenCatalog?: (action: ActionButton) => void
+  onOpenPage?: (action: ActionButton) => void
 }
 
 /** The agent marks names with **bold**; render those as <strong> instead of showing the asterisks. */
@@ -25,7 +26,7 @@ function withBold(text: string) {
   return text.split(/\*\*(.+?)\*\*/g).map((part, i) => (i % 2 ? <strong key={i}>{part}</strong> : part))
 }
 
-export function ChatMessage({ message, onOptionSelect, onAddToCart, onContactSupplier, onOpenCatalog }: ChatMessageProps) {
+export function ChatMessage({ message, onOptionSelect, onAddToCart, onContactSupplier, onOpenCatalog, onOpenPage }: ChatMessageProps) {
   const isUser = message.role === 'user'
 
   return (
@@ -61,6 +62,8 @@ export function ChatMessage({ message, onOptionSelect, onAddToCart, onContactSup
                         onContactSupplier?.(action)
                       } else if (action.action === 'open-catalog') {
                         onOpenCatalog?.(action)
+                      } else if (action.action === 'open-page') {
+                        onOpenPage?.(action)
                       }
                     }}
                     className={`text-xs px-2 py-1 rounded ${
