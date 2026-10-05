@@ -8,8 +8,8 @@ applications. A visitor can browse products without prices; prices appear after 
 ## Entry points
 | Route | What |
 |---|---|
-| `/` | Landing page (`app/Landing.tsx`, static, no DB read) for visitors; a signed-in carpenter is redirected to `/app`. Copy must stay within CLAUDE.md §0's "safe to advertise" list |
-| `/join` → `POST /api/join` | Carpenter registration. The only public endpoint that writes. Dedupes on the last 9 phone digits and returns the same personal link |
+| `/` | Landing page (`app/Landing.tsx`, static, no DB read) for visitors; a signed-in carpenter is redirected to `/app`. A visitor who opens `/app`, signs out, or leaves the terms gate lands back here. Copy must stay within CLAUDE.md §0's "safe to advertise" list |
+| `/join` → `POST /api/join` | Carpenter registration. The only public endpoint that writes. Dedupes on the last 9 phone digits and emails a login link to the address on file. Rate-limited in memory: 3 per phone and 10 per IP per hour |
 | `/o/[token]` | A carpenter's personal link. The token **is** the identity; resolved on the server every time |
 | `/supplier/join` → `POST /api/supplier-join` | Supplier application; the operator approves it in `/admin/suppliers` |
 | `/terms` → `POST /api/terms/accept` | Terms; acceptance is mandatory at registration (`TermsGate`, `lib/terms.ts` version) |
@@ -30,10 +30,11 @@ acceptance columns.
 - Every server use re-resolves the token. Never trust a client-supplied carpenter id (CLAUDE.md §6, security model).
 - One phone and one email per carpentry: `/api/join` treats either as "already registered" and mails a login link to the address on file; the profile refuses an email another carpentry holds.
 - Signup mails a welcome email. Every emailed entry link carries `?v=` (an HMAC of token + email, `emailProof()` in `lib/carpenter-auth.ts`); opening it sets `carpenters.email_verified_at`. Changing the email clears it.
+- Opening an emailed entry link in a browser not signed in to that account mails the owner a "new device" notice (`lib/emails/new-device.ts`), for carpenters and suppliers.
 - Bumping `TERMS_VERSION` makes everyone re-accept. Change it only when the terms change in substance.
 
 ## Status
 Live. Accessibility statement and terms review before a wide launch are open in `TODO.md`.
 
 ## Open tasks
-T-015, T-020
+T-015

@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { TERMS_VERSION } from '@/lib/terms'
 import { isTestName, sendEmail } from '@/lib/email'
 import { carpenterLoginHtml, carpenterLoginSubject, carpenterWelcomeHtml, carpenterWelcomeSubject } from '@/lib/emails/carpenter'
+import { checkRateLimit, getClientIP, getRateLimitHeaders, hashIdentifier } from '@/lib/rate-limit'
 
 /** "h****l@gmail.com" — enough to recognise your own address, not to read someone else's. */
 function maskEmail(email: string): string {
@@ -67,6 +68,23 @@ export async function POST(request: NextRequest) {
       terms_accepted_at: new Date().toISOString(),
       terms_version: TERMS_VERSION,
       marketing_consent: body.marketing_consent === true,
+    }
+
+    // Every call past this point can send an email, so it is capped: per phone,
+    // so one inbox cannot be flooded with login links, and per network, so the
+    // form cannot be used to mass-create rows. In memory, so best effort on a
+    // serverless host; it still stops a script hammering one instance.
+    for (const [key, type] of [
+      [`join:${hashIdentifier(phone)}`, 'join'],
+      [`join-ip:${hashIdentifier(getClientIP(request))}`, 'joinIp'],
+    ] as const) {
+      const limit = checkRateLimit(key, type)
+      if (!limit.allowed) {
+        return NextResponse.json(
+          { error: 'יותר מדי ניסיונות הרשמה. נסו שוב בעוד שעה' },
+          { status: 429, headers: getRateLimitHeaders(limit) }
+        )
+      }
     }
 
     const supabase = getSupabaseAdmin()

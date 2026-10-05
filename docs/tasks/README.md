@@ -73,7 +73,7 @@ python .claude/skills/product-map/scripts/task_index.py
 | [T-017](T-017.md) | P3 | open | incomplete | 03-agent-chat | Product documents visible to all carpenters |  |
 | [T-018](T-018.md) | P3 | open | debt | 02-carpenter-app | Legacy /order search page | T-001 |
 | [T-019](T-019.md) | P3 | open | decision | 10-platform | CLAUDE.md rules vs reality: Zod, @supabase/ssr, Server Components |  |
-| [T-020](T-020.md) | P2 | open | future | 01-public-onboarding | Email the account owner when a new device signs in |  |
+| [T-020](T-020.md) | P2 | done | future | 01-public-onboarding | Email the account owner when a new device signs in |  |
 | [T-008](T-008.md) | P0 | blocked | ops | 03-agent-chat | Apply migration supplier_contact_requests | env files (work PC) |
 | [T-011](T-011.md) | P1 | blocked | ops | 03-agent-chat | End-to-end test of the agent chat on staging | env files (work PC) |
 <!-- INDEX:END -->
