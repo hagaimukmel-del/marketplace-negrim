@@ -28,10 +28,12 @@ acceptance columns.
 ## Rules & invariants
 - No passwords for carpenters: personal link plus a cookie session; a login link can be re-sent by email (`/api/carpenter/login-link`).
 - Every server use re-resolves the token. Never trust a client-supplied carpenter id (CLAUDE.md §6, security model).
+- One phone and one email per carpentry: `/api/join` treats either as "already registered" and mails a login link to the address on file; the profile refuses an email another carpentry holds.
+- Signup mails a welcome email. Every emailed entry link carries `?v=` (an HMAC of token + email, `emailProof()` in `lib/carpenter-auth.ts`); opening it sets `carpenters.email_verified_at`. Changing the email clears it.
 - Bumping `TERMS_VERSION` makes everyone re-accept. Change it only when the terms change in substance.
 
 ## Status
 Live. Accessibility statement and terms review before a wide launch are open in `TODO.md`.
 
 ## Open tasks
-T-015
+T-015, T-020

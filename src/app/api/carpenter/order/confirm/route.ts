@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { confirmOrder } from '@/lib/order-agent'
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
 /**
  * POST /api/carpenter/order/confirm
@@ -18,6 +19,12 @@ export async function POST(request: NextRequest) {
     const carpenter = await getSessionCarpenter()
     if (!carpenter) {
       return NextResponse.json({ error: 'חייב להיות מחובר' }, { status: 401 })
+    }
+
+    // Same rule as /api/orders: no order reaches a supplier before the email is confirmed
+    const { data: record } = await getSupabaseAdmin().from('carpenters').select('email_verified_at').eq('id', carpenter.id).maybeSingle()
+    if (!record?.email_verified_at) {
+      return NextResponse.json({ error: 'לפני ההזמנה הראשונה צריך לאשר את המייל: לחצו על הקישור ששלחנו אליכם.', code: 'email_unverified' }, { status: 403 })
     }
 
     const { productId, supplierId, quantity } = await request.json()

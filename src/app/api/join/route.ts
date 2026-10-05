@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { TERMS_VERSION } from '@/lib/terms'
 import { isTestName, sendEmail } from '@/lib/email'
-import { carpenterLoginHtml, carpenterLoginSubject } from '@/lib/emails/carpenter'
+import { carpenterLoginHtml, carpenterLoginSubject, carpenterWelcomeHtml, carpenterWelcomeSubject } from '@/lib/emails/carpenter'
 
 /** "h****l@gmail.com" — enough to recognise your own address, not to read someone else's. */
 function maskEmail(email: string): string {
@@ -76,11 +76,23 @@ export async function POST(request: NextRequest) {
     // This used to hand the existing link straight back, which meant anyone who
     // typed a registered phone number walked into that carpenter's account. Now
     // the link goes to the email on file, and the page only says where it went.
-    const { data: existing } = await supabase
+    //
+    // The email is a key too: one inbox is one carpentry. Two carpentries on one
+    // address would share every login link and supplier confirmation.
+    const { data: byPhone } = await supabase
       .from('carpenters')
       .select('id, token, is_active, email, business_name')
       .eq('phone', phone)
       .maybeSingle()
+    const { data: byEmail } = byPhone
+      ? { data: null }
+      : await supabase
+          .from('carpenters')
+          .select('id, token, is_active, email, business_name')
+          .ilike('email', email.replace(/[\\%_]/g, (char: string) => `\\${char}`))
+          .limit(1)
+          .maybeSingle()
+    const existing = byPhone ?? byEmail
 
     if (existing) {
       if (!existing.is_active) {
@@ -90,13 +102,14 @@ export async function POST(request: NextRequest) {
         await sendEmail({
           to: existing.email,
           subject: carpenterLoginSubject(),
-          html: carpenterLoginHtml({ businessName: existing.business_name, token: existing.token }),
+          html: carpenterLoginHtml({ businessName: existing.business_name, token: existing.token, email: existing.email }),
           isTest: isTestName(existing.business_name),
         })
       }
       return NextResponse.json({
         ok: true,
         existing: true,
+        matchedOn: byPhone ? 'phone' : 'email',
         emailedTo: existing.email ? maskEmail(existing.email) : null,
       })
     }
@@ -133,6 +146,19 @@ export async function POST(request: NextRequest) {
         { error: error?.message ?? 'ההרשמה נכשלה' },
         { status: 500 }
       )
+    }
+
+    // The personal link, in their inbox. A failed send must not fail the signup:
+    // the row exists and the carpenter is about to be signed in on this device.
+    try {
+      await sendEmail({
+        to: email,
+        subject: carpenterWelcomeSubject(),
+        html: carpenterWelcomeHtml({ businessName, token: data.token, email }),
+        isTest: isTestName(businessName),
+      })
+    } catch (mailError) {
+      console.error('Welcome email failed:', mailError)
     }
 
     return NextResponse.json({ ok: true, token: data.token, existing: false }, { status: 201 })
