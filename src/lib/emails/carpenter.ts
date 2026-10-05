@@ -69,6 +69,28 @@ export function carpenterLoginHtml({ businessName, token }: { businessName: stri
     <p style="margin:14px 0 0;font-size:13px;color:#78716c">לא ביקשתם? אפשר להתעלם — בלי ללחוץ שום דבר לא קורה.</p>`)
 }
 
+// ---- welcome -----------------------------------------------------------------
+
+export function carpenterWelcomeSubject(): string {
+  return `ברוכים הבאים לשוק הנגרים · ${sentAt()}`
+}
+
+/**
+ * Sent the moment a carpentry registers. It is the first proof the address is
+ * real (a typo here means supplier confirmations would go nowhere), and it puts
+ * the personal link somewhere the carpenter can find it again.
+ */
+export function carpenterWelcomeHtml({ businessName, token }: { businessName: string; token: string }): string {
+  const link = `${siteUrl()}/carpenter/enter/${token}`
+  return shell(`
+    <div style="font:bold 20px ${FONT}">ברוכים הבאים, ${escapeHtml(businessName)}</div>
+    <p style="margin:12px 0 0">ההרשמה לשוק הנגרים הושלמה. זה הקישור האישי של הנגרייה: פותחים אותו בכל טלפון או מחשב ונכנסים, בלי סיסמה. כדאי לשמור את המייל הזה.</p>
+    ${button(link, 'כניסה לאתר')}
+    <p style="margin:12px 0 0;font-size:12px;color:#78716c">הכפתור לא מופיע? הקישור עצמו:<br>
+      <a href="${link}" dir="ltr" style="color:#047857;word-break:break-all">${link}</a></p>
+    <p style="margin:14px 0 0;font-size:13px;color:#78716c">לכתובת הזו יגיעו גם אישורי הספקים על כל הזמנה. לא נרשמתם? אפשר להתעלם מהמייל.</p>`)
+}
+
 // ---- order sent ------------------------------------------------------------
 
 export interface CarpenterOrderLine {

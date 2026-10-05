@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { TERMS_VERSION } from '@/lib/terms'
 import { isTestName, sendEmail } from '@/lib/email'
-import { carpenterLoginHtml, carpenterLoginSubject } from '@/lib/emails/carpenter'
+import { carpenterLoginHtml, carpenterLoginSubject, carpenterWelcomeHtml, carpenterWelcomeSubject } from '@/lib/emails/carpenter'
 
 /** "h****l@gmail.com" — enough to recognise your own address, not to read someone else's. */
 function maskEmail(email: string): string {
@@ -133,6 +133,19 @@ export async function POST(request: NextRequest) {
         { error: error?.message ?? 'ההרשמה נכשלה' },
         { status: 500 }
       )
+    }
+
+    // The personal link, in their inbox. A failed send must not fail the signup:
+    // the row exists and the carpenter is about to be signed in on this device.
+    try {
+      await sendEmail({
+        to: email,
+        subject: carpenterWelcomeSubject(),
+        html: carpenterWelcomeHtml({ businessName, token: data.token }),
+        isTest: isTestName(businessName),
+      })
+    } catch (mailError) {
+      console.error('Welcome email failed:', mailError)
     }
 
     return NextResponse.json({ ok: true, token: data.token, existing: false }, { status: 201 })

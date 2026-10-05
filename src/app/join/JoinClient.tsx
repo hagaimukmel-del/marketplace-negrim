@@ -87,8 +87,8 @@ export default function JoinClient() {
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5 pt-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] md:items-start md:gap-8">
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
         <section>
-          <div className="text-[15px] font-medium text-muted">הצטרפות לנגרים B2B</div>
-          <h1 className="m-0 mt-0.5 text-[28px] font-extrabold leading-tight text-navy text-balance md:text-[34px]">רכש הנגרייה שלך. בשליטה.</h1>
+          <div className="text-[15px] font-medium text-muted">שוק הנגרים</div>
+          <h1 className="m-0 mt-0.5 text-[28px] font-extrabold leading-tight text-navy text-balance md:text-[34px]">הרשמה חינם לנגריות</h1>
           <ul className="m-0 mt-3 grid list-none gap-1.5 p-0 text-[15px]">
             {BENEFITS.map((line) => (
               <li key={line} className="flex items-center gap-2">
@@ -118,7 +118,7 @@ export default function JoinClient() {
       <form onSubmit={submit} className="grid grid-cols-[minmax(0,1fr)] gap-3.5 rounded-2xl border border-hair bg-white p-4 md:p-5">
         <div>
           <h2 className="m-0 text-lg font-bold">נגרייה חדשה</h2>
-          <p className="m-0 mt-0.5 text-sm text-muted">פחות מדקה. אין סיסמה — הקישור האישי הוא החשבון.</p>
+          <p className="m-0 mt-0.5 text-sm text-muted">פחות מדקה, בלי סיסמה. הקישור האישי שלכם יישלח גם למייל.</p>
         </div>
         <Field label="שם הנגרייה" required autoFocus value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder="נגרות כהן ובניו" />
         <div className="grid grid-cols-[minmax(0,1fr)] gap-3.5 sm:grid-cols-2">
