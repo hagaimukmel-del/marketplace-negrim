@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { Check, FileText, Info, LayoutGrid, Plus, Search, Sparkles, Trash2, Truck, X } from 'lucide-react'
+import { Check, FileText, Info, LayoutGrid, Plus, Trash2, Truck, X } from 'lucide-react'
 import { useCart, type CartItem } from '@/lib/cart-context'
 import { money, packText, termsText } from '@/lib/app/format'
 import { sortedOffers, stepOf, suggestedOffer, type AppOffer, type AppProduct } from '@/lib/app/products'
@@ -10,8 +10,6 @@ import { VAT_RATE } from '@/lib/vat'
 import CategoryGlyph from '@/components/app/CategoryGlyph'
 import Stepper from '@/components/app/Stepper'
 import { AttentionLine } from '@/components/app/ui'
-import SearchInput from '@/app/(app)/order/search-input'
-import { useOpenAgent } from '@/components/chat/agent-context'
 
 interface Quote {
   products: AppProduct[]
@@ -82,7 +80,6 @@ function ConfirmEmailNotice({ email }: { email: string | null }) {
 
 export default function OrderView({ profile }: { profile: { address: string; city: string; hasContact: boolean; email: string | null; emailVerified: boolean } | null }) {
   const cart = useCart()
-  const openAgent = useOpenAgent()
   const [quote, setQuote] = useState<Quote | null>(null)
   const [address, setAddress] = useState(profile?.address ?? '')
   const [city, setCity] = useState(profile?.city ?? '')
@@ -128,19 +125,14 @@ export default function OrderView({ profile }: { profile: { address: string; cit
   if (cart.items.length === 0) {
     return (
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 pt-1">
-        <h1 className="m-0 text-2xl font-extrabold">הזמנה חדשה</h1>
+        <h1 className="m-0 text-2xl font-extrabold">העגלה</h1>
         <div className="rounded-xl border-[1.5px] border-dashed border-[#D9CFC1] p-3.5 text-sm text-muted">
-          <b className="block text-ink">ההזמנה ריקה</b>
-          מחפשים מוצרים? השתמש בחיפוש למטה או בדיוק בקטלוג.
+          <b className="block text-ink">העגלה ריקה</b>
+          מוסיפים מוצרים מהקטלוג, והם מחכים כאן עד שליחת ההזמנה לספק.
         </div>
-        <SearchInput onSearch={() => {}} loading={false} />
-        <div className="flex gap-2">
-          <button type="button" onClick={openAgent} className="inline-flex h-12 flex-1 items-center justify-center gap-1.5 rounded-[11px] bg-gradient-to-br from-purple-500 to-blue-600 font-bold text-white shadow-lg hover:shadow-xl transition-shadow">
-            <Sparkles size={18} />
-            סוכן חכם
-          </button>
-          <Link href="/app/catalog" className="inline-flex h-12 flex-1 items-center justify-center gap-1.5 rounded-[11px] border-[1.5px] border-hair bg-white font-bold text-navy">
-            <LayoutGrid size={18} /> קטלוג
+        <div className="flex">
+          <Link href="/app/catalog" className="inline-flex h-12 flex-1 items-center justify-center gap-1.5 rounded-[11px] bg-brand font-bold text-navy hover:bg-brand-hover">
+            <LayoutGrid size={18} /> לקטלוג
           </Link>
         </div>
       </div>
@@ -228,7 +220,7 @@ export default function OrderView({ profile }: { profile: { address: string; cit
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4 pb-28 pt-1 md:pb-0">
       <section>
-        <h1 className="m-0 text-2xl font-extrabold md:text-[28px]">ההזמנה שלך</h1>
+        <h1 className="m-0 text-2xl font-extrabold md:text-[28px]">העגלה שלך</h1>
         <div className="mt-1 flex flex-wrap items-baseline gap-2">
           <b className="tnum text-[28px] font-extrabold leading-tight">{money(total)}</b>
           <span className="text-sm text-muted">

@@ -26,7 +26,7 @@ and keep the carpenter informed. The marketplace never takes payment.
 CLAUDE.md §5 is binding. In short:
 - The supplier is the seller of record. Checkout ends at "order sent".
 - Status reflects fulfilment, never payment (`lib/order-status.ts` is the one vocabulary).
-- Only a signed-in or token-identified carpentry with `email_verified_at` set can create orders (`/api/orders`, `/api/carpenter/order/confirm`). No anonymous orders. Unconfirmed carpentries keep their cart; `/app/order` shows how to confirm.
+- Only a signed-in or token-identified carpentry with `email_verified_at` set can create orders (`/api/orders`, the only order-creating route). No anonymous orders. Unconfirmed carpentries keep their cart; `/app/order` shows how to confirm.
 - Amounts are snapshots. Commission is based on the supplier's **confirmed** amount.
 - One checkout becomes one order per supplier, sharing a `checkout_id`.
 - Email safety valves: names containing "ניסיון" and all of staging go to the test inbox.

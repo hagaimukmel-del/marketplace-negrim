@@ -62,6 +62,8 @@ export default function AppShell({
 
   const is = (href: string) => (href === '/app' ? pathname === '/app' : pathname.startsWith(href))
   const catalogActive = is('/app/catalog') || is('/app/product')
+  // Exact match: a prefix test would also light up on /app/orders
+  const cartActive = pathname === '/app/order'
 
   const openAgent = () => setIsOpen(true)
 
@@ -77,7 +79,7 @@ export default function AppShell({
         <nav className="grid gap-0.5" aria-label="ניווט ראשי">
           <SideLink href="/app" label="בית" active={is('/app')} icon={<Home size={19} />} />
           <SideLink href="/app/catalog" label="קטלוג" active={catalogActive} icon={<LayoutGrid size={19} />} />
-          <SideLink href="/app/order" label="הזמנה" active={is('/app/order')} icon={<ShoppingBag size={19} />} count={lines} />
+          <SideLink href="/app/order" label="עגלה" active={cartActive} icon={<ShoppingBag size={19} />} count={lines} />
           <button
             type="button"
             onClick={openAgent}
@@ -132,10 +134,10 @@ export default function AppShell({
             <ShoppingBag size={18} />
             {lines ? (
               <>
-                הזמנה · <span className="tnum">{lines}</span>
+                עגלה · <span className="tnum">{lines}</span>
               </>
             ) : (
-              'הזמנה חדשה'
+              'עגלה'
             )}
           </Link>
           {signedIn ? (
@@ -163,7 +165,8 @@ export default function AppShell({
         </main>
       </div>
 
-      {/* FAB Agent Button - Phone only */}
+      {/* FAB Agent Button - Phone only; kept off the cart so nothing sits over the send button */}
+      {!cartActive && (
       <button
         onClick={() => setIsOpen(true)}
         className="fixed bottom-24 start-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-blue-600 text-white shadow-[0_8px_24px_rgba(88,28,135,.4)] hover:shadow-[0_12px_32px_rgba(88,28,135,.5)] transition-shadow active:scale-95 md:hidden"
@@ -175,6 +178,7 @@ export default function AppShell({
         </svg>
         <span className="absolute text-lg">🧠</span>
       </button>
+      )}
 
       {/* Chat Modal */}
       <ChatContainer
@@ -190,7 +194,7 @@ export default function AppShell({
       >
         <BottomLink href="/app" label="בית" active={is('/app')} icon={<Home size={22} />} />
         <BottomLink href="/app/catalog" label="קטלוג" active={catalogActive} icon={<LayoutGrid size={22} />} />
-        <Link href="/app/order" aria-current={is('/app/order') ? 'page' : undefined} className="flex flex-col items-center gap-0.5 text-xs font-semibold text-navy">
+        <Link href="/app/order" aria-current={cartActive ? 'page' : undefined} className="flex flex-col items-center gap-0.5 text-xs font-semibold text-navy">
           <span className="relative -mt-5 grid h-[46px] w-[46px] place-items-center rounded-full bg-brand text-navy shadow-[0_6px_16px_rgba(242,154,18,.35)]">
             <ShoppingBag size={23} />
             {lines > 0 && (
@@ -199,7 +203,7 @@ export default function AppShell({
               </span>
             )}
           </span>
-          הזמנה
+          עגלה
         </Link>
         <BottomLink href="/app/orders" label="הזמנות" active={is('/app/orders')} icon={<ClipboardList size={22} />} dot={attention > 0} />
         <BottomLink href={signedIn ? '/app/account' : '/join'} label={signedIn ? 'אני' : 'כניסה'} active={is('/app/account')} icon={<UserRound size={22} />} />

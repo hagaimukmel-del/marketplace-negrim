@@ -68,7 +68,7 @@ export default async function CarpenterViewPage({
       icon: Store,
       note: 'עם כל המחירים — כמנהל אתה רואה אותם בלי להירשם',
     },
-    { href: '/app/order', label: 'הזמנה', icon: ShoppingCart, note: 'ריקה עד שמוסיפים משהו' },
+    { href: '/app/order', label: 'עגלה', icon: ShoppingCart, note: 'ריקה עד שמוסיפים משהו' },
     { href: '/app/orders', label: 'ההזמנות שלי', icon: ClipboardList, note: 'דורש קישור אישי' },
     { href: '/join', label: 'הרשמת נגרייה', icon: UserPlus, note: 'הטופס שנגר חדש ממלא' },
   ]
