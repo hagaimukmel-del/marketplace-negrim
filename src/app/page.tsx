@@ -1,10 +1,14 @@
 import { redirect } from 'next/navigation'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
+import Landing from './Landing'
+
+export const dynamic = 'force-dynamic'
 
 /**
- * A signed-in carpentry opens on its home screen; anyone else on the catalogue,
- * which is where a visitor can see what the site is before registering.
+ * A signed-in carpentry opens on its home screen; anyone else gets the landing
+ * page, which says what the site is before asking them to register.
  */
 export default async function Home() {
-  redirect((await getSessionCarpenter()) ? '/app' : '/app/catalog')
+  if (await getSessionCarpenter()) redirect('/app')
+  return <Landing />
 }
