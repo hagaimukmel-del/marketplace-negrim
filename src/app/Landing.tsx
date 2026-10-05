@@ -108,7 +108,7 @@ export default function Landing() {
           <div>
             <span className="inline-flex rounded-full bg-brand-soft px-3 py-1 text-sm font-bold text-attn">לנגריות בישראל</span>
             <h1 className="m-0 mt-4 text-[34px] font-extrabold leading-[1.15] tracking-tight text-navy text-balance md:text-[48px]">
-              מזמינים חומרים לנגרייה, ישירות מהספק
+              מזמינים חומרים לנגרייה, הכל במקום אחד
             </h1>
             <p className="m-0 mt-4 max-w-[520px] text-lg leading-relaxed text-muted">
               מוצאים את המוצר, שולחים הזמנת רכש, והספק מאשר, מספק ומוציא לכם חשבונית. בלי טלפונים ובלי הודעות שהולכות לאיבוד.
