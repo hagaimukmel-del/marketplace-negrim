@@ -30,6 +30,8 @@ export interface AppProduct {
   icon: string | null
   topId: string | null
   subId: string | null
+  /** The product's own description, when it has one. */
+  description: string | null
   offers: AppOffer[]
 }
 
