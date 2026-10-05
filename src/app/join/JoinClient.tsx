@@ -103,12 +103,13 @@ export default function JoinClient() {
 
         {existing !== null && (
           <div role="status" className="rounded-2xl border border-brand-line bg-brand-soft p-4 text-[#5B3A07]">
-            <p className="m-0 font-bold">הנגרייה כבר רשומה אצלנו</p>
+            <p className="m-0 font-bold">הטלפון או המייל האלה כבר רשומים אצלנו לנגרייה קיימת</p>
             <p className="m-0 mt-1 text-sm">
               {existing
                 ? `שלחנו קישור כניסה ל-${existing}. פתחו אותו במכשיר הזה ותהיו מחוברים.`
                 : 'אין מייל בפרטי הנגרייה, ולכן לא יכולנו לשלוח קישור. צרו קשר ונעזור.'}
             </p>
+            <p className="m-0 mt-1 text-sm">רוצים לרשום נגרייה נוספת? כל נגרייה נרשמת עם טלפון ומייל משלה.</p>
           </div>
         )}
 

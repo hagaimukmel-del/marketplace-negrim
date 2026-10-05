@@ -3,6 +3,7 @@ import 'server-only'
 import { siteUrl } from '../email'
 import { formatIls } from '../vat'
 import { emailLogo } from './brand'
+import { emailProof } from '../carpenter-auth'
 
 /**
  * The emails a carpenter gets: a way back in from another device, the order
@@ -52,14 +53,19 @@ function button(href: string, label: string): string {
 </table>`
 }
 
+/** The emailed way in. Opening it also proves the address is real (see enter route). */
+function enterLink(token: string, email: string): string {
+  return `${siteUrl()}/carpenter/enter/${token}?v=${emailProof(token, email)}`
+}
+
 // ---- login link ------------------------------------------------------------
 
 export function carpenterLoginSubject(): string {
   return `קישור כניסה לשוק הנגרים · ${sentAt()}`
 }
 
-export function carpenterLoginHtml({ businessName, token }: { businessName: string; token: string }): string {
-  const link = `${siteUrl()}/carpenter/enter/${token}`
+export function carpenterLoginHtml({ businessName, token, email }: { businessName: string; token: string; email: string }): string {
+  const link = enterLink(token, email)
   return shell(`
     <div style="font:bold 20px ${FONT}">כניסה לשוק הנגרים</div>
     <p style="margin:12px 0 0">ביקשתם קישור כניסה עבור <strong>${escapeHtml(businessName)}</strong>. הקישור מחבר את המכשיר שבו תפתחו אותו — טלפון או מחשב.</p>
@@ -80,12 +86,12 @@ export function carpenterWelcomeSubject(): string {
  * real (a typo here means supplier confirmations would go nowhere), and it puts
  * the personal link somewhere the carpenter can find it again.
  */
-export function carpenterWelcomeHtml({ businessName, token }: { businessName: string; token: string }): string {
-  const link = `${siteUrl()}/carpenter/enter/${token}`
+export function carpenterWelcomeHtml({ businessName, token, email }: { businessName: string; token: string; email: string }): string {
+  const link = enterLink(token, email)
   return shell(`
     <div style="font:bold 20px ${FONT}">ברוכים הבאים, ${escapeHtml(businessName)}</div>
-    <p style="margin:12px 0 0">ההרשמה לשוק הנגרים הושלמה. זה הקישור האישי של הנגרייה: פותחים אותו בכל טלפון או מחשב ונכנסים, בלי סיסמה. כדאי לשמור את המייל הזה.</p>
-    ${button(link, 'כניסה לאתר')}
+    <p style="margin:12px 0 0">ההרשמה לשוק הנגרים הושלמה. לחיצה על הכפתור מאשרת את המייל, ואחריה אפשר לשלוח הזמנות לספקים. זה גם הקישור האישי של הנגרייה: פותחים אותו בכל טלפון או מחשב ונכנסים, בלי סיסמה. כדאי לשמור את המייל הזה.</p>
+    ${button(link, 'אישור המייל וכניסה')}
     <p style="margin:12px 0 0;font-size:12px;color:#78716c">הכפתור לא מופיע? הקישור עצמו:<br>
       <a href="${link}" dir="ltr" style="color:#047857;word-break:break-all">${link}</a></p>
     <p style="margin:14px 0 0;font-size:13px;color:#78716c">לכתובת הזו יגיעו גם אישורי הספקים על כל הזמנה. לא נרשמתם? אפשר להתעלם מהמייל.</p>`)

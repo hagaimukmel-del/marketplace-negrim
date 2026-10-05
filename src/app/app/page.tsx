@@ -19,8 +19,8 @@ function nowMs(): number {
  * Home: calm control. Everything is read here; the view only adds what lives in
  * the browser — the order being put together.
  */
-export default async function AppHome() {
-  const carpenter = await getSessionCarpenter()
+export default async function AppHome({ searchParams }: { searchParams: Promise<{ verified?: string }> }) {
+  const [carpenter, { verified }] = await Promise.all([getSessionCarpenter(), searchParams])
   // Home is a carpentry's own screen; a visitor starts on the catalogue.
   if (!carpenter) redirect('/app/catalog')
 
@@ -36,7 +36,7 @@ export default async function AppHome() {
   const greeting = hour < 12 ? 'בוקר טוב' : hour < 17 ? 'צהריים טובים' : 'ערב טוב'
   const name = carpenter.contact_name?.trim().split(/\s+/)[0] || carpenter.business_name
 
-  return (
+  const view = (
     <HomeView
       greeting={`${greeting}, ${name}`}
       now={nowMs()}
@@ -45,5 +45,12 @@ export default async function AppHome() {
       categories={categories}
       minimums={Object.fromEntries((suppliers ?? []).map((s) => [s.id, { name: s.company_name, min: s.min_order_value_excl_vat == null ? null : Number(s.min_order_value_excl_vat) }]))}
     />
+  )
+  if (verified !== '1') return view
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
+      <p role="status" className="m-0 rounded-xl bg-ok-soft px-3.5 py-2.5 text-[15px] font-semibold text-ok-ink">המייל אושר. אפשר לשלוח הזמנות לספקים.</p>
+      {view}
+    </div>
   )
 }

@@ -10,12 +10,12 @@ export const dynamic = 'force-dynamic'
  */
 export default async function AppOrder() {
   const carpenter = await getSessionCarpenter()
-  let profile: { address: string; city: string; hasContact: boolean } | null = null
+  let profile: { address: string; city: string; hasContact: boolean; email: string | null; emailVerified: boolean } | null = null
 
   if (carpenter) {
     const { data } = await getSupabaseAdmin()
       .from('carpenters')
-      .select('address, city, email, phone')
+      .select('address, city, email, phone, email_verified_at')
       .eq('id', carpenter.id)
       .maybeSingle()
     const { data: lastOrder } = await getSupabaseAdmin()
@@ -30,6 +30,8 @@ export default async function AppOrder() {
       address: data?.address ?? lastOrder?.address ?? '',
       city: data?.city ?? lastOrder?.city ?? '',
       hasContact: Boolean(data?.email && data?.phone),
+      email: data?.email ?? null,
+      emailVerified: Boolean(data?.email_verified_at),
     }
   }
 
