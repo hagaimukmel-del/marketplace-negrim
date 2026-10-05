@@ -1,5 +1,5 @@
 # 1 · Public site & onboarding
-Verified: 2026-10-03
+Verified: 2026-10-05
 
 ## Purpose
 The front door: explains the marketplace, registers carpenters (free) and takes supplier
@@ -8,7 +8,7 @@ applications. A visitor can browse products without prices; prices appear after 
 ## Entry points
 | Route | What |
 |---|---|
-| `/` | Landing page |
+| `/` | Landing page (`app/Landing.tsx`, static, no DB read) for visitors; a signed-in carpenter is redirected to `/app`. Copy must stay within CLAUDE.md §0's "safe to advertise" list |
 | `/join` → `POST /api/join` | Carpenter registration. The only public endpoint that writes. Dedupes on the last 9 phone digits and returns the same personal link |
 | `/o/[token]` | A carpenter's personal link. The token **is** the identity; resolved on the server every time |
 | `/supplier/join` → `POST /api/supplier-join` | Supplier application; the operator approves it in `/admin/suppliers` |
@@ -16,7 +16,7 @@ applications. A visitor can browse products without prices; prices appear after 
 | `/auth/login`, `/auth/signup` | **Legacy** pages from an abandoned account model. Nothing links to them |
 
 ## Code
-`src/app/page.tsx`, `src/app/join/`, `src/app/o/[token]/`, `src/app/supplier/join/`,
+`src/app/page.tsx`, `src/app/Landing.tsx`, `src/app/join/`, `src/app/o/[token]/`, `src/app/supplier/join/`,
 `src/components/TermsGate.tsx`, `lib/carpenter-auth.ts`, `lib/carpenter-session.ts`,
 `lib/terms.ts`, `lib/regions.ts` (region picked at registration), emails in `lib/emails/carpenter.ts`
 and `lib/emails/supplier-application.ts`.
