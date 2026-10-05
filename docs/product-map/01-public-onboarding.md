@@ -36,4 +36,4 @@ acceptance columns.
 Live. Accessibility statement and terms review before a wide launch are open in `TODO.md`.
 
 ## Open tasks
-T-015
+T-015, T-020
