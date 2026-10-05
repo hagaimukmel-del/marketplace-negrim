@@ -13,12 +13,11 @@ request. Marketed publicly as "הסוכן של נגרים B2B" (see CLAUDE.md §
 | `POST /api/carpenter/search` | Runs the procurement agent on a message |
 | `GET /api/carpenter/previous-products` | "What did I order last time" |
 | `POST /api/carpenter/contact-supplier` | Stores a `supplier_contact_requests` row |
-| `POST /api/carpenter/order/confirm` | Order agent: pre-confirmation with live price, stock and lead time (`lib/order-agent.ts`) |
 | `/api/carpenter/documents/retrieve` | Product documents; requires a signed-in carpenter |
 
 ## Code
 `lib/procurement-agent.ts` (intent → search → response type: selection / clarification /
-comparison / order_confirmation / supplier_contact), `lib/order-agent.ts`, `components/chat/*`.
+comparison / order_confirmation / supplier_contact), `components/chat/*`. The agent adds to the cart and sends the carpenter to `/app/order`; it never creates orders itself.
 
 ## Data
 `products`, `supplier_offers`, `product_specifications`, `product_documents`,
