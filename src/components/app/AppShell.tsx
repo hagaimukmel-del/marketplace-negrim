@@ -134,6 +134,15 @@ export default function AppShell({
               className="h-11 w-full rounded-xl border-[1.5px] border-hair bg-white ps-11 pe-3.5 text-[15px] placeholder:text-faint"
             />
           </form>
+          {/* Searching and asking sit together: what the search bar can't find, the agent may */}
+          <button
+            type="button"
+            onClick={() => openAgent()}
+            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-[11px] border-[1.5px] border-purple-200 bg-white px-3.5 text-[15px] font-bold text-purple-700 hover:bg-purple-50"
+          >
+            <Sparkles size={18} />
+            שאל את הסוכן
+          </button>
           <span className="flex-1" />
           <Link href="/app/order" className="inline-flex h-11 items-center gap-2 rounded-[11px] bg-brand px-4 font-bold text-navy hover:bg-brand-hover">
             <ShoppingBag size={18} />
@@ -183,6 +192,18 @@ export default function AppShell({
         </svg>
         <span className="absolute text-lg">🧠</span>
       </button>
+      )}
+
+      {/* The same bubble on a wide screen, with its name, on the side away from the sidebar */}
+      {!cartActive && !isOpen && (
+        <button
+          type="button"
+          onClick={() => openAgent()}
+          className="fixed bottom-6 end-6 z-30 hidden h-14 items-center gap-2.5 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 pe-6 ps-5 text-[16px] font-bold text-white shadow-[0_8px_24px_rgba(88,28,135,.4)] transition-shadow hover:shadow-[0_12px_32px_rgba(88,28,135,.5)] active:scale-95 md:flex"
+        >
+          <Sparkles size={22} />
+          שאל את הסוכן
+        </button>
       )}
 
       {/* Chat Modal */}

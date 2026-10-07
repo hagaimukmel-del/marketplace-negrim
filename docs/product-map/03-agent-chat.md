@@ -9,7 +9,7 @@ supplier ("שאלה לספק"). Marketed publicly as "הסוכן של נגרים
 ## Entry points
 | Where | What |
 |---|---|
-| Chat panel in `AppShell` (desktop sidebar; floating button on mobile) | `components/chat/ChatContainer.tsx`, `ChatMessage.tsx` |
+| Chat panel in `AppShell` | `components/chat/ChatContainer.tsx`, `ChatMessage.tsx`. Opened from a floating bubble (phone: round; desktop: "שאל את הסוכן" pill; both hidden on the cart), a button beside the desktop search bar, and the sidebar |
 | `POST /api/carpenter/search` | Runs the procurement agent on a message |
 | `GET /api/carpenter/previous-products` | "What did I order last time" |
 | `POST /api/carpenter/contact-supplier` | "שאלה לספק": stores a `supplier_contact_requests` row and emails the supplier (approved suppliers only, 10 per carpenter per hour, in memory) |
