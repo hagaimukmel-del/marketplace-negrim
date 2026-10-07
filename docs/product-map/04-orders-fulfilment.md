@@ -13,10 +13,13 @@ and keep the carpenter informed. The marketplace never takes payment.
 | `/supplier` → Orders tab (`/api/supplier/orders`) | Supplier sees and updates their orders |
 | `/admin/orders` (`/api/admin/orders/[id]`) | Operator view and override |
 | `/app/orders/[id]` | Carpenter tracking |
+| `/doc/order/[id]` | The order as a printable "הזמנת רכש" (print / save as PDF), carpenter-scoped |
+| `/doc/quote` | The cart as a "הצעת מחיר", one A4 page per supplier, current prices, not stored |
 
 ## Code
 `lib/notify-order.ts`, `lib/emails/new-order.ts`, `lib/emails/carpenter.ts`,
-`lib/supplier-confirm.ts`, `lib/supplier-link.ts`, `lib/order-status.ts`, `lib/vat.ts`.
+`lib/supplier-confirm.ts`, `lib/supplier-link.ts`, `lib/order-status.ts`, `lib/vat.ts`,
+`components/docs/PurchaseDocument.tsx` (the one quote / purchase-order layout), `app/doc/*`, `lib/app/doc-buyer.ts`.
 
 ## Data
 `orders` (`supplier_id`, `checkout_id`, `vat_rate`, commission snapshots), `order_items`
@@ -29,10 +32,11 @@ CLAUDE.md §5 is binding. In short:
 - Only a signed-in or token-identified carpentry with `email_verified_at` set can create orders (`/api/orders`, the only order-creating route). No anonymous orders. Unconfirmed carpentries keep their cart; `/app/order` shows how to confirm.
 - Amounts are snapshots. Commission is based on the supplier's **confirmed** amount.
 - One checkout becomes one order per supplier, sharing a `checkout_id`.
+- Quote and order files are titled הצעת מחיר / הזמנת רכש and say they are not a חשבונית; VAT on them is indicative.
 - Email safety valves: names containing "ניסיון" and all of staging go to the test inbox.
 
 ## Status
 Live. The operator gets no per-order email, by design.
 
 ## Open tasks
-T-012
+T-012, T-022

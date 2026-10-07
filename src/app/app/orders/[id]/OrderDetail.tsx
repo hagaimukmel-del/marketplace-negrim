@@ -224,6 +224,12 @@ export default function OrderDetail({ order, siblings, now }: { order: AppOrder;
           <span>{order.notes}</span>
         </Row>
       )}
+      <Row icon={<FileText size={18} />}>
+        <small className="text-[12.5px] text-muted">קובץ</small>
+        <Link href={`/doc/order/${order.id}`} className="font-semibold text-brand-ink">
+          הזמנת רכש להדפסה או PDF
+        </Link>
+      </Row>
       {siblings.length > 0 && (
         <Row icon={<ClipboardList size={18} />}>
           <small className="text-[12.5px] text-muted">נשלחה יחד עם</small>

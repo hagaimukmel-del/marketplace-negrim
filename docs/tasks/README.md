@@ -52,10 +52,11 @@ python .claude/skills/product-map/scripts/task_index.py
 ## Index
 
 <!-- INDEX:START -->
-20 open of 20.
+18 open of 22.
 
 | ID | Pri | Status | Type | Area | Title | Blocked by |
 |---|---|---|---|---|---|---|
+| [T-022](T-022.md) | P2 | in-progress | future | 04-orders-fulfilment | Purchase order and price quote as a file, per supplier | T-007 (agent tool only) |
 | [T-002](T-002.md) | P0 | open | promise-gap | 05-catalogue-pricing | Onboard a second live supplier |  |
 | [T-009](T-009.md) | P0 | open | ops | 10-platform | Rotate the staging service_role key |  |
 | [T-001](T-001.md) | P1 | open | promise-gap | 03-agent-chat | Voice ordering in under a minute |  |
@@ -65,16 +66,16 @@ python .claude/skills/product-map/scripts/task_index.py
 | [T-004](T-004.md) | P2 | open | incomplete | 03-agent-chat | Agent: comparison answer | T-002 |
 | [T-005](T-005.md) | P2 | open | promise-gap | 05-catalogue-pricing | Real stock availability |  |
 | [T-007](T-007.md) | P2 | open | decision | 03-agent-chat | Decide: keyword agent vs LLM |  |
-| [T-010](T-010.md) | P2 | done | incomplete | 03-agent-chat | "פנה לספק" should notify the supplier | T-008 |
 | [T-014](T-014.md) | P2 | open | debt | 05-catalogue-pricing | Supplier SKU, brand and mpn data |  |
 | [T-021](T-021.md) | P2 | open | debt | 07-admin-console | Admin supplier-document upload always fails |  |
 | [T-013](T-013.md) | P3 | open | debt | 05-catalogue-pricing | Product images: rehost from Google Drive |  |
 | [T-015](T-015.md) | P3 | open | debt | 01-public-onboarding | Delete legacy /auth/login and /auth/signup |  |
 | [T-016](T-016.md) | P3 | open | debt | 10-platform | Lint errors |  |
 | [T-017](T-017.md) | P3 | open | incomplete | 03-agent-chat | Product documents visible to all carpenters |  |
-| [T-018](T-018.md) | P3 | done | debt | 02-carpenter-app | Legacy /order search page | T-001 |
 | [T-019](T-019.md) | P3 | open | decision | 10-platform | CLAUDE.md rules vs reality: Zod, @supabase/ssr, Server Components |  |
-| [T-020](T-020.md) | P2 | done | future | 01-public-onboarding | Email the account owner when a new device signs in |  |
-| [T-008](T-008.md) | P0 | done | ops | 03-agent-chat | Apply migration supplier_contact_requests |  |
 | [T-011](T-011.md) | P1 | blocked | ops | 03-agent-chat | End-to-end test of the agent chat on staging | env files (work PC) |
+| [T-008](T-008.md) | P0 | done | ops | 03-agent-chat | Apply migration supplier_contact_requests |  |
+| [T-010](T-010.md) | P2 | done | incomplete | 03-agent-chat | "פנה לספק" should notify the supplier | T-008 |
+| [T-020](T-020.md) | P2 | done | future | 01-public-onboarding | Email the account owner when a new device signs in |  |
+| [T-018](T-018.md) | P3 | done | debt | 02-carpenter-app | Legacy /order search page | T-001 |
 <!-- INDEX:END -->
