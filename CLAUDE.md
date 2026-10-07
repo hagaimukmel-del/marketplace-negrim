@@ -25,7 +25,8 @@ today, and nothing more:
 - A catalogue that today is mostly adhesives and finishing.
 
 Supplier comparison exists on the product page but stays dormant until a second supplier is live.
-The agent is **keyword matching, not an LLM**, so don't call it AI in copy or UI. Everything
+The agent runs on Claude (Sonnet 5.5, chosen 2026-10-07) when `ANTHROPIC_API_KEY` is set, and falls back
+to keyword matching without it; still don't call it AI in copy or UI until the owner decides. Everything
 promised but not built is tracked as a `promise-gap` task (see §7). Move a capability into the
 list above only after it passes `nagarim-smoke-test` on staging.
 
@@ -130,7 +131,8 @@ Last verified 2026-10-03 by running the checks, not from memory. Re-verify befor
 - **המציאון** (`/app/metzion`, `lib/metzion.ts`): carpenter-to-carpenter listings; the deal
   happens directly between carpenters, the platform only connects them (spec in `TODO.md`).
 - **Agent chat** (`components/chat`, `lib/procurement-agent.ts`, `/api/carpenter/search`): a
-  Hebrew search assistant. **No LLM.** Intent parsing is keyword matching (see its `TODO`).
+  Hebrew assistant. With `ANTHROPIC_API_KEY` it is Claude with site-only tools (`lib/agent/llm-agent.ts`,
+  `/api/carpenter/agent`); without it, keyword matching (`procurement-agent.ts`).
   "פנה לספק" writes `supplier_contact_requests` (migration not applied yet, see `HANDOFF.md`)
   and does not email the supplier.
 - Product knowledge and documents (`product_specifications`, supplier/product documents in

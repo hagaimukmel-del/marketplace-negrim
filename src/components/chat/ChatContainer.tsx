@@ -215,6 +215,30 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
         return
       }
 
+      // The conversational agent answers when it is configured; otherwise the
+      // shortcuts and keyword search below answer, as before
+      const history = [...messages, userMessage]
+        .filter((m) => m.content.trim())
+        .map((m) => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }))
+      const agentResponse = await fetch('/api/carpenter/agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: history }),
+      }).catch(() => null)
+      if (agentResponse?.ok) {
+        const reply = (await agentResponse.json()) as { fallback?: boolean; message?: string; actions?: ActionButton[] }
+        if (!reply.fallback && reply.message) {
+          say(reply.message, reply.actions?.length ? reply.actions : undefined)
+          return
+        }
+      } else if (agentResponse?.status === 429) {
+        const { error } = (await agentResponse.json().catch(() => ({}))) as { error?: string }
+        if (error) {
+          say(error, [{ label: 'לקטלוג', action: 'open-page', value: '/app/catalog' }])
+          return
+        }
+      }
+
       if (PREVIOUS_PRODUCTS.test(userMessageText)) {
         const prevResponse = await fetch('/api/carpenter/previous-products')
         if (prevResponse.ok) {
@@ -366,6 +390,11 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
                 onOpenPage={handleOpenPage}
               />
             ))
+          )}
+          {isLoading && (
+            <div className="flex justify-start" aria-live="polite">
+              <div className="rounded-2xl bg-slate-100 px-4 py-2 text-sm text-slate-500">כותב תשובה...</div>
+            </div>
           )}
           <div ref={messagesEndRef} />
         </div>
