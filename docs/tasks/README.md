@@ -64,7 +64,7 @@ python .claude/skills/product-map/scripts/task_index.py
 | [T-012](T-012.md) | P1 | open | debt | 10-platform | Test data seeded into production by migrations |  |
 | [T-004](T-004.md) | P2 | open | incomplete | 03-agent-chat | Agent: comparison answer | T-002 |
 | [T-005](T-005.md) | P2 | open | promise-gap | 05-catalogue-pricing | Real stock availability |  |
-| [T-007](T-007.md) | P2 | open | decision | 03-agent-chat | Decide: keyword agent vs LLM |  |
+| [T-007](T-007.md) | P2 | done | decision | 03-agent-chat | Decide: keyword agent vs LLM |  |
 | [T-010](T-010.md) | P2 | done | incomplete | 03-agent-chat | "פנה לספק" should notify the supplier | T-008 |
 | [T-014](T-014.md) | P2 | open | debt | 05-catalogue-pricing | Supplier SKU, brand and mpn data |  |
 | [T-021](T-021.md) | P2 | open | debt | 07-admin-console | Admin supplier-document upload always fails |  |

@@ -10,6 +10,7 @@ const config = {
   join: { maxAttempts: 3, windowMs: 60 * 60 * 1000 }, // 3 attempts per hour, per phone
   joinIp: { maxAttempts: 10, windowMs: 60 * 60 * 1000 }, // 10 sign-ups per hour, per network
   supplierQuestion: { maxAttempts: 10, windowMs: 60 * 60 * 1000 }, // 10 questions per hour, per carpenter
+  agentChat: { maxAttempts: 80, windowMs: 24 * 60 * 60 * 1000 }, // 80 agent messages per day, per carpenter (caps model cost)
 }
 
 // In-memory store for rate limiting (will reset on server restart)

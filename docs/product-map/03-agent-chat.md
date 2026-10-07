@@ -10,7 +10,8 @@ supplier ("שאלה לספק"). Marketed publicly as "הסוכן של נגרים
 | Where | What |
 |---|---|
 | Chat panel in `AppShell` | `components/chat/ChatContainer.tsx`, `ChatMessage.tsx`. Opened from a floating bubble (phone: round; desktop: "שאל את הסוכן" pill; both hidden on the cart), a button beside the desktop search bar, and the sidebar |
-| `POST /api/carpenter/search` | Runs the procurement agent on a message |
+| `POST /api/carpenter/agent` | The conversational agent (Claude). Answers `{fallback:true}` without `ANTHROPIC_API_KEY` or on a model error, and the chat then uses search |
+| `POST /api/carpenter/search` | Runs the keyword procurement agent on a message |
 | `GET /api/carpenter/previous-products` | "What did I order last time" |
 | `POST /api/carpenter/contact-supplier` | "שאלה לספק": stores a `supplier_contact_requests` row and emails the supplier (approved suppliers only, 10 per carpenter per hour, in memory) |
 | `/api/carpenter/documents/retrieve` | Product documents; requires a signed-in carpenter |
@@ -39,7 +40,12 @@ the Vercel logs; messages are cut at 300 characters.
 `supplier_contact_requests`.
 
 ## Rules & invariants
-- **No LLM.** Intent parsing is keyword matching. Don't call it AI in UI or copy until that changes.
+- **Two engines.** With `ANTHROPIC_API_KEY`, `lib/agent/llm-agent.ts`: Claude (`AGENT_MODEL`, default
+  `claude-sonnet-5-5`, the owner's choice on 07.10) with read-only tools over the catalogue, categories and the
+  carpentry's own orders, plus `show_buttons`. Buttons are built on the server from the database, so a price on a
+  button is the catalogue's. It never sends orders, never sees the web, 80 messages per carpentry per day (in
+  memory). One `agent.llm` log line per answer with tokens and tools. Without the key: keyword matching as below.
+- Don't call it AI in UI or copy until the owner decides to.
 - Prices shown by the agent must match the catalogue, per base unit (a bug once showed ₪24/kg as ₪0.96).
 - Answers come only from the catalogue, never from the internet (TODO.md "יועץ").
 - Never show stock: `stock_qty` is a placeholder on synced rows, so the agent has no "במלאי"/"אזל".
@@ -53,6 +59,8 @@ run on 50 phrases over the staging catalogue (fixes: "KS351" without a space, He
 the empty "לא מצאתי" answer, the result count). "שאלה לספק" was tested by the owner on staging on 07.10; its
 table is on both databases. Missing: voice, supplier preference and quantity
 in one sentence, and an agent-level comparison answer (the `comparison` type is declared but not built).
+
+With the key set, the chat's shortcuts (past products, orders, page names) are answered by the model too.
 
 ## Open tasks
 T-001, T-003, T-004, T-007, T-011, T-017
