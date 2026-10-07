@@ -50,9 +50,9 @@ the Vercel logs; messages are cut at 300 characters.
 Partial. Search, option selection, add-to-cart and the product-page link were tested by the owner
 on the staging preview on 05.10 ("צריך אקרילי לבן" → found, added to cart). On 07.10 the agent was
 run on 50 phrases over the staging catalogue (fixes: "KS351" without a space, Hebrew brand names,
-the empty "לא מצאתי" answer, the result count). "שאלה לספק" works on staging; production needs
-the `supplier_contact_requests` migration (T-008). Missing: voice, supplier preference and quantity
+the empty "לא מצאתי" answer, the result count). "שאלה לספק" was tested by the owner on staging on 07.10; its
+table is on both databases. Missing: voice, supplier preference and quantity
 in one sentence, and an agent-level comparison answer (the `comparison` type is declared but not built).
 
 ## Open tasks
-T-001, T-003, T-004, T-007, T-008, T-011, T-017
+T-001, T-003, T-004, T-007, T-011, T-017
