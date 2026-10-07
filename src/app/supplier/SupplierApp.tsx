@@ -7,7 +7,7 @@ import ProductsTab from './tabs/ProductsTab'
 import BusinessTab from './tabs/BusinessTab'
 import TermsTab from './tabs/TermsTab'
 import UploadDocuments from './UploadDocuments'
-import type { CatalogPick, CategoryOption, ProductItem, SupplierOrder, SupplierProfile, Tab } from './types'
+import type { CatalogPick, CategoryOption, ProductItem, SupplierOrder, SupplierProfile, SupplierQuestion, Tab } from './types'
 
 export type Notify = (text: string, kind?: 'ok' | 'error') => void
 
@@ -92,6 +92,7 @@ export default function SupplierApp({
   profile,
   products,
   orders,
+  questions,
   categories,
   catalog,
 }: {
@@ -99,6 +100,7 @@ export default function SupplierApp({
   profile: SupplierProfile
   products: ProductItem[]
   orders: SupplierOrder[]
+  questions: SupplierQuestion[]
   categories: CategoryOption[]
   catalog: CatalogPick[]
 }) {
@@ -187,7 +189,7 @@ export default function SupplierApp({
       </nav>
 
       <div>
-        {tab === 'orders' && <OrdersTab orders={orders} notify={notify} />}
+        {tab === 'orders' && <OrdersTab orders={orders} questions={questions} notify={notify} />}
         {tab === 'products' && (
           <ProductsTab products={products} categories={categories} catalog={catalog} notify={notify} />
         )}

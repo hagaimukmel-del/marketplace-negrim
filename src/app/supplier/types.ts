@@ -90,6 +90,17 @@ export interface OrderLine {
   lineTotal: number
 }
 
+/** A carpenter's question from "שאלה לספק" in the agent chat. */
+export interface SupplierQuestion {
+  id: string
+  createdAt: string
+  carpenter: string
+  contactName: string | null
+  phone: string | null
+  productName: string | null
+  message: string
+}
+
 export interface SupplierOrder {
   id: string
   orderNumber: string

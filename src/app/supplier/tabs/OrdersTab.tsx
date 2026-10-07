@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Check, MapPin, MessageCircle, Phone, Send, PackageCheck, Inbox } from 'lucide-react'
 import { formatIls, withVat } from '@/lib/vat'
 import { statusInfo } from '@/lib/order-status'
-import { callApi, jsonInit, whatsappLink, type SupplierOrder } from '../types'
+import { callApi, jsonInit, whatsappLink, type SupplierOrder, type SupplierQuestion } from '../types'
 import type { Notify } from '../SupplierApp'
 
 type Filter = 'pending' | 'active' | 'done' | 'all'
@@ -276,7 +276,55 @@ const DONE_MESSAGE: Record<Action, string> = {
  * Orders carpenters sent to this supplier — incoming, not placed by them.
  * Waiting ones first, because that is the only part of the screen with work on it.
  */
-export default function OrdersTab({ orders, notify }: { orders: SupplierOrder[]; notify: Notify }) {
+/**
+ * Questions carpenters sent from the agent chat. Each one was also emailed;
+ * the answer goes back directly, by phone or WhatsApp.
+ */
+function Questions({ questions }: { questions: SupplierQuestion[] }) {
+  if (questions.length === 0) return null
+  return (
+    <section className="rounded-xl border border-stone-200 bg-white p-4">
+      <h2 className="font-bold text-stone-900">שאלות מנגריות</h2>
+      <ul className="mt-2 divide-y divide-stone-100">
+        {questions.map((q) => {
+          const whatsapp = whatsappLink(q.phone, q.productName ? `שלום, לגבי השאלה שלך על ${q.productName} בשוק הנגרים` : undefined)
+          return (
+            <li key={q.id} className="py-3">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="font-semibold text-stone-900">{q.carpenter}</span>
+                <span className="tnum shrink-0 text-xs text-stone-500">{formatDate(q.createdAt)}</span>
+              </div>
+              {q.productName && <p className="text-sm text-stone-600">על {q.productName}</p>}
+              <p className="mt-1 whitespace-pre-wrap text-sm text-stone-800">{q.message}</p>
+              {q.phone && (
+                <div className="mt-2 flex gap-2">
+                  <a href={`tel:${q.phone}`} className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 px-3 py-1.5 text-sm font-semibold text-stone-800">
+                    <Phone size={15} /> {q.contactName ?? q.phone}
+                  </a>
+                  {whatsapp && (
+                    <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 px-3 py-1.5 text-sm font-semibold text-emerald-800">
+                      <MessageCircle size={15} /> וואטסאפ
+                    </a>
+                  )}
+                </div>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
+}
+
+export default function OrdersTab({
+  orders,
+  questions,
+  notify,
+}: {
+  orders: SupplierOrder[]
+  questions: SupplierQuestion[]
+  notify: Notify
+}) {
   const router = useRouter()
   const hasPending = orders.some((order) => order.status === 'pending')
   const [filter, setFilter] = useState<Filter>(hasPending ? 'pending' : 'all')
@@ -309,6 +357,8 @@ export default function OrdersTab({ orders, notify }: { orders: SupplierOrder[];
 
   return (
     <div className="space-y-3">
+      <Questions questions={questions} />
+
       <div className="-mx-4 overflow-x-auto px-4">
         <div className="flex gap-2">
           {FILTERS.map((item) => {

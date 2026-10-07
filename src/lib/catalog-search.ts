@@ -18,13 +18,23 @@ const SYNONYM_GROUPS: string[][] = [
   ['בורג', 'ברג', 'screw'],
   ['מסילה', 'מסיל', 'slide'],
   ['מגירה', 'drawer'],
-  ['סיליקון', 'silicone'],
   ['מדלל', 'טינר', 'thinner'],
   ['ניקוי', 'מנקה', 'קלינר', 'cleaner'],
   ['פוליאוריתן', 'פוליאוריטן', 'pu'],
+  ['אקרילי', 'אקריל', 'acrylic'],
+  ['סיליקון', 'סיליקונ', 'silicone'],
+  // Brands as carpenters say them in Hebrew
   ['בלום', 'blum'],
   ['הטיש', 'hettich'],
   ['גראס', 'grass'],
+  ['טייטבונד', 'טיטבונד', 'titebond'],
+  ['גובט', 'יובט', 'jowat'],
+  ['קלייבריט', 'קליברייט', 'קלייברייט', 'kleiberit'],
+  ['הנקל', 'henkel'],
+  ['ריפה', 'riepe'],
+  ['דנלופ', 'dunlop'],
+  ['רהאו', 'rehau'],
+  ['לייץ', 'leitz'],
 ]
 
 /** Words that say what someone wants, not what they want. */
@@ -66,6 +76,9 @@ function variantsOf(token: string): string[] {
     if (form.length >= 5 && (form.endsWith('ימ') || form.endsWith('ות'))) forms.add(form.slice(0, -2))
   }
   for (const form of [...forms]) for (const synonym of SYNONYMS.get(form) ?? []) forms.add(synonym)
+  // A model number typed without its space, "ks351", also finds "KS 351"
+  const glued = token.match(/^([a-z]+)(\d[\d.]*)$/)
+  if (glued) forms.add(`${glued[1]} ${glued[2]}`)
   return [...forms]
 }
 

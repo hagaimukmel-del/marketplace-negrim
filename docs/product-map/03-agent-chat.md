@@ -1,10 +1,10 @@
 # 3 · Agent chat (search assistant)
-Verified: 2026-10-05
+Verified: 2026-10-07
 
 ## Purpose
 A Hebrew chat inside the carpenter app: the carpenter writes what they need, the assistant finds
-products, shows the supplier price excl. VAT, adds to the cart, and can open a "contact supplier"
-request. Marketed publicly as "הסוכן של נגרים B2B" (see CLAUDE.md §0 for what may be claimed).
+products, shows the supplier price excl. VAT, adds to the cart, and passes a question to the
+supplier ("שאלה לספק"). Marketed publicly as "הסוכן של נגרים B2B" (see CLAUDE.md §0 for what may be claimed).
 
 ## Entry points
 | Where | What |
@@ -12,7 +12,7 @@ request. Marketed publicly as "הסוכן של נגרים B2B" (see CLAUDE.md §
 | Chat panel in `AppShell` (desktop sidebar; floating button on mobile) | `components/chat/ChatContainer.tsx`, `ChatMessage.tsx` |
 | `POST /api/carpenter/search` | Runs the procurement agent on a message |
 | `GET /api/carpenter/previous-products` | "What did I order last time" |
-| `POST /api/carpenter/contact-supplier` | Stores a `supplier_contact_requests` row |
+| `POST /api/carpenter/contact-supplier` | "שאלה לספק": stores a `supplier_contact_requests` row and emails the supplier (approved suppliers only, 10 per carpenter per hour, in memory) |
 | `/api/carpenter/documents/retrieve` | Product documents; requires a signed-in carpenter |
 
 ## Code
@@ -23,6 +23,11 @@ catalogue search bar uses (Hebrew normalization, prefixes, plurals, a seed synon
 live products only. The catalogue results page has "שאל את הסוכן" (`AskAgentButton`, which opens
 the chat already asking the query), and every agent answer with results has "כל התוצאות בקטלוג". A single match also gets "לדף המוצר".
 A signed-out visitor who asks the chat gets an invitation to /join instead of the 401.
+A single match (or a chosen option) also gets "שאלה לספק": the chat asks for the question, the next
+message goes to that supplier instead of search ("ביטול" cancels), and the supplier gets it by email
+with the carpenter's phone, WhatsApp and, once verified, their email as reply-to. It also lists in the
+supplier console's orders tab. A search with no match says so and offers the catalogue; a partial
+match says it is the closest, not a match.
 Before searching, the chat answers three narrow shortcuts itself (`ChatContainer.tsx`): "בפעם שעברה"
 lists past products with links, "ההזמנות שלי" lists orders with Hebrew statuses, and a short
 "קח אותי ל..." / one-word page name opens that page. Anything else, "הזמנה של דבק" included, is a
@@ -43,9 +48,11 @@ the Vercel logs; messages are cut at 300 characters.
 
 ## Status
 Partial. Search, option selection, add-to-cart and the product-page link were tested by the owner
-on the staging preview on 05.10 ("צריך אקרילי לבן" → found, added to cart). Missing: voice, supplier preference and quantity in one sentence, an
-agent-level comparison answer (the `comparison` type is declared but not built), and emailing
-the supplier on "פנה לספק".
+on the staging preview on 05.10 ("צריך אקרילי לבן" → found, added to cart). On 07.10 the agent was
+run on 50 phrases over the staging catalogue (fixes: "KS351" without a space, Hebrew brand names,
+the empty "לא מצאתי" answer, the result count). "שאלה לספק" works on staging; production needs
+the `supplier_contact_requests` migration (T-008). Missing: voice, supplier preference and quantity
+in one sentence, and an agent-level comparison answer (the `comparison` type is declared but not built).
 
 ## Open tasks
-T-001, T-003, T-004, T-007, T-008, T-010, T-011, T-017
+T-001, T-003, T-004, T-007, T-008, T-011, T-017
