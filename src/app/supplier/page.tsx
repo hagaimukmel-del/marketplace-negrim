@@ -9,6 +9,7 @@ import {
   type ProductItem,
   type SupplierOrder,
   type Tab,
+  type SupplierQuestion,
 } from './types'
 
 export const dynamic = 'force-dynamic'
@@ -85,7 +86,7 @@ export default async function SupplierHome({
   const { tab } = await searchParams
   const supabase = getSupabaseAdmin()
 
-  const [{ data: offers }, { data: lines }, { data: categories }, { data: catalogRows }] = await Promise.all([
+  const [{ data: offers }, { data: lines }, { data: categories }, { data: catalogRows }, { data: questionRows }] = await Promise.all([
     supabase
       .from('supplier_offers')
       .select(
@@ -115,6 +116,13 @@ export default async function SupplierHome({
       .eq('is_active', true)
       .order('name_he')
       .limit(3000),
+    // Questions carpenters sent from the agent chat, newest first
+    supabase
+      .from('supplier_contact_requests')
+      .select('id, created_at, message, carpenters(business_name, contact_name, phone), products(name_he)')
+      .eq('supplier_id', supplier.id)
+      .order('created_at', { ascending: false })
+      .limit(20),
   ])
 
   const myLines = (lines ?? []) as unknown as RawLine[]
@@ -235,6 +243,16 @@ export default async function SupplierHome({
       imageUrl: row.image_url,
     }))
 
+  const questions: SupplierQuestion[] = (questionRows ?? []).map((row) => ({
+    id: row.id,
+    createdAt: row.created_at,
+    carpenter: row.carpenters?.business_name ?? 'נגרייה',
+    contactName: row.carpenters?.contact_name ?? null,
+    phone: row.carpenters?.phone ?? null,
+    productName: row.products?.name_he ?? null,
+    message: row.message,
+  }))
+
   const waiting = orders.filter((order) => order.status === 'pending').length
   const initialTab: Tab = isTab(tab) ? tab : waiting > 0 ? 'orders' : 'products'
 
@@ -260,6 +278,7 @@ export default async function SupplierHome({
       }}
       products={products}
       orders={orders}
+      questions={questions}
       categories={(categories ?? []) as CategoryOption[]}
       catalog={catalog}
     />

@@ -67,12 +67,15 @@ export async function sendEmail({
   subject,
   html,
   isTest = false,
+  replyTo,
 }: {
   to: string
   subject: string
   html: string
   /** Redirect to EMAIL_TEST_RECIPIENT. Only for businesses marked as tests. */
   isTest?: boolean
+  /** Where "reply" goes when it should reach someone other than the operator. */
+  replyTo?: string | null
 }): Promise<SendResult> {
   const apiKey = process.env.RESEND_API_KEY
   // In the staging environment every business is a test business, whatever its
@@ -106,7 +109,7 @@ export async function sendEmail({
         subject,
         html: body,
         // A supplier hitting reply should reach a person, not a void.
-        ...(process.env.EMAIL_REPLY_TO ? { reply_to: process.env.EMAIL_REPLY_TO } : {}),
+        ...(replyTo || process.env.EMAIL_REPLY_TO ? { reply_to: replyTo || process.env.EMAIL_REPLY_TO } : {}),
       }),
     })
 

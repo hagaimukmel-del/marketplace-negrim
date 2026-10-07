@@ -1,5 +1,5 @@
 # 6 · Supplier console (`/supplier`)
-Verified: 2026-10-04
+Verified: 2026-10-07
 
 ## Purpose
 Self-service for an approved supplier: their orders, price list, products, business details,
@@ -8,7 +8,7 @@ terms and documents. No password needed.
 ## Entry points
 | Route | What |
 |---|---|
-| `/supplier` | Console with tabs: Orders, Products, Documents (דפים טכניים), Business, Terms (`src/app/supplier/tabs/*`, `UploadDocuments.tsx`) |
+| `/supplier` | Console with tabs: Orders, Products, Documents (דפים טכניים), Business, Terms (`src/app/supplier/tabs/*`, `UploadDocuments.tsx`). The Orders tab opens with carpenters' questions from the agent chat (last 20, `supplier_contact_requests`) |
 | `POST /api/supplier/documents/upload` | Documents tab: attach a spec sheet/guide to a product the supplier has an offer on (`product_documents`, bucket `product_documents`) |
 | `/supplier/enter` + `/api/supplier/session` | Link → cookie session (six months); approval is re-checked on every request |
 | `/api/supplier/login-link` | Re-sends the link to the address on file only |
@@ -18,11 +18,11 @@ terms and documents. No password needed.
 
 ## Code
 `src/app/supplier/**`, `lib/supplier-auth.ts`, `lib/supplier-link.ts`, `lib/price-import*.ts`,
-`src/app/supplier/UploadDocuments.tsx`, emails `supplier-approved.ts`, `supplier-login-link.ts`.
+`src/app/supplier/UploadDocuments.tsx`, emails `supplier-approved.ts`, `supplier-login-link.ts`, `supplier-question.ts`.
 
 ## Data
 `suppliers` (status, token, terms such as MOQ, payment terms, logo), `supplier_offers`,
-`import_batches`, `supplier_documents`, `orders`.
+`import_batches`, `supplier_documents`, `orders`, `supplier_contact_requests`.
 
 ## Rules & invariants
 - Only an **approved** supplier can mint a session. Rejecting a supplier cuts access immediately.

@@ -9,6 +9,7 @@ const config = {
   login: { maxAttempts: 6, windowMs: 15 * 60 * 1000 }, // 6 attempts per 15 minutes
   join: { maxAttempts: 3, windowMs: 60 * 60 * 1000 }, // 3 attempts per hour, per phone
   joinIp: { maxAttempts: 10, windowMs: 60 * 60 * 1000 }, // 10 sign-ups per hour, per network
+  supplierQuestion: { maxAttempts: 10, windowMs: 60 * 60 * 1000 }, // 10 questions per hour, per carpenter
 }
 
 // In-memory store for rate limiting (will reset on server restart)

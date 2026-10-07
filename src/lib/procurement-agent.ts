@@ -248,7 +248,7 @@ function parseIntent(userMessage: string): ParsedIntent {
  */
 async function findMatchingProducts(
   intent: ParsedIntent
-): Promise<MatchedProduct[]> {
+): Promise<{ matches: MatchedProduct[]; total: number; partial: boolean }> {
   const supabase = getSupabaseAdmin()
   const live = await loadProducts({ showPrices: true })
   const { products: hits, partial } = searchProducts(live, intent.rawText)
@@ -345,7 +345,7 @@ async function findMatchingProducts(
     }
   }
 
-  return topProducts
+  return { matches: topProducts, total: hits.length, partial }
 }
 
 /**
@@ -416,54 +416,18 @@ function getDocTypeLabel(docType: string): string {
 /**
  * Generate natural Hebrew response with live data
  */
-function generateResponse(intent: ParsedIntent, matches: MatchedProduct[]): string {
+function generateResponse(
+  intent: ParsedIntent,
+  matches: MatchedProduct[],
+  { total, partial }: { total: number; partial: boolean }
+): string {
   if (matches.length === 0) {
-    // No matches found - clarify or suggest alternatives
-    if (intent.confidence < 0.5) {
-      // Need more information
-      let response = '🤔 כדי למצוא לך בדיוק מה שצריך:\n'
-
-      if (!intent.category) {
-        response += '\n• איזה סוג מוצר? (דבק, צבע, כלי, וכו\')'
-      } else {
-        response += `\n✅ מחפש: ${intent.category}`
-      }
-
-      if (!intent.material) {
-        response += '\n• עם איזה עץ אתה עובד? (בירץ, אורן, אלון, וכו\')'
-      } else if (intent.material) {
-        response += `\n✅ חומר: ${intent.material}`
-      }
-
-      if (!intent.quantity) {
-        response += '\n• כמה אתה צריך? (ק"ג/ליטר)'
-      }
-
-      response += '\n\nתן לי עוד פרטים 👇'
-      return response
-    } else {
-      // High confidence but no exact match
-      let response = `❌ לא מצאתי ${intent.category || 'מוצר'} בשם המדויק.\n\n`
-      response += '🤷 אבל אני מנחש שחיפשת:\n'
-
-      if (intent.category) {
-        response += `• סוג: ${intent.category}\n`
-      }
-      if (intent.material) {
-        response += `• חומר: ${intent.material}\n`
-      }
-      if (intent.quantity) {
-        response += `• כמות: ${intent.quantity}\n`
-      }
-
-      response += '\nתוכל להסביר קצת יותר או לחפש משהו אחר?'
-      return response
-    }
+    return `לא מצאתי בקטלוג מוצר שמתאים ל"${intent.rawText.trim()}".\nנסה מילה אחרת, שם יצרן או מק״ט, או עיין בקטלוג לפי קטגוריות.`
   }
 
   if (matches.length === 1) {
     const product = matches[0]
-    let response = `מצאתי מוצר שמתאים:\n\n**${product.productName}**`
+    let response = `${partial ? 'לא מצאתי התאמה מדויקת. הכי קרוב:' : 'מצאתי מוצר שמתאים:'}\n\n**${product.productName}**`
 
     // Step 5: Show document evidence
     if (product.documents && product.documents.length > 0) {
@@ -505,7 +469,11 @@ function generateResponse(intent: ParsedIntent, matches: MatchedProduct[]): stri
 
   // Multiple matches - show up to 4 options with numbers
   const showLimit = Math.min(4, matches.length)
-  let response = `מצאתי ${matches.length} מוצרים שמתאימים:\n`
+  let response = partial
+    ? 'לא מצאתי מוצר שמתאים לכל המילים. אלה הקרובים ביותר:\n'
+    : total > showLimit
+      ? `מצאתי ${total} מוצרים. הנה ${showLimit} הראשונים:\n`
+      : `מצאתי ${total} מוצרים שמתאימים:\n`
 
   for (let i = 0; i < showLimit; i++) {
     const product = matches[i]
@@ -614,7 +582,7 @@ export async function processProcurementRequest(
     const intent = parseIntent(request.userMessage)
 
     // 2. Find matching products
-    const matches = await findMatchingProducts(intent)
+    const { matches, total, partial } = await findMatchingProducts(intent)
 
     // 3. Select response type
     const responseType = selectResponseType(intent, matches)
@@ -643,7 +611,7 @@ export async function processProcurementRequest(
     }
 
     // 5. Generate response
-    const message = generateResponse(intent, matches)
+    const message = generateResponse(intent, matches, { total, partial })
 
     // 6. Prepare action buttons based on result type
     const actions: ActionButton[] = []
@@ -675,10 +643,15 @@ export async function processProcurementRequest(
         })
       }
       actions.push({ label: 'לדף המוצר', action: 'open-page', value: `/app/product/${matches[0].productId}` })
+      if (item) {
+        actions.push({ label: 'שאלה לספק', action: 'contact-supplier', value: item.supplier_id, item })
+      }
     }
 
     // The same words in the search bar show the full list
-    if (matches.length > 0) {
+    if (matches.length === 0) {
+      actions.push({ label: 'לקטלוג', action: 'open-page', value: '/app/catalog' })
+    } else {
       actions.push({ label: 'כל התוצאות בקטלוג', action: 'open-catalog', value: request.userMessage })
     }
 

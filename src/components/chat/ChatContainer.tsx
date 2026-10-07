@@ -43,6 +43,8 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isListening, setIsListening] = useState(false)
+  // After "שאלה לספק", the next message is the question for that supplier, not a search
+  const [askingSupplier, setAskingSupplier] = useState<{ supplierId: string; supplierName: string; productId: string; productName: string } | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<any>(null)
   // The panel only renders once opened, so this never runs during server rendering
@@ -97,6 +99,7 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
   // The button carries the product the agent showed, so the choice is resolved
   // here rather than sent back through search as the bare text "2"
   const handleOptionSelect = (action: ActionButton) => {
+    setAskingSupplier(null)
     const number = action.action.replace('select-', '')
     const item = action.item
 
@@ -118,11 +121,16 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
     const pack = item.pack_qty && item.pack_qty > 1 ? ` · ${item.pack_label ?? 'חבילה'} ${item.pack_qty} ${item.unit}` : ''
     say(
       `${item.name_he}\n₪${item.base_price_excl_vat} ל${item.unit} לפני מע״מ${pack}\nספק: ${item.supplier_name}`,
-      [{ label: '➕ הוסף לעגלה', action: 'add-to-cart', value: item.id, item }, productPage]
+      [
+        { label: '➕ הוסף לעגלה', action: 'add-to-cart', value: item.id, item },
+        productPage,
+        { label: 'שאלה לספק', action: 'contact-supplier', value: item.supplier_id, item },
+      ]
     )
   }
 
   const handleAddToCart = (action: ActionButton) => {
+    setAskingSupplier(null)
     const item = action.item
     if (!item) {
       say('לא הצלחתי להוסיף לעגלה — חסרים פרטי מחיר. נסה לחפש שוב.')
@@ -133,28 +141,41 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
     say(`✅ הוספתי לעגלה: ${item.name_he}`)
   }
 
-  const handleContactSupplier = async (action: ActionButton) => {
-    const supplierId = action.item?.supplier_id ?? action.value
-    if (!supplierId) return
-    const productName = action.item?.name_he
+  // The question itself comes as the next message, so the supplier gets the
+  // carpenter's own words rather than a canned line
+  const handleContactSupplier = (action: ActionButton) => {
+    const item = action.item
+    if (!item?.supplier_id) return
+    const supplierName = item.supplier_name || 'הספק'
+    setAskingSupplier({ supplierId: item.supplier_id, supplierName, productId: item.id, productName: item.name_he })
+    say(`כתוב כאן את השאלה ל${supplierName} על ${item.name_he}, ואשלח לו אותה במייל עם הטלפון שלך. כדי לחזור לחיפוש כתוב "ביטול".`)
+  }
 
-    try {
-      const response = await fetch('/api/carpenter/contact-supplier', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId,
-          action: 'inquiry',
-          message: productName ? `שאלה לגבי ${productName}` : 'שאלה כללית',
-          productId: action.item?.id,
-        }),
-      })
-
-      say(response.ok ? '✅ הבקשה נשמרה ותועבר לספק.' : 'לא הצלחתי לשלוח את ההודעה לספק. נסה שוב בעוד רגע.')
-    } catch (error) {
-      console.error('Failed to contact supplier:', error)
-      say('לא הצלחתי לשלוח את ההודעה לספק. נסה שוב בעוד רגע.')
+  const sendQuestion = async (question: string) => {
+    if (!askingSupplier) return
+    const { supplierId, supplierName, productId } = askingSupplier
+    if (/^ביטול$/.test(question)) {
+      setAskingSupplier(null)
+      say('בוטל. מה לחפש?')
+      return
     }
+    const failed = 'לא הצלחתי לשלוח את השאלה. נסה שוב בעוד רגע, או כתוב "ביטול".'
+    const response = await fetch('/api/carpenter/contact-supplier', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ supplierId, action: 'inquiry', message: question.slice(0, 1000), productId }),
+    }).catch(() => null)
+    if (!response) {
+      say(failed)
+      return
+    }
+    if (response.ok) {
+      setAskingSupplier(null)
+      say(`✅ השאלה נשלחה ל${supplierName}. הוא יחזור אליך לטלפון או למייל.`)
+      return
+    }
+    const { error } = (await response.json().catch(() => ({}))) as { error?: string }
+    say(response.status === 429 && error ? error : failed)
   }
 
   const goTo = (path: string) => {
@@ -189,6 +210,11 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
     setIsLoading(true)
 
     try {
+      if (askingSupplier) {
+        await sendQuestion(userMessageText)
+        return
+      }
+
       if (PREVIOUS_PRODUCTS.test(userMessageText)) {
         const prevResponse = await fetch('/api/carpenter/previous-products')
         if (prevResponse.ok) {
