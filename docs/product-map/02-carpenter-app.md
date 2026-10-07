@@ -11,8 +11,8 @@ splits per supplier, send purchase orders, track them, and reorder.
 | `/app` | Home (`HomeView`) |
 | `/app/catalog`, `/app/catalog/[id]` | Catalogue and category view; search across name, brand, mpn, supplier |
 | `/app/product/[id]` | Product page: offers, **"השוואת ספקים"** and **"החלף ספק"** when more than one supplier sells it, "הזול במלאי" badge, last-ordered supplier |
-| `/app/order` | Cart ("עגלה" in the menu) → send. Grouped by supplier, with each supplier's minimum shown when it isn't met plus suggestions to close the gap (`POST /api/app/quote`) |
-| `/app/orders`, `/app/orders/[id]` | Order history and status (`/api/app/orders/[id]`, `/api/carpenter/orders`) |
+| `/app/order` | Cart ("עגלה" in the menu) → send. Grouped by supplier, with each supplier's minimum shown when it isn't met plus suggestions to close the gap (`POST /api/app/quote`). Links to `/doc/quote`, a printable price quote per supplier |
+| `/app/orders`, `/app/orders/[id]` | Order history and status (`/api/app/orders/[id]`, `/api/carpenter/orders`). The order page links to `/doc/order/[id]` |
 | `/app/account` | Profile (`/api/carpenter/profile`) |
 | `/app/demo` | Static marketing/demo page. Uses emoji and old styling |
 | `/carpenter/*` | Redirects to `/app/*` (`next.config.ts`) |

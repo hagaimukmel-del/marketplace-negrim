@@ -100,3 +100,11 @@ input[inputmode='decimal'] {
     scroll-behavior: auto !important;
   }
 }
+
+/* Quotes and purchase orders (/doc/*) print one supplier per A4 page */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+}
