@@ -397,7 +397,7 @@ export default function OrderView({ profile }: { profile: { address: string; cit
             המחירים לפי המחירון של הספק, והוא רשאי לעדכן אותם עד שהוא מאשר את ההזמנה. כדאי לבדוק היטב את ההזמנה המאושרת שתגיע ממנו.
           </p>
           <Link href="/doc/quote" className="flex h-11 items-center justify-center gap-1.5 rounded-[11px] border-[1.5px] border-hair text-[15px] font-bold text-navy">
-            <FileText size={17} /> {groups.length > 1 ? `הצעת מחיר לכל ספק (${groups.length})` : 'הצעת מחיר להדפסה או PDF'}
+            <FileText size={17} /> {groups.length > 1 ? `הצעת מחיר לפי ספק (${groups.length})` : 'הצעת מחיר להדפסה או PDF'}
           </Link>
           {!profile.hasContact && <p className="m-0 text-[13.5px] text-attn">חסרים טלפון או מייל בפרטי הנגרייה — אפשר להשלים באזור האישי.</p>}
           {error && <p role="alert" className="m-0 rounded-lg bg-red-50 p-2.5 text-sm text-red-800">{error}</p>}
