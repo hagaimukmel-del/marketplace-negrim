@@ -1,5 +1,5 @@
 # 5 · Catalogue & pricing
-Verified: 2026-10-04
+Verified: 2026-10-08
 
 ## Purpose
 What can be bought and at what price: canonical products, each supplier's offer on them,
@@ -39,4 +39,4 @@ category roots (boards, timber, hardware, tools, machines) have no offers yet. `
 placeholder 100 on synced rows. No SKU, brand or mpn data yet.
 
 ## Open tasks
-T-002, T-005, T-006, T-013, T-014
+T-002, T-005, T-006, T-013, T-014, T-023, T-026

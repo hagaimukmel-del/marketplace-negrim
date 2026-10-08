@@ -90,8 +90,10 @@ working around it. The live site doesn't depend on either PC: **Vercel deploys e
 - **Amounts are snapshots.** Store `unit_price` at time of order and never recompute from the
   current price. The supplier's confirmed amount — not the submitted amount — is the basis for
   any commission calculation.
-- **Revenue model**: commission billed to the supplier (`supplier_commission`, `commission_rate`
-  stored as snapshots on the supplier order) and/or supplier subscription. Not a cut of payment.
+- **Revenue model** (owner, 2026-10-08): a monthly **supplier subscription** by number of products,
+  excl. VAT: up to 50 products 1,300 ₪, up to 150 1,900 ₪, above 150 2,500 ₪. Billing starts January
+  2027 (may slip) and happens outside the site. No commission on orders; the `supplier_commission` /
+  `commission_rate` snapshots stay but are not billed. Later: a paid weekly promotion slot, 690 ₪ a week.
 
 ## 6. Current State vs Target — read before assuming
 Last verified 2026-10-03 by running the checks, not from memory. Re-verify before trusting it.
