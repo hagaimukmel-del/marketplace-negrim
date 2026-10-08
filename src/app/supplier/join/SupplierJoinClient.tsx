@@ -2,9 +2,11 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { CheckCircle2 } from 'lucide-react'
+import { Check, CheckCircle2 } from 'lucide-react'
 import LoginLinkBox from './LoginLinkBox'
 import Logo from '@/components/brand/Logo'
+import { REGIONS } from '@/lib/regions'
+import { BILLING_STARTS_LABEL, planLabel, SUPPLIER_PLANS } from '@/lib/supplier-plans'
 
 const EMPTY = {
   company_name: '',
@@ -23,6 +25,7 @@ const EMPTY = {
  */
 export default function SupplierJoinPage() {
   const [form, setForm] = useState(EMPTY)
+  const [regions, setRegions] = useState<string[]>([])
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -39,7 +42,7 @@ export default function SupplierJoinPage() {
       const response = await fetch('/api/supplier-join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, accept_terms: acceptTerms }),
+        body: JSON.stringify({ ...form, delivery_regions: regions, accept_terms: acceptTerms }),
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'ההרשמה נכשלה')
@@ -182,6 +185,47 @@ export default function SupplierJoinPage() {
             />
           </label>
 
+          <fieldset>
+            <legend className="text-sm font-medium text-stone-700">
+              לאן אתם מספקים? <span className="text-red-600">*</span>
+            </legend>
+            <div className="mt-1.5 flex flex-wrap gap-2">
+              {REGIONS.map((region) => {
+                const active = regions.includes(region.key)
+                return (
+                  <button
+                    key={region.key}
+                    type="button"
+                    aria-pressed={active}
+                    title={region.note}
+                    onClick={() =>
+                      setRegions((prev) => (active ? prev.filter((key) => key !== region.key) : [...prev, region.key]))
+                    }
+                    className={`flex h-10 items-center gap-1 rounded-full border px-3 text-sm font-semibold ${
+                      active ? 'border-emerald-700 bg-emerald-700 text-white' : 'border-stone-300 bg-white text-stone-700'
+                    }`}
+                  >
+                    {active && <Check size={14} />}
+                    {region.name}
+                  </button>
+                )
+              })}
+            </div>
+          </fieldset>
+
+          <div className="rounded-lg bg-stone-100 p-3 text-sm text-stone-700">
+            <b className="block text-stone-900">מנוי חודשי לפי מספר המוצרים, לפני מע״מ</b>
+            {SUPPLIER_PLANS.map((plan, i) => (
+              <span key={i} className="flex justify-between">
+                <span>{planLabel(i)}</span>
+                <span className="tnum font-semibold">{plan.monthlyExclVat.toLocaleString('he-IL')} ₪</span>
+              </span>
+            ))}
+            <span className="mt-1 block text-xs text-stone-500">
+              החיוב מתחיל ב{BILLING_STARTS_LABEL} ונעשה מחוץ לאתר. אין עמלה על הזמנות. הפרטים יישלחו גם למייל.
+            </span>
+          </div>
+
           <label className="flex items-start gap-3 rounded-lg border border-stone-200 p-3">
             <input
               type="checkbox"
@@ -203,7 +247,7 @@ export default function SupplierJoinPage() {
 
           <button
             type="submit"
-            disabled={busy || !form.company_name || !form.business_id || !form.phone || !acceptTerms}
+            disabled={busy || !form.company_name || !form.business_id || !form.phone || regions.length === 0 || !acceptTerms}
             className="h-12 w-full rounded-lg bg-emerald-700 font-bold text-white disabled:opacity-50"
           >
             {busy ? 'שולח…' : 'שלח בקשה'}

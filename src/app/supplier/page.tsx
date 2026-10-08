@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionSupplier } from '@/lib/supplier-auth'
+import { loadDelivery } from '@/lib/delivery'
 import SupplierApp from './SupplierApp'
 import {
   isTab,
@@ -86,7 +87,7 @@ export default async function SupplierHome({
   const { tab } = await searchParams
   const supabase = getSupabaseAdmin()
 
-  const [{ data: offers }, { data: lines }, { data: categories }, { data: catalogRows }, { data: questionRows }] = await Promise.all([
+  const [{ data: offers }, { data: lines }, { data: categories }, { data: catalogRows }, { data: questionRows }, delivery] = await Promise.all([
     supabase
       .from('supplier_offers')
       .select(
@@ -123,6 +124,7 @@ export default async function SupplierHome({
       .eq('supplier_id', supplier.id)
       .order('created_at', { ascending: false })
       .limit(20),
+    loadDelivery([supplier.id]),
   ])
 
   const myLines = (lines ?? []) as unknown as RawLine[]
@@ -275,6 +277,10 @@ export default async function SupplierHome({
           supplier.min_order_value_excl_vat == null ? null : Number(supplier.min_order_value_excl_vat),
         default_lead_time_days: supplier.default_lead_time_days,
         payment_terms: supplier.payment_terms ?? [],
+        delivery_ready: delivery.ready,
+        delivery_regions: delivery.bySupplier.get(supplier.id)?.regions ?? [],
+        delivery_fee_excl_vat: delivery.bySupplier.get(supplier.id)?.feeExclVat ?? null,
+        free_delivery_from_excl_vat: delivery.bySupplier.get(supplier.id)?.freeFromExclVat ?? null,
       }}
       products={products}
       orders={orders}

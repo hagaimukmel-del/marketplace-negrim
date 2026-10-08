@@ -109,6 +109,7 @@ export default function ProductView({
           {offer.supplierLogo ? <SupplierLogo url={offer.supplierLogo} /> : <Building2 size={17} className="text-muted" />}
           {offer.supplierName}
         </span>
+        {offer.delivers === false && <span className="text-[13px] font-semibold text-attn">לא מגיע לאזור שלך</span>}
         {offer.suggested ? <Reason product={product} offer={offer} /> : <span className="text-[13.5px] text-muted">בחרת ספק אחר</span>}
         {product.offers.length > 1 && (
           <button type="button" onClick={() => setSheet(true)} className="ms-auto text-sm font-semibold text-brand-ink md:hidden">
@@ -236,6 +237,7 @@ export default function ProductView({
                             <SupplierLogo url={o.supplierLogo} size={20} />
                             <b>{o.supplierName}</b>
                           </span>{' '}
+                          {o.delivers === false && <><span className="text-[13px] font-semibold text-attn">לא מגיע לאזור שלך</span>{' '}</>}
                           <Reason product={product} offer={o} />
                         </td>
                         <td className="tnum px-3 py-2.5 font-bold">{o.price != null ? money(o.price) : '—'}</td>
@@ -331,6 +333,7 @@ export default function ProductView({
                     </span>
                     <span className="grid min-w-0 leading-snug">
                       <b className="text-[15.5px]">{o.supplierName}</b>
+                      {o.delivers === false && <span className="text-[13px] font-semibold text-attn">לא מגיע לאזור שלך</span>}
                       <small className="text-[12.5px] text-muted">
                         {packText(o.packLabel, o.packQty, product.unit) ?? product.unit}
                         {o.leadDays != null ? ` · עד ${o.leadDays} ימי עסקים` : ''} · {termsText(o.terms)}

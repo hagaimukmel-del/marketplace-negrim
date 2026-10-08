@@ -130,6 +130,9 @@ export default function SupplierApp({
       tab: 'business',
     },
     { label: 'לבחור תנאי תשלום', done: profile.payment_terms.length > 0, tab: 'terms' },
+    ...(profile.delivery_ready
+      ? [{ label: 'לסמן לאן אתם מספקים', done: profile.delivery_regions.length > 0, tab: 'terms' as const }]
+      : []),
     {
       label: 'מינימום הזמנה וזמן אספקה',
       done: profile.min_order_value_excl_vat != null && profile.default_lead_time_days != null,

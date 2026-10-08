@@ -2,6 +2,7 @@ import 'server-only'
 
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { bestOffer, unitLabel, type Offer } from '@/lib/catalog'
+import { deliversTo, loadDelivery, regionsForCity } from '@/lib/delivery'
 import type { AppProduct, CategoryNode } from './products'
 
 interface CategoryRow {
@@ -68,7 +69,13 @@ const STOCK_IS_TRACKED = false
  * every offer and the terms of the supplier behind it. Prices are left out
  * entirely, not hidden, for a viewer who may not see them.
  */
-export async function loadProducts(opts: { showPrices: boolean; ids?: string[] }): Promise<AppProduct[]> {
+/**
+ * `city` is the signed-in carpentry's city. With it, each offer says whether
+ * its supplier delivers there, and a supplier that does not is never the
+ * suggested offer while another one does (T-026). bestOffer() still decides
+ * among the offers that remain.
+ */
+export async function loadProducts(opts: { showPrices: boolean; ids?: string[]; city?: string | null }): Promise<AppProduct[]> {
   const supabase = getSupabaseAdmin()
   let query = supabase
     .from('products')
@@ -79,11 +86,14 @@ export async function loadProducts(opts: { showPrices: boolean; ids?: string[] }
     .limit(1000)
   if (opts.ids) query = query.in('id', opts.ids.length ? opts.ids : ['00000000-0000-0000-0000-000000000000'])
 
-  const [{ data }, cats] = await Promise.all([query, categories()])
+  const [{ data }, cats, delivery] = await Promise.all([query, categories(), loadDelivery()])
+  const carpenterRegions = regionsForCity(opts.city)
   const byId = new Map(cats.map((row) => [row.id, row]))
 
   return ((data ?? []) as unknown as ProductRow[]).map((row) => {
-    const best = bestOffer(row)
+    const delivers = new Map(row.supplier_offers.map((offer) => [offer.id, deliversTo(delivery.bySupplier.get(offer.supplier_id), carpenterRegions)]))
+    const reachable = row.supplier_offers.filter((offer) => delivers.get(offer.id) !== false)
+    const best = bestOffer({ supplier_offers: reachable.length ? reachable : row.supplier_offers })
     const category = row.category_id ? byId.get(row.category_id) : undefined
     const topId = category ? (category.parent_category_id && byId.has(category.parent_category_id) ? category.parent_category_id : category.id) : null
     return {
@@ -111,6 +121,7 @@ export async function loadProducts(opts: { showPrices: boolean; ids?: string[] }
         leadDays: offer.lead_time_days ?? offer.suppliers.default_lead_time_days,
         terms: offer.suppliers.payment_terms ?? [],
         minOrder: offer.suppliers.min_order_value_excl_vat == null ? null : Number(offer.suppliers.min_order_value_excl_vat),
+        delivers: delivers.get(offer.id) ?? null,
         suggested: offer.id === best?.id,
       })),
     }

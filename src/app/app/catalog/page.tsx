@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic'
 export default async function AppCatalog({ searchParams }: { searchParams: Promise<{ q?: string; focus?: string }> }) {
   const [{ q, focus }, carpenter, admin] = await Promise.all([searchParams, getSessionCarpenter(), isAdmin()])
   const showPrices = Boolean(carpenter) || admin
-  const products = await loadProducts({ showPrices })
+  const products = await loadProducts({ showPrices, city: carpenter?.city })
   const query = (q ?? '').trim()
 
   const search = (

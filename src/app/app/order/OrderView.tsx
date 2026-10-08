@@ -30,6 +30,8 @@ interface Group {
   supplierId: string
   name: string
   logo: string | null
+  /** False when the supplier set delivery regions and this carpentry is outside them. */
+  delivers: boolean | null
   terms: string[]
   leadDays: number | null
   min: number
@@ -155,6 +157,7 @@ export default function OrderView({ profile }: { profile: { address: string; cit
       supplierId,
       name: line.offer?.supplierName ?? line.item.supplier_name ?? 'ספק',
       logo: line.offer?.supplierLogo ?? null,
+      delivers: line.offer?.delivers ?? null,
       terms: line.offer?.terms ?? [],
       leadDays: line.offer?.leadDays ?? null,
       min: line.offer?.minOrder ?? 0,
@@ -251,6 +254,7 @@ export default function OrderView({ profile }: { profile: { address: string; cit
                 <div className="flex items-center gap-2">
                   <SupplierLogo url={group.logo} size={24} />
                   <b className="text-base">{group.name}</b>
+                  {group.delivers === false && <span className="text-[13px] font-semibold text-attn">לא מגיע לאזור שלך</span>}
                   <span className="tnum ms-auto font-bold">{money(group.total)}</span>
                 </div>
                 <div className="text-[13px] text-muted">
@@ -451,6 +455,7 @@ export default function OrderView({ profile }: { profile: { address: string; cit
                     <span className={`grid h-[22px] w-[22px] place-items-center rounded-full border-2 text-white ${chosen ? 'border-navy bg-navy' : 'border-[#CBD2DA]'}`}>{chosen && <Check size={13} strokeWidth={3} />}</span>
                     <span className="grid min-w-0 leading-snug">
                       <b>{o.supplierName}</b>
+                      {o.delivers === false && <span className="text-[13px] font-semibold text-attn">לא מגיע לאזור שלך</span>}
                       <small className="text-[12.5px] text-muted">
                         {packText(o.packLabel, o.packQty, sheetProduct.unit) ?? sheetProduct.unit}
                         {o.leadDays != null ? ` · עד ${o.leadDays} ימים` : ''} · {termsText(o.terms)}

@@ -1366,7 +1366,10 @@ export type Database = {
           created_at: string | null
           decided_at: string | null
           default_lead_time_days: number | null
+          delivery_fee_excl_vat: number | null
+          delivery_regions: string[]
           email: string | null
+          free_delivery_from_excl_vat: number | null
           id: string
           is_verified: boolean | null
           logo_url: string | null
@@ -1394,7 +1397,10 @@ export type Database = {
           created_at?: string | null
           decided_at?: string | null
           default_lead_time_days?: number | null
+          delivery_fee_excl_vat?: number | null
+          delivery_regions?: string[]
           email?: string | null
+          free_delivery_from_excl_vat?: number | null
           id?: string
           is_verified?: boolean | null
           logo_url?: string | null
@@ -1422,7 +1428,10 @@ export type Database = {
           created_at?: string | null
           decided_at?: string | null
           default_lead_time_days?: number | null
+          delivery_fee_excl_vat?: number | null
+          delivery_regions?: string[]
           email?: string | null
+          free_delivery_from_excl_vat?: number | null
           id?: string
           is_verified?: boolean | null
           logo_url?: string | null

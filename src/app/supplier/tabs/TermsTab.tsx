@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Check } from 'lucide-react'
+import { REGIONS } from '@/lib/regions'
 import { callApi, jsonInit, PAYMENT_TERMS, type SupplierProfile } from '../types'
 import type { Notify } from '../SupplierApp'
 
@@ -16,6 +17,10 @@ const INPUT = 'mt-1 h-12 w-full rounded-lg border border-stone-300 bg-white px-3
  * both mean "30 days from end of month" have to say it the same way before a
  * carpenter can compare them. The supplier sets them and invoices the carpenter
  * directly — nothing is paid through the site.
+ *
+ * Delivery regions are required (owner, 2026-10-08): a carpenter outside them
+ * sees "לא מגיע לאזור שלך" and the catalogue suggests another supplier. They
+ * appear once the database has migration 20261008130000 (profile.delivery_ready).
  */
 export default function TermsTab({ profile, notify }: { profile: SupplierProfile; notify: Notify }) {
   const router = useRouter()
@@ -27,6 +32,14 @@ export default function TermsTab({ profile, notify }: { profile: SupplierProfile
     default_lead_time_days:
       profile.default_lead_time_days == null ? '' : String(profile.default_lead_time_days),
     pickup_address: profile.pickup_address ?? '',
+    ...(profile.delivery_ready
+      ? {
+          delivery_regions: profile.delivery_regions,
+          delivery_fee_excl_vat: profile.delivery_fee_excl_vat == null ? '' : String(profile.delivery_fee_excl_vat),
+          free_delivery_from_excl_vat:
+            profile.free_delivery_from_excl_vat == null ? '' : String(profile.free_delivery_from_excl_vat),
+        }
+      : {}),
   }
   const [form, setForm] = useState(initial)
   const [snapshot, setSnapshot] = useState(() => JSON.stringify(initial))
@@ -43,9 +56,19 @@ export default function TermsTab({ profile, notify }: { profile: SupplierProfile
         : [...prev.payment_terms, term],
     }))
 
+  const toggleRegion = (key: string) =>
+    setForm((prev) => {
+      const regions = prev.delivery_regions ?? []
+      return { ...prev, delivery_regions: regions.includes(key) ? regions.filter((item) => item !== key) : [...regions, key] }
+    })
+
   const save = async (event: React.FormEvent) => {
     event.preventDefault()
     setError(null)
+    if (form.delivery_regions && form.delivery_regions.length === 0) {
+      setError('צריך לסמן לפחות אזור חלוקה אחד')
+      return
+    }
     setBusy(true)
     try {
       await callApi('/api/supplier/profile', jsonInit('PATCH', form))
@@ -123,6 +146,57 @@ export default function TermsTab({ profile, notify }: { profile: SupplierProfile
           />
         </label>
       </section>
+
+      {form.delivery_regions && (
+        <section className="rounded-xl border border-stone-200 bg-white p-4">
+          <h2 className="font-bold text-stone-900">לאן אתם מספקים</h2>
+          <p className="mt-0.5 text-sm text-stone-600">
+            חובה. נגרייה מחוץ לאזורים שסימנתם תראה שאתם לא מגיעים אליה.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {REGIONS.map((region) => {
+              const active = form.delivery_regions!.includes(region.key)
+              return (
+                <button
+                  key={region.key}
+                  type="button"
+                  onClick={() => toggleRegion(region.key)}
+                  aria-pressed={active}
+                  title={region.note}
+                  className={`flex h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-semibold ${
+                    active ? 'border-emerald-700 bg-emerald-700 text-white' : 'border-stone-300 bg-white text-stone-700'
+                  }`}
+                >
+                  {active && <Check size={15} />}
+                  {region.name}
+                </button>
+              )
+            })}
+          </div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="text-sm font-medium text-stone-700">דמי משלוח (₪ ללא מע״מ)</span>
+              <input
+                inputMode="decimal"
+                value={form.delivery_fee_excl_vat ?? ''}
+                onChange={(e) => setForm((prev) => ({ ...prev, delivery_fee_excl_vat: e.target.value }))}
+                placeholder="ריק = כלול במחיר"
+                className={`tnum ${INPUT}`}
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium text-stone-700">משלוח חינם מעל (₪ ללא מע״מ)</span>
+              <input
+                inputMode="decimal"
+                value={form.free_delivery_from_excl_vat ?? ''}
+                onChange={(e) => setForm((prev) => ({ ...prev, free_delivery_from_excl_vat: e.target.value }))}
+                placeholder="ריק = אין"
+                className={`tnum ${INPUT}`}
+              />
+            </label>
+          </div>
+        </section>
+      )}
 
       {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 

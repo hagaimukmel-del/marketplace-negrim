@@ -14,7 +14,9 @@ export interface AppOffer {
   leadDays: number | null
   terms: string[]
   minOrder: number | null
-  /** The offer the catalogue suggests: in stock first, then cheapest (lib/catalog bestOffer). */
+  /** Whether the supplier delivers to this carpentry's region; null when either side is unknown. */
+  delivers: boolean | null
+  /** The offer the catalogue suggests: among suppliers that reach this carpentry, in stock first, then cheapest. */
   suggested: boolean
 }
 

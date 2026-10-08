@@ -15,7 +15,7 @@ function nowMs(): number {
 export default async function AppProduct({ params }: { params: Promise<{ id: string }> }) {
   const [{ id }, carpenter, admin] = await Promise.all([params, getSessionCarpenter(), isAdmin()])
   const showPrices = Boolean(carpenter) || admin
-  const [product] = await loadProducts({ showPrices, ids: [id] })
+  const [product] = await loadProducts({ showPrices, ids: [id], city: carpenter?.city })
   if (!product) notFound()
 
   const tree = await loadCategoryTree([product])

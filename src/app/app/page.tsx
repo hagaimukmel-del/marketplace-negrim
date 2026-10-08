@@ -27,7 +27,7 @@ export default async function AppHome({ searchParams }: { searchParams: Promise<
   const [orders, reorder, products, { data: suppliers }] = await Promise.all([
     loadCarpenterOrders(carpenter.id),
     loadReorder(carpenter.id, 3),
-    loadProducts({ showPrices: true }),
+    loadProducts({ showPrices: true, city: carpenter.city }),
     getSupabaseAdmin().from('suppliers').select('id, company_name, min_order_value_excl_vat').eq('status', 'approved'),
   ])
   const categories = await loadCategoryTree(products)

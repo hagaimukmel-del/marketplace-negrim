@@ -6,7 +6,7 @@
 -- and this log is the proof: opening a supplier's console, revealing the lines
 -- of their order for support, merging or hiding their offer.
 --
--- Written only by server code with the service role (lib/admin-log.ts), read
+-- Written only by server code with the service role (lib/admin-scope.ts), read
 -- only in the admin console. Nothing depends on it; writes are best-effort, so
 -- the console keeps working on a database where this file is not applied yet.
 

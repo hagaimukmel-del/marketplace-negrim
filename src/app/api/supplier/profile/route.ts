@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionSupplier } from '@/lib/supplier-auth'
 import { refuseAdminWriteFor } from '@/lib/admin-scope'
 import { PAYMENT_TERMS } from '@/app/supplier/types'
+import { isRegionKey } from '@/lib/regions'
 import type { Database } from '@/lib/database.types'
 
 type SupplierUpdate = Database['public']['Tables']['suppliers']['Update']
@@ -168,6 +169,36 @@ export async function PATCH(request: NextRequest) {
         (term): term is string => typeof term === 'string' && allowed.includes(term)
       )
       update.payment_terms = [...new Set(terms)]
+    }
+
+    // Delivery terms (T-026) save on their own, so a database without migration
+    // 20261008130000 refuses only them and not the rest of the form.
+    const delivery: SupplierUpdate = {}
+    if ('delivery_regions' in body) {
+      if (!Array.isArray(body.delivery_regions)) {
+        return NextResponse.json({ error: 'אזורי חלוקה לא תקינים' }, { status: 400 })
+      }
+      const regions = [...new Set((body.delivery_regions as unknown[]).filter(isRegionKey))]
+      if (regions.length === 0) {
+        return NextResponse.json({ error: 'צריך לסמן לפחות אזור חלוקה אחד' }, { status: 400 })
+      }
+      delivery.delivery_regions = regions
+    }
+    for (const [key, label] of [
+      ['delivery_fee_excl_vat', 'דמי משלוח'],
+      ['free_delivery_from_excl_vat', 'משלוח חינם מעל'],
+    ] as const) {
+      if (!(key in body)) continue
+      const value = optionalNumber(body[key])
+      if (value === 'invalid') return NextResponse.json({ error: `${label} לא תקין` }, { status: 400 })
+      delivery[key] = value
+    }
+    if (Object.keys(delivery).length > 0) {
+      const { error: deliveryError } = await supabase.from('suppliers').update(delivery).eq('id', supplier.id)
+      if (deliveryError) {
+        console.error('Supplier delivery update failed:', deliveryError)
+        return NextResponse.json({ error: 'לא הצלחתי לשמור את אזורי החלוקה' }, { status: 500 })
+      }
     }
 
     const { error } = await supabase.from('suppliers').update(update).eq('id', supplier.id)
