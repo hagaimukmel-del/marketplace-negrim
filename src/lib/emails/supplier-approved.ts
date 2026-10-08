@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { siteUrl } from '../email'
-import { emailLogo } from './brand'
+import { emailLogo, supplierTermsBlock } from './brand'
 
 /**
  * The message that turns an approval into access.
@@ -87,10 +87,7 @@ export function supplierApprovedHtml({
             אם הוא הודלף, כתבו לנו ונחליף אותו.
           </p>
 
-          <p style="margin:16px 0 0;color:#57534e;font-size:13px">
-            תזכורת: אתם מספקים, אתם מוציאים את החשבונית לנגר ואתם קובעים את תנאי התשלום.
-            אנחנו לא גובים כסף מהנגר.
-          </p>
+          ${supplierTermsBlock()}
         </td></tr>
       </table>
     </td></tr>
