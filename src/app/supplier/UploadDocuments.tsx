@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { ProductItem } from './types'
 
 interface Document {
@@ -14,6 +15,7 @@ interface UploadDocumentsProps {
 }
 
 export default function UploadDocuments({ products }: UploadDocumentsProps) {
+  const router = useRouter()
   const [selectedProduct, setSelectedProduct] = useState<string>('')
   const [docType, setDocType] = useState<string>('spec_sheet')
   const [file, setFile] = useState<File | null>(null)
@@ -54,6 +56,7 @@ export default function UploadDocuments({ products }: UploadDocumentsProps) {
       })
       setFile(null)
       setSelectedProduct('')
+      router.refresh()
     } catch (err) {
       setMessage({
         text: `שגיאה: ${err instanceof Error ? err.message : 'נסה שוב'}`,
@@ -63,6 +66,8 @@ export default function UploadDocuments({ products }: UploadDocumentsProps) {
       setUploading(false)
     }
   }
+
+  const missing = products.filter((product) => !product.hasSheet)
 
   const docTypeLabels = {
     spec_sheet: 'דף טכני',
@@ -75,6 +80,14 @@ export default function UploadDocuments({ products }: UploadDocumentsProps) {
   return (
     <div className="space-y-4 p-4 border rounded-lg bg-slate-50">
       <h3 className="font-semibold text-lg">העלאת דפים טכניים</h3>
+      {products.length > 0 && (
+        <p className="text-sm text-slate-600">
+          לכל מוצר יש מקום לדף טכני, והנגר רואה אותו בדף המוצר.{' '}
+          {missing.length === 0
+            ? 'לכל המוצרים שלך כבר יש דף.'
+            : `חסר דף ב־${missing.length} מתוך ${products.length} מוצרים.`}
+        </p>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
@@ -86,9 +99,10 @@ export default function UploadDocuments({ products }: UploadDocumentsProps) {
             disabled={uploading}
           >
             <option value="">-- בחר מוצר --</option>
-            {products.map((product) => (
+            {[...missing, ...products.filter((product) => product.hasSheet)].map((product) => (
               <option key={product.productId} value={product.productId}>
                 {product.name}
+                {product.hasSheet ? ' (יש דף)' : ''}
               </option>
             ))}
           </select>

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { Building2, Check, Info, Plus, Repeat, X } from 'lucide-react'
+import { Building2, Check, FileText, Info, Plus, Repeat, X } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { money, packText, termsText, when } from '@/lib/app/format'
 import { sortedOffers, stepOf, suggestedOffer, type AppOffer, type AppProduct } from '@/lib/app/products'
@@ -10,6 +10,14 @@ import ProductImage from '@/components/app/ProductImage'
 import Stepper from '@/components/app/Stepper'
 import { BackLink } from '@/components/app/ui'
 import SupplierLogo from '@/components/app/SupplierLogo'
+
+/** A technical sheet or guide a supplier attached to this product (product_documents). */
+export interface ProductDoc {
+  id: string
+  title: string
+  url: string
+  supplierName: string
+}
 
 export interface LastPurchase {
   quantity: number
@@ -39,8 +47,10 @@ export default function ProductView({
   last,
   now,
   crumbs,
+  docs,
 }: {
   product: AppProduct
+  docs: ProductDoc[]
   showPrices: boolean
   last: LastPurchase | null
   now: number
@@ -156,6 +166,28 @@ export default function ProductView({
     </section>
   )
 
+  const sheets = docs.length > 0 && (
+    <section>
+      <h3 className="mb-2 text-base font-bold">דפים טכניים</h3>
+      <ul className="m-0 grid list-none gap-1.5 p-0">
+        {docs.map((doc) => (
+          <li key={doc.id}>
+            <a
+              href={doc.url}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-2 rounded-2xl border border-hair bg-white p-3 text-[14.5px] font-semibold"
+            >
+              <FileText size={18} className="shrink-0 text-muted" />
+              <span className="min-w-0 flex-1 truncate">{doc.title}</span>
+              <small className="shrink-0 text-[12.5px] font-normal text-muted">{doc.supplierName}</small>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+
   const details = (product.attributes.length > 0 || product.brand) && (
     <section>
       <h3 className="mb-2 text-base font-bold">פרטי המוצר</h3>
@@ -265,6 +297,7 @@ export default function ProductView({
           )}
           {about}
           {details}
+          {sheets}
         </div>
 
         {/* Desktop buy box */}

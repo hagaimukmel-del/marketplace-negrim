@@ -18,12 +18,6 @@ export async function GET(request: NextRequest) {
 
     // Record admin login attempt for RLS (required by policy)
     const supabase = getSupabaseAdmin()
-    const clientIp = request.headers.get('x-forwarded-for') || 'unknown'
-    await supabase
-      .from('admin_login_attempts')
-      .insert({ ip: clientIp, succeeded: true })
-      .throwOnError()
-
     // Get supplier_id from query
     const supplierId = request.nextUrl.searchParams.get('supplier_id')
     if (!supplierId) {
@@ -87,12 +81,6 @@ export async function DELETE(request: NextRequest) {
 
     // Record admin login attempt for RLS (required by policy)
     const supabase = getSupabaseAdmin()
-    const clientIp = request.headers.get('x-forwarded-for') || 'unknown'
-    await supabase
-      .from('admin_login_attempts')
-      .insert({ ip: clientIp, succeeded: true })
-      .throwOnError()
-
     // Get document_id from URL
     const url = new URL(request.url)
     const pathParts = url.pathname.split('/')

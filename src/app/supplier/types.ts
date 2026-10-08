@@ -68,6 +68,8 @@ export interface ProductItem {
   isActive: boolean
   /** Only the supplier who created a product may change what is shared. */
   canEditProduct: boolean
+  /** This supplier attached at least one technical sheet or guide to it. */
+  hasSheet: boolean
 }
 
 /**
