@@ -1,5 +1,5 @@
 # 6 · Supplier console (`/supplier`)
-Verified: 2026-10-07
+Verified: 2026-10-08
 
 ## Purpose
 Self-service for an approved supplier: their orders, price list, products, business details,
@@ -34,4 +34,4 @@ Live; the owner's own business is the only active supplier. The supplier logo is
 not yet shown to carpenters (TODO.md).
 
 ## Open tasks
-T-002
+T-002, T-023, T-024, T-025, T-026, T-027

@@ -1,5 +1,5 @@
 # 9 · Campaigns, offer pages, raffle
-Verified: 2026-10-03
+Verified: 2026-10-08
 
 ## Purpose
 The original growth engine (roadmap `docs/workplan.html`): the operator sends a carpenter a
@@ -28,4 +28,4 @@ measured. A raffle among carpenters is the engagement tool.
 Live; older than the `/app` purchasing app. Check how much of it is still used before extending it.
 
 ## Open tasks
-(none specific)
+T-024

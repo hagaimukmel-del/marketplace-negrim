@@ -1,5 +1,5 @@
 # 4 · Orders & fulfilment
-Verified: 2026-10-05
+Verified: 2026-10-08
 
 ## Purpose
 Turn a cart into purchase orders (הזמנות רכש), one per supplier, get each supplier to confirm,
@@ -39,4 +39,4 @@ CLAUDE.md §5 is binding. In short:
 Live. The operator gets no per-order email, by design.
 
 ## Open tasks
-T-012, T-022
+T-012, T-022, T-023, T-027

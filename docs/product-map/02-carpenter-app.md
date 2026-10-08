@@ -1,5 +1,5 @@
 # 2 · Carpenter purchasing app (`/app`)
-Verified: 2026-10-05
+Verified: 2026-10-08
 
 ## Purpose
 Where a carpenter buys: browse the catalogue, compare suppliers on a product, build a cart that
@@ -41,4 +41,4 @@ uploaded (Supabase Storage; Drive links fall back to the category glyph) and the
 supplier, no product shows them.
 
 ## Open tasks
-T-002, T-005, T-006, T-018
+T-002, T-005, T-006, T-018, T-023, T-024, T-025, T-026, T-027
