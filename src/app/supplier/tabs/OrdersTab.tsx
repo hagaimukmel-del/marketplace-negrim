@@ -162,7 +162,8 @@ function OrderCard({
 
       {order.split ? (
         <p className="mt-3 rounded-lg bg-stone-100 p-3 text-sm text-stone-600">
-          ההזמנה כוללת גם ספקים אחרים, ולכן היא מטופלת מהמערכת.
+          {/* Only orders from before checkouts were split per supplier (2026-09-17) can mix suppliers. */}
+          הזמנה ישנה, מלפני שכל הזמנה נשלחה לספק אחד. היא כוללת גם ספקים אחרים ולכן לא מאשרים אותה מכאן.
         </p>
       ) : (
         <div className="mt-3 space-y-2">

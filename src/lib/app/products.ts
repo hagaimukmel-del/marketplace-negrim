@@ -5,6 +5,7 @@
 export interface AppOffer {
   supplierId: string
   supplierName: string
+  supplierLogo: string | null
   /** Per base unit, excl VAT. Null when this viewer may not see prices. */
   price: number | null
   packLabel: string | null

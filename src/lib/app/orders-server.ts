@@ -7,7 +7,7 @@ import type { AppOrder, OrderStatus } from './orders'
 const ORDER_COLUMNS =
   'id, short_number, order_number, status, created_at, confirmed_at, processing_at, shipped_at, delivered_at, ' +
   'subtotal_excl_vat, confirmed_subtotal_excl_vat, supplier_note, carpenter_seen_at, checkout_id, address, city, notes, ' +
-  'suppliers(id, company_name, phone, payment_terms, default_lead_time_days, min_order_value_excl_vat), ' +
+  'suppliers(id, company_name, logo_url, phone, payment_terms, default_lead_time_days, min_order_value_excl_vat), ' +
   'order_items(product_id, product_name_he, quantity, unit_price_excl_vat, line_total_excl_vat, supplier_id, products(base_unit))'
 
 interface OrderRow {
@@ -31,6 +31,7 @@ interface OrderRow {
   suppliers: {
     id: string
     company_name: string
+    logo_url: string | null
     phone: string | null
     payment_terms: string[] | null
     default_lead_time_days: number | null
@@ -97,6 +98,7 @@ export async function loadCarpenterOrders(carpenterId: string, orderId?: string)
       ? {
           id: row.suppliers.id,
           name: row.suppliers.company_name,
+          logoUrl: row.suppliers.logo_url,
           phone: row.suppliers.phone,
           terms: row.suppliers.payment_terms ?? [],
           leadDays: row.suppliers.default_lead_time_days,

@@ -27,6 +27,7 @@ interface ProductRow {
     suppliers: {
       status: string
       company_name: string
+      logo_url: string | null
       payment_terms: string[] | null
       min_order_value_excl_vat: number | null
       default_lead_time_days: number | null
@@ -37,7 +38,7 @@ interface ProductRow {
 const PRODUCT_COLUMNS =
   'id, name_he, description_he, brand, mpn, base_unit, image_url, attributes, category_id, ' +
   'supplier_offers!inner(id, supplier_id, supplier_sku, price_excl_vat, stock_qty, pack_label, pack_qty, min_order_qty, lead_time_days, ' +
-  'suppliers!inner(status, company_name, payment_terms, min_order_value_excl_vat, default_lead_time_days))'
+  'suppliers!inner(status, company_name, logo_url, payment_terms, min_order_value_excl_vat, default_lead_time_days))'
 
 async function categories(): Promise<CategoryRow[]> {
   const { data } = await getSupabaseAdmin()
@@ -102,6 +103,7 @@ export async function loadProducts(opts: { showPrices: boolean; ids?: string[] }
       offers: row.supplier_offers.map((offer) => ({
         supplierId: offer.supplier_id,
         supplierName: offer.suppliers.company_name,
+        supplierLogo: offer.suppliers.logo_url,
         price: opts.showPrices ? Number(offer.price_excl_vat) : null,
         packLabel: offer.pack_label,
         packQty: offer.pack_qty == null ? null : Number(offer.pack_qty),

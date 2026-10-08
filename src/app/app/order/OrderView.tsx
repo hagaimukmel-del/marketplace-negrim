@@ -10,6 +10,7 @@ import { VAT_RATE } from '@/lib/vat'
 import CategoryGlyph from '@/components/app/CategoryGlyph'
 import Stepper from '@/components/app/Stepper'
 import { AttentionLine } from '@/components/app/ui'
+import SupplierLogo from '@/components/app/SupplierLogo'
 
 interface Quote {
   products: AppProduct[]
@@ -28,6 +29,7 @@ interface Line {
 interface Group {
   supplierId: string
   name: string
+  logo: string | null
   terms: string[]
   leadDays: number | null
   min: number
@@ -152,6 +154,7 @@ export default function OrderView({ profile }: { profile: { address: string; cit
     const group = groupMap.get(supplierId) ?? {
       supplierId,
       name: line.offer?.supplierName ?? line.item.supplier_name ?? 'ספק',
+      logo: line.offer?.supplierLogo ?? null,
       terms: line.offer?.terms ?? [],
       leadDays: line.offer?.leadDays ?? null,
       min: line.offer?.minOrder ?? 0,
@@ -245,7 +248,8 @@ export default function OrderView({ profile }: { profile: { address: string; cit
           {groups.map((group) => (
             <section key={group.supplierId} id={`group-${group.supplierId}`} className="scroll-mt-20 overflow-hidden rounded-2xl border border-hair bg-white">
               <div className="grid gap-0.5 border-b border-hair bg-[#FBF9F6] px-3.5 py-3">
-                <div className="flex items-baseline gap-2">
+                <div className="flex items-center gap-2">
+                  <SupplierLogo url={group.logo} size={24} />
                   <b className="text-base">{group.name}</b>
                   <span className="tnum ms-auto font-bold">{money(group.total)}</span>
                 </div>

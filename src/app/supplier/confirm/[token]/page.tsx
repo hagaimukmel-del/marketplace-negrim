@@ -73,7 +73,7 @@ export default async function SupplierConfirmPage({
         <Notice
           icon={<Users size={40} className="mx-auto text-stone-400" />}
           title="ההזמנה כוללת כמה ספקים"
-          body="הזמנה שמערבת יותר מספק אחד מאושרת מהמערכת ולא מהקישור הזה. נחזור אליכם."
+          body="זו הזמנה ישנה, מלפני שכל הזמנה נשלחה לספק אחד, ולכן לא מאשרים אותה מהקישור הזה. נחזור אליכם."
         />
       )
     }

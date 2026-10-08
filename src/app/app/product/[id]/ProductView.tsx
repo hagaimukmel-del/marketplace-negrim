@@ -9,6 +9,7 @@ import { sortedOffers, stepOf, suggestedOffer, type AppOffer, type AppProduct } 
 import ProductImage from '@/components/app/ProductImage'
 import Stepper from '@/components/app/Stepper'
 import { BackLink } from '@/components/app/ui'
+import SupplierLogo from '@/components/app/SupplierLogo'
 
 export interface LastPurchase {
   quantity: number
@@ -105,7 +106,7 @@ export default function ProductView({
       )}
       <div className="mt-1.5 flex flex-wrap items-center gap-2 border-t border-hair pt-2.5 text-[15px]">
         <span className="inline-flex items-center gap-1.5 font-bold">
-          <Building2 size={17} className="text-muted" />
+          {offer.supplierLogo ? <SupplierLogo url={offer.supplierLogo} /> : <Building2 size={17} className="text-muted" />}
           {offer.supplierName}
         </span>
         {offer.suggested ? <Reason product={product} offer={offer} /> : <span className="text-[13.5px] text-muted">בחרת ספק אחר</span>}
@@ -231,7 +232,11 @@ export default function ProductView({
                     {sortedOffers(product).map((o) => (
                       <tr key={o.supplierId} className={`border-t border-hair ${o.supplierId === offer.supplierId ? 'bg-[#F6F8FB]' : ''}`}>
                         <td className="px-3 py-2.5">
-                          <b>{o.supplierName}</b> <Reason product={product} offer={o} />
+                          <span className="inline-flex items-center gap-1.5 align-middle">
+                            <SupplierLogo url={o.supplierLogo} size={20} />
+                            <b>{o.supplierName}</b>
+                          </span>{' '}
+                          <Reason product={product} offer={o} />
                         </td>
                         <td className="tnum px-3 py-2.5 font-bold">{o.price != null ? money(o.price) : '—'}</td>
                         <td className="px-3 py-2.5">{packText(o.packLabel, o.packQty, product.unit) ?? '—'}</td>

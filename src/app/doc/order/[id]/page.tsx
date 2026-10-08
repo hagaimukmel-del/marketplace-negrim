@@ -35,6 +35,7 @@ export default async function OrderDocument({ params }: { params: Promise<{ id: 
           status={STATUS_LABEL[order.status]}
           supplier={{
             name: order.supplier?.name ?? 'ספק',
+            logoUrl: order.supplier?.logoUrl,
             phone: order.supplier?.phone,
             terms: order.supplier?.terms ?? [],
             leadDays: order.supplier?.leadDays ?? null,

@@ -10,6 +10,7 @@ export type OrderStatus = 'pending' | 'confirmed' | 'processing' | 'shipped' | '
 export interface AppSupplier {
   id: string
   name: string
+  logoUrl: string | null
   phone: string | null
   terms: string[]
   leadDays: number | null
