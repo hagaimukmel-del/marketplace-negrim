@@ -72,6 +72,16 @@ export default function OrderDetail({ order, siblings, now }: { order: AppOrder;
           </bdi>
         </div>
         <p className="m-0 mt-0.5 text-sm font-semibold text-attn">הספק אישר סכום שונה</p>
+        {order.lines.some((line) => line.unavailable) && (
+          <p className="m-0 mt-1 text-sm">
+            לא יסופק: {order.lines.filter((line) => line.unavailable).map((line) => line.name).join(', ')}
+          </p>
+        )}
+        {order.deliveryOn && (
+          <p className="m-0 mt-1 text-sm">
+            אספקה צפויה: {new Date(`${order.deliveryOn}T12:00:00`).toLocaleDateString('he-IL', { weekday: 'short', day: '2-digit', month: '2-digit' })}
+          </p>
+        )}
         {order.supplierNote && (
           <div className="mt-2 rounded-[10px] border border-dashed border-[#EBD3AE] bg-white/70 px-2.5 py-2 text-[14.5px] text-[#5B4632]">
             ״{order.supplierNote}״ — {supplier?.name}

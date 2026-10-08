@@ -32,6 +32,9 @@ See CLAUDE.md §6, "The catalogue's shape". Most important:
 - A product without a live offer isn't in the catalogue.
 - Prices aren't public: `lock_prices` dropped the anon policy. Check it's applied on the database you're on.
 - Matching: brand + mpn, otherwise the Hebrew + English name pair.
+- Delivery regions (`suppliers.delivery_regions`, `lib/delivery.ts`): with the carpentry's city,
+  `loadProducts` marks each offer `delivers` and never suggests a supplier outside the carpentry's
+  region while another one reaches it. bestOffer() decides among the rest. Empty = unknown.
 
 ## Status
 Live but thin: essentially one supplier, mostly adhesives (about 30 offers from the sheet). Most
