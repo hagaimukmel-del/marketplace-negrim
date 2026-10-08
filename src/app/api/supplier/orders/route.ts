@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionSupplier } from '@/lib/supplier-auth'
+import { refuseAdminWriteFor } from '@/lib/admin-scope'
 import type { OrderUpdate } from '@/lib/db'
 import { notifyCarpenterOrderUpdate } from '@/lib/notify-order'
 
@@ -33,6 +34,9 @@ function isAction(value: unknown): value is Action {
 export async function PATCH(request: NextRequest) {
   const supplier = await getSessionSupplier()
   if (!supplier) return NextResponse.json({ error: 'צריך להיות מחובר' }, { status: 401 })
+
+  const refused = await refuseAdminWriteFor(supplier)
+  if (refused) return refused
 
   try {
     const body = (await request.json()) as Record<string, unknown>

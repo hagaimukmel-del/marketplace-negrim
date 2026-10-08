@@ -2,6 +2,37 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/admin-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import type { OrderUpdate } from '@/lib/db'
+import { logAdminAction, refusedForSelfRun, supplierIsOperatorManaged } from '@/lib/admin-scope'
+
+/**
+ * The lines of one order, for support.
+ *
+ * For a self-run supplier, what their customer bought is their business: the
+ * orders screen shows the order without its lines, and opening them comes
+ * through here so it is written down (owner, 2026-10-08).
+ */
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  if (!(await isAdmin())) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { id } = await params
+  const { data: order } = await getSupabaseAdmin()
+    .from('orders')
+    .select('id, supplier_id, order_items(id, product_name_he, quantity, unit_price_excl_vat, line_total_excl_vat)')
+    .eq('id', id)
+    .maybeSingle()
+
+  if (!order) return NextResponse.json({ error: 'ההזמנה לא נמצאה' }, { status: 404 })
+
+  if (!(await supplierIsOperatorManaged(order.supplier_id))) {
+    await logAdminAction({ action: 'reveal_order_lines', supplierId: order.supplier_id, targetId: id })
+  }
+  return NextResponse.json({ lines: order.order_items })
+}
 
 /** Statuses the operator can move an order to, in fulfilment order. */
 const STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'] as const
@@ -16,6 +47,14 @@ export async function PATCH(
 
   try {
     const { id } = await params
+    const supabase = getSupabaseAdmin()
+
+    // Only the supplier confirms their own order (owner, 2026-10-08). The
+    // operator still runs the suppliers they created.
+    const { data: order } = await supabase.from('orders').select('supplier_id').eq('id', id).maybeSingle()
+    if (!order) return NextResponse.json({ error: 'ההזמנה לא נמצאה' }, { status: 404 })
+    if (!(await supplierIsOperatorManaged(order.supplier_id))) return refusedForSelfRun()
+
     const body = await request.json()
     const update: OrderUpdate = {}
 
@@ -46,7 +85,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'אין מה לעדכן' }, { status: 400 })
     }
 
-    const { data, error } = await getSupabaseAdmin()
+    const { data, error } = await supabase
       .from('orders')
       .update(update)
       .eq('id', id)

@@ -31,8 +31,12 @@ interface Order {
   supplier_note: string | null
   carpenter_id: string | null
   checkout_id: string | null
-  suppliers: { company_name: string } | null
-  order_items: Line[]
+  suppliers: { company_name: string; source: string } | null
+  /** Operator-run supplier: the admin confirms and sees lines. See lib/admin-scope.ts */
+  managed: boolean
+  line_count: number
+  /** null for a self-run supplier until revealed for support */
+  order_items: Line[] | null
 }
 
 const NEXT_STEPS: { status: string; label: string; Icon: typeof Check }[] = [
@@ -70,6 +74,25 @@ function Row({
       ? Number(order.confirmed_subtotal_excl_vat)
       : null
   const differs = confirmed != null && round2(confirmed) !== round2(submitted)
+  const [revealed, setRevealed] = useState<Line[] | null>(null)
+  const [revealing, setRevealing] = useState(false)
+  const [revealError, setRevealError] = useState<string | null>(null)
+  const lines = order.order_items ?? revealed
+
+  const reveal = async () => {
+    setRevealing(true)
+    setRevealError(null)
+    try {
+      const response = await fetch(`/api/admin/orders/${order.id}`)
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'הטעינה נכשלה')
+      setRevealed(data.lines)
+    } catch (err) {
+      setRevealError(err instanceof Error ? err.message : 'הטעינה נכשלה')
+    } finally {
+      setRevealing(false)
+    }
+  }
 
   return (
     <div className="border-b border-stone-200 last:border-b-0">
@@ -110,7 +133,7 @@ function Row({
             {formatIls(confirmed ?? submitted)}
           </p>
           <p className="text-xs text-stone-400">
-            {confirmed != null ? 'מאושר' : 'הוזמן'} · {order.order_items.length} שורות
+            {confirmed != null ? 'מאושר' : 'הוזמן'} · {order.line_count} שורות
           </p>
         </div>
 
@@ -122,9 +145,10 @@ function Row({
 
       {expanded && (
         <div className="border-t border-stone-200 bg-stone-50 p-4">
+          {lines ? (
           <table className="w-full text-sm">
             <tbody>
-              {order.order_items.map((line) => (
+              {lines.map((line) => (
                 <tr key={line.id} className="border-b border-stone-200 last:border-b-0">
                   <td className="py-1.5 font-medium text-stone-900">{line.product_name_he}</td>
                   <td className="tnum py-1.5 text-stone-600">×{line.quantity}</td>
@@ -138,6 +162,20 @@ function Row({
               ))}
             </tbody>
           </table>
+          ) : (
+            <div className="rounded-lg border border-stone-200 bg-white p-3 text-sm text-stone-600">
+              <p>השורות של ספק שמנהל את החשבון בעצמו מוסתרות.</p>
+              <button
+                type="button"
+                disabled={revealing}
+                onClick={reveal}
+                className="mt-2 h-10 rounded-lg border border-stone-300 px-3 text-sm font-medium text-stone-700 disabled:opacity-50"
+              >
+                {revealing ? 'טוען…' : 'הצג שורות לתמיכה (נרשם ביומן)'}
+              </button>
+              {revealError && <p className="mt-2 text-red-700">{revealError}</p>}
+            </div>
+          )}
 
           <div className="mt-3 flex flex-wrap items-baseline gap-x-4 text-sm">
             <span className="text-stone-600">
@@ -160,6 +198,8 @@ function Row({
             </p>
           )}
 
+          {order.managed ? (
+            <>
           {/* Confirming is the point of this screen. The amount defaults to
               what was ordered but is editable, because the invoice is what
               counts and it often differs — a line out of stock, an adjusted
@@ -169,7 +209,7 @@ function Row({
               {confirmed != null ? 'עדכן את הסכום המאושר' : 'אשר את ההזמנה'}
             </p>
             <p className="mt-0.5 text-xs text-stone-500">
-              הסכום שתאשר הוא הבסיס לעמלה — לא הסכום שהוזמן.
+              הסכום שתאשר הוא מה שהספק יספק ויחייב — לא בהכרח מה שהוזמן.
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <input
@@ -224,6 +264,12 @@ function Row({
               </button>
             ))}
           </div>
+            </>
+          ) : (
+            <p className="mt-4 rounded-lg border border-stone-200 bg-white p-3 text-sm text-stone-600">
+              רק הספק מאשר ומעדכן את ההזמנה הזאת.
+            </p>
+          )}
         </div>
       )}
     </div>
@@ -257,7 +303,8 @@ export default function OrdersClient({ orders }: { orders: Order[] }) {
     }
   }
 
-  const open = orders.filter((o) => o.status === 'pending')
+  const open = orders.filter((o) => o.status === 'pending' && o.managed)
+  const waitingSupplier = orders.filter((o) => o.status === 'pending' && !o.managed)
   const rest = orders.filter((o) => o.status !== 'pending')
 
   return (
@@ -265,7 +312,7 @@ export default function OrdersClient({ orders }: { orders: Order[] }) {
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-xl font-bold text-stone-900">הזמנות</h1>
         <p className="text-sm text-stone-600">
-          {open.length} ממתינות לאישור · {orders.length} בסך הכול
+          {open.length + waitingSupplier.length} ממתינות לאישור · {orders.length} בסך הכול
         </p>
         <div className="mt-3">
           <EmailTestButton />
@@ -289,6 +336,28 @@ export default function OrdersClient({ orders }: { orders: Order[] }) {
                 ממתינות לאישור שלך
               </h2>
               {open.map((order) => (
+                <Row
+                  key={order.id}
+                  order={order}
+                  expanded={openId === order.id}
+                  busy={busy === order.id}
+                  amount={amounts[order.id]}
+                  note={notes[order.id]}
+                  onToggle={(id) => setOpenId(openId === id ? null : id)}
+                  onAmount={(id, v) => setAmounts((p) => ({ ...p, [id]: v }))}
+                  onNote={(id, v) => setNotes((p) => ({ ...p, [id]: v }))}
+                  onPatch={patch}
+                />
+              ))}
+            </section>
+          )}
+
+          {waitingSupplier.length > 0 && (
+            <section className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+              <h2 className="border-b border-stone-200 px-4 py-2.5 text-sm font-bold text-stone-700">
+                ממתינות לאישור הספק
+              </h2>
+              {waitingSupplier.map((order) => (
                 <Row
                   key={order.id}
                   order={order}

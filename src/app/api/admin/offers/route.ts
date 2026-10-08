@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/admin-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { isOperatorManaged, logAdminAction, refusedForSelfRun, supplierIsOperatorManaged } from '@/lib/admin-scope'
 
 function trimmed(value: unknown, max = 80): string | null {
   if (typeof value !== 'string') return null
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseAdmin()
     const [{ data: supplier }, { data: product }] = await Promise.all([
-      supabase.from('suppliers').select('status').eq('id', supplierId).maybeSingle(),
+      supabase.from('suppliers').select('status, source').eq('id', supplierId).maybeSingle(),
       supabase.from('products').select('id').eq('id', productId).maybeSingle(),
     ])
 
@@ -49,6 +50,8 @@ export async function POST(request: NextRequest) {
     if (supplier.status !== 'approved') {
       return NextResponse.json({ error: 'אפשר לקשר רק ספק מאושר' }, { status: 409 })
     }
+    // A self-run supplier sets their own prices; they add it from their console.
+    if (!isOperatorManaged(supplier.source)) return refusedForSelfRun()
 
     const { data, error } = await supabase
       .from('supplier_offers')
@@ -142,6 +145,15 @@ export async function PATCH(request: NextRequest) {
       .eq('id', offerId)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    if (!(await supplierIsOperatorManaged(offer.supplier_id))) {
+      await logAdminAction({
+        action: 'merge_offer',
+        supplierId: offer.supplier_id,
+        targetId: offerId,
+        details: { from_product: offer.product_id, to_product: targetId },
+      })
+    }
 
     const { count } = await supabase
       .from('supplier_offers')

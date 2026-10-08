@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { refusedForSelfRun } from '@/lib/admin-scope'
 import { applyImport, planImport, resolveImportSupplier, sanitiseRows } from '@/lib/price-import-server'
 
 /** Recent imports for this supplier, newest first, for the history and undo. */
@@ -39,6 +40,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (body.mode === 'apply') {
+      if (who.adminOnSelfRun) return refusedForSelfRun()
       const skip = new Set(
         (Array.isArray(body.skip) ? body.skip : []).filter((value): value is number => typeof value === 'number')
       )

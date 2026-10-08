@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { refusedForSelfRun } from '@/lib/admin-scope'
 import { resolveImportSupplier, undoImport } from '@/lib/price-import-server'
 
 /** Undo a price-list import: prices back, added products out. */
@@ -7,6 +8,7 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as Record<string, unknown>
     const who = await resolveImportSupplier(body.supplier_id)
     if (!who) return NextResponse.json({ error: 'אין הרשאה' }, { status: 401 })
+    if (who.adminOnSelfRun) return refusedForSelfRun()
     if (typeof body.batch_id !== 'string') {
       return NextResponse.json({ error: 'חסר ייבוא' }, { status: 400 })
     }

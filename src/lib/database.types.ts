@@ -39,6 +39,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_actions: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json
+          id: string
+          supplier_id: string | null
+          target_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json
+          id?: string
+          supplier_id?: string | null
+          target_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          supplier_id?: string | null
+          target_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_actions_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_login_attempts: {
         Row: {
           attempted_at: string
@@ -1133,7 +1168,7 @@ export type Database = {
           language: string
           supplier_id: string
           uploaded_at: string
-          uploaded_by: string
+          uploaded_by: string | null
         }
         Insert: {
           categories?: string[] | null
@@ -1149,7 +1184,7 @@ export type Database = {
           language?: string
           supplier_id: string
           uploaded_at?: string
-          uploaded_by: string
+          uploaded_by?: string | null
         }
         Update: {
           categories?: string[] | null
@@ -1165,7 +1200,7 @@ export type Database = {
           language?: string
           supplier_id?: string
           uploaded_at?: string
-          uploaded_by?: string
+          uploaded_by?: string | null
         }
         Relationships: [
           {

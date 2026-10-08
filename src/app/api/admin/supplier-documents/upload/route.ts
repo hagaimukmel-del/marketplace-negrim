@@ -16,13 +16,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Record admin login attempt for RLS (required by policy)
+    // The service role bypasses RLS. Writing to admin_login_attempts here
+    // used to skew the login throttle on every upload (T-021).
     const supabase = getSupabaseAdmin()
-    const clientIp = request.headers.get('x-forwarded-for') || 'unknown'
-    await supabase
-      .from('admin_login_attempts')
-      .insert({ ip: clientIp, succeeded: true })
-      .throwOnError()
 
     // Parse form data
     const formData = await request.formData()
@@ -93,13 +89,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Record in database
-    // Get current user ID from auth context
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Failed to get user context' }, { status: 500 })
-    }
-
+    // Record in database. The operator has no auth.users row, so there is
+    // no uploader to record (migration 20261008120000 made it nullable).
     const { data: document, error: dbError } = await supabase
       .from('supplier_documents')
       .insert({
@@ -111,7 +102,7 @@ export async function POST(request: NextRequest) {
         document_type: documentType,
         language,
         description: description || null,
-        uploaded_by: user.id,
+        uploaded_by: null,
       })
       .select()
       .single()

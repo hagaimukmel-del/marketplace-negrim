@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionSupplier } from '@/lib/supplier-auth'
+import { refuseAdminWriteFor } from '@/lib/admin-scope'
 import { PAYMENT_TERMS } from '@/app/supplier/types'
 import type { Database } from '@/lib/database.types'
 
@@ -49,6 +50,9 @@ export async function PATCH(request: NextRequest) {
   if (!supplier) {
     return NextResponse.json({ error: 'צריך להיות מחובר' }, { status: 401 })
   }
+
+  const refused = await refuseAdminWriteFor(supplier)
+  if (refused) return refused
 
   try {
     const supabase = getSupabaseAdmin()

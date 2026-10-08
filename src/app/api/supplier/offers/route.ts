@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
-import { getSupplierId } from '@/lib/supplier-auth'
+import { getSessionSupplier } from '@/lib/supplier-auth'
+import { refuseAdminWriteFor } from '@/lib/admin-scope'
 import type { Database } from '@/lib/database.types'
 
 type OfferUpdate = Database['public']['Tables']['supplier_offers']['Update']
@@ -19,10 +20,13 @@ type OfferUpdate = Database['public']['Tables']['supplier_offers']['Update']
  * whoever happens to be editing.
  */
 export async function PATCH(request: NextRequest) {
-  const supplierId = await getSupplierId()
-  if (!supplierId) {
+  const supplier = await getSessionSupplier()
+  if (!supplier) {
     return NextResponse.json({ error: 'צריך להיות מחובר' }, { status: 401 })
   }
+  const refused = await refuseAdminWriteFor(supplier)
+  if (refused) return refused
+  const supplierId = supplier.id
 
   try {
     const body = await request.json()

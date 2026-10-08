@@ -33,8 +33,12 @@ export default async function SuppliersPage() {
     ordersBy.set(line.supplier_id, set)
   }
 
+  // A supplier who runs his own account keeps his entry link to himself: the
+  // operator can open the console view-only and re-send the link to the
+  // address on file, but never sees or copies it.
   const rows: SupplierRow[] = (data ?? []).map((row) => ({
     ...row,
+    token: row.source === 'self' ? null : row.token,
     offer_count: offersBy.get(row.id) ?? 0,
     order_count: ordersBy.get(row.id)?.size ?? 0,
   }))

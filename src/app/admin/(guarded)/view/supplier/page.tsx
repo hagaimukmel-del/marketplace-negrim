@@ -12,11 +12,15 @@ export const dynamic = 'force-dynamic'
  * entry link here signs this browser in as that supplier. The console then
  * shows a banner saying whose it is, and skips the terms prompt, so the operator
  * never accepts anything on a supplier's behalf.
+ *
+ * The button goes through /api/admin/view-supplier, which signs the browser in
+ * on the server, so the supplier's entry token is never rendered here. A
+ * supplier who runs his own account (source 'self') opens view-only.
  */
 export default async function SupplierViewPage() {
   const { data } = await getSupabaseAdmin()
     .from('suppliers')
-    .select('id, company_name, city, status, token, logo_url')
+    .select('id, company_name, city, status, logo_url, source')
     .in('status', ['approved', 'blocked'])
     .order('company_name')
 
@@ -27,7 +31,8 @@ export default async function SupplierViewPage() {
       <div>
         <h1 className="text-xl font-bold text-stone-900">האתר כפי שספק רואה</h1>
         <p className="mt-1 text-sm text-stone-600">
-          כל כפתור פותח את הממשק האמיתי של הספק בלשונית חדשה. מה שתשנה שם נשמר אצלו — זה לא הדמיה.
+          כל כפתור פותח את הממשק האמיתי של הספק בלשונית חדשה. בספק שמנהל את עצמו אפשר רק לצפות, והכניסה נרשמת ביומן.
+          בספק שאתה מנהל, מה שתשנה נשמר אצלו — זה לא הדמיה.
         </p>
       </div>
 
@@ -80,11 +85,12 @@ export default async function SupplierViewPage() {
                   <span className="block text-xs text-stone-500">
                     {supplier.city ?? 'ללא עיר'}
                     {supplier.status === 'blocked' && ' · חסום — לא יכול להיכנס'}
+                    {supplier.source === 'self' ? ' · מנהל את עצמו (צפייה בלבד)' : ' · בניהול שלך'}
                   </span>
                 </span>
-                {supplier.status === 'approved' && supplier.token ? (
+                {supplier.status === 'approved' ? (
                   <a
-                    href={`/supplier/enter/${supplier.token}`}
+                    href={`/api/admin/view-supplier/${supplier.id}`}
                     target="_blank"
                     rel="noreferrer"
                     className="flex h-10 shrink-0 items-center gap-1.5 rounded-lg bg-emerald-700 px-3 text-sm font-semibold text-white"

@@ -26,6 +26,8 @@ terms and documents. No password needed.
 
 ## Rules & invariants
 - Only an **approved** supplier can mint a session. Rejecting a supplier cuts access immediately.
+- When the operator opens a self-run supplier's console (admin cookie + supplier cookie), the
+  banner says view-only and every write route answers 403. See area 7.
 - A supplier's link edits what the whole marketplace pays, so treat it as a strong credential.
 - In imports, any supplier id in the request is ignored for a signed-in supplier.
 
