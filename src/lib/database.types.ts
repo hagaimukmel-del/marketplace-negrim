@@ -296,6 +296,86 @@ export type Database = {
           },
         ]
       }
+      message_threads: {
+        Row: {
+          carpenter_id: string
+          carpenter_last_read_at: string | null
+          contact_request_id: string | null
+          created_at: string
+          id: string
+          last_message_at: string
+          last_sender: string
+          order_id: string | null
+          product_id: string | null
+          status: string
+          subject: string
+          supplier_id: string
+          supplier_last_read_at: string | null
+        }
+        Insert: {
+          carpenter_id: string
+          carpenter_last_read_at?: string | null
+          contact_request_id?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          last_sender: string
+          order_id?: string | null
+          product_id?: string | null
+          status?: string
+          subject: string
+          supplier_id: string
+          supplier_last_read_at?: string | null
+        }
+        Update: {
+          carpenter_id?: string
+          carpenter_last_read_at?: string | null
+          contact_request_id?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          last_sender?: string
+          order_id?: string | null
+          product_id?: string | null
+          status?: string
+          subject?: string
+          supplier_id?: string
+          supplier_last_read_at?: string | null
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          sender: string
+          thread_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          sender: string
+          thread_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          sender?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "message_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       metzion_listings: {
         Row: {
           carpenter_id: string

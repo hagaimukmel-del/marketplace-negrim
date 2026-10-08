@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, MapPin, MessageCircle, Phone, Send, PackageCheck, Inbox } from 'lucide-react'
+import Link from 'next/link'
+import { Check, MapPin, MessageCircle, MessageSquare, Phone, Send, PackageCheck, Inbox } from 'lucide-react'
 import { formatIls, withVat } from '@/lib/vat'
 import { statusInfo } from '@/lib/order-status'
 import { callApi, jsonInit, whatsappLink, type SupplierOrder, type SupplierQuestion } from '../types'
@@ -123,6 +124,15 @@ function OrderCard({
             <MessageCircle size={15} />
             וואטסאפ
           </a>
+        )}
+        {!order.split && (
+          <Link
+            href={`/supplier/messages/new?order=${order.id}`}
+            className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 px-3 text-sm font-semibold text-stone-700"
+          >
+            <MessageSquare size={15} />
+            הודעה
+          </Link>
         )}
         {mapsLink && (
           <a
@@ -366,7 +376,12 @@ function Questions({ questions }: { questions: SupplierQuestion[] }) {
   if (questions.length === 0) return null
   return (
     <section className="rounded-xl border border-stone-200 bg-white p-4">
-      <h2 className="font-bold text-stone-900">שאלות מנגריות</h2>
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="font-bold text-stone-900">שאלות מנגריות</h2>
+        <Link href="/supplier/messages" className="text-sm font-semibold text-emerald-800">
+          לענות באתר
+        </Link>
+      </div>
       <ul className="mt-2 divide-y divide-stone-100">
         {questions.map((q) => {
           const whatsapp = whatsappLink(q.phone, q.productName ? `שלום, לגבי השאלה שלך על ${q.productName} בשוק הנגרים` : undefined)

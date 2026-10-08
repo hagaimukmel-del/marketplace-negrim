@@ -35,6 +35,8 @@ operator did inside a self-run supplier's account.
   refuse with 403 (`refuseAdminWriteFor`, `refusedForSelfRun`). Allowed and logged in
   `admin_actions`: hiding/showing an offer, merging duplicate products, opening the console
   (`open_supplier_console`), revealing an order's lines for support (`reveal_order_lines`).
+- `/admin/suppliers` shows each supplier's message thread count and how many wait for its answer;
+  message content is never shown to the admin.
 - A self-run supplier's order lines are not sent to `/admin/orders` until the operator clicks
   "הצג שורות לתמיכה", and his entry token is never sent to the admin pages; the operator can
   mail it to the address on file instead.

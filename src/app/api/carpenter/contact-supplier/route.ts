@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { isTestName, sendEmail } from '@/lib/email'
 import { supplierQuestionHtml, supplierQuestionSubject } from '@/lib/emails/supplier-question'
+import { startThread } from '@/lib/messages'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -14,6 +15,10 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
  * Stored in supplier_contact_requests (shown in the supplier console) and
  * emailed to the supplier with the carpenter's phone, so the answer goes
  * straight between them. Types: quote_request, inquiry, support.
+ *
+ * It also opens a message thread (T-025), so the supplier can answer inside
+ * the site. Best-effort: a database without the messages tables still logs
+ * and emails the question.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -62,18 +67,23 @@ export async function POST(request: NextRequest) {
 
     const question = message.trim().slice(0, 1000)
 
-    const { error: logError } = await supabase.from('supplier_contact_requests').insert({
+    const { data: logged, error: logError } = await supabase.from('supplier_contact_requests').insert({
       carpenter_id: carpenter.id,
       supplier_id: supplier.id,
       action_type: action,
       message: question,
       product_id: productId || null,
-    })
+    }).select('id').single()
 
     if (logError) {
       console.error('Failed to log contact request:', logError)
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
+
+    await startThread(
+      { side: 'carpenter', id: carpenter.id },
+      { supplierId: supplier.id, productId: productId || null, contactRequestId: logged.id, body: question, notify: false }
+    ).catch((err) => console.error('Contact supplier: thread not opened', err))
 
     // The question is saved and shows in the supplier console; a failed email
     // must not tell the carpenter it was lost

@@ -45,6 +45,8 @@ export interface SupplierRow {
   terms_accepted_at: string | null
   offer_count: number
   order_count: number
+  /** Message threads with carpentries and how many wait for the supplier. Never their content. */
+  threads: { total: number; unanswered: number }
 }
 
 /** The row as the form wants it: every field a string, nulls as empty. */
@@ -276,6 +278,8 @@ function SupplierCard({
           <span className="block truncate font-bold text-stone-900">{row.company_name}</span>
           <span className="tnum block truncate text-xs text-stone-500">
             {row.city ?? 'ללא עיר'} · {row.offer_count} מוצרים · {row.order_count} הזמנות
+            {row.threads.total > 0 && ` · ${row.threads.total} שיחות`}
+            {row.threads.unanswered > 0 && ` (${row.threads.unanswered} בלי מענה)`}
           </span>
         </span>
         <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${TONE[row.status] ?? ''}`}>

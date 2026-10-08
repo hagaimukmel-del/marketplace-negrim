@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ClipboardList, Home, LayoutGrid, Recycle, Search, ShoppingBag, Sparkles, UserRound } from 'lucide-react'
+import { Bell, ClipboardList, Home, LayoutGrid, MessageSquare, Recycle, Search, ShoppingBag, Sparkles, UserRound } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { LogoMark } from '@/components/brand/Logo'
 import { ChatContainer } from '@/components/chat/ChatContainer'
@@ -24,6 +24,24 @@ function Wordmark({ onDark = false }: { onDark?: boolean }) {
   )
 }
 
+/** The bell: messages from suppliers the carpenter has not opened yet. */
+function BellLink({ unread }: { unread: number }) {
+  return (
+    <Link
+      href="/app/messages"
+      aria-label={unread ? `הודעות, ${unread} חדשות` : 'הודעות'}
+      className="relative grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-hair bg-white text-navy"
+    >
+      <Bell size={20} />
+      {unread > 0 && (
+        <span className="tnum absolute -end-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-[#DC6F0C] px-1 text-[11px] font-bold text-white">
+          {unread > 9 ? '9+' : unread}
+        </span>
+      )}
+    </Link>
+  )
+}
+
 /**
  * The frame every screen of the purchasing app sits in.
  *
@@ -34,6 +52,7 @@ function Wordmark({ onDark = false }: { onDark?: boolean }) {
  */
 export default function AppShell({
   attention,
+  unread,
   initial,
   signedIn,
   children,
@@ -42,6 +61,8 @@ export default function AppShell({
   signedIn: boolean
   /** Orders that want the carpenter — the dot on "הזמנות". */
   attention: number
+  /** Message threads with an answer the carpenter has not opened — the bell. */
+  unread: number
   /** First letter of the carpentry, for the avatar. */
   initial: string
   children: React.ReactNode
@@ -95,6 +116,9 @@ export default function AppShell({
             סוכן חכם
           </button>
           <SideLink href="/app/orders" label="הזמנות" active={is('/app/orders')} icon={<ClipboardList size={19} />} count={attention} />
+          {signedIn && (
+            <SideLink href="/app/messages" label="הודעות" active={is('/app/messages')} icon={<MessageSquare size={19} />} count={unread} />
+          )}
           <SideLink href="/app/metzion" label="מציאון" active={is('/app/metzion')} icon={<Recycle size={19} />} />
           <SideLink href={signedIn ? '/app/account' : '/join'} label={signedIn ? 'הנגרייה שלי' : 'כניסה / הרשמה'} active={is('/app/account')} icon={<UserRound size={19} />} />
         </nav>
@@ -108,6 +132,7 @@ export default function AppShell({
             <Wordmark />
           </Link>
           <span className="flex-1" />
+          {signedIn && <BellLink unread={unread} />}
           <Link href="/app/catalog?focus=search" aria-label="חיפוש" className="grid h-10 w-10 place-items-center rounded-xl border border-hair bg-white text-navy">
             <Search size={20} />
           </Link>
@@ -144,6 +169,7 @@ export default function AppShell({
             שאל את הסוכן
           </button>
           <span className="flex-1" />
+          {signedIn && <BellLink unread={unread} />}
           <Link href="/app/order" className="inline-flex h-11 items-center gap-2 rounded-[11px] bg-brand px-4 font-bold text-navy hover:bg-brand-hover">
             <ShoppingBag size={18} />
             {lines ? (

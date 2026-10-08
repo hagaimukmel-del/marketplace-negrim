@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { Building2, Check, ClipboardList, FileText, MessageCircle, Phone, Repeat, Truck } from 'lucide-react'
+import { Building2, Check, ClipboardList, FileText, MessageCircle, MessageSquare, Phone, Repeat, Truck } from 'lucide-react'
 import { money, termsText, when } from '@/lib/app/format'
 import { attentionOf, orderSteps, quantityText, totalOf, type AppOrder } from '@/lib/app/orders'
 import { VAT_RATE } from '@/lib/vat'
@@ -229,6 +229,9 @@ export default function OrderDetail({ order, siblings, now }: { order: AppOrder;
             {supplier.leadDays != null ? ` · עד ${supplier.leadDays} ימי עסקים` : ''}
           </small>
           <span className="flex gap-1.5">
+            <Link href={`/app/messages/new?order=${order.id}`} aria-label="הודעה לספק באתר" className="grid h-[38px] w-[38px] place-items-center rounded-xl border border-hair text-navy">
+              <MessageSquare size={18} />
+            </Link>
             {supplier.phone && (
               <a href={`tel:${supplier.phone}`} aria-label="חיוג לספק" className="grid h-[38px] w-[38px] place-items-center rounded-xl border border-hair text-navy">
                 <Phone size={18} />

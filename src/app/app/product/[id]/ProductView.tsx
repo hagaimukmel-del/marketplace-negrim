@@ -120,6 +120,11 @@ export default function ProductView({
           {offer.supplierName}
         </span>
         {offer.delivers === false && <span className="text-[13px] font-semibold text-attn">לא מגיע לאזור שלך</span>}
+        {showPrices && (
+          <Link href={`/app/messages/new?supplier=${offer.supplierId}&product=${product.id}`} className="text-[13.5px] font-semibold text-brand-ink">
+            שאלה לספק
+          </Link>
+        )}
         {offer.suggested ? <Reason product={product} offer={offer} /> : <span className="text-[13.5px] text-muted">בחרת ספק אחר</span>}
         {product.offers.length > 1 && (
           <button type="button" onClick={() => setSheet(true)} className="ms-auto text-sm font-semibold text-brand-ink md:hidden">
