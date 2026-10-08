@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionSupplier } from '@/lib/supplier-auth'
+import { refuseAdminWriteFor } from '@/lib/admin-scope'
 import { BASE_UNITS, type BaseUnit } from '@/lib/catalog'
 import type { Database } from '@/lib/database.types'
 
@@ -87,6 +88,9 @@ function readOfferFields(body: Record<string, unknown>, requirePrice: boolean): 
 export async function POST(request: NextRequest) {
   const supplier = await getSessionSupplier()
   if (!supplier) return NextResponse.json({ error: 'צריך להיות מחובר' }, { status: 401 })
+
+  const refused = await refuseAdminWriteFor(supplier)
+  if (refused) return refused
 
   try {
     const body = (await request.json()) as Record<string, unknown>
@@ -259,6 +263,9 @@ export async function PATCH(request: NextRequest) {
   const supplier = await getSessionSupplier()
   if (!supplier) return NextResponse.json({ error: 'צריך להיות מחובר' }, { status: 401 })
 
+  const refused = await refuseAdminWriteFor(supplier)
+  if (refused) return refused
+
   try {
     const supabase = getSupabaseAdmin()
     const contentType = request.headers.get('content-type') ?? ''
@@ -415,6 +422,9 @@ export async function PATCH(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const supplier = await getSessionSupplier()
   if (!supplier) return NextResponse.json({ error: 'צריך להיות מחובר' }, { status: 401 })
+
+  const refused = await refuseAdminWriteFor(supplier)
+  if (refused) return refused
 
   try {
     const offerId = request.nextUrl.searchParams.get('offer_id')

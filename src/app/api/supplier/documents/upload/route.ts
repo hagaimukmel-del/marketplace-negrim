@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionSupplier } from '@/lib/supplier-auth'
+import { refuseAdminWriteFor } from '@/lib/admin-scope'
 
 const DOC_TYPES = ['spec_sheet', 'usage_guide', 'image', 'datasheet', 'other'] as const
 const ALLOWED_CONTENT_TYPES = ['application/pdf', 'image/jpeg', 'image/png']
@@ -20,6 +21,9 @@ export async function POST(request: NextRequest) {
   if (!supplier) {
     return NextResponse.json({ error: 'צריך להיות מחובר' }, { status: 401 })
   }
+
+  const refused = await refuseAdminWriteFor(supplier)
+  if (refused) return refused
 
   try {
     const formData = await request.formData()

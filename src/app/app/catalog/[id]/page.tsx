@@ -20,7 +20,7 @@ export default async function AppCategory({
 }) {
   const [{ id }, { b }, carpenter, admin] = await Promise.all([params, searchParams, getSessionCarpenter(), isAdmin()])
   const showPrices = Boolean(carpenter) || admin
-  const products = await loadProducts({ showPrices })
+  const products = await loadProducts({ showPrices, city: carpenter?.city })
   const tree = await loadCategoryTree(products)
   const top = tree.find((node) => node.id === id)
   if (!top) notFound()

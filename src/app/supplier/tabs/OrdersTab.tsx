@@ -2,14 +2,15 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, MapPin, MessageCircle, Phone, Send, PackageCheck, Inbox } from 'lucide-react'
+import Link from 'next/link'
+import { Check, MapPin, MessageCircle, MessageSquare, Phone, Send, PackageCheck, Inbox } from 'lucide-react'
 import { formatIls, withVat } from '@/lib/vat'
 import { statusInfo } from '@/lib/order-status'
 import { callApi, jsonInit, whatsappLink, type SupplierOrder, type SupplierQuestion } from '../types'
 import type { Notify } from '../SupplierApp'
 
 type Filter = 'pending' | 'active' | 'done' | 'all'
-type Action = 'confirm' | 'prepare' | 'ship' | 'deliver'
+type Action = 'confirm' | 'reject' | 'prepare' | 'ship' | 'deliver'
 
 const FILTERS: { key: Filter; label: string; match: (status: string) => boolean }[] = [
   { key: 'pending', label: 'ממתינות לאישור', match: (s) => s === 'pending' },
@@ -29,8 +30,9 @@ function formatDate(value: string): string {
 /**
  * One incoming order, with the next step as its own button.
  *
- * Confirming is one tap for "yes, all of it"; the amount and a note sit behind
- * "יש שינוי" for the times what can be supplied differs from what was ordered.
+ * Confirming is one tap for "yes, all of it"; behind "יש שינוי" the supplier
+ * can mark lines it cannot supply (the amount follows), change the amount, set
+ * a delivery date and add a note. "לא יכול לספק" rejects with a reason.
  * After that the card offers only the step that comes next, so there is never a
  * choice to make about which button applies.
  */
@@ -44,8 +46,19 @@ function OrderCard({
   onAction: (order: SupplierOrder, action: Action, extra?: Record<string, unknown>) => Promise<boolean>
 }) {
   const [changing, setChanging] = useState(false)
+  const [rejecting, setRejecting] = useState(false)
+  const [missing, setMissing] = useState<string[]>([])
   const [amount, setAmount] = useState(String(order.total))
+  const [deliveryOn, setDeliveryOn] = useState('')
   const [note, setNote] = useState('')
+  const [reason, setReason] = useState('')
+
+  const toggleMissing = (lineId: string) => {
+    const next = missing.includes(lineId) ? missing.filter((id) => id !== lineId) : [...missing, lineId]
+    setMissing(next)
+    const total = order.lines.filter((line) => !next.includes(line.id)).reduce((sum, line) => sum + line.lineTotal, 0)
+    setAmount(String(Math.round(total * 100) / 100))
+  }
 
   const info = statusInfo(order.status)
   const whatsapp = whatsappLink(
@@ -59,9 +72,16 @@ function OrderCard({
   const confirm = async () => {
     const ok = await onAction(order, 'confirm', {
       confirmed_subtotal_excl_vat: changing ? amount : undefined,
+      unavailable_lines: changing ? missing : [],
+      expected_delivery_on: changing && deliveryOn ? deliveryOn : undefined,
       supplier_note: note,
     })
     if (ok) setChanging(false)
+  }
+
+  const reject = async () => {
+    const ok = await onAction(order, 'reject', { reason })
+    if (ok) setRejecting(false)
   }
 
   return (
@@ -105,6 +125,15 @@ function OrderCard({
             וואטסאפ
           </a>
         )}
+        {!order.split && (
+          <Link
+            href={`/supplier/messages/new?order=${order.id}`}
+            className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 px-3 text-sm font-semibold text-stone-700"
+          >
+            <MessageSquare size={15} />
+            הודעה
+          </Link>
+        )}
         {mapsLink && (
           <a
             href={mapsLink}
@@ -129,9 +158,20 @@ function OrderCard({
 
       <ul className="mt-3 divide-y divide-stone-100 border-y border-stone-100">
         {order.lines.map((line) => (
-          <li key={line.id} className="flex justify-between gap-3 py-2 text-sm">
-            <span className="min-w-0">
-              <span className="block font-medium text-stone-900">{line.name}</span>
+          <li key={line.id} className={`flex justify-between gap-3 py-2 text-sm ${missing.includes(line.id) ? 'opacity-50' : ''}`}>
+            {changing && order.status === 'pending' && (
+              <label className="flex shrink-0 items-center gap-1 text-xs font-semibold text-stone-600">
+                <input
+                  type="checkbox"
+                  checked={missing.includes(line.id)}
+                  onChange={() => toggleMissing(line.id)}
+                  className="h-5 w-5 accent-amber-600"
+                />
+                חסר
+              </label>
+            )}
+            <span className="min-w-0 flex-1">
+              <span className={`block font-medium text-stone-900 ${missing.includes(line.id) ? 'line-through' : ''}`}>{line.name}</span>
               <span className="tnum text-xs text-stone-500">
                 {line.quantity} × {formatIls(line.unitPrice)}
               </span>
@@ -162,7 +202,8 @@ function OrderCard({
 
       {order.split ? (
         <p className="mt-3 rounded-lg bg-stone-100 p-3 text-sm text-stone-600">
-          ההזמנה כוללת גם ספקים אחרים, ולכן היא מטופלת מהמערכת.
+          {/* Only orders from before checkouts were split per supplier (2026-09-17) can mix suppliers. */}
+          הזמנה ישנה, מלפני שכל הזמנה נשלחה לספק אחד. היא כוללת גם ספקים אחרים ולכן לא מאשרים אותה מכאן.
         </p>
       ) : (
         <div className="mt-3 space-y-2">
@@ -176,6 +217,16 @@ function OrderCard({
                       inputMode="decimal"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
+                      className="tnum mt-1 h-11 w-full rounded-lg border border-stone-300 bg-white px-3"
+                    />
+                  </label>
+                  <p className="text-xs text-stone-500">סמנו ״חסר״ ליד שורה שלא תסופק, והסכום יתעדכן.</p>
+                  <label className="block">
+                    <span className="text-xs font-medium text-stone-600">תאריך אספקה (לא חובה)</span>
+                    <input
+                      type="date"
+                      value={deliveryOn}
+                      onChange={(e) => setDeliveryOn(e.target.value)}
                       className="tnum mt-1 h-11 w-full rounded-lg border border-stone-300 bg-white px-3"
                     />
                   </label>
@@ -210,6 +261,46 @@ function OrderCard({
                   {changing ? 'ביטול' : 'יש שינוי'}
                 </button>
               </div>
+              {rejecting ? (
+                <div className="space-y-2 rounded-lg bg-red-50 p-3">
+                  <label className="block">
+                    <span className="text-xs font-medium text-red-800">למה אי אפשר לספק? הנגר יקבל את זה במייל</span>
+                    <textarea
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      rows={2}
+                      placeholder="למשל: המוצר אזל מהמלאי עד סוף החודש"
+                      className="mt-1 w-full rounded-lg border border-red-200 bg-white p-3"
+                    />
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={reject}
+                      disabled={busy || reason.trim().length < 2}
+                      className="h-11 flex-1 rounded-lg bg-red-700 text-sm font-bold text-white disabled:opacity-50"
+                    >
+                      דחה את ההזמנה
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRejecting(false)}
+                      className="h-11 shrink-0 rounded-lg border border-stone-300 bg-white px-4 text-sm font-semibold text-stone-700"
+                    >
+                      חזרה
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setRejecting(true)}
+                  disabled={busy}
+                  className="w-full text-center text-sm font-semibold text-red-700"
+                >
+                  לא יכול לספק את ההזמנה
+                </button>
+              )}
             </>
           )}
 
@@ -267,6 +358,7 @@ function OrderCard({
 
 const DONE_MESSAGE: Record<Action, string> = {
   confirm: 'ההזמנה אושרה',
+  reject: 'ההזמנה נדחתה והנגר עודכן',
   prepare: 'סומן: בהכנה',
   ship: 'סומן: יצא לאספקה',
   deliver: 'סומן: סופק',
@@ -284,7 +376,12 @@ function Questions({ questions }: { questions: SupplierQuestion[] }) {
   if (questions.length === 0) return null
   return (
     <section className="rounded-xl border border-stone-200 bg-white p-4">
-      <h2 className="font-bold text-stone-900">שאלות מנגריות</h2>
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="font-bold text-stone-900">שאלות מנגריות</h2>
+        <Link href="/supplier/messages" className="text-sm font-semibold text-emerald-800">
+          לענות באתר
+        </Link>
+      </div>
       <ul className="mt-2 divide-y divide-stone-100">
         {questions.map((q) => {
           const whatsapp = whatsappLink(q.phone, q.productName ? `שלום, לגבי השאלה שלך על ${q.productName} בשוק הנגרים` : undefined)

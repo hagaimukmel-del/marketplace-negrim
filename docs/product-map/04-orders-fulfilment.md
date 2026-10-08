@@ -31,6 +31,11 @@ CLAUDE.md §5 is binding. In short:
 - Status reflects fulfilment, never payment (`lib/order-status.ts` is the one vocabulary).
 - Only a signed-in or token-identified carpentry with `email_verified_at` set can create orders (`/api/orders`, the only order-creating route). No anonymous orders. Unconfirmed carpentries keep their cart; `/app/order` shows how to confirm.
 - Amounts are snapshots. Commission is based on the supplier's **confirmed** amount.
+- Confirming can mark lines `order_items.unavailable` (the line keeps its snapshot; the default
+  confirmed amount leaves it out) and set `orders.expected_delivery_on`. Rejecting moves
+  `pending` → `cancelled` with the reason in `supplier_note`, emailed to the carpenter
+  (migration `20261008140000`; both read and written apart from the main queries).
+- The purchase order shows the supplier's logo on the right and the Nagarim logo on the left.
 - One checkout becomes one order per supplier, sharing a `checkout_id`.
 - Quote and order files are titled הצעת מחיר / הזמנת רכש and say they are not a חשבונית; VAT on them is indicative.
 - Email safety valves: names containing "ניסיון" and all of staging go to the test inbox.
@@ -39,4 +44,4 @@ CLAUDE.md §5 is binding. In short:
 Live. The operator gets no per-order email, by design.
 
 ## Open tasks
-T-012, T-022, T-023, T-027
+T-012, T-022, T-023, T-029

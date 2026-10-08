@@ -62,6 +62,7 @@ export function supplierQuestionHtml(q: SupplierQuestionEmail): string {
       <div style="text-align:center;padding-top:16px">
         ${q.phone ? button(`tel:${escapeHtml(q.phone)}`, `להתקשר ${escapeHtml(q.phone)}`, '#1c1917') : ''}
         ${wa ? button(wa, 'וואטסאפ', '#047857') : ''}
+        ${button(`${siteUrl()}/supplier/messages`, 'לענות באתר', '#57534e')}
       </div>
       <div style="text-align:center;color:#78716c;font-size:12px;padding-top:14px;line-height:1.6">
         ${q.carpenterEmail ? 'אפשר גם להשיב למייל הזה, והתשובה תגיע ישירות לנגרייה.<br>' : ''}

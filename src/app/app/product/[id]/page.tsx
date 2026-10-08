@@ -3,7 +3,7 @@ import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { isAdmin } from '@/lib/admin-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { loadCategoryTree, loadProducts } from '@/lib/app/catalog-server'
-import ProductView, { type LastPurchase } from './ProductView'
+import ProductView, { type LastPurchase, type ProductDoc } from './ProductView'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +15,7 @@ function nowMs(): number {
 export default async function AppProduct({ params }: { params: Promise<{ id: string }> }) {
   const [{ id }, carpenter, admin] = await Promise.all([params, getSessionCarpenter(), isAdmin()])
   const showPrices = Boolean(carpenter) || admin
-  const [product] = await loadProducts({ showPrices, ids: [id] })
+  const [product] = await loadProducts({ showPrices, ids: [id], city: carpenter?.city })
   if (!product) notFound()
 
   const tree = await loadCategoryTree([product])
@@ -39,8 +39,22 @@ export default async function AppProduct({ params }: { params: Promise<{ id: str
     }
   }
 
+  // Technical sheets from the suppliers that sell it today; a sheet from a
+  // supplier that stopped selling it is not shown.
+  const sellers = new Map(product.offers.map((offer) => [offer.supplierId, offer.supplierName]))
+  const { data: docRows } = await getSupabaseAdmin()
+    .from('product_documents')
+    .select('id, title_he, file_url, supplier_id')
+    .eq('product_id', product.id)
+    .order('uploaded_at', { ascending: false })
+    .limit(10)
+  const docs: ProductDoc[] = (docRows ?? [])
+    .filter((doc) => sellers.has(doc.supplier_id))
+    .map((doc) => ({ id: doc.id, title: doc.title_he, url: doc.file_url, supplierName: sellers.get(doc.supplier_id)! }))
+
   return (
     <ProductView
+      docs={docs}
       product={product}
       showPrices={showPrices}
       last={last}

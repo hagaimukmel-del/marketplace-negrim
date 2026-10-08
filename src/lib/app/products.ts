@@ -5,6 +5,7 @@
 export interface AppOffer {
   supplierId: string
   supplierName: string
+  supplierLogo: string | null
   /** Per base unit, excl VAT. Null when this viewer may not see prices. */
   price: number | null
   packLabel: string | null
@@ -13,7 +14,9 @@ export interface AppOffer {
   leadDays: number | null
   terms: string[]
   minOrder: number | null
-  /** The offer the catalogue suggests: in stock first, then cheapest (lib/catalog bestOffer). */
+  /** Whether the supplier delivers to this carpentry's region; null when either side is unknown. */
+  delivers: boolean | null
+  /** The offer the catalogue suggests: among suppliers that reach this carpentry, in stock first, then cheapest. */
   suggested: boolean
 }
 

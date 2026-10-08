@@ -40,6 +40,11 @@ export interface SupplierProfile {
   min_order_value_excl_vat: number | null
   default_lead_time_days: number | null
   payment_terms: string[]
+  /** False on a database without migration 20261008130000; the regions form waits for it. */
+  delivery_ready: boolean
+  delivery_regions: string[]
+  delivery_fee_excl_vat: number | null
+  free_delivery_from_excl_vat: number | null
 }
 
 export interface ProductItem {
@@ -63,6 +68,8 @@ export interface ProductItem {
   isActive: boolean
   /** Only the supplier who created a product may change what is shared. */
   canEditProduct: boolean
+  /** This supplier attached at least one technical sheet or guide to it. */
+  hasSheet: boolean
 }
 
 /**

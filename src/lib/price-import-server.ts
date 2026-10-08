@@ -5,6 +5,7 @@ import { getSessionSupplier } from './supplier-auth'
 import { isAdmin } from './admin-auth'
 import { BASE_UNITS, type BaseUnit } from './catalog'
 import { MAX_IMPORT_ROWS, type ImportRow, type PlanLine } from './price-import'
+import { isOperatorManaged } from './admin-scope'
 
 interface OfferRow {
   id: string
@@ -56,18 +57,24 @@ const key = (value: string) => value.trim().toLowerCase().replace(/["'׳״]/g, '
  */
 export async function resolveImportSupplier(
   requestedSupplierId: unknown
-): Promise<{ supplierId: string; createdBy: 'supplier' | 'admin' } | null> {
+): Promise<{ supplierId: string; createdBy: 'supplier' | 'admin'; adminOnSelfRun: boolean } | null> {
   const supplier = await getSessionSupplier()
-  if (supplier) return { supplierId: supplier.id, createdBy: 'supplier' }
+  if (supplier) {
+    // The operator looking at a self-run supplier's console reads, never writes.
+    const adminOnSelfRun = !isOperatorManaged(supplier.source) && (await isAdmin())
+    return { supplierId: supplier.id, createdBy: 'supplier', adminOnSelfRun }
+  }
 
   if (typeof requestedSupplierId === 'string' && (await isAdmin())) {
     const { data } = await getSupabaseAdmin()
       .from('suppliers')
-      .select('id')
+      .select('id, source')
       .eq('id', requestedSupplierId)
       .eq('status', 'approved')
       .maybeSingle()
-    if (data) return { supplierId: data.id, createdBy: 'admin' }
+    if (data) {
+      return { supplierId: data.id, createdBy: 'admin', adminOnSelfRun: !isOperatorManaged(data.source) }
+    }
   }
   return null
 }

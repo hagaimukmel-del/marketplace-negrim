@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { siteUrl } from '../email'
-import { emailLogo } from './brand'
+import { emailLogo, supplierTermsBlock } from './brand'
 
 /**
  * The two messages a supplier application should produce, and until now did
@@ -66,10 +66,7 @@ export function applicationReceivedHtml(application: SupplierApplication): strin
       כל ספק מאושר ידנית לפני שהמוצרים שלו עולים לקטלוג. נעבור על הפרטים ונחזור אליכם —
       אם משהו חסר, נתקשר.
     </p>
-    <p style="margin:16px 0 0;color:#57534e">
-      תזכורת למה שמצפה לכם: אתם מספקים, אתם מוציאים את החשבונית ואתם קובעים את תנאי התשלום.
-      אנחנו לא גובים כסף מהנגר.
-    </p>
+    ${supplierTermsBlock()}
     <p style="margin:16px 0 0;font-size:13px;color:#78716c">
       אפשר להשיב למייל הזה בכל שאלה.
     </p>`)

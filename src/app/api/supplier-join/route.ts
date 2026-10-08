@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { TERMS_VERSION } from '@/lib/terms'
+import { isRegionKey } from '@/lib/regions'
 import { isTestName, sendEmail } from '@/lib/email'
 import {
   applicationReceivedHtml,
@@ -73,6 +74,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'כתובת מייל לא תקינה' }, { status: 400 })
     }
 
+    const regions = Array.isArray(body.delivery_regions)
+      ? [...new Set((body.delivery_regions as unknown[]).filter(isRegionKey))]
+      : []
+    if (regions.length === 0) {
+      return NextResponse.json({ error: 'צריך לסמן לאן אתם מספקים' }, { status: 400 })
+    }
+
     if (body.accept_terms !== true) {
       return NextResponse.json({ error: 'צריך לאשר את התקנון' }, { status: 400 })
     }
@@ -105,7 +113,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { error } = await supabase.from('suppliers').insert({
+    const { data: created, error } = await supabase.from('suppliers').insert({
       company_name: companyName,
       business_id: businessId,
       contact_name: text(body.contact_name, 120),
@@ -119,7 +127,7 @@ export async function POST(request: NextRequest) {
       is_verified: false,
       terms_accepted_at: new Date().toISOString(),
       terms_version: TERMS_VERSION,
-    })
+    }).select('id').single()
 
     if (error) {
       // Both business_id and phone_key are unique; either can lose a race with
@@ -132,6 +140,14 @@ export async function POST(request: NextRequest) {
       }
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
+
+    // Saved apart from the insert: on a database without migration
+    // 20261008130000 the regions are lost but the application is not.
+    const { error: regionsError } = await supabase
+      .from('suppliers')
+      .update({ delivery_regions: regions })
+      .eq('id', created.id)
+    if (regionsError) console.error('Supplier join: delivery regions not saved:', regionsError)
 
     // Two messages, neither of which existed: registering and hearing nothing
     // reads as a form that swallowed your details, and the operator should not

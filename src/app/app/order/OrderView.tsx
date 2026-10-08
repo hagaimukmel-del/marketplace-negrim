@@ -10,6 +10,7 @@ import { VAT_RATE } from '@/lib/vat'
 import CategoryGlyph from '@/components/app/CategoryGlyph'
 import Stepper from '@/components/app/Stepper'
 import { AttentionLine } from '@/components/app/ui'
+import SupplierLogo from '@/components/app/SupplierLogo'
 
 interface Quote {
   products: AppProduct[]
@@ -28,6 +29,9 @@ interface Line {
 interface Group {
   supplierId: string
   name: string
+  logo: string | null
+  /** False when the supplier set delivery regions and this carpentry is outside them. */
+  delivers: boolean | null
   terms: string[]
   leadDays: number | null
   min: number
@@ -152,6 +156,8 @@ export default function OrderView({ profile }: { profile: { address: string; cit
     const group = groupMap.get(supplierId) ?? {
       supplierId,
       name: line.offer?.supplierName ?? line.item.supplier_name ?? 'ספק',
+      logo: line.offer?.supplierLogo ?? null,
+      delivers: line.offer?.delivers ?? null,
       terms: line.offer?.terms ?? [],
       leadDays: line.offer?.leadDays ?? null,
       min: line.offer?.minOrder ?? 0,
@@ -245,8 +251,10 @@ export default function OrderView({ profile }: { profile: { address: string; cit
           {groups.map((group) => (
             <section key={group.supplierId} id={`group-${group.supplierId}`} className="scroll-mt-20 overflow-hidden rounded-2xl border border-hair bg-white">
               <div className="grid gap-0.5 border-b border-hair bg-[#FBF9F6] px-3.5 py-3">
-                <div className="flex items-baseline gap-2">
+                <div className="flex items-center gap-2">
+                  <SupplierLogo url={group.logo} size={24} />
                   <b className="text-base">{group.name}</b>
+                  {group.delivers === false && <span className="text-[13px] font-semibold text-attn">לא מגיע לאזור שלך</span>}
                   <span className="tnum ms-auto font-bold">{money(group.total)}</span>
                 </div>
                 <div className="text-[13px] text-muted">
@@ -447,6 +455,7 @@ export default function OrderView({ profile }: { profile: { address: string; cit
                     <span className={`grid h-[22px] w-[22px] place-items-center rounded-full border-2 text-white ${chosen ? 'border-navy bg-navy' : 'border-[#CBD2DA]'}`}>{chosen && <Check size={13} strokeWidth={3} />}</span>
                     <span className="grid min-w-0 leading-snug">
                       <b>{o.supplierName}</b>
+                      {o.delivers === false && <span className="text-[13px] font-semibold text-attn">לא מגיע לאזור שלך</span>}
                       <small className="text-[12.5px] text-muted">
                         {packText(o.packLabel, o.packQty, sheetProduct.unit) ?? sheetProduct.unit}
                         {o.leadDays != null ? ` · עד ${o.leadDays} ימים` : ''} · {termsText(o.terms)}

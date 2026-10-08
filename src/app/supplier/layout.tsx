@@ -1,6 +1,7 @@
 import { getSessionSupplier } from '@/lib/supplier-auth'
 import { isAdmin } from '@/lib/admin-auth'
 import { acceptedCurrentTerms } from '@/lib/terms'
+import { unreadCount } from '@/lib/messages'
 import SupplierNav from './SupplierNav'
 import TermsGate from '@/components/TermsGate'
 
@@ -15,20 +16,25 @@ export const dynamic = 'force-dynamic'
  *
  * A supplier who has not accepted the current terms is asked to first. The
  * operator opening a supplier's console to look is not asked, and a banner says
- * whose console it is, so it is never mistaken for his own.
+ * whose console it is, so it is never mistaken for his own. For a supplier who
+ * runs his own account the banner says view-only: every write route refuses
+ * the operator there (see lib/admin-scope.ts).
  */
 export default async function SupplierLayout({ children }: { children: React.ReactNode }) {
   const [supplier, admin] = await Promise.all([getSessionSupplier(), isAdmin()])
   const needsTerms = supplier && !admin && !acceptedCurrentTerms(supplier.terms_version)
+  const unread = supplier ? await unreadCount({ side: 'supplier', id: supplier.id }) : 0
 
   return (
     <>
       {supplier && admin && (
         <div className="bg-amber-100 px-4 py-1.5 text-center text-xs font-semibold text-amber-900">
-          מצב אדמין — אתה צופה בממשק של {supplier.company_name}. שינויים כאן נשמרים אצלו.
+          {supplier.source === 'self'
+            ? `מצב אדמין — צפייה בלבד בממשק של ${supplier.company_name}. הספק מנהל את החשבון בעצמו, ושינויים לא יישמרו.`
+            : `מצב אדמין — אתה מנהל את הממשק של ${supplier.company_name}. שינויים כאן נשמרים אצלו.`}
         </div>
       )}
-      {supplier && <SupplierNav company={supplier.company_name} logo={supplier.logo_url} />}
+      {supplier && <SupplierNav company={supplier.company_name} logo={supplier.logo_url} unread={unread} />}
       <main className="w-full flex-1 px-4 py-5">
         <div className="mx-auto max-w-4xl">{children}</div>
       </main>

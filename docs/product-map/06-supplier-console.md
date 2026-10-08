@@ -26,7 +26,15 @@ terms and documents. No password needed.
 
 ## Rules & invariants
 - Only an **approved** supplier can mint a session. Rejecting a supplier cuts access immediately.
+- When the operator opens a self-run supplier's console (admin cookie + supplier cookie), the
+  banner says view-only and every write route answers 403. See area 7.
 - A supplier's link edits what the whole marketplace pays, so treat it as a strong credential.
+- Delivery regions are required at `/supplier/join` and in the Terms tab (T-026). The join page
+  and the application/approval emails state the subscription tiers (`lib/supplier-plans.ts`).
+- Messages (`/supplier/messages`, bell in `SupplierNav`): reply, mark "טופל", write to a carpentry
+  about an order. The operator sees counts only for a self-run supplier, never content.
+- Orders: confirm all, confirm with missing lines / amount / delivery date / note, or reject
+  with a reason. The documents tab counts products without a technical sheet.
 - In imports, any supplier id in the request is ignored for a signed-in supplier.
 
 ## Status

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionSupplier } from '@/lib/supplier-auth'
+import { loadDelivery } from '@/lib/delivery'
 import SupplierApp from './SupplierApp'
 import {
   isTab,
@@ -86,7 +87,7 @@ export default async function SupplierHome({
   const { tab } = await searchParams
   const supabase = getSupabaseAdmin()
 
-  const [{ data: offers }, { data: lines }, { data: categories }, { data: catalogRows }, { data: questionRows }] = await Promise.all([
+  const [{ data: offers }, { data: lines }, { data: categories }, { data: catalogRows }, { data: questionRows }, delivery, { data: docRows }] = await Promise.all([
     supabase
       .from('supplier_offers')
       .select(
@@ -123,6 +124,8 @@ export default async function SupplierHome({
       .eq('supplier_id', supplier.id)
       .order('created_at', { ascending: false })
       .limit(20),
+    loadDelivery([supplier.id]),
+    supabase.from('product_documents').select('product_id').eq('supplier_id', supplier.id).limit(2000),
   ])
 
   const myLines = (lines ?? []) as unknown as RawLine[]
@@ -141,6 +144,7 @@ export default async function SupplierHome({
     suppliersByOrder.set(line.order_id, set)
   }
 
+  const withSheet = new Set((docRows ?? []).map((doc) => doc.product_id))
   const products: ProductItem[] = ((offers ?? []) as unknown as RawOffer[])
     .filter((offer) => offer.products)
     .map((offer) => {
@@ -165,6 +169,7 @@ export default async function SupplierHome({
         minOrderQty: Number(offer.min_order_qty),
         isActive: offer.is_active,
         canEditProduct: product.created_by_supplier_id === supplier.id,
+        hasSheet: withSheet.has(offer.product_id),
       }
     })
     .sort((a, b) => {
@@ -275,6 +280,10 @@ export default async function SupplierHome({
           supplier.min_order_value_excl_vat == null ? null : Number(supplier.min_order_value_excl_vat),
         default_lead_time_days: supplier.default_lead_time_days,
         payment_terms: supplier.payment_terms ?? [],
+        delivery_ready: delivery.ready,
+        delivery_regions: delivery.bySupplier.get(supplier.id)?.regions ?? [],
+        delivery_fee_excl_vat: delivery.bySupplier.get(supplier.id)?.feeExclVat ?? null,
+        free_delivery_from_excl_vat: delivery.bySupplier.get(supplier.id)?.freeFromExclVat ?? null,
       }}
       products={products}
       orders={orders}

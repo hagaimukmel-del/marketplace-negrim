@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { LogOut, Store } from 'lucide-react'
+import { Bell, LogOut, Store } from 'lucide-react'
 import { LogoMark } from '@/components/brand/Logo'
 
 /**
@@ -13,7 +13,7 @@ import { LogoMark } from '@/components/brand/Logo'
  * The sign-out exists from the first day because the alternative is what we
  * once shipped for the carpenters — a long session and no way to end it.
  */
-export default function SupplierNav({ company, logo }: { company: string; logo: string | null }) {
+export default function SupplierNav({ company, logo, unread }: { company: string; logo: string | null; unread: number }) {
   const router = useRouter()
   const [leaving, setLeaving] = useState(false)
 
@@ -51,15 +51,27 @@ export default function SupplierNav({ company, logo }: { company: string; logo: 
           )}
           <span className="truncate font-bold text-stone-900">{company}</span>
         </Link>
-        <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+        <span className="hidden shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800 sm:inline">
           ספק
         </span>
 
+        <Link
+          href="/supplier/messages"
+          aria-label={unread ? `הודעות, ${unread} חדשות` : 'הודעות'}
+          className="relative ms-auto grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-stone-200 text-stone-700 hover:bg-stone-50"
+        >
+          <Bell size={19} />
+          {unread > 0 && (
+            <span className="tnum absolute -end-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-amber-500 px-1 text-[11px] font-bold text-white">
+              {unread > 9 ? '9+' : unread}
+            </span>
+          )}
+        </Link>
         <button
           type="button"
           onClick={signOut}
           disabled={leaving}
-          className="ms-auto flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-2 text-sm text-stone-500 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50"
+          className="flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-2 text-sm text-stone-500 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50"
         >
           <LogOut size={16} />
           <span className="hidden sm:inline">{leaving ? 'יוצא…' : 'יציאה'}</span>

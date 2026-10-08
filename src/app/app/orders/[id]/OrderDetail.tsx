@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { Building2, Check, ClipboardList, FileText, MessageCircle, Phone, Repeat, Truck } from 'lucide-react'
+import { Building2, Check, ClipboardList, FileText, MessageCircle, MessageSquare, Phone, Repeat, Truck } from 'lucide-react'
 import { money, termsText, when } from '@/lib/app/format'
 import { attentionOf, orderSteps, quantityText, totalOf, type AppOrder } from '@/lib/app/orders'
 import { VAT_RATE } from '@/lib/vat'
@@ -72,6 +72,16 @@ export default function OrderDetail({ order, siblings, now }: { order: AppOrder;
           </bdi>
         </div>
         <p className="m-0 mt-0.5 text-sm font-semibold text-attn">הספק אישר סכום שונה</p>
+        {order.lines.some((line) => line.unavailable) && (
+          <p className="m-0 mt-1 text-sm">
+            לא יסופק: {order.lines.filter((line) => line.unavailable).map((line) => line.name).join(', ')}
+          </p>
+        )}
+        {order.deliveryOn && (
+          <p className="m-0 mt-1 text-sm">
+            אספקה צפויה: {new Date(`${order.deliveryOn}T12:00:00`).toLocaleDateString('he-IL', { weekday: 'short', day: '2-digit', month: '2-digit' })}
+          </p>
+        )}
         {order.supplierNote && (
           <div className="mt-2 rounded-[10px] border border-dashed border-[#EBD3AE] bg-white/70 px-2.5 py-2 text-[14.5px] text-[#5B4632]">
             ״{order.supplierNote}״ — {supplier?.name}
@@ -107,6 +117,20 @@ export default function OrderDetail({ order, siblings, now }: { order: AppOrder;
         )}
       </Card>
     )
+  } else if (order.status === 'cancelled' && order.supplierNote) {
+    card = (
+      <Card>
+        <Kicker tone="attn">הספק דחה את ההזמנה</Kicker>
+        <div className="mt-2 rounded-[10px] border border-dashed border-[#EBD3AE] bg-white/70 px-2.5 py-2 text-[14.5px] text-[#5B4632]">
+          ״{order.supplierNote}״ — {supplier?.name}
+        </div>
+        {supplier?.phone && (
+          <a href={`tel:${supplier.phone}`} className={quiet}>
+            לבירור, חיוג לספק
+          </a>
+        )}
+      </Card>
+    )
   } else if (order.status === 'shipped' || order.status === 'processing' || order.status === 'confirmed') {
     card = (
       <Card>
@@ -121,6 +145,11 @@ export default function OrderDetail({ order, siblings, now }: { order: AppOrder;
             )}
           </Kicker>
         </div>
+        {order.deliveryOn && (
+          <p className="m-0 mt-2 text-[15px] font-semibold">
+            אספקה צפויה: {new Date(`${order.deliveryOn}T12:00:00`).toLocaleDateString('he-IL', { weekday: 'short', day: '2-digit', month: '2-digit' })}
+          </p>
+        )}
         <p className="m-0 mt-2 text-[14.5px] text-muted">כשהסחורה אצלך — סמן, והספק יראה שהתקבלה.</p>
         <button type="button" disabled={acting} onClick={() => act('received')} className={primary}>
           <Check size={18} strokeWidth={2.4} /> קיבלתי את ההזמנה
@@ -149,7 +178,7 @@ export default function OrderDetail({ order, siblings, now }: { order: AppOrder;
       <div className="overflow-hidden rounded-2xl border border-hair bg-white">
         {order.lines.map((line, i) => (
           <div key={`${line.productId}-${i}`} className="grid gap-px border-t border-hair px-3.5 py-2.5 first:border-t-0">
-            <div className="flex items-baseline gap-2">
+            <div className={`flex items-baseline gap-2 ${line.unavailable ? 'text-faint line-through' : ''}`}>
               {line.productId ? (
                 <Link href={`/app/product/${line.productId}`} className="font-bold">
                   {line.name}
@@ -160,6 +189,7 @@ export default function OrderDetail({ order, siblings, now }: { order: AppOrder;
               <span className="tnum ms-auto whitespace-nowrap font-bold">{money(line.lineTotal)}</span>
             </div>
             <div className="text-[13px] text-muted">
+              {line.unavailable && <b className="me-1 text-attn">הספק לא יספק ·</b>}
               {quantityText(line)} · <span className="tnum">{money(line.unitPrice)}</span> ל{line.unit} בעת ההזמנה
             </div>
           </div>
@@ -199,6 +229,9 @@ export default function OrderDetail({ order, siblings, now }: { order: AppOrder;
             {supplier.leadDays != null ? ` · עד ${supplier.leadDays} ימי עסקים` : ''}
           </small>
           <span className="flex gap-1.5">
+            <Link href={`/app/messages/new?order=${order.id}`} aria-label="הודעה לספק באתר" className="grid h-[38px] w-[38px] place-items-center rounded-xl border border-hair text-navy">
+              <MessageSquare size={18} />
+            </Link>
             {supplier.phone && (
               <a href={`tel:${supplier.phone}`} aria-label="חיוג לספק" className="grid h-[38px] w-[38px] place-items-center rounded-xl border border-hair text-navy">
                 <Phone size={18} />

@@ -1,12 +1,13 @@
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import SuppliersClient, { type SupplierRow } from './SuppliersClient'
+import { threadCountsBySupplier } from '@/lib/messages'
 
 export const dynamic = 'force-dynamic'
 
 export default async function SuppliersPage() {
   const supabase = getSupabaseAdmin()
 
-  const [{ data }, { data: offers }, { data: lines }] = await Promise.all([
+  const [{ data }, { data: offers }, { data: lines }, threads] = await Promise.all([
     supabase
       .from('suppliers')
       // One literal, not a concatenation: PostgREST infers the row type from the
@@ -18,6 +19,7 @@ export default async function SuppliersPage() {
       .limit(500),
     supabase.from('supplier_offers').select('supplier_id').limit(20000),
     supabase.from('order_items').select('supplier_id, order_id').not('supplier_id', 'is', null).limit(50000),
+    threadCountsBySupplier(),
   ])
 
   const offersBy = new Map<string, number>()
@@ -33,10 +35,15 @@ export default async function SuppliersPage() {
     ordersBy.set(line.supplier_id, set)
   }
 
+  // A supplier who runs his own account keeps his entry link to himself: the
+  // operator can open the console view-only and re-send the link to the
+  // address on file, but never sees or copies it.
   const rows: SupplierRow[] = (data ?? []).map((row) => ({
     ...row,
+    token: row.source === 'self' ? null : row.token,
     offer_count: offersBy.get(row.id) ?? 0,
     order_count: ordersBy.get(row.id)?.size ?? 0,
+    threads: threads.get(row.id) ?? { total: 0, unanswered: 0 },
   }))
 
   return <SuppliersClient rows={rows} />

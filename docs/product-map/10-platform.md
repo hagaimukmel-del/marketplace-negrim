@@ -1,5 +1,5 @@
 # 10 · Platform: auth, email, data, environments
-Verified: 2026-10-03
+Verified: 2026-10-08
 
 ## Purpose
 The plumbing every area relies on.
@@ -28,4 +28,4 @@ passed, until `20261005090000_lock_product_knowledge` (applied to staging and pr
 the only public ones besides the catalogue.
 
 ## Open tasks
-T-009, T-012, T-016, T-019
+T-009, T-012, T-016, T-019, T-028

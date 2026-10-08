@@ -7,8 +7,8 @@ import type { AppOrder, OrderStatus } from './orders'
 const ORDER_COLUMNS =
   'id, short_number, order_number, status, created_at, confirmed_at, processing_at, shipped_at, delivered_at, ' +
   'subtotal_excl_vat, confirmed_subtotal_excl_vat, supplier_note, carpenter_seen_at, checkout_id, address, city, notes, ' +
-  'suppliers(id, company_name, phone, payment_terms, default_lead_time_days, min_order_value_excl_vat), ' +
-  'order_items(product_id, product_name_he, quantity, unit_price_excl_vat, line_total_excl_vat, supplier_id, products(base_unit))'
+  'suppliers(id, company_name, logo_url, phone, payment_terms, default_lead_time_days, min_order_value_excl_vat), ' +
+  'order_items(id, product_id, product_name_he, quantity, unit_price_excl_vat, line_total_excl_vat, supplier_id, products(base_unit))'
 
 interface OrderRow {
   id: string
@@ -31,12 +31,14 @@ interface OrderRow {
   suppliers: {
     id: string
     company_name: string
+    logo_url: string | null
     phone: string | null
     payment_terms: string[] | null
     default_lead_time_days: number | null
     min_order_value_excl_vat: number | null
   } | null
   order_items: {
+    id: string
     product_id: string | null
     product_name_he: string
     quantity: number
@@ -76,6 +78,16 @@ export async function loadCarpenterOrders(carpenterId: string, orderId?: string)
     : { data: [] as { product_id: string; supplier_id: string; pack_label: string | null; pack_qty: number | null }[] }
   const packOf = new Map((offers ?? []).map((offer) => [`${offer.product_id}:${offer.supplier_id}`, offer]))
 
+  // From migration 20261008140000, read apart so a database without it still
+  // lists orders: the supplier's delivery date and the lines it cannot supply.
+  const orderIds = rows.map((row) => row.id)
+  const [{ data: dates, error: datesError }, { data: missingLines, error: missingError }] = await Promise.all([
+    supabase.from('orders').select('id, expected_delivery_on').in('id', orderIds),
+    supabase.from('order_items').select('id').in('order_id', orderIds).eq('unavailable', true),
+  ])
+  const deliveryOf = new Map(datesError ? [] : (dates ?? []).map((row) => [row.id, row.expected_delivery_on]))
+  const missing = new Set(missingError ? [] : (missingLines ?? []).map((line) => line.id))
+
   return rows.map((row) => ({
     id: row.id,
     shortNumber: row.short_number,
@@ -87,6 +99,7 @@ export async function loadCarpenterOrders(carpenterId: string, orderId?: string)
     shippedAt: row.shipped_at,
     deliveredAt: row.delivered_at,
     submitted: Number(row.subtotal_excl_vat),
+    deliveryOn: deliveryOf.get(row.id) ?? null,
     confirmed: row.confirmed_subtotal_excl_vat == null ? null : Number(row.confirmed_subtotal_excl_vat),
     supplierNote: row.supplier_note,
     carpenterSeenAt: row.carpenter_seen_at,
@@ -97,6 +110,7 @@ export async function loadCarpenterOrders(carpenterId: string, orderId?: string)
       ? {
           id: row.suppliers.id,
           name: row.suppliers.company_name,
+          logoUrl: row.suppliers.logo_url,
           phone: row.suppliers.phone,
           terms: row.suppliers.payment_terms ?? [],
           leadDays: row.suppliers.default_lead_time_days,
@@ -114,6 +128,7 @@ export async function loadCarpenterOrders(carpenterId: string, orderId?: string)
         unit: unitLabel(line.products?.base_unit),
         packLabel: pack?.pack_label ?? null,
         packQty: pack?.pack_qty == null ? null : Number(pack.pack_qty),
+        unavailable: missing.has(line.id),
       }
     }),
   }))

@@ -2,13 +2,22 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { Building2, Check, Info, Plus, Repeat, X } from 'lucide-react'
+import { Building2, Check, FileText, Info, Plus, Repeat, X } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { money, packText, termsText, when } from '@/lib/app/format'
 import { sortedOffers, stepOf, suggestedOffer, type AppOffer, type AppProduct } from '@/lib/app/products'
 import ProductImage from '@/components/app/ProductImage'
 import Stepper from '@/components/app/Stepper'
 import { BackLink } from '@/components/app/ui'
+import SupplierLogo from '@/components/app/SupplierLogo'
+
+/** A technical sheet or guide a supplier attached to this product (product_documents). */
+export interface ProductDoc {
+  id: string
+  title: string
+  url: string
+  supplierName: string
+}
 
 export interface LastPurchase {
   quantity: number
@@ -38,8 +47,10 @@ export default function ProductView({
   last,
   now,
   crumbs,
+  docs,
 }: {
   product: AppProduct
+  docs: ProductDoc[]
   showPrices: boolean
   last: LastPurchase | null
   now: number
@@ -105,9 +116,15 @@ export default function ProductView({
       )}
       <div className="mt-1.5 flex flex-wrap items-center gap-2 border-t border-hair pt-2.5 text-[15px]">
         <span className="inline-flex items-center gap-1.5 font-bold">
-          <Building2 size={17} className="text-muted" />
+          {offer.supplierLogo ? <SupplierLogo url={offer.supplierLogo} /> : <Building2 size={17} className="text-muted" />}
           {offer.supplierName}
         </span>
+        {offer.delivers === false && <span className="text-[13px] font-semibold text-attn">לא מגיע לאזור שלך</span>}
+        {showPrices && (
+          <Link href={`/app/messages/new?supplier=${offer.supplierId}&product=${product.id}`} className="text-[13.5px] font-semibold text-brand-ink">
+            שאלה לספק
+          </Link>
+        )}
         {offer.suggested ? <Reason product={product} offer={offer} /> : <span className="text-[13.5px] text-muted">בחרת ספק אחר</span>}
         {product.offers.length > 1 && (
           <button type="button" onClick={() => setSheet(true)} className="ms-auto text-sm font-semibold text-brand-ink md:hidden">
@@ -151,6 +168,28 @@ export default function ProductView({
     <section>
       <h3 className="mb-2 text-base font-bold">על המוצר</h3>
       <p className="m-0 whitespace-pre-line rounded-2xl border border-hair bg-white p-3.5 text-[14.5px] leading-relaxed">{product.description}</p>
+    </section>
+  )
+
+  const sheets = docs.length > 0 && (
+    <section>
+      <h3 className="mb-2 text-base font-bold">דפים טכניים</h3>
+      <ul className="m-0 grid list-none gap-1.5 p-0">
+        {docs.map((doc) => (
+          <li key={doc.id}>
+            <a
+              href={doc.url}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-2 rounded-2xl border border-hair bg-white p-3 text-[14.5px] font-semibold"
+            >
+              <FileText size={18} className="shrink-0 text-muted" />
+              <span className="min-w-0 flex-1 truncate">{doc.title}</span>
+              <small className="shrink-0 text-[12.5px] font-normal text-muted">{doc.supplierName}</small>
+            </a>
+          </li>
+        ))}
+      </ul>
     </section>
   )
 
@@ -231,7 +270,12 @@ export default function ProductView({
                     {sortedOffers(product).map((o) => (
                       <tr key={o.supplierId} className={`border-t border-hair ${o.supplierId === offer.supplierId ? 'bg-[#F6F8FB]' : ''}`}>
                         <td className="px-3 py-2.5">
-                          <b>{o.supplierName}</b> <Reason product={product} offer={o} />
+                          <span className="inline-flex items-center gap-1.5 align-middle">
+                            <SupplierLogo url={o.supplierLogo} size={20} />
+                            <b>{o.supplierName}</b>
+                          </span>{' '}
+                          {o.delivers === false && <><span className="text-[13px] font-semibold text-attn">לא מגיע לאזור שלך</span>{' '}</>}
+                          <Reason product={product} offer={o} />
                         </td>
                         <td className="tnum px-3 py-2.5 font-bold">{o.price != null ? money(o.price) : '—'}</td>
                         <td className="px-3 py-2.5">{packText(o.packLabel, o.packQty, product.unit) ?? '—'}</td>
@@ -258,6 +302,7 @@ export default function ProductView({
           )}
           {about}
           {details}
+          {sheets}
         </div>
 
         {/* Desktop buy box */}
@@ -326,6 +371,7 @@ export default function ProductView({
                     </span>
                     <span className="grid min-w-0 leading-snug">
                       <b className="text-[15.5px]">{o.supplierName}</b>
+                      {o.delivers === false && <span className="text-[13px] font-semibold text-attn">לא מגיע לאזור שלך</span>}
                       <small className="text-[12.5px] text-muted">
                         {packText(o.packLabel, o.packQty, product.unit) ?? product.unit}
                         {o.leadDays != null ? ` · עד ${o.leadDays} ימי עסקים` : ''} · {termsText(o.terms)}

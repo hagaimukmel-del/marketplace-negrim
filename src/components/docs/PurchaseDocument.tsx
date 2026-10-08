@@ -1,4 +1,5 @@
 import { money, termsText } from '@/lib/app/format'
+import Logo from '@/components/brand/Logo'
 import { round2, vatAmount, VAT_RATE } from '@/lib/vat'
 
 export interface DocLine {
@@ -21,7 +22,7 @@ export interface PurchaseDocumentProps {
   number?: string
   date: string
   status?: string
-  supplier: { name: string; phone?: string | null; terms: string[]; leadDays: number | null }
+  supplier: { name: string; logoUrl?: string | null; phone?: string | null; terms: string[]; leadDays: number | null }
   buyer: DocParty
   lines: DocLine[]
   /** The supplier's confirmed amount, when it differs from the sum of the lines. */
@@ -33,6 +34,9 @@ export interface PurchaseDocumentProps {
  * A price quote or a purchase order for one supplier, laid out to print or save
  * as PDF. Deliberately not an invoice (CLAUDE.md §5): it says what it is, gives
  * prices excl. VAT with VAT as an indication, and says the supplier invoices.
+ *
+ * The supplier's logo sits on the right and the platform's on the left (owner,
+ * 2026-10-08): the document is the supplier's order, sent through the platform.
  */
 export default function PurchaseDocument(props: PurchaseDocumentProps) {
   const { kind, supplier, buyer, lines } = props
@@ -42,19 +46,25 @@ export default function PurchaseDocument(props: PurchaseDocumentProps) {
 
   return (
     <article className="doc-page mx-auto w-full max-w-[800px] break-after-page bg-white p-5 text-[13px] leading-relaxed text-stone-900 sm:p-8 print:max-w-none print:p-0">
-      <header className="flex flex-wrap items-start justify-between gap-3 border-b-2 border-stone-900 pb-3">
-        <div>
-          <h1 className="m-0 text-2xl font-extrabold">
-            {title} {props.number && <span className="tnum">{props.number}</span>}
-          </h1>
-          <div className="text-stone-600">
-            {props.date}
-            {props.status && <> · {props.status}</>}
-          </div>
+      <div className="flex items-center justify-between gap-3 pb-3">
+        {supplier.logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={supplier.logoUrl} alt={supplier.name} className="h-14 max-w-[180px] object-contain" />
+        ) : (
+          <b className="text-lg">{supplier.name}</b>
+        )}
+        <div className="flex flex-col items-end gap-0.5 text-xs text-stone-600">
+          <Logo size="sm" tagline="always" />
+          <span dir="ltr">nagarimb2b.com</span>
         </div>
-        <div className="text-end text-stone-600">
-          <b className="block text-stone-900">שוק הנגרים</b>
-          nagarimb2b.com
+      </div>
+      <header className="border-b-2 border-stone-900 pb-3">
+        <h1 className="m-0 text-2xl font-extrabold">
+          {title} {props.number && <span className="tnum">{props.number}</span>}
+        </h1>
+        <div className="text-stone-600">
+          {props.date}
+          {props.status && <> · {props.status}</>}
         </div>
       </header>
 

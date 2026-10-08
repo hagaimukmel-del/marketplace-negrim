@@ -45,6 +45,8 @@ export interface SupplierRow {
   terms_accepted_at: string | null
   offer_count: number
   order_count: number
+  /** Message threads with carpentries and how many wait for the supplier. Never their content. */
+  threads: { total: number; unanswered: number }
 }
 
 /** The row as the form wants it: every field a string, nulls as empty. */
@@ -129,10 +131,11 @@ function formatDate(value: string | null): string {
 }
 
 /**
- * The approved supplier's way in, shown so it can be sent by hand — and opened
- * from here to see their console exactly as they do.
+ * The approved supplier's way in, shown so it can be sent by hand — for a
+ * supplier the operator runs. Opening the console goes through the admin route,
+ * so the link itself is never what the button follows.
  */
-function EntryLink({ token }: { token: string }) {
+function EntryLink({ id, token }: { id: string; token: string }) {
   const [copied, setCopied] = useState(false)
   const link =
     typeof window === 'undefined' ? `/supplier/enter/${token}` : `${window.location.origin}/supplier/enter/${token}`
@@ -161,7 +164,7 @@ function EntryLink({ token }: { token: string }) {
           {copied ? 'הועתק' : 'העתק'}
         </button>
         <a
-          href={`/supplier/enter/${token}`}
+          href={`/api/admin/view-supplier/${id}`}
           target="_blank"
           rel="noreferrer"
           className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-xs font-semibold text-stone-700"
@@ -173,6 +176,58 @@ function EntryLink({ token }: { token: string }) {
       <p className="mt-1.5 text-xs text-stone-500">
         זו הכניסה שלהם, ואין סיסמה מאחוריה — מי שמחזיק בקישור יכול לשנות את המחירים שלהם.
       </p>
+    </div>
+  )
+}
+
+/**
+ * A supplier who signed up himself keeps his link private. The operator can
+ * look at the console (view-only, logged) and mail the link to the address on
+ * file — the same request the supplier's own "send me my link" form makes.
+ */
+function SelfRunAccess({ id, email }: { id: string; email: string | null }) {
+  const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'failed'>('idle')
+
+  return (
+    <div className="mt-3 rounded-lg bg-white p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="min-w-0 flex-1 text-xs text-stone-700">
+          הספק מנהל את החשבון בעצמו. קישור הכניסה שלו לא מוצג כאן.
+        </p>
+        {email && (
+          <button
+            type="button"
+            disabled={state === 'sending'}
+            onClick={async () => {
+              setState('sending')
+              try {
+                const res = await fetch('/api/supplier/login-link', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ email }),
+                })
+                setState(res.ok ? 'sent' : 'failed')
+              } catch {
+                setState('failed')
+              }
+            }}
+            className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-xs font-semibold text-stone-700 disabled:opacity-50"
+          >
+            <Mail size={13} />
+            {state === 'sent' ? 'נשלח למייל שלו' : state === 'failed' ? 'השליחה נכשלה, נסה שוב' : 'שלח לו קישור כניסה למייל'}
+          </button>
+        )}
+        <a
+          href={`/api/admin/view-supplier/${id}`}
+          target="_blank"
+          rel="noreferrer"
+          className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-xs font-semibold text-stone-700"
+        >
+          <ExternalLink size={13} />
+          צפה כספק
+        </a>
+      </div>
+      <p className="mt-1.5 text-xs text-stone-500">הצפייה נרשמת ביומן הפעולות.</p>
     </div>
   )
 }
@@ -223,6 +278,8 @@ function SupplierCard({
           <span className="block truncate font-bold text-stone-900">{row.company_name}</span>
           <span className="tnum block truncate text-xs text-stone-500">
             {row.city ?? 'ללא עיר'} · {row.offer_count} מוצרים · {row.order_count} הזמנות
+            {row.threads.total > 0 && ` · ${row.threads.total} שיחות`}
+            {row.threads.unanswered > 0 && ` (${row.threads.unanswered} בלי מענה)`}
           </span>
         </span>
         <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${TONE[row.status] ?? ''}`}>
@@ -291,7 +348,12 @@ function SupplierCard({
             </span>
           </div>
 
-          {row.status === 'approved' && row.token && <EntryLink token={row.token} />}
+          {row.status === 'approved' &&
+            (row.source === 'self' ? (
+              <SelfRunAccess id={row.id} email={row.email} />
+            ) : (
+              row.token && <EntryLink id={row.id} token={row.token} />
+            ))}
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
             {pending && (

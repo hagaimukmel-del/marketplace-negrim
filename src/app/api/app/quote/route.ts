@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
   const ids = Array.isArray(body?.ids) ? (body.ids as unknown[]).filter((id): id is string => typeof id === 'string').slice(0, 200) : []
   if (ids.length === 0) return NextResponse.json({ products: [], suggestions: {} })
 
-  const all = await loadProducts({ showPrices: true })
+  const all = await loadProducts({ showPrices: true, city: carpenter?.city })
   const wanted = new Set(ids)
   const products = all.filter((p) => wanted.has(p.id))
 

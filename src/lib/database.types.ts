@@ -39,6 +39,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_actions: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json
+          id: string
+          supplier_id: string | null
+          target_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json
+          id?: string
+          supplier_id?: string | null
+          target_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          supplier_id?: string | null
+          target_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_actions_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_login_attempts: {
         Row: {
           attempted_at: string
@@ -257,6 +292,86 @@ export type Database = {
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_threads: {
+        Row: {
+          carpenter_id: string
+          carpenter_last_read_at: string | null
+          contact_request_id: string | null
+          created_at: string
+          id: string
+          last_message_at: string
+          last_sender: string
+          order_id: string | null
+          product_id: string | null
+          status: string
+          subject: string
+          supplier_id: string
+          supplier_last_read_at: string | null
+        }
+        Insert: {
+          carpenter_id: string
+          carpenter_last_read_at?: string | null
+          contact_request_id?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          last_sender: string
+          order_id?: string | null
+          product_id?: string | null
+          status?: string
+          subject: string
+          supplier_id: string
+          supplier_last_read_at?: string | null
+        }
+        Update: {
+          carpenter_id?: string
+          carpenter_last_read_at?: string | null
+          contact_request_id?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          last_sender?: string
+          order_id?: string | null
+          product_id?: string | null
+          status?: string
+          subject?: string
+          supplier_id?: string
+          supplier_last_read_at?: string | null
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          sender: string
+          thread_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          sender: string
+          thread_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          sender?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "message_threads"
             referencedColumns: ["id"]
           },
         ]
@@ -507,6 +622,7 @@ export type Database = {
           product_name_he: string
           quantity: number
           supplier_id: string | null
+          unavailable: boolean
           unit_price_excl_vat: number
         }
         Insert: {
@@ -519,6 +635,7 @@ export type Database = {
           product_name_he: string
           quantity: number
           supplier_id?: string | null
+          unavailable?: boolean
           unit_price_excl_vat: number
         }
         Update: {
@@ -531,6 +648,7 @@ export type Database = {
           product_name_he?: string
           quantity?: number
           supplier_id?: string | null
+          unavailable?: boolean
           unit_price_excl_vat?: number
         }
         Relationships: [
@@ -574,6 +692,7 @@ export type Database = {
           customer_phone: string
           delivered_at: string | null
           delivered_by: string | null
+          expected_delivery_on: string | null
           id: string
           notes: string | null
           order_number: string
@@ -606,6 +725,7 @@ export type Database = {
           customer_phone: string
           delivered_at?: string | null
           delivered_by?: string | null
+          expected_delivery_on?: string | null
           id?: string
           notes?: string | null
           order_number: string
@@ -638,6 +758,7 @@ export type Database = {
           customer_phone?: string
           delivered_at?: string | null
           delivered_by?: string | null
+          expected_delivery_on?: string | null
           id?: string
           notes?: string | null
           order_number?: string
@@ -1133,7 +1254,7 @@ export type Database = {
           language: string
           supplier_id: string
           uploaded_at: string
-          uploaded_by: string
+          uploaded_by: string | null
         }
         Insert: {
           categories?: string[] | null
@@ -1149,7 +1270,7 @@ export type Database = {
           language?: string
           supplier_id: string
           uploaded_at?: string
-          uploaded_by: string
+          uploaded_by?: string | null
         }
         Update: {
           categories?: string[] | null
@@ -1165,7 +1286,7 @@ export type Database = {
           language?: string
           supplier_id?: string
           uploaded_at?: string
-          uploaded_by?: string
+          uploaded_by?: string | null
         }
         Relationships: [
           {
@@ -1331,7 +1452,10 @@ export type Database = {
           created_at: string | null
           decided_at: string | null
           default_lead_time_days: number | null
+          delivery_fee_excl_vat: number | null
+          delivery_regions: string[]
           email: string | null
+          free_delivery_from_excl_vat: number | null
           id: string
           is_verified: boolean | null
           logo_url: string | null
@@ -1359,7 +1483,10 @@ export type Database = {
           created_at?: string | null
           decided_at?: string | null
           default_lead_time_days?: number | null
+          delivery_fee_excl_vat?: number | null
+          delivery_regions?: string[]
           email?: string | null
+          free_delivery_from_excl_vat?: number | null
           id?: string
           is_verified?: boolean | null
           logo_url?: string | null
@@ -1387,7 +1514,10 @@ export type Database = {
           created_at?: string | null
           decided_at?: string | null
           default_lead_time_days?: number | null
+          delivery_fee_excl_vat?: number | null
+          delivery_regions?: string[]
           email?: string | null
+          free_delivery_from_excl_vat?: number | null
           id?: string
           is_verified?: boolean | null
           logo_url?: string | null

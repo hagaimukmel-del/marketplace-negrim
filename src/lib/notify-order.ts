@@ -149,7 +149,11 @@ export async function notifyNewOrder(orderId: string): Promise<void> {
  * visible warning if it differs from what they ordered) or sent out.
  * Never throws, for the same reason as above.
  */
-export async function notifyCarpenterOrderUpdate(orderId: string, kind: 'confirmed' | 'shipped'): Promise<void> {
+export async function notifyCarpenterOrderUpdate(
+  orderId: string,
+  kind: 'confirmed' | 'shipped' | 'rejected',
+  extra: { deliveryOn?: string | null; missing?: string[] } = {}
+): Promise<void> {
   try {
     const supabase = getSupabaseAdmin()
     const [{ data: order }, { data: lines }] = await Promise.all([
@@ -182,6 +186,8 @@ export async function notifyCarpenterOrderUpdate(orderId: string, kind: 'confirm
         submitted: Number(order.subtotal_excl_vat),
         confirmed: order.confirmed_subtotal_excl_vat == null ? null : Number(order.confirmed_subtotal_excl_vat),
         note: order.supplier_note,
+        deliveryOn: extra.deliveryOn ?? null,
+        missing: extra.missing ?? [],
       }),
       isTest: isTestName(carpenterName, ...(suppliers ?? []).map((item) => item.company_name)),
     })

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/admin-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { isOperatorManaged, logAdminAction, refusedForSelfRun, supplierIsOperatorManaged } from '@/lib/admin-scope'
 import { BASE_UNITS, type BaseUnit } from '@/lib/catalog'
 import type { Database } from '@/lib/database.types'
 
@@ -70,13 +71,14 @@ export async function POST(request: NextRequest) {
 
     const { data: supplier } = await supabase
       .from('suppliers')
-      .select('id, status')
+      .select('id, status, source')
       .eq('id', supplierId)
       .maybeSingle()
 
     if (!supplier) {
       return NextResponse.json({ error: 'הספק לא נמצא' }, { status: 404 })
     }
+    if (!isOperatorManaged(supplier.source)) return refusedForSelfRun()
     if (supplier.status !== 'approved') {
       return NextResponse.json(
         { error: 'אי אפשר לטעון מוצרים לספק שלא אושר' },
@@ -307,6 +309,22 @@ export async function PATCH(request: NextRequest) {
           { status: 409 }
         )
       }
+      // A self-run supplier's price, stock and pack are theirs. The operator
+      // may only hide the offer (moderation), and that is written down.
+      const { data: owner } = await supabase
+        .from('supplier_offers')
+        .select('supplier_id, suppliers(source)')
+        .eq('id', offerId)
+        .maybeSingle()
+      const ownerSource = (owner?.suppliers as { source: string } | null)?.source
+      if (!isOperatorManaged(ownerSource)) {
+        if (Object.keys(offer).some((field) => field !== 'is_active')) return refusedForSelfRun()
+        await logAdminAction({
+          action: offer.is_active ? 'show_offer' : 'hide_offer',
+          supplierId: owner?.supplier_id ?? null,
+          targetId: offerId,
+        })
+      }
       offer.updated_at = new Date().toISOString()
       const { error } = await supabase.from('supplier_offers').update(offer).eq('id', offerId)
       if (error) {
@@ -349,13 +367,14 @@ export async function DELETE(request: NextRequest) {
     const supabase = getSupabaseAdmin()
     const { data: offer } = await supabase
       .from('supplier_offers')
-      .select('id, product_id, source')
+      .select('id, product_id, source, supplier_id')
       .eq('id', offerId)
       .maybeSingle()
 
     if (!offer) {
       return NextResponse.json({ error: 'ההצעה לא נמצאה' }, { status: 404 })
     }
+    if (!(await supplierIsOperatorManaged(offer.supplier_id))) return refusedForSelfRun()
     if (offer.source !== 'manual') {
       return NextResponse.json(
         { error: 'מוצר מהגיליון לא נמחק — הוא יחזור בסנכרון הבא. אפשר להשבית אותו.' },

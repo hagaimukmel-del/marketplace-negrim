@@ -12,6 +12,7 @@ import PrintBar from '@/components/docs/PrintBar'
 interface SupplierQuote {
   supplierId: string
   name: string
+  logoUrl: string | null
   terms: string[]
   leadDays: number | null
   lines: DocLine[]
@@ -59,7 +60,7 @@ export default function QuoteView({ buyer }: { buyer: DocParty }) {
     const offer: AppOffer | null = product ? product.offers.find((o) => o.supplierId === item.supplier_id) ?? suggestedOffer(product) : null
     // A product no supplier sells any more has no price to quote
     if (!product || !offer || offer.price == null) continue
-    const group = groups.get(offer.supplierId) ?? { supplierId: offer.supplierId, name: offer.supplierName, terms: offer.terms, leadDays: offer.leadDays, lines: [] }
+    const group = groups.get(offer.supplierId) ?? { supplierId: offer.supplierId, name: offer.supplierName, logoUrl: offer.supplierLogo, terms: offer.terms, leadDays: offer.leadDays, lines: [] }
     group.lines.push({
       name: product.name,
       quantity: quantityText({ quantity: item.quantity, unit: product.unit, packLabel: offer.packLabel, packQty: offer.packQty }),
@@ -88,7 +89,7 @@ export default function QuoteView({ buyer }: { buyer: DocParty }) {
             key={quote.supplierId}
             kind="quote"
             date={date}
-            supplier={{ name: quote.name, terms: quote.terms, leadDays: quote.leadDays }}
+            supplier={{ name: quote.name, logoUrl: quote.logoUrl, terms: quote.terms, leadDays: quote.leadDays }}
             buyer={buyer}
             lines={quote.lines}
           />

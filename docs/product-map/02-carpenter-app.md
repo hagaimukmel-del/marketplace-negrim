@@ -27,6 +27,11 @@ Reads `products`, `supplier_offers`, `suppliers` (server-side), `categories`; wr
 `order_items` via area 4.
 
 ## Rules & invariants
+- Messages (`/app/messages`, bell in `AppShell`): threads with suppliers per question or order,
+  `lib/messages.ts`. A carpentry writes to an approved supplier or about its own order.
+- The product page lists technical sheets (`product_documents`) from suppliers that sell the
+  product today, shows supplier logos and "לא מגיע לאזור שלך". The order page shows a supplier's
+  delivery date, lines it will not supply, and a rejection reason.
 - Prices are fetched on the server and only for a signed-in carpenter (`lock_prices`, CLAUDE.md §6).
 - Supplier names stay in server components (the `suppliers` table is closed to the browser).
 - Prices are excl. VAT and per base unit; VAT is display only (`lib/vat.ts`).
