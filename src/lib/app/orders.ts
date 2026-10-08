@@ -26,6 +26,8 @@ export interface AppOrderLine {
   unit: string
   packLabel: string | null
   packQty: number | null
+  /** The supplier marked this line as not supplied when confirming. */
+  unavailable: boolean
 }
 
 export interface AppOrder {
@@ -39,6 +41,8 @@ export interface AppOrder {
   shippedAt: string | null
   deliveredAt: string | null
   submitted: number
+  /** YYYY-MM-DD the supplier committed to when confirming, if it gave one. */
+  deliveryOn: string | null
   confirmed: number | null
   supplierNote: string | null
   carpenterSeenAt: string | null

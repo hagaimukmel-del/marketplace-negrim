@@ -16,9 +16,16 @@ import { notifyCarpenterOrderUpdate } from '@/lib/notify-order'
  * Each step only moves forward from the state before it, and the update is
  * guarded on that state, so two taps — or a tap from two devices — cannot skip
  * a step or overwrite a confirmation that already happened.
+ *
+ * Confirming can mark lines the supplier cannot supply (their total comes off
+ * the default confirmed amount) and set a delivery date. Rejecting cancels a
+ * waiting order and needs a reason, which the carpenter is emailed. Those two
+ * extras save after the status moves and are best-effort, so a database
+ * without migration 20261008140000 still confirms.
  */
 const TRANSITIONS = {
   confirm: { from: ['pending'], to: 'confirmed' },
+  reject: { from: ['pending'], to: 'cancelled' },
   // Optional. A supplier who never marks it goes straight to ship or deliver.
   prepare: { from: ['confirmed'], to: 'processing' },
   ship: { from: ['confirmed', 'processing'], to: 'shipped' },
@@ -50,7 +57,7 @@ export async function PATCH(request: NextRequest) {
     const supabase = getSupabaseAdmin()
     const { data: lines } = await supabase
       .from('order_items')
-      .select('supplier_id, line_total_excl_vat')
+      .select('id, product_name_he, supplier_id, line_total_excl_vat')
       .eq('order_id', body.order_id)
 
     const allLines = lines ?? []
@@ -72,11 +79,37 @@ export async function PATCH(request: NextRequest) {
       updated_at: new Date().toISOString(),
     }
 
+    const unavailable = Array.isArray(body.unavailable_lines)
+      ? mine.filter((line) => (body.unavailable_lines as unknown[]).includes(line.id))
+      : []
+    if (body.action === 'confirm' && unavailable.length === mine.length) {
+      return NextResponse.json({ error: 'אם אין אף שורה לספק, דחו את ההזמנה עם סיבה' }, { status: 400 })
+    }
+
+    let deliveryOn: string | null = null
+    if (body.action === 'confirm' && body.expected_delivery_on) {
+      const raw = String(body.expected_delivery_on)
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(raw) || Number.isNaN(Date.parse(raw))) {
+        return NextResponse.json({ error: 'תאריך אספקה לא תקין' }, { status: 400 })
+      }
+      deliveryOn = raw
+    }
+
+    if (body.action === 'reject') {
+      const reason = typeof body.reason === 'string' ? body.reason.trim() : ''
+      if (reason.length < 2) {
+        return NextResponse.json({ error: 'צריך לכתוב לנגר למה ההזמנה נדחתה' }, { status: 400 })
+      }
+      update.supplier_note = reason.slice(0, 600)
+    }
+
     if (body.action === 'confirm') {
-      // Defaults to what was ordered: most confirmations are "yes, all of it",
-      // and retyping a number you agree with is how typos reach the figure
-      // commission is calculated from.
-      const ordered = mine.reduce((sum, line) => sum + Number(line.line_total_excl_vat), 0)
+      // Defaults to what was ordered, less any line marked unavailable: most
+      // confirmations are "yes, all of it", and retyping a number you agree
+      // with is how typos reach the confirmed amount.
+      const ordered = mine
+        .filter((line) => !unavailable.includes(line))
+        .reduce((sum, line) => sum + Number(line.line_total_excl_vat), 0)
       const raw = body.confirmed_subtotal_excl_vat
       const amount = raw === undefined || raw === null || raw === '' ? ordered : Number(raw)
       if (!Number.isFinite(amount) || amount < 0) {
@@ -105,7 +138,25 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
-    if (body.action === 'confirm') await notifyCarpenterOrderUpdate(body.order_id, 'confirmed')
+    if (body.action === 'confirm' && (unavailable.length > 0 || deliveryOn)) {
+      const [items, order] = await Promise.all([
+        unavailable.length
+          ? supabase.from('order_items').update({ unavailable: true }).in('id', unavailable.map((line) => line.id))
+          : Promise.resolve({ error: null }),
+        deliveryOn
+          ? supabase.from('orders').update({ expected_delivery_on: deliveryOn }).eq('id', body.order_id)
+          : Promise.resolve({ error: null }),
+      ])
+      if (items.error || order.error) console.error('Order confirmation extras not saved:', items.error ?? order.error)
+    }
+
+    if (body.action === 'confirm') {
+      await notifyCarpenterOrderUpdate(body.order_id, 'confirmed', {
+        deliveryOn,
+        missing: unavailable.map((line) => line.product_name_he),
+      })
+    }
+    if (body.action === 'reject') await notifyCarpenterOrderUpdate(body.order_id, 'rejected')
     if (body.action === 'ship') await notifyCarpenterOrderUpdate(body.order_id, 'shipped')
 
     return NextResponse.json({ ok: true, status: moved.status })

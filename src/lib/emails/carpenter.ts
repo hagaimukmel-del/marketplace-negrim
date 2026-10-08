@@ -172,8 +172,14 @@ export function carpenterOrderSentHtml({
 
 // ---- supplier's answer ------------------------------------------------------
 
-export function carpenterOrderUpdateSubject(kind: 'confirmed' | 'shipped', orderNumber: string): string {
+export function carpenterOrderUpdateSubject(kind: 'confirmed' | 'shipped' | 'rejected', orderNumber: string): string {
+  if (kind === 'rejected') return `הספק לא יכול לספק את ההזמנה · ${orderNumber}`
   return kind === 'confirmed' ? `הספק אישר את ההזמנה · ${orderNumber}` : `ההזמנה יצאה לאספקה · ${orderNumber}`
+}
+
+/** "יום ג׳, 14.10" for a YYYY-MM-DD the supplier picked. */
+function deliveryDate(value: string): string {
+  return new Date(`${value}T12:00:00`).toLocaleDateString('he-IL', { weekday: 'short', day: '2-digit', month: '2-digit' })
 }
 
 export function carpenterOrderUpdateHtml({
@@ -185,8 +191,10 @@ export function carpenterOrderUpdateHtml({
   submitted,
   confirmed,
   note,
+  deliveryOn = null,
+  missing = [],
 }: {
-  kind: 'confirmed' | 'shipped'
+  kind: 'confirmed' | 'shipped' | 'rejected'
   businessName: string
   orderNumber: string
   supplierName: string
@@ -194,7 +202,17 @@ export function carpenterOrderUpdateHtml({
   submitted: number
   confirmed: number | null
   note: string | null
+  deliveryOn?: string | null
+  missing?: string[]
 }): string {
+  if (kind === 'rejected') {
+    return shell(`
+    <div style="font:bold 20px ${FONT}">ההזמנה נדחתה</div>
+    <p style="margin:8px 0 0">שלום ${escapeHtml(businessName)}, ${escapeHtml(supplierName)} לא יכול/ה לספק את הזמנה <strong dir="ltr">${escapeHtml(orderNumber)}</strong>.</p>
+    ${note ? `<p style="margin:12px 0 0;background:#fef2f2;border-radius:8px;padding:10px"><strong>הסיבה:</strong> ${escapeHtml(note)}</p>` : ''}
+    ${supplierPhone ? `<p style="margin:12px 0 0">לבירור ישירות מול הספק: <a href="tel:${escapeHtml(supplierPhone)}" style="color:#047857;font-weight:bold" dir="ltr">${escapeHtml(supplierPhone)}</a></p>` : ''}
+    ${button(`${siteUrl()}/app/orders`, 'להזמנות שלי')}`)
+  }
   const changed = kind === 'confirmed' && confirmed != null && Math.abs(confirmed - submitted) > 0.005
 
   return shell(`
@@ -210,6 +228,8 @@ export function carpenterOrderUpdateHtml({
           </div>`
         : ''
     }
+    ${kind === 'confirmed' && missing.length ? `<p style="margin:12px 0 0;background:#fef3c7;border-radius:8px;padding:10px"><strong>לא יסופק:</strong> ${missing.map(escapeHtml).join(', ')}</p>` : ''}
+    ${kind === 'confirmed' && deliveryOn ? `<p style="margin:12px 0 0"><strong>אספקה צפויה:</strong> ${deliveryDate(deliveryOn)}</p>` : ''}
     ${note ? `<p style="margin:12px 0 0;background:#fafaf9;border-radius:8px;padding:10px"><strong>הערת הספק:</strong> ${escapeHtml(note)}</p>` : ''}
     ${supplierPhone ? `<p style="margin:12px 0 0">שאלות על האספקה או החשבונית — ישירות לספק: <a href="tel:${escapeHtml(supplierPhone)}" style="color:#047857;font-weight:bold" dir="ltr">${escapeHtml(supplierPhone)}</a></p>` : ''}
     ${button(`${siteUrl()}/app/orders`, 'להזמנות שלי')}`)

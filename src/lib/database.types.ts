@@ -542,6 +542,7 @@ export type Database = {
           product_name_he: string
           quantity: number
           supplier_id: string | null
+          unavailable: boolean
           unit_price_excl_vat: number
         }
         Insert: {
@@ -554,6 +555,7 @@ export type Database = {
           product_name_he: string
           quantity: number
           supplier_id?: string | null
+          unavailable?: boolean
           unit_price_excl_vat: number
         }
         Update: {
@@ -566,6 +568,7 @@ export type Database = {
           product_name_he?: string
           quantity?: number
           supplier_id?: string | null
+          unavailable?: boolean
           unit_price_excl_vat?: number
         }
         Relationships: [
@@ -609,6 +612,7 @@ export type Database = {
           customer_phone: string
           delivered_at: string | null
           delivered_by: string | null
+          expected_delivery_on: string | null
           id: string
           notes: string | null
           order_number: string
@@ -641,6 +645,7 @@ export type Database = {
           customer_phone: string
           delivered_at?: string | null
           delivered_by?: string | null
+          expected_delivery_on?: string | null
           id?: string
           notes?: string | null
           order_number: string
@@ -673,6 +678,7 @@ export type Database = {
           customer_phone?: string
           delivered_at?: string | null
           delivered_by?: string | null
+          expected_delivery_on?: string | null
           id?: string
           notes?: string | null
           order_number?: string
