@@ -1,5 +1,5 @@
 # 7 · Admin console (`/admin`)
-Verified: 2026-10-08
+Verified: 2026-10-11
 
 ## Purpose
 The operator's (owner's) back office: approve suppliers, manage the catalogue, watch orders and
@@ -10,6 +10,7 @@ carpenters, run campaigns and raffles, moderate the Metzion, read reports.
 |---|---|
 | `/admin/login` → `/api/admin/login` | One shared passphrase (`ADMIN_PASSWORD` + `ADMIN_SECRET`), throttled (`admin_login_attempts`) |
 | `/admin` | Dashboard |
+| `/admin/promotions` | "מוצר השבוע" bookings: approve, reject with a note shown to the supplier, withdraw a coming week, results per week (T-024). Logged in `admin_actions` |
 | `/admin/orders`, `/suppliers`, `/carpenters`, `/products`, `/categories` | Core management |
 | `/admin/campaigns`, `/api/admin/raffle` | Campaigns and raffle draws (area 9) |
 | `/admin/metzion` | Listing moderation and reports |

@@ -10,6 +10,7 @@ import type { CategoryNode } from '@/lib/app/products'
 import type { ReorderItem } from '@/lib/app/catalog-server'
 import { AttentionLine, Kicker, SectionTitle, StatusDot } from '@/components/app/ui'
 import CategoryGlyph from '@/components/app/CategoryGlyph'
+import PromotedCard, { type PromotedSlot } from '@/components/app/PromotedCard'
 
 type Minimums = Record<string, { name: string; min: number | null }>
 
@@ -64,6 +65,7 @@ export default function HomeView({
   reorder,
   categories,
   minimums,
+  promoted = null,
 }: {
   greeting: string
   now: number
@@ -71,6 +73,8 @@ export default function HomeView({
   reorder: ReorderItem[]
   categories: CategoryNode[]
   minimums: Minimums
+  /** This week's "מוצר השבוע", shown under the greeting (T-024). */
+  promoted?: PromotedSlot | null
 }) {
   const cart = useCart()
   const actions = actionsFor(orders, cart.items, minimums, now)
@@ -82,6 +86,7 @@ export default function HomeView({
         <Hello greeting={greeting}>
           <p className="mt-1 mb-0 text-[15px] text-muted">חיפוש, קטגוריות, והזמנה ראשונה ישירות מהספק.</p>
         </Hello>
+        {promoted && <PromotedCard slot={promoted} placement="home" showPrices />}
         <SearchBlock />
         <CategoryList categories={categories} />
         <HowItWorks />
@@ -101,6 +106,8 @@ export default function HomeView({
           {actions.length === 1 ? 'דבר אחד דורש את תשומת לבך' : 'דברים דורשים את תשומת לבך'}
         </AttentionLine>
       </Hello>
+
+      {promoted && <PromotedCard slot={promoted} placement="home" showPrices />}
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-5 md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] md:items-start md:gap-6">
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5">

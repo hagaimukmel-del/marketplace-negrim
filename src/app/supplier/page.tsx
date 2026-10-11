@@ -5,6 +5,8 @@ import { loadDelivery } from '@/lib/delivery'
 import { loadOrderCc } from '@/lib/order-recipients'
 import { loadSupplierDocs } from '@/lib/supplier-documents'
 import { computeSales } from './sales'
+import { loadPromoWeeks } from '@/lib/promo'
+import { addDays, bookableWeeks, currentWeek } from '@/lib/promo-weeks'
 import SupplierApp from './SupplierApp'
 import {
   isTab,
@@ -91,7 +93,7 @@ export default async function SupplierHome({
   const { tab } = await searchParams
   const supabase = getSupabaseAdmin()
 
-  const [{ data: offers }, { data: lines }, { data: categories }, { data: catalogRows }, { data: questionRows }, delivery, orderCc, documents] = await Promise.all([
+  const [{ data: offers }, { data: lines }, { data: categories }, { data: catalogRows }, { data: questionRows }, delivery, orderCc, documents, myWeeks, liveWeeks] = await Promise.all([
     supabase
       .from('supplier_offers')
       .select(
@@ -132,6 +134,10 @@ export default async function SupplierHome({
     loadDelivery([supplier.id]),
     loadOrderCc([supplier.id]),
     loadSupplierDocs(supplier.id),
+    // "מוצר השבוע" (T-024): this supplier's bookings over the last half year
+    // and the coming weeks, and which coming weeks anyone has taken.
+    loadPromoWeeks({ from: addDays(currentWeek(), -26 * 7), to: bookableWeeks().at(-1)!, supplierId: supplier.id }),
+    loadPromoWeeks({ from: bookableWeeks()[0], to: bookableWeeks().at(-1)!, statuses: ['requested', 'approved'] }),
   ])
 
   // Lines the supplier said it could not supply (migration 20261008140000).
@@ -312,6 +318,7 @@ export default async function SupplierHome({
       catalog={catalog}
       sales={computeSales(orders, new Date())}
       documents={documents}
+      promo={{ ready: myWeeks.ready, weeks: myWeeks.weeks, taken: liveWeeks.weeks.map((week) => week.weekStart) }}
     />
   )
 }

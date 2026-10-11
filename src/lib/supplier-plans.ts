@@ -20,6 +20,9 @@ export const SUPPLIER_PLANS: SupplierPlan[] = [
 
 export const BILLING_STARTS_LABEL = 'ינואר 2027'
 
+/** One week of "מוצר השבוע", excl. VAT (T-024). Snapshotted on each booking. */
+export const PROMO_WEEK_EXCL_VAT = 690
+
 /** "עד 50 מוצרים", "51 עד 150 מוצרים", "מעל 150 מוצרים". */
 export function planLabel(index: number): string {
   const plan = SUPPLIER_PLANS[index]

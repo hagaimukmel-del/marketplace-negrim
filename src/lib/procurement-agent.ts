@@ -5,6 +5,7 @@ import type { Database } from '@/lib/database.types'
 import { bestOffer, unitLabel } from '@/lib/catalog'
 import { loadProducts } from '@/lib/app/catalog-server'
 import { searchProducts } from '@/lib/catalog-search'
+import { loadCurrentPromo, recordPromoEvent } from '@/lib/promo'
 
 type ProductSpec = Database['public']['Tables']['product_specifications']['Row']
 
@@ -127,6 +128,8 @@ export interface MatchedProduct {
   }>
   sourceDocuments: string[]
   confidence: number
+  /** This week's "מוצר השבוע", put first because the search is in its field (T-024). */
+  promoted?: boolean
   // Live data (Step 4)
   offers?: Array<{
     supplierId: string
@@ -248,10 +251,26 @@ function parseIntent(userMessage: string): ParsedIntent {
  */
 async function findMatchingProducts(
   intent: ParsedIntent
-): Promise<{ matches: MatchedProduct[]; total: number; partial: boolean }> {
+): Promise<{ matches: MatchedProduct[]; total: number; partial: boolean; promo: { weekId: string; supplierId: string } | null }> {
   const supabase = getSupabaseAdmin()
-  const live = await loadProducts({ showPrices: true })
-  const { products: hits, partial } = searchProducts(live, intent.rawText)
+  const [live, current] = await Promise.all([loadProducts({ showPrices: true }), loadCurrentPromo()])
+  const { products: found, partial } = searchProducts(live, intent.rawText)
+
+  // "מוצר השבוע" goes first, labelled, when the search lands in its main
+  // category. A paid slot, never a silent ranking change (T-024).
+  let hits = found
+  let total = found.length
+  let promo: { weekId: string; supplierId: string } | null = null
+  if (current && found.length > 0) {
+    const promoted = live.find(
+      (product) => product.id === current.productId && product.offers.some((offer) => offer.supplierId === current.supplierId)
+    )
+    if (promoted?.topId && found.some((product) => product.topId === promoted.topId)) {
+      if (!found.some((product) => product.id === promoted.id)) total += 1
+      hits = [promoted, ...found.filter((product) => product.id !== promoted.id)]
+      promo = { weekId: current.id, supplierId: current.supplierId }
+    }
+  }
 
   const productMap = new Map<string, MatchedProduct>()
   hits.slice(0, 5).forEach((product, i) => {
@@ -263,6 +282,7 @@ async function findMatchingProducts(
       sourceDocuments: [],
       // Search order is the ranking; a partial match is never a confident one
       confidence: (partial ? 0.5 : 1) - i * 0.05,
+      promoted: promo !== null && i === 0,
       offers: [],
     })
   })
@@ -307,7 +327,10 @@ async function findMatchingProducts(
     if (offers && offers.length > 0) {
       // Only approved suppliers; bestOffer() decides which one leads, same as the catalogue
       const approved = offers.filter((offer) => offer.suppliers?.status === 'approved')
-      const best = bestOffer({ supplier_offers: approved })
+      // The promoted product sells from the supplier who booked the week.
+      const best =
+        (product.promoted && approved.find((offer) => offer.supplier_id === promo?.supplierId)) ||
+        bestOffer({ supplier_offers: approved })
       product.offers = [...approved]
         .sort((a, b) => (a === best ? -1 : b === best ? 1 : 0))
         .map((offer) => ({
@@ -345,7 +368,7 @@ async function findMatchingProducts(
     }
   }
 
-  return { matches: topProducts, total: hits.length, partial }
+  return { matches: topProducts, total, partial, promo }
 }
 
 /**
@@ -427,7 +450,7 @@ function generateResponse(
 
   if (matches.length === 1) {
     const product = matches[0]
-    let response = `${partial ? 'לא מצאתי התאמה מדויקת. הכי קרוב:' : 'מצאתי מוצר שמתאים:'}\n\n**${product.productName}**`
+    let response = `${partial ? 'לא מצאתי התאמה מדויקת. הכי קרוב:' : 'מצאתי מוצר שמתאים:'}\n\n**${product.productName}**${product.promoted ? ' · מוצר השבוע (קידום בתשלום)' : ''}`
 
     // Step 5: Show document evidence
     if (product.documents && product.documents.length > 0) {
@@ -478,7 +501,7 @@ function generateResponse(
   for (let i = 0; i < showLimit; i++) {
     const product = matches[i]
     const number = i + 1
-    response += `\n${number}) **${product.productName}**`
+    response += `\n${number}) **${product.productName}**${product.promoted ? ' · מוצר השבוע (קידום)' : ''}`
 
     // Show price and supplier as main info
     if (product.offers && product.offers.length > 0) {
@@ -582,7 +605,10 @@ export async function processProcurementRequest(
     const intent = parseIntent(request.userMessage)
 
     // 2. Find matching products
-    const { matches, total, partial } = await findMatchingProducts(intent)
+    const { matches, total, partial, promo } = await findMatchingProducts(intent)
+    if (promo && matches[0]?.promoted) {
+      await recordPromoEvent({ weekId: promo.weekId, kind: 'view', placement: 'agent', carpenterId: request.carpenterId ?? null })
+    }
 
     // 3. Select response type
     const responseType = selectResponseType(intent, matches)

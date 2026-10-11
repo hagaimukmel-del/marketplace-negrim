@@ -32,6 +32,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     supabase.from('suppliers').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
     supabase.from('metzion_reports').select('id', { count: 'exact', head: true }).is('resolved_at', null),
   ])
+  // Bookings waiting for approval; zero on a database without promo_weeks.
+  const { count: pendingPromos } = await supabase
+    .from('promo_weeks')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'requested')
 
   const nav: NavItem[] = [
     // Orders first: it is the screen with work waiting on it every day.
@@ -41,6 +46,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: '/admin/products', label: 'מוצרים' },
     { href: '/admin/categories', label: 'קטגוריות' },
     { href: '/admin/campaigns', label: 'קמפיינים' },
+    { href: '/admin/promotions', label: 'מוצר השבוע', count: pendingPromos ?? 0 },
     { href: '/admin/suppliers', label: 'ספקים', count: pendingSuppliers ?? 0 },
     { href: '/admin/carpenters', label: 'נגריות' },
     { href: '/admin/metzion', label: 'מציאון', count: openReports ?? 0 },

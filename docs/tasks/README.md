@@ -59,6 +59,7 @@ python .claude/skills/product-map/scripts/task_index.py
 | [T-022](T-022.md) | P2 | in-progress | future | 04-orders-fulfilment | Purchase order and price quote as a file, per supplier | T-007 (agent tool only) |
 | [T-025](T-025.md) | P2 | in-progress | future | 02-carpenter-app | Internal messages between carpenter and supplier |  |
 | [T-026](T-026.md) | P2 | in-progress | future | 05-catalogue-pricing | Supplier delivery regions; carpenters see suppliers that deliver to them | T-002 |
+| [T-024](T-024.md) | P3 | in-progress | future | 09-campaigns-offers | "מוצר השבוע": a paid weekly promotion slot |  |
 | [T-002](T-002.md) | P0 | open | promise-gap | 05-catalogue-pricing | Onboard a second live supplier |  |
 | [T-009](T-009.md) | P0 | open | ops | 10-platform | Rotate the staging service_role key |  |
 | [T-001](T-001.md) | P1 | open | promise-gap | 03-agent-chat | Voice ordering in under a minute |  |
@@ -77,7 +78,6 @@ python .claude/skills/product-map/scripts/task_index.py
 | [T-016](T-016.md) | P3 | open | debt | 10-platform | Lint errors |  |
 | [T-017](T-017.md) | P3 | open | incomplete | 03-agent-chat | Product documents visible to all carpenters |  |
 | [T-019](T-019.md) | P3 | open | decision | 10-platform | CLAUDE.md rules vs reality: Zod, @supabase/ssr, Server Components |  |
-| [T-024](T-024.md) | P3 | open | future | 09-campaigns-offers | "מוצר השבוע": a paid weekly promotion slot | T-002 |
 | [T-029](T-029.md) | P3 | open | incomplete | 04-orders-fulfilment | Email confirm link can only confirm all of an order |  |
 | [T-011](T-011.md) | P1 | blocked | ops | 03-agent-chat | End-to-end test of the agent chat on staging | env files (work PC) |
 | [T-008](T-008.md) | P0 | done | ops | 03-agent-chat | Apply migration supplier_contact_requests |  |

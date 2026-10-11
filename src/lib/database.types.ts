@@ -344,6 +344,69 @@ export type Database = {
         }
         Relationships: []
       }
+      promo_events: {
+        Row: {
+          carpenter_id: string | null
+          created_at: string
+          id: number
+          kind: string
+          placement: string
+          promo_week_id: string
+        }
+        Insert: {
+          carpenter_id?: string | null
+          created_at?: string
+          id?: never
+          kind: string
+          placement: string
+          promo_week_id: string
+        }
+        Update: {
+          carpenter_id?: string | null
+          created_at?: string
+          id?: never
+          kind?: string
+          placement?: string
+          promo_week_id?: string
+        }
+        Relationships: []
+      }
+      promo_weeks: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          id: string
+          note: string | null
+          price_excl_vat: number
+          product_id: string
+          status: string
+          supplier_id: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          note?: string | null
+          price_excl_vat: number
+          product_id: string
+          status?: string
+          supplier_id: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          note?: string | null
+          price_excl_vat?: number
+          product_id?: string
+          status?: string
+          supplier_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           body: string

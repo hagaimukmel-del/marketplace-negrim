@@ -20,7 +20,7 @@
 ```bash
 git pull
 npm ci
-npm run db:push:staging   # admin_actions, supplier_delivery, order_confirmation, messages, supplier_order_recipients
+npm run db:push:staging   # admin_actions, supplier_delivery, order_confirmation, messages, supplier_order_recipients, promo_weeks
 # בדיקה ידנית בסטייג'ינג (skill: nagarim-smoke-test): הודעות, אישור עם שורה חסרה, אזורי חלוקה
 npm run db:push           # פרודקשן
 npm run db:types
@@ -30,8 +30,12 @@ npm run db:types
 הורדת מחירון, מסך מכירות ולקוחות, ניהול דפים טכניים וקטלוג, נמענים נוספים להזמנות.
 נוספה מיגרציה חמישית: `20261011120000_supplier_order_recipients`.
 
+עדכון 11.10 (מאוחר יותר): שלב 7 (הכנסות) נבנה: לשונית "מנוי ופרסום" לספק, "מוצר השבוע"
+בדף הבית, בקטגוריה ובסוכן, ואישור שבועות ב-`/admin/promotions`. מיגרציה שישית:
+`20261011130000_promo_weeks`. עדיין פתוח ב-T-024: הודעת ההיכרות השבועית לא לוקחת את מוצר השבוע.
+
 **איפה עצרנו:** שלב 4 בתוכנית — ספק שני חי (גיוס, מחירון, מתג מחירים/הצעת מחיר T-023).
-מחכה לספק אמיתי ומחירון מהבעלים. אחריו: 5 פיילוט ומדידה, 7 הכנסות.
+מחכה לספק אמיתי ומחירון מהבעלים. אחריו: 5 פיילוט ומדידה.
 פתוחים קטנים: הסוכן לא מתחשב באזור חלוקה (T-026), קישור האישור במייל מאשר רק הכל (T-029).
 
 ## מה נשאר — לפי הסדר
