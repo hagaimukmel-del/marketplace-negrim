@@ -20,14 +20,18 @@
 ```bash
 git pull
 npm ci
-npm run db:push:staging   # admin_actions, supplier_delivery, order_confirmation, messages
+npm run db:push:staging   # admin_actions, supplier_delivery, order_confirmation, messages, supplier_order_recipients
 # בדיקה ידנית בסטייג'ינג (skill: nagarim-smoke-test): הודעות, אישור עם שורה חסרה, אזורי חלוקה
 npm run db:push           # פרודקשן
 npm run db:types
 ```
 
+עדכון 11.10: שלב 6 (נוחות לספק) נבנה לפני שלב 4, כי הוא לא תלוי בספק שני: עריכה מהירה,
+הורדת מחירון, מסך מכירות ולקוחות, ניהול דפים טכניים וקטלוג, נמענים נוספים להזמנות.
+נוספה מיגרציה חמישית: `20261011120000_supplier_order_recipients`.
+
 **איפה עצרנו:** שלב 4 בתוכנית — ספק שני חי (גיוס, מחירון, מתג מחירים/הצעת מחיר T-023).
-מחכה לספק אמיתי ומחירון מהבעלים. אחריו: 5 פיילוט ומדידה, 6 נוחות לספק, 7 הכנסות.
+מחכה לספק אמיתי ומחירון מהבעלים. אחריו: 5 פיילוט ומדידה, 7 הכנסות.
 פתוחים קטנים: הסוכן לא מתחשב באזור חלוקה (T-026), קישור האישור במייל מאשר רק הכל (T-029).
 
 ## מה נשאר — לפי הסדר

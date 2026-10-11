@@ -3,6 +3,7 @@ import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { isAdmin } from '@/lib/admin-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { loadCategoryTree, loadProducts } from '@/lib/app/catalog-server'
+import { CATALOG_PREFIX, catalogUrl } from '@/lib/supplier-documents'
 import ProductView, { type LastPurchase, type ProductDoc } from './ProductView'
 
 export const dynamic = 'force-dynamic'
@@ -51,6 +52,26 @@ export default async function AppProduct({ params }: { params: Promise<{ id: str
   const docs: ProductDoc[] = (docRows ?? [])
     .filter((doc) => sellers.has(doc.supplier_id))
     .map((doc) => ({ id: doc.id, title: doc.title_he, url: doc.file_url, supplierName: sellers.get(doc.supplier_id)! }))
+
+  // And each seller's general catalogue, uploaded in the supplier console.
+  if (sellers.size > 0) {
+    const { data: catalogRows } = await getSupabaseAdmin()
+      .from('supplier_documents')
+      .select('id, supplier_id, file_name, file_path, description')
+      .in('supplier_id', [...sellers.keys()])
+      .eq('is_active', true)
+      .like('file_path', `${CATALOG_PREFIX}%`)
+      .order('uploaded_at', { ascending: false })
+      .limit(10)
+    for (const row of catalogRows ?? []) {
+      docs.push({
+        id: row.id,
+        title: `קטלוג: ${row.description || row.file_name}`,
+        url: catalogUrl(row.file_path),
+        supplierName: sellers.get(row.supplier_id)!,
+      })
+    }
+  }
 
   return (
     <ProductView

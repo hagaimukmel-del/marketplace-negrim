@@ -1,12 +1,13 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { FileSpreadsheet, Plus, Search, ImageOff, PackageOpen, X } from 'lucide-react'
+import { Download, FileSpreadsheet, List, Pencil, Plus, Search, ImageOff, PackageOpen, X } from 'lucide-react'
 import { formatIls } from '@/lib/vat'
 import { unitLabel } from '@/lib/catalog'
 import PriceImport from '@/components/import/PriceImport'
 import ProductForm from './ProductForm'
 import ProductPicker from './ProductPicker'
+import QuickEdit from './QuickEdit'
 import type { CatalogPick, CategoryOption, ProductItem } from '../types'
 import type { Notify } from '../SupplierApp'
 
@@ -85,6 +86,7 @@ export default function ProductsTab({
   const [picking, setPicking] = useState(false)
   const [attachTo, setAttachTo] = useState<CatalogPick | null>(null)
   const [importing, setImporting] = useState(false)
+  const [quick, setQuick] = useState(false)
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -127,69 +129,110 @@ export default function ProductsTab({
         </div>
       ) : (
         <>
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search
-                size={17}
-                className="pointer-events-none absolute top-1/2 -translate-y-1/2 text-stone-400"
-                style={{ insetInlineStart: '0.75rem' }}
-              />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="חפש מוצר, מותג או מק״ט"
-                aria-label="חיפוש מוצרים"
-                className="h-11 w-full rounded-xl border border-stone-300 bg-white ps-10 pe-3"
-              />
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex rounded-xl border border-stone-300 bg-white p-0.5" role="group" aria-label="תצוגה">
+              <button
+                type="button"
+                onClick={() => setQuick(false)}
+                aria-pressed={!quick}
+                className={`flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold ${!quick ? 'bg-stone-900 text-white' : 'text-stone-600'}`}
+              >
+                <List size={16} />
+                רשימה
+              </button>
+              <button
+                type="button"
+                onClick={() => setQuick(true)}
+                aria-pressed={quick}
+                className={`flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold ${quick ? 'bg-stone-900 text-white' : 'text-stone-600'}`}
+              >
+                <Pencil size={15} />
+                עריכה מהירה
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setImporting(true)}
-              aria-label="ייבוא מאקסל"
-              title="ייבוא מאקסל"
-              className="flex h-11 shrink-0 items-center gap-2 rounded-xl border border-stone-300 bg-white px-3 font-semibold text-stone-700"
+            <a
+              href="/api/supplier/pricelist"
+              download
+              title="הורד את המחירון שלי לאקסל, תקן והעלה בחזרה"
+              className="flex h-10 items-center gap-1.5 rounded-xl px-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-50"
             >
-              <FileSpreadsheet size={17} />
-              <span className="hidden sm:inline">ייבוא מאקסל</span>
-            </button>
+              <Download size={16} />
+              הורד מחירון
+            </a>
+          </div>
+
+          {quick ? (
+            <QuickEdit key={products.length} products={products} notify={notify} />
+          ) : (
+            <>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search
+                  size={17}
+                  className="pointer-events-none absolute top-1/2 -translate-y-1/2 text-stone-400"
+                  style={{ insetInlineStart: '0.75rem' }}
+                />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="חפש מוצר, מותג או מק״ט"
+                  aria-label="חיפוש מוצרים"
+                  className="h-11 w-full rounded-xl border border-stone-300 bg-white ps-10 pe-3"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => setImporting(true)}
+                aria-label="ייבוא מאקסל"
+                title="ייבוא מאקסל"
+                className="flex h-11 shrink-0 items-center gap-2 rounded-xl border border-stone-300 bg-white px-3 font-semibold text-stone-700"
+              >
+                <FileSpreadsheet size={17} />
+                <span className="hidden sm:inline">ייבוא מאקסל</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPicking(true)}
+                className="hidden h-11 shrink-0 items-center gap-2 rounded-xl bg-emerald-700 px-4 font-semibold text-white sm:flex"
+              >
+                <Plus size={17} />
+                הוסף מוצר
+              </button>
+            </div>
+
+            {(missingImages > 0 || outOfStock > 0) && (
+              <p className="text-xs text-stone-500">
+                {products.length} מוצרים
+                {missingImages > 0 && ` · ${missingImages} בלי תמונה`}
+                {outOfStock > 0 && ` · ${outOfStock} אזלו`}
+              </p>
+            )}
+
+            {shown.length === 0 ? (
+              <p className="rounded-xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-600">
+                לא נמצא מוצר שמתאים לחיפוש.
+              </p>
+            ) : (
+              <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+                {shown.map((product) => (
+                  <ProductRow key={product.offerId} product={product} onOpen={() => setEditing(product)} />
+                ))}
+              </div>
+            )}
+
+            </>
+          )}
+
+          {!quick && (
             <button
               type="button"
               onClick={() => setPicking(true)}
-              className="hidden h-11 shrink-0 items-center gap-2 rounded-xl bg-emerald-700 px-4 font-semibold text-white sm:flex"
+              aria-label="הוסף מוצר"
+              className="fixed bottom-20 end-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-700 text-white shadow-lg sm:hidden"
             >
-              <Plus size={17} />
-              הוסף מוצר
+              <Plus size={26} />
             </button>
-          </div>
-
-          {(missingImages > 0 || outOfStock > 0) && (
-            <p className="text-xs text-stone-500">
-              {products.length} מוצרים
-              {missingImages > 0 && ` · ${missingImages} בלי תמונה`}
-              {outOfStock > 0 && ` · ${outOfStock} אזלו`}
-            </p>
           )}
-
-          {shown.length === 0 ? (
-            <p className="rounded-xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-600">
-              לא נמצא מוצר שמתאים לחיפוש.
-            </p>
-          ) : (
-            <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
-              {shown.map((product) => (
-                <ProductRow key={product.offerId} product={product} onOpen={() => setEditing(product)} />
-              ))}
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setPicking(true)}
-            aria-label="הוסף מוצר"
-            className="fixed bottom-20 end-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-700 text-white shadow-lg sm:hidden"
-          >
-            <Plus size={26} />
-          </button>
         </>
       )}
 

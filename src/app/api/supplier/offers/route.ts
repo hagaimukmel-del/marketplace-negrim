@@ -105,3 +105,78 @@ export async function PATCH(request: NextRequest) {
     )
   }
 }
+
+const MAX_BULK = 500
+
+/**
+ * Quick edit: many prices, stock counts or show/hide switches saved at once.
+ *
+ * Body: `{ changes: [{ offer_id, price_excl_vat?, stock_qty?, is_active? }] }`.
+ * Everything is checked before anything is written, so one bad price refuses
+ * the whole save and the table keeps what was typed. Each row is filtered on
+ * the session's supplier, like the single edit above.
+ */
+export async function POST(request: NextRequest) {
+  const supplier = await getSessionSupplier()
+  if (!supplier) {
+    return NextResponse.json({ error: 'צריך להיות מחובר' }, { status: 401 })
+  }
+  const refused = await refuseAdminWriteFor(supplier)
+  if (refused) return refused
+
+  try {
+    const body = (await request.json()) as { changes?: unknown }
+    if (!Array.isArray(body.changes) || body.changes.length === 0) {
+      return NextResponse.json({ error: 'אין שינויים לשמור' }, { status: 400 })
+    }
+    if (body.changes.length > MAX_BULK) {
+      return NextResponse.json({ error: `אפשר לשמור עד ${MAX_BULK} שורות בבת אחת` }, { status: 400 })
+    }
+
+    const now = new Date().toISOString()
+    const updates: { id: string; update: OfferUpdate }[] = []
+    for (const raw of body.changes as Record<string, unknown>[]) {
+      if (!raw || typeof raw.offer_id !== 'string') {
+        return NextResponse.json({ error: 'חסר מזהה הצעה' }, { status: 400 })
+      }
+      const update: OfferUpdate = { updated_at: now }
+      if (raw.price_excl_vat !== undefined) {
+        const price = Number(raw.price_excl_vat)
+        if (!Number.isFinite(price) || price <= 0) {
+          return NextResponse.json({ error: 'מחיר לא תקין', offer_id: raw.offer_id }, { status: 400 })
+        }
+        update.price_excl_vat = Math.round(price * 100) / 100
+      }
+      if (raw.stock_qty !== undefined) {
+        const stock = Number(raw.stock_qty)
+        if (!Number.isInteger(stock) || stock < 0) {
+          return NextResponse.json({ error: 'מלאי לא תקין', offer_id: raw.offer_id }, { status: 400 })
+        }
+        update.stock_qty = stock
+      }
+      if (typeof raw.is_active === 'boolean') update.is_active = raw.is_active
+      if (Object.keys(update).length > 1) updates.push({ id: raw.offer_id, update })
+    }
+
+    const supabase = getSupabaseAdmin()
+    let saved = 0
+    const failed: string[] = []
+    for (let i = 0; i < updates.length; i += 20) {
+      const results = await Promise.all(
+        updates.slice(i, i + 20).map(({ id, update }) =>
+          supabase.from('supplier_offers').update(update).eq('id', id).eq('supplier_id', supplier.id).select('id').maybeSingle()
+        )
+      )
+      results.forEach(({ data, error }, index) => {
+        if (error || !data) failed.push(updates[i + index].id)
+        else saved += 1
+      })
+    }
+
+    if (failed.length > 0) console.error(`Bulk offer update: ${failed.length} rows not saved`)
+    return NextResponse.json({ ok: failed.length === 0, saved, failed }, { status: failed.length && !saved ? 500 : 200 })
+  } catch (err) {
+    console.error('Supplier bulk offer update failed:', err)
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Failed' }, { status: 500 })
+  }
+}

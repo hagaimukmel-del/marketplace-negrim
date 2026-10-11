@@ -5,6 +5,7 @@ import { refuseAdminWriteFor } from '@/lib/admin-scope'
 import { PAYMENT_TERMS } from '@/app/supplier/types'
 import { isRegionKey } from '@/lib/regions'
 import type { Database } from '@/lib/database.types'
+import { cleanOrderCc } from '@/lib/order-recipients'
 
 type SupplierUpdate = Database['public']['Tables']['suppliers']['Update']
 
@@ -198,6 +199,17 @@ export async function PATCH(request: NextRequest) {
       if (deliveryError) {
         console.error('Supplier delivery update failed:', deliveryError)
         return NextResponse.json({ error: 'לא הצלחתי לשמור את אזורי החלוקה' }, { status: 500 })
+      }
+    }
+
+    // Copies of new orders, also on their own (migration 20261011120000).
+    if ('order_cc_emails' in body) {
+      const emails = cleanOrderCc(body.order_cc_emails, update.email ?? supplier.email)
+      if (typeof emails === 'string') return NextResponse.json({ error: emails }, { status: 400 })
+      const { error: ccError } = await supabase.from('suppliers').update({ order_cc_emails: emails }).eq('id', supplier.id)
+      if (ccError) {
+        console.error('Supplier order copies update failed:', ccError)
+        return NextResponse.json({ error: 'לא הצלחתי לשמור את הנמענים הנוספים' }, { status: 500 })
       }
     }
 
