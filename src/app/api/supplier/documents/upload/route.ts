@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionSupplier } from '@/lib/supplier-auth'
 import { refuseAdminWriteFor } from '@/lib/admin-scope'
+import { removeSheet } from '@/lib/supplier-documents'
 
 const DOC_TYPES = ['spec_sheet', 'usage_guide', 'image', 'datasheet', 'other'] as const
 const ALLOWED_CONTENT_TYPES = ['application/pdf', 'image/jpeg', 'image/png']
@@ -31,6 +32,8 @@ export async function POST(request: NextRequest) {
     const productId = formData.get('product_id')
     const docType = formData.get('doc_type')
     const title = formData.get('title_he')
+    // "החלף": the new file takes the old one's place once it is saved.
+    const replaces = formData.get('replaces')
 
     if (!(file instanceof File) || typeof productId !== 'string' || typeof docType !== 'string') {
       return NextResponse.json({ error: 'חסרים פרטים' }, { status: 400 })
@@ -92,6 +95,16 @@ export async function POST(request: NextRequest) {
       console.error('Supplier document insert failed:', docError)
       await supabase.storage.from('product_documents').remove([path])
       return NextResponse.json({ error: 'שמירת המסמך נכשלה' }, { status: 500 })
+    }
+
+    if (typeof replaces === 'string' && replaces) {
+      const { data: old } = await supabase
+        .from('product_documents')
+        .select('product_id')
+        .eq('id', replaces)
+        .eq('supplier_id', supplier.id)
+        .maybeSingle()
+      if (old?.product_id === productId) await removeSheet(replaces, supplier.id)
     }
 
     return NextResponse.json({ success: true, document: doc }, { status: 201 })

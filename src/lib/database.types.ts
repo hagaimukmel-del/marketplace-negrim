@@ -1460,6 +1460,7 @@ export type Database = {
           is_verified: boolean | null
           logo_url: string | null
           min_order_value_excl_vat: number | null
+          order_cc_emails: string[]
           payment_terms: string[]
           phone: string | null
           phone_key: string | null
@@ -1491,6 +1492,7 @@ export type Database = {
           is_verified?: boolean | null
           logo_url?: string | null
           min_order_value_excl_vat?: number | null
+          order_cc_emails?: string[]
           payment_terms?: string[]
           phone?: string | null
           phone_key?: string | null
@@ -1522,6 +1524,7 @@ export type Database = {
           is_verified?: boolean | null
           logo_url?: string | null
           min_order_value_excl_vat?: number | null
+          order_cc_emails?: string[]
           payment_terms?: string[]
           phone?: string | null
           phone_key?: string | null

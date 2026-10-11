@@ -1,25 +1,29 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { Truck, Package, Building2, Handshake, FileText, CheckCircle2, Circle, ChevronLeft } from 'lucide-react'
+import { Truck, Package, Building2, Handshake, FileText, CheckCircle2, Circle, ChevronLeft, TrendingUp } from 'lucide-react'
 import OrdersTab from './tabs/OrdersTab'
 import ProductsTab from './tabs/ProductsTab'
 import BusinessTab from './tabs/BusinessTab'
 import TermsTab from './tabs/TermsTab'
+import SalesTab from './tabs/SalesTab'
 import UploadDocuments from './UploadDocuments'
-import type { CatalogPick, CategoryOption, ProductItem, SupplierOrder, SupplierProfile, SupplierQuestion, Tab } from './types'
+import type { Sales } from './sales'
+import type { CatalogPick, CategoryOption, ProductItem, SupplierDocs, SupplierOrder, SupplierProfile, SupplierQuestion, Tab } from './types'
 
 export type Notify = (text: string, kind?: 'ok' | 'error') => void
 
-const TAB_META: Record<Tab, { label: string; Icon: typeof Truck }> = {
-  orders: { label: 'הזמנות נכנסות', Icon: Truck },
-  products: { label: 'מוצרים', Icon: Package },
-  documents: { label: 'דפים טכניים', Icon: FileText },
-  business: { label: 'פרטי העסק', Icon: Building2 },
-  terms: { label: 'תנאי סחר', Icon: Handshake },
+/** `short` is the label in both tab bars, where six tabs share the width; `label` is its tooltip. */
+const TAB_META: Record<Tab, { label: string; short: string; Icon: typeof Truck }> = {
+  orders: { label: 'הזמנות נכנסות', short: 'הזמנות', Icon: Truck },
+  products: { label: 'מוצרים', short: 'מוצרים', Icon: Package },
+  sales: { label: 'מכירות', short: 'מכירות', Icon: TrendingUp },
+  documents: { label: 'דפים טכניים', short: 'מסמכים', Icon: FileText },
+  business: { label: 'פרטי העסק', short: 'העסק', Icon: Building2 },
+  terms: { label: 'תנאי סחר', short: 'תנאים', Icon: Handshake },
 }
 
-const ORDER: Tab[] = ['orders', 'products', 'documents', 'business', 'terms']
+const ORDER: Tab[] = ['orders', 'products', 'sales', 'documents', 'business', 'terms']
 
 interface ChecklistItem {
   label: string
@@ -95,6 +99,8 @@ export default function SupplierApp({
   questions,
   categories,
   catalog,
+  sales,
+  documents,
 }: {
   initialTab: Tab
   profile: SupplierProfile
@@ -103,6 +109,8 @@ export default function SupplierApp({
   questions: SupplierQuestion[]
   categories: CategoryOption[]
   catalog: CatalogPick[]
+  sales: Sales
+  documents: SupplierDocs
 }) {
   const [tab, setTab] = useState<Tab>(initialTab)
   const [toast, setToast] = useState<{ text: string; kind: 'ok' | 'error' } | null>(null)
@@ -163,7 +171,7 @@ export default function SupplierApp({
       {/* Wider screens: tabs across the top. */}
       <nav className="hidden gap-1 rounded-xl border border-stone-200 bg-white p-1 sm:flex">
         {ORDER.map((key) => {
-          const { label, Icon } = TAB_META[key]
+          const { label, short, Icon } = TAB_META[key]
           const active = tab === key
           return (
             <button
@@ -176,7 +184,7 @@ export default function SupplierApp({
               }`}
             >
               <Icon size={16} />
-              {label}
+              <span title={label}>{short}</span>
               {key === 'orders' && waiting > 0 && (
                 <span
                   className={`tnum rounded-full px-1.5 text-xs font-bold ${
@@ -196,16 +204,17 @@ export default function SupplierApp({
         {tab === 'products' && (
           <ProductsTab products={products} categories={categories} catalog={catalog} notify={notify} />
         )}
-        {tab === 'documents' && <UploadDocuments products={products} />}
+        {tab === 'sales' && <SalesTab sales={sales} />}
+        {tab === 'documents' && <UploadDocuments products={products} documents={documents} notify={notify} />}
         {tab === 'business' && <BusinessTab profile={profile} notify={notify} />}
         {tab === 'terms' && <TermsTab profile={profile} notify={notify} />}
       </div>
 
       {/* Phones: a bar at the bottom, where the thumb already is. */}
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden">
-        <div className="grid grid-cols-4">
+        <div className="grid grid-cols-6">
           {ORDER.map((key) => {
-            const { label, Icon } = TAB_META[key]
+            const { short, Icon } = TAB_META[key]
             const active = tab === key
             return (
               <button
@@ -218,9 +227,9 @@ export default function SupplierApp({
                 }`}
               >
                 <Icon size={21} strokeWidth={active ? 2.4 : 1.8} />
-                {label}
+                {short}
                 {key === 'orders' && waiting > 0 && (
-                  <span className="tnum absolute top-1.5 end-[28%] flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-700 px-1 text-[10px] font-bold text-white">
+                  <span className="tnum absolute top-1.5 end-[18%] flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-700 px-1 text-[10px] font-bold text-white">
                     {waiting}
                   </span>
                 )}

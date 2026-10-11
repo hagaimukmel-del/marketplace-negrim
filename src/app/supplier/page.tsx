@@ -2,6 +2,9 @@ import { redirect } from 'next/navigation'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionSupplier } from '@/lib/supplier-auth'
 import { loadDelivery } from '@/lib/delivery'
+import { loadOrderCc } from '@/lib/order-recipients'
+import { loadSupplierDocs } from '@/lib/supplier-documents'
+import { computeSales } from './sales'
 import SupplierApp from './SupplierApp'
 import {
   isTab,
@@ -48,6 +51,7 @@ interface RawLine {
   line_total_excl_vat: number
   orders: {
     id: string
+    carpenter_id: string | null
     order_number: string
     short_number: number | null
     status: string | null
@@ -87,7 +91,7 @@ export default async function SupplierHome({
   const { tab } = await searchParams
   const supabase = getSupabaseAdmin()
 
-  const [{ data: offers }, { data: lines }, { data: categories }, { data: catalogRows }, { data: questionRows }, delivery, { data: docRows }] = await Promise.all([
+  const [{ data: offers }, { data: lines }, { data: categories }, { data: catalogRows }, { data: questionRows }, delivery, orderCc, documents] = await Promise.all([
     supabase
       .from('supplier_offers')
       .select(
@@ -100,10 +104,11 @@ export default async function SupplierHome({
       .from('order_items')
       .select(
         'id, order_id, product_name_he, quantity, unit_price_excl_vat, line_total_excl_vat, ' +
-          'orders(id, order_number, short_number, status, created_at, business_name, customer_name, customer_phone, address, city, notes, payment_method, confirmed_subtotal_excl_vat, supplier_note)'
+          'orders(id, carpenter_id, order_number, short_number, status, created_at, business_name, customer_name, customer_phone, address, city, notes, payment_method, confirmed_subtotal_excl_vat, supplier_note)'
       )
       .eq('supplier_id', supplier.id)
-      .limit(1000),
+      .order('created_at', { ascending: false })
+      .limit(5000),
     supabase
       .from('categories')
       .select('id, name_he, parent_category_id')
@@ -125,8 +130,19 @@ export default async function SupplierHome({
       .order('created_at', { ascending: false })
       .limit(20),
     loadDelivery([supplier.id]),
-    supabase.from('product_documents').select('product_id').eq('supplier_id', supplier.id).limit(2000),
+    loadOrderCc([supplier.id]),
+    loadSupplierDocs(supplier.id),
   ])
+
+  // Lines the supplier said it could not supply (migration 20261008140000).
+  // Read on their own so a database without the column just has none.
+  const { data: unavailableRows } = await supabase
+    .from('order_items')
+    .select('id')
+    .eq('supplier_id', supplier.id)
+    .eq('unavailable', true)
+    .limit(5000)
+  const unavailable = new Set((unavailableRows ?? []).map((row) => row.id))
 
   const myLines = (lines ?? []) as unknown as RawLine[]
 
@@ -144,7 +160,7 @@ export default async function SupplierHome({
     suppliersByOrder.set(line.order_id, set)
   }
 
-  const withSheet = new Set((docRows ?? []).map((doc) => doc.product_id))
+  const withSheet = new Set(documents.sheets.map((doc) => doc.productId))
   const products: ProductItem[] = ((offers ?? []) as unknown as RawOffer[])
     .filter((offer) => offer.products)
     .map((offer) => {
@@ -187,6 +203,7 @@ export default async function SupplierHome({
       quantity: line.quantity,
       unitPrice: Number(line.unit_price_excl_vat),
       lineTotal: Number(line.line_total_excl_vat),
+      unavailable: unavailable.has(line.id),
     }
     const existing = byOrder.get(order.id)
     if (existing) {
@@ -201,6 +218,7 @@ export default async function SupplierHome({
       status: order.status ?? 'pending',
       createdAt: order.created_at ?? new Date(0).toISOString(),
       buyer: order.business_name || order.customer_name || 'נגרייה',
+      customerKey: order.carpenter_id ?? `name:${order.business_name || order.customer_name || order.customer_phone || order.id}`,
       contactName: order.business_name ? order.customer_name : null,
       phone: order.customer_phone,
       address: [order.address, order.city].filter(Boolean).join(', ') || null,
@@ -284,12 +302,16 @@ export default async function SupplierHome({
         delivery_regions: delivery.bySupplier.get(supplier.id)?.regions ?? [],
         delivery_fee_excl_vat: delivery.bySupplier.get(supplier.id)?.feeExclVat ?? null,
         free_delivery_from_excl_vat: delivery.bySupplier.get(supplier.id)?.freeFromExclVat ?? null,
+        order_cc_ready: orderCc.ready,
+        order_cc_emails: orderCc.bySupplier.get(supplier.id) ?? [],
       }}
       products={products}
       orders={orders}
       questions={questions}
       categories={(categories ?? []) as CategoryOption[]}
       catalog={catalog}
+      sales={computeSales(orders, new Date())}
+      documents={documents}
     />
   )
 }

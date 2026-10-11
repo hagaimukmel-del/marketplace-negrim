@@ -4,9 +4,9 @@
  * tabs can read it.
  */
 
-export type Tab = 'orders' | 'products' | 'business' | 'terms' | 'documents'
+export type Tab = 'orders' | 'products' | 'sales' | 'business' | 'terms' | 'documents'
 
-export const TABS: readonly Tab[] = ['orders', 'products', 'business', 'terms', 'documents']
+export const TABS: readonly Tab[] = ['orders', 'products', 'sales', 'business', 'terms', 'documents']
 
 export function isTab(value: unknown): value is Tab {
   return typeof value === 'string' && (TABS as readonly string[]).includes(value)
@@ -45,6 +45,10 @@ export interface SupplierProfile {
   delivery_regions: string[]
   delivery_fee_excl_vat: number | null
   free_delivery_from_excl_vat: number | null
+  /** False on a database without migration 20261011120000; the copies field waits for it. */
+  order_cc_ready: boolean
+  /** Who else gets a copy of each new order (warehouse, bookkeeping). */
+  order_cc_emails: string[]
 }
 
 export interface ProductItem {
@@ -95,6 +99,8 @@ export interface OrderLine {
   quantity: number
   unitPrice: number
   lineTotal: number
+  /** The supplier marked it as not supplied when confirming. */
+  unavailable: boolean
 }
 
 /** A carpenter's question from "שאלה לספק" in the agent chat. */
@@ -114,6 +120,8 @@ export interface SupplierOrder {
   status: string
   createdAt: string
   buyer: string
+  /** Groups a carpentry's orders on the customers screen: its id, or its name on old orders. */
+  customerKey: string
   contactName: string | null
   phone: string | null
   address: string | null
@@ -125,6 +133,23 @@ export interface SupplierOrder {
   supplierNote: string | null
   /** Also holds another supplier's lines, so it is confirmed centrally. */
   split: boolean
+}
+
+/** A file this supplier uploaded: a sheet on one product, or a catalogue for the whole business. */
+export interface SupplierDoc {
+  id: string
+  productId: string | null
+  productName: string | null
+  title: string
+  docType: string
+  url: string
+  fileName: string
+  uploadedAt: string | null
+}
+
+export interface SupplierDocs {
+  sheets: SupplierDoc[]
+  catalogs: SupplierDoc[]
 }
 
 export interface CategoryOption {

@@ -3,6 +3,7 @@ import 'server-only'
 import { getSupabaseAdmin } from './supabase-admin'
 import { isTestName, sendEmail } from './email'
 import { newOrderHtml, newOrderSubject, type NewOrderLine } from './emails/new-order'
+import { loadOrderCc } from './order-recipients'
 import {
   carpenterOrderSentHtml,
   carpenterOrderSentSubject,
@@ -50,6 +51,7 @@ export async function notifyNewOrders(orderIds: string[]): Promise<void> {
       ? await supabase.from('suppliers').select('id, company_name, email').in('id', supplierIds)
       : { data: [] as { id: string; company_name: string; email: string | null }[] }
     const supplierById = new Map((suppliers ?? []).map((supplier) => [supplier.id, supplier]))
+    const { bySupplier: ccBySupplier } = await loadOrderCc(supplierIds)
 
     const first = orders[0]
     const carpenterName = first.business_name || first.customer_name || 'נגרייה'
@@ -118,6 +120,17 @@ export async function notifyNewOrders(orderIds: string[]): Promise<void> {
           // real supplier must not receive it.
           isTest: isTestName(supplier.company_name, payload.carpenterName),
         })
+
+        // Copies for the warehouse or the bookkeeper: the same order, but no
+        // confirm button. Confirming stays with the supplier's own address.
+        for (const cc of ccBySupplier.get(supplier.id) ?? []) {
+          await sendEmail({
+            to: cc,
+            subject: `העתק: ${newOrderSubject(payload)}`,
+            html: newOrderHtml(payload, { canConfirm: false }),
+            isTest: isTestName(supplier.company_name, payload.carpenterName),
+          })
+        }
       }
     }
 

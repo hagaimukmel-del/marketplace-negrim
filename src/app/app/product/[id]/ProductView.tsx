@@ -173,7 +173,7 @@ export default function ProductView({
 
   const sheets = docs.length > 0 && (
     <section>
-      <h3 className="mb-2 text-base font-bold">דפים טכניים</h3>
+      <h3 className="mb-2 text-base font-bold">דפים טכניים וקטלוגים</h3>
       <ul className="m-0 grid list-none gap-1.5 p-0">
         {docs.map((doc) => (
           <li key={doc.id}>
