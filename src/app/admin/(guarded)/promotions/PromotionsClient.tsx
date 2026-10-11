@@ -48,6 +48,7 @@ function Row({ week, onDone }: { week: PromoWeek; onDone: () => void }) {
         </span>
         <span className="min-w-0 flex-1 text-sm text-stone-700">
           <b>{week.productName ?? 'מוצר שנמחק'}</b> · {week.supplierName ?? 'ספק'}
+          <span className="text-stone-500"> · {week.showPrice ? 'עם מחיר' : 'בלי מחיר'}</span>
         </span>
         <span className="tnum text-sm text-stone-500">{formatIls(week.price)}</span>
       </div>

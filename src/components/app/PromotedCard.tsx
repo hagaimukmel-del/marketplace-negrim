@@ -15,6 +15,8 @@ export interface PromotedSlot {
   product: AppProduct
   /** The paying supplier's own offer: the card always sells from them. */
   offer: AppOffer
+  /** The supplier asked for their price on the card; otherwise it shows none. */
+  showPrice: boolean
 }
 
 function send(weekId: string, kind: 'view' | 'add', placement: 'home' | 'category') {
@@ -29,8 +31,8 @@ function send(weekId: string, kind: 'view' | 'add', placement: 'home' | 'categor
 /**
  * "מוצר השבוע": the one product a supplier paid to show this week (T-024).
  *
- * Labelled as promoted every time it appears, so a carpenter never mistakes it
- * for a neutral pick. It sells from the supplier who booked the week, at their
+ * Labelled "פרסומת" every time it appears, so a carpenter never mistakes it
+ * for a neutral pick. The price shows only when the supplier asked for it. It sells from the supplier who booked the week, at their
  * own price. A view is counted once per page load and every add-to-cart, for
  * the results both the supplier and the operator see.
  */
@@ -82,7 +84,7 @@ export default function PromotedCard({
     >
       <div className="flex items-center justify-between gap-2 bg-wood-soft px-4 py-2">
         <span className="text-[13px] font-extrabold text-[#6B4E2E]">מוצר השבוע</span>
-        <span className="text-[12px] text-muted">קידום בתשלום של הספק</span>
+        <span className="text-[11px] text-muted">פרסומת</span>
       </div>
       <div className="grid grid-cols-[72px_minmax(0,1fr)] items-center gap-3.5 p-4 md:grid-cols-[96px_minmax(0,1fr)_auto]">
         <Link href={`/app/product/${product.id}`} tabIndex={-1} aria-hidden>
@@ -97,7 +99,7 @@ export default function PromotedCard({
             {offer.supplierName}
             {pack && <> · {pack}</>}
           </span>
-          {showPrices && offer.quoteOnly ? (
+          {!slot.showPrice ? null : showPrices && offer.quoteOnly ? (
             <span className="text-[15px] font-semibold">מחיר בהצעה מהספק</span>
           ) : showPrices && offer.price != null ? (
             <span className="text-[15px]">

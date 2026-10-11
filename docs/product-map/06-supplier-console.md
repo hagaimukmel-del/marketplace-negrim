@@ -14,7 +14,7 @@ terms and documents. No password needed.
 | `DELETE /api/supplier/documents/[id]?kind=sheet\|catalog` | Delete one of the supplier's own files (row + storage object) |
 | `POST /api/supplier/documents/catalog` | A PDF catalogue for the whole business: `supplier_documents` row, file under `catalogs/<supplier id>/` in the public `product_documents` bucket. Shown on the product page of every product the supplier sells |
 | `GET /api/supplier/pricelist` | "הורד מחירון": active offers as CSV with the import's own headers, so it goes back in through "ייבוא מאקסל" |
-| `POST/DELETE /api/supplier/promo` | Book a week of "מוצר השבוע" for an active product (from next week, 12 ahead), or cancel a booking still waiting for approval (T-024). A new booking emails the owner at nagarim.b2b@gmail.com (`lib/emails/promo-request.ts`) |
+| `POST/PATCH/DELETE /api/supplier/promo` | Book a week of "מוצר השבוע" for an active product (from next week, 12 ahead), with or without the price on the card; switch the price on or off on a booking that has not ended; or cancel a booking still waiting for approval (T-024). A new booking emails the owner at nagarim.b2b@gmail.com (`lib/emails/promo-request.ts`) |
 | `POST /api/supplier/offers` | Quick edit (עריכה מהירה): up to 500 price / stock / shown changes in one save |
 | `/supplier/enter` + `/api/supplier/session` | Link → cookie session (six months); approval is re-checked on every request |
 | `/api/supplier/login-link` | Re-sends the link to the address on file only |

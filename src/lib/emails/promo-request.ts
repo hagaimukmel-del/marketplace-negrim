@@ -25,6 +25,8 @@ export interface PromoRequestEmail {
   productName: string
   weekText: string
   priceText: string
+  /** The supplier wants their price on the card. */
+  showPrice: boolean
 }
 
 export function promoRequestSubject(p: PromoRequestEmail): string {
@@ -47,7 +49,8 @@ export function promoRequestHtml(p: PromoRequestEmail): string {
           ${who ? `<div style="color:#57534e;padding-top:2px">${who}</div>` : ''}
           <div style="padding-top:10px">מוצר: <strong>${escapeHtml(p.productName)}</strong></div>
           <div>שבוע: <strong>${escapeHtml(p.weekText)}</strong></div>
-          <div>מחיר: <strong>${escapeHtml(p.priceText)}</strong> לפני מע״מ</div>
+          <div>מחיר הפרסום: <strong>${escapeHtml(p.priceText)}</strong> לפני מע״מ</div>
+          <div>מחיר המוצר בפרסומת: <strong>${p.showPrice ? 'מוצג' : 'לא מוצג'}</strong></div>
         </td></tr>
       </table>
       <div style="text-align:center;padding-top:16px">

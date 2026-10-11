@@ -17,18 +17,25 @@ export interface CurrentPromo {
   id: string
   productId: string
   supplierId: string
+  /** The supplier asked for the price on the card (migration 20261011150000). */
+  showPrice: boolean
 }
 
 /** The approved booking for the week running now, if any. */
 export async function loadCurrentPromo(now: Date = new Date()): Promise<CurrentPromo | null> {
-  const { data, error } = await getSupabaseAdmin()
-    .from('promo_weeks')
-    .select('id, product_id, supplier_id')
-    .eq('week_start', currentWeek(now))
-    .eq('status', 'approved')
-    .maybeSingle()
+  const query = (columns: string) =>
+    getSupabaseAdmin()
+      .from('promo_weeks')
+      .select(columns)
+      .eq('week_start', currentWeek(now))
+      .eq('status', 'approved')
+      .maybeSingle()
+  // Without the show_price column, the promotion still runs, without a price.
+  let { data, error } = await query('id, product_id, supplier_id, show_price')
+  if (error) ({ data, error } = await query('id, product_id, supplier_id'))
   if (error || !data) return null
-  return { id: data.id, productId: data.product_id, supplierId: data.supplier_id }
+  const row = data as unknown as { id: string; product_id: string; supplier_id: string; show_price?: boolean }
+  return { id: row.id, productId: row.product_id, supplierId: row.supplier_id, showPrice: row.show_price === true }
 }
 
 /** Midnight at the start of this Israeli date, as an instant. Follows summer time. */
@@ -50,6 +57,7 @@ interface Row {
   status: string
   price_excl_vat: number
   note: string | null
+  show_price: boolean
 }
 
 /**
@@ -65,7 +73,7 @@ export async function loadPromoWeeks(opts: {
   const supabase = getSupabaseAdmin()
   let query = supabase
     .from('promo_weeks')
-    .select('id, week_start, supplier_id, product_id, status, price_excl_vat, note')
+    .select('id, week_start, supplier_id, product_id, status, price_excl_vat, note, show_price')
     .gte('week_start', opts.from)
     .lte('week_start', opts.to)
     .order('week_start', { ascending: false })
@@ -104,6 +112,7 @@ export async function loadPromoWeeks(opts: {
       status: row.status as PromoStatus,
       price: Number(row.price_excl_vat),
       note: row.note,
+      showPrice: row.show_price,
       results: results.get(row.id) ?? null,
     })),
   }
@@ -186,5 +195,5 @@ export function promotedSlot(products: AppProduct[], promo: CurrentPromo | null)
   if (!promo) return null
   const product = products.find((item) => item.id === promo.productId)
   const offer = product?.offers.find((item) => item.supplierId === promo.supplierId)
-  return product && offer ? { weekId: promo.id, product, offer } : null
+  return product && offer ? { weekId: promo.id, product, offer, showPrice: promo.showPrice } : null
 }
