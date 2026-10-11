@@ -302,10 +302,21 @@ function Reorder({ items }: { items: ReorderItem[] }) {
                 <b className="truncate text-[15px]">{item.product.name}</b>
                 <small className="truncate text-[13px] text-muted">
                   {pack ? `${pack} · ` : ''}
-                  <span className="tnum">{money((offer.price ?? 0) * (offer.packQty ?? 1))}</span>
-                  {offer.packQty ? '' : ` ל${item.product.unit}`}
+                  {offer.quoteOnly ? (
+                    'מחיר בהצעה'
+                  ) : (
+                    <>
+                      <span className="tnum">{money((offer.price ?? 0) * (offer.packQty ?? 1))}</span>
+                      {offer.packQty ? '' : ` ל${item.product.unit}`}
+                    </>
+                  )}
                 </small>
               </Link>
+              {offer.quoteOnly ? (
+                <Link href={`/app/product/${item.product.id}?quote=1`} className="inline-flex h-[38px] items-center rounded-[11px] border-[1.5px] border-hair bg-white px-3 text-sm font-bold">
+                  בקש הצעה
+                </Link>
+              ) : (
               <button
                 type="button"
                 className="h-[38px] rounded-[11px] border-[1.5px] border-hair bg-white px-3 text-sm font-bold"
@@ -329,6 +340,7 @@ function Reorder({ items }: { items: ReorderItem[] }) {
               >
                 {added === item.product.id ? '✓ נוסף' : 'הזמן שוב'}
               </button>
+              )}
             </div>
           )
         })}

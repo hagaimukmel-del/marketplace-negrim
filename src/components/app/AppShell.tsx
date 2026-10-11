@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Bell, ClipboardList, Home, LayoutGrid, MessageSquare, Recycle, Search, ShoppingBag, Sparkles, UserRound } from 'lucide-react'
+import { Bell, ClipboardList, FileText, Home, LayoutGrid, MessageSquare, Recycle, Search, ShoppingBag, Sparkles, UserRound } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { LogoMark } from '@/components/brand/Logo'
 import { ChatContainer } from '@/components/chat/ChatContainer'
@@ -53,6 +53,7 @@ function BellLink({ unread }: { unread: number }) {
 export default function AppShell({
   attention,
   unread,
+  quotes,
   initial,
   signedIn,
   children,
@@ -63,6 +64,8 @@ export default function AppShell({
   attention: number
   /** Message threads with an answer the carpenter has not opened — the bell. */
   unread: number
+  /** Answered quotes waiting for the carpenter (T-023). */
+  quotes: number
   /** First letter of the carpentry, for the avatar. */
   initial: string
   children: React.ReactNode
@@ -116,6 +119,9 @@ export default function AppShell({
             סוכן חכם
           </button>
           <SideLink href="/app/orders" label="הזמנות" active={is('/app/orders')} icon={<ClipboardList size={19} />} count={attention} />
+          {signedIn && (
+            <SideLink href="/app/quotes" label="הצעות מחיר" active={is('/app/quotes')} icon={<FileText size={19} />} count={quotes} />
+          )}
           {signedIn && (
             <SideLink href="/app/messages" label="הודעות" active={is('/app/messages')} icon={<MessageSquare size={19} />} count={unread} />
           )}
@@ -258,7 +264,7 @@ export default function AppShell({
           </span>
           עגלה
         </Link>
-        <BottomLink href="/app/orders" label="הזמנות" active={is('/app/orders')} icon={<ClipboardList size={22} />} dot={attention > 0} />
+        <BottomLink href="/app/orders" label="הזמנות" active={is('/app/orders') || is('/app/quotes')} icon={<ClipboardList size={22} />} dot={attention > 0 || quotes > 0} />
         <BottomLink href={signedIn ? '/app/account' : '/join'} label={signedIn ? 'אני' : 'כניסה'} active={is('/app/account')} icon={<UserRound size={22} />} />
       </nav>
     </div>

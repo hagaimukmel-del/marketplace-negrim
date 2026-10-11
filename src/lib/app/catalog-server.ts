@@ -3,6 +3,7 @@ import 'server-only'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { bestOffer, unitLabel, type Offer } from '@/lib/catalog'
 import { deliversTo, loadDelivery, regionsForCity } from '@/lib/delivery'
+import { loadPriceModes } from '@/lib/price-mode'
 import type { AppProduct, CategoryNode } from './products'
 
 interface CategoryRow {
@@ -86,14 +87,18 @@ export async function loadProducts(opts: { showPrices: boolean; ids?: string[]; 
     .limit(1000)
   if (opts.ids) query = query.in('id', opts.ids.length ? opts.ids : ['00000000-0000-0000-0000-000000000000'])
 
-  const [{ data }, cats, delivery] = await Promise.all([query, categories(), loadDelivery()])
+  const [{ data }, cats, delivery, modes] = await Promise.all([query, categories(), loadDelivery(), loadPriceModes()])
   const carpenterRegions = regionsForCity(opts.city)
   const byId = new Map(cats.map((row) => [row.id, row]))
 
   return ((data ?? []) as unknown as ProductRow[]).map((row) => {
     const delivers = new Map(row.supplier_offers.map((offer) => [offer.id, deliversTo(delivery.bySupplier.get(offer.supplier_id), carpenterRegions)]))
     const reachable = row.supplier_offers.filter((offer) => delivers.get(offer.id) !== false)
-    const best = bestOffer({ supplier_offers: reachable.length ? reachable : row.supplier_offers })
+    const pool = reachable.length ? reachable : row.supplier_offers
+    // A quote-only supplier's price never decides which offer leads: that
+    // would tell a carpenter it is the cheapest without showing the price.
+    const priced = pool.filter((offer) => !modes.quoteOnly.has(offer.supplier_id))
+    const best = bestOffer({ supplier_offers: priced.length ? priced : pool })
     const category = row.category_id ? byId.get(row.category_id) : undefined
     const topId = category ? (category.parent_category_id && byId.has(category.parent_category_id) ? category.parent_category_id : category.id) : null
     return {
@@ -114,7 +119,9 @@ export async function loadProducts(opts: { showPrices: boolean; ids?: string[]; 
         supplierId: offer.supplier_id,
         supplierName: offer.suppliers.company_name,
         supplierLogo: offer.suppliers.logo_url,
-        price: opts.showPrices ? Number(offer.price_excl_vat) : null,
+        // Left out, not hidden, for a supplier who answers with quotes only (T-023).
+        price: opts.showPrices && !modes.quoteOnly.has(offer.supplier_id) ? Number(offer.price_excl_vat) : null,
+        quoteOnly: modes.quoteOnly.has(offer.supplier_id),
         packLabel: offer.pack_label,
         packQty: offer.pack_qty == null ? null : Number(offer.pack_qty),
         inStock: STOCK_IS_TRACKED ? offer.stock_qty > 0 : true,

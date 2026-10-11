@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useRef } from 'react'
-import { Plus } from 'lucide-react'
+import { FileText, Plus } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { money, packText } from '@/lib/app/format'
 import { stepOf, type AppOffer, type AppProduct } from '@/lib/app/products'
@@ -97,7 +97,9 @@ export default function PromotedCard({
             {offer.supplierName}
             {pack && <> · {pack}</>}
           </span>
-          {showPrices && offer.price != null ? (
+          {showPrices && offer.quoteOnly ? (
+            <span className="text-[15px] font-semibold">מחיר בהצעה מהספק</span>
+          ) : showPrices && offer.price != null ? (
             <span className="text-[15px]">
               <b className="tnum text-lg font-extrabold">{money(offer.price)}</b>{' '}
               <small className="text-[12.5px] text-muted">ל{product.unit} · לפני מע״מ</small>
@@ -111,7 +113,17 @@ export default function PromotedCard({
         </div>
         {showPrices && (
           <div className="col-span-2 md:col-span-1">
-            {line ? (
+            {line?.quote_id ? (
+              <span className="text-sm font-semibold text-ok-ink">בהזמנה, לפי הצעת מחיר</span>
+            ) : offer.quoteOnly ? (
+              <Link
+                href={`/app/product/${product.id}?quote=1`}
+                className="flex h-12 w-full items-center justify-center gap-1.5 rounded-[11px] bg-brand px-5 text-[15px] font-bold text-navy hover:bg-brand-hover md:w-auto"
+              >
+                <FileText size={18} />
+                בקש הצעת מחיר
+              </Link>
+            ) : line ? (
               <Stepper
                 value={Math.round(line.quantity / step)}
                 onChange={(packs) => cart.updateQuantity(product.id, packs * step)}

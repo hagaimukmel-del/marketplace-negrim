@@ -1,4 +1,6 @@
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { isOperatorManaged } from '@/lib/admin-scope'
+import { loadPriceModes } from '@/lib/price-mode'
 import ProductsClient from './ProductsClient'
 
 export const dynamic = 'force-dynamic'
@@ -7,7 +9,7 @@ const SELECT =
   'id, name_he, name_en, description_he, is_active, image_url, category_id, brand, mpn, ' +
   'base_unit, categories(name_he), ' +
   'supplier_offers(id, supplier_id, supplier_sku, price_excl_vat, stock_qty, pack_label, ' +
-  'pack_qty, min_order_qty, lead_time_days, is_active, source, suppliers(company_name))'
+  'pack_qty, min_order_qty, lead_time_days, is_active, source, suppliers(company_name, source))'
 
 interface RawOffer {
   id: string
@@ -21,7 +23,7 @@ interface RawOffer {
   lead_time_days: number | null
   is_active: boolean
   source: string
-  suppliers: { company_name: string } | null
+  suppliers: { company_name: string; source: string } | null
 }
 
 interface RawProduct {
@@ -42,7 +44,7 @@ interface RawProduct {
 export default async function AdminProductsPage() {
   const supabase = getSupabaseAdmin()
 
-  const [{ data: products }, { data: categories }, { data: suppliers }] = await Promise.all([
+  const [{ data: products }, { data: categories }, { data: suppliers }, modes] = await Promise.all([
     supabase.from('products').select(SELECT).limit(500),
     supabase
       .from('categories')
@@ -55,6 +57,7 @@ export default async function AdminProductsPage() {
       .select('id, company_name')
       .eq('status', 'approved')
       .order('company_name'),
+    loadPriceModes(),
   ])
 
   // One line per offer, because a price belongs to a supplier and not to the
@@ -66,6 +69,11 @@ export default async function AdminProductsPage() {
     if (offers.length === 0) pairs.push({ product, offer: null })
     else for (const offer of offers) pairs.push({ product, offer })
   }
+
+  // A supplier who runs its own account and answers with quotes only keeps its
+  // prices from the operator too (T-023). One the operator runs stays visible.
+  const hidden = (offer: RawOffer | null) =>
+    Boolean(offer && modes.quoteOnly.has(offer.supplier_id) && !isOperatorManaged(offer.suppliers?.source))
 
   const rows = pairs
     .map(({ product, offer }) => ({
@@ -84,7 +92,8 @@ export default async function AdminProductsPage() {
       is_active: product.is_active && (offer?.is_active ?? false),
       supplier_name: offer?.suppliers?.company_name ?? null,
       sku: offer?.supplier_sku ?? null,
-      base_price_excl_vat: Number(offer?.price_excl_vat ?? 0),
+      base_price_excl_vat: hidden(offer) ? 0 : Number(offer?.price_excl_vat ?? 0),
+      price_hidden: hidden(offer),
       stock_qty: offer?.stock_qty ?? 0,
       pack_label: offer?.pack_label ?? null,
       pack_qty: offer?.pack_qty ?? null,

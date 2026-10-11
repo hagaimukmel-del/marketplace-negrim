@@ -1090,6 +1090,86 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_requests: {
+        Row: {
+          answered_at: string | null
+          carpenter_id: string
+          created_at: string
+          decided_at: string | null
+          id: string
+          note: string | null
+          order_id: string | null
+          product_id: string
+          quantity: number
+          quoted_unit_price_excl_vat: number | null
+          status: string
+          supplier_id: string
+          supplier_note: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          answered_at?: string | null
+          carpenter_id: string
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          note?: string | null
+          order_id?: string | null
+          product_id: string
+          quantity: number
+          quoted_unit_price_excl_vat?: number | null
+          status?: string
+          supplier_id: string
+          supplier_note?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          answered_at?: string | null
+          carpenter_id?: string
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          note?: string | null
+          order_id?: string | null
+          product_id?: string
+          quantity?: number
+          quoted_unit_price_excl_vat?: number | null
+          status?: string
+          supplier_id?: string
+          supplier_note?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_requests_carpenter_id_fkey"
+            columns: ["carpenter_id"]
+            isOneToOne: false
+            referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_requests_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_requests_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_requests_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       raffle_draws: {
         Row: {
           carpenter_id: string | null
@@ -1524,6 +1604,7 @@ export type Database = {
           logo_url: string | null
           min_order_value_excl_vat: number | null
           order_cc_emails: string[]
+          price_mode: string
           payment_terms: string[]
           phone: string | null
           phone_key: string | null
@@ -1556,6 +1637,7 @@ export type Database = {
           logo_url?: string | null
           min_order_value_excl_vat?: number | null
           order_cc_emails?: string[]
+          price_mode?: string
           payment_terms?: string[]
           phone?: string | null
           phone_key?: string | null
@@ -1588,6 +1670,7 @@ export type Database = {
           logo_url?: string | null
           min_order_value_excl_vat?: number | null
           order_cc_emails?: string[]
+          price_mode?: string
           payment_terms?: string[]
           phone?: string | null
           phone_key?: string | null

@@ -5,6 +5,8 @@ import { logEvent, resolveCarpenter } from '@/lib/offer'
 import { bestOffer, OFFER_COLUMNS, type Offer } from '@/lib/catalog'
 import { notifyNewOrders } from '@/lib/notify-order'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
+import { loadPriceModes } from '@/lib/price-mode'
+import { israelDate } from '@/lib/quotes'
 
 /** One line as the checkout posts it. */
 interface IncomingItem {
@@ -15,6 +17,21 @@ interface IncomingItem {
   quantity: number
   /** The supplier the carpenter chose. Honoured when it still has a live offer. */
   supplier_id?: string
+  /** An answered quote this line orders at (T-023). Its price and quantity are the quote's. */
+  quote_id?: string
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+interface QuoteRow {
+  id: string
+  carpenter_id: string
+  supplier_id: string
+  product_id: string
+  quantity: number
+  status: string
+  quoted_unit_price_excl_vat: number | null
+  valid_until: string | null
 }
 
 const VAT_RATE = 0.18
@@ -43,6 +60,7 @@ function parseItems(raw: unknown): IncomingItem[] | null {
       base_price_excl_vat: price,
       quantity,
       supplier_id: typeof item.supplier_id === 'string' ? item.supplier_id : undefined,
+      quote_id: typeof item.quote_id === 'string' && UUID.test(item.quote_id) ? item.quote_id : undefined,
     })
   }
   return items
@@ -138,6 +156,54 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // A supplier who answers with quotes only (T-023) is never ordered from at
+    // its list price: a line from it has to carry an answered quote, and a
+    // line that names no supplier falls to a priced one.
+    const modes = await loadPriceModes()
+    const quoteIds = items.map((item) => item.quote_id).filter((id): id is string => Boolean(id))
+    const quotes = new Map<string, QuoteRow>()
+    if (quoteIds.length) {
+      const { data: quoteRows, error: quoteError } = await supabase
+        .from('quote_requests')
+        .select('id, carpenter_id, supplier_id, product_id, quantity, status, quoted_unit_price_excl_vat, valid_until')
+        .in('id', quoteIds)
+      if (quoteError) {
+        return NextResponse.json({ error: 'הצעות מחיר עוד לא זמינות' }, { status: 409 })
+      }
+      for (const row of (quoteRows ?? []) as QuoteRow[]) quotes.set(row.id, row)
+    }
+    const today = israelDate()
+    for (const item of items) {
+      if (item.quote_id) {
+        const quote = quotes.get(item.quote_id)
+        const valid =
+          quote &&
+          quote.carpenter_id === carpenter.id &&
+          quote.product_id === item.id &&
+          quote.status === 'quoted' &&
+          quote.quoted_unit_price_excl_vat != null &&
+          quote.valid_until != null &&
+          quote.valid_until >= today &&
+          Number(quote.quantity) === item.quantity
+        if (!valid) {
+          return NextResponse.json(
+            { error: `הצעת המחיר ל${item.name_he} כבר לא בתוקף. אפשר לבקש הצעה חדשה מדף המוצר.`, code: 'quote_invalid', productId: item.id },
+            { status: 409 }
+          )
+        }
+        continue
+      }
+      const product = byId.get(item.id)!
+      const named = item.supplier_id && modes.quoteOnly.has(item.supplier_id)
+      const priced = product.supplier_offers.some((offer) => !modes.quoteOnly.has(offer.supplier_id))
+      if (named || !priced) {
+        return NextResponse.json(
+          { error: `את ${item.name_he} מזמינים לפי הצעת מחיר מהספק. מבקשים הצעה מדף המוצר.`, code: 'quote_required', productId: item.id },
+          { status: 409 }
+        )
+      }
+    }
+
     // Amounts are snapshots. They are stored as calculated here and never
     // recomputed from the product row afterwards.
     // Which supplier is stamped on the line, not just which price: one cart
@@ -145,13 +211,28 @@ export async function POST(request: NextRequest) {
     // if the line remembers who it was bought from.
     const lines = items.map((item) => {
       const product = byId.get(item.id)!
+      const quote = item.quote_id ? quotes.get(item.quote_id) : undefined
+      if (quote) {
+        // The quoted price is the snapshot, from the quote row, never from the request.
+        const unitPrice = Number(quote.quoted_unit_price_excl_vat)
+        return {
+          product_id: product.id,
+          product_name_he: product.name_he,
+          product_name_en: product.name_en,
+          supplier_id: quote.supplier_id,
+          unit_price_excl_vat: unitPrice,
+          quantity: item.quantity,
+          line_total_excl_vat: Number((unitPrice * item.quantity).toFixed(2)),
+        }
+      }
+      const orderable = product.supplier_offers.filter((offer) => !modes.quoteOnly.has(offer.supplier_id))
       // The carpenter may have chosen another supplier than the suggested one.
       // That choice stands only while that supplier still has a live offer;
       // otherwise the catalogue's own rule decides, as it always did.
       const chosen = item.supplier_id
-        ? product.supplier_offers.find((offer) => offer.supplier_id === item.supplier_id)
+        ? orderable.find((offer) => offer.supplier_id === item.supplier_id)
         : undefined
-      const offer = chosen ?? bestOffer(product)
+      const offer = chosen ?? bestOffer({ supplier_offers: orderable })
       const unitPrice = Number(offer?.price_excl_vat ?? 0)
       return {
         product_id: product.id,
@@ -195,6 +276,26 @@ export async function POST(request: NextRequest) {
           { status: 409 }
         )
       }
+    }
+
+    // Each quote orders once. Claimed before the orders exist, so a double
+    // click cannot spend it twice; given back if the order fails below.
+    const claimed: string[] = []
+    const release = async () => {
+      if (claimed.length) await supabase.from('quote_requests').update({ status: 'quoted', decided_at: null }).in('id', claimed)
+    }
+    for (const id of new Set(quoteIds)) {
+      const { data: claim } = await supabase
+        .from('quote_requests')
+        .update({ status: 'accepted', decided_at: new Date().toISOString() })
+        .eq('id', id)
+        .eq('status', 'quoted')
+        .select('id')
+      if (!claim?.length) {
+        await release()
+        return NextResponse.json({ error: 'הצעת המחיר כבר הוזמנה או שאינה בתוקף', code: 'quote_invalid' }, { status: 409 })
+      }
+      claimed.push(id)
     }
 
     const checkoutId = crypto.randomUUID()
@@ -243,6 +344,7 @@ export async function POST(request: NextRequest) {
 
     if (orderError || !created || created.length !== groups.length) {
       await supabase.from('orders').delete().eq('checkout_id', checkoutId)
+      await release()
       return NextResponse.json(
         { error: orderError?.message ?? 'Failed to create order' },
         { status: 500 }
@@ -260,6 +362,7 @@ export async function POST(request: NextRequest) {
       // Postgres has no transaction across two PostgREST calls, so orders
       // without lines have to be cleaned up by hand rather than left orphaned.
       await supabase.from('orders').delete().eq('checkout_id', checkoutId)
+      await release()
       return NextResponse.json(
         { error: `Failed to save order lines: ${itemsError.message}` },
         { status: 500 }
@@ -270,6 +373,13 @@ export async function POST(request: NextRequest) {
     // returns can be frozen mid-request, and a notification that vanishes
     // sometimes is worse than one that never existed. It swallows its own
     // failures, so it cannot fail the order.
+    // Each quote remembers the purchase order it became.
+    for (const id of claimed) {
+      const order = orderBySupplier.get(quotes.get(id)!.supplier_id)
+      const { error: linkError } = await supabase.from('quote_requests').update({ order_id: order?.id ?? null }).eq('id', id)
+      if (linkError) console.error('Quote not linked to its order:', linkError.message)
+    }
+
     await notifyNewOrders(created.map((order) => order.id))
 
     const subtotalExclVat = Number(groups.reduce((sum, group) => sum + group.subtotal, 0).toFixed(2))

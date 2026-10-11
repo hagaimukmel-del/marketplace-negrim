@@ -5,6 +5,7 @@
  */
 
 import type { PromoWeek } from '@/lib/promo-weeks'
+import type { SupplierQuoteRequest } from '@/lib/quotes'
 
 export type Tab = 'orders' | 'products' | 'sales' | 'promo' | 'business' | 'terms' | 'documents'
 
@@ -51,6 +52,8 @@ export interface SupplierProfile {
   order_cc_ready: boolean
   /** Who else gets a copy of each new order (warehouse, bookkeeping). */
   order_cc_emails: string[]
+  /** "להציג מחירים / רק הצעת מחיר" (T-023); null on a database without migration 20261011140000. */
+  price_mode: 'shown' | 'quote' | null
 }
 
 export interface ProductItem {
@@ -161,6 +164,13 @@ export interface SupplierPromo {
   weeks: PromoWeek[]
   /** Bookable weeks already held by a request or an approval, from any supplier. Dates only. */
   taken: string[]
+}
+
+/** Quote requests from carpentries (T-023). */
+export interface SupplierQuotes {
+  /** False on a database without migration 20261011140000. */
+  ready: boolean
+  quotes: SupplierQuoteRequest[]
 }
 
 export interface CategoryOption {

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { FileText, Plus } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { money, packText } from '@/lib/app/format'
 import { stepOf, suggestedOffer, type AppOffer, type AppProduct } from '@/lib/app/products'
@@ -23,7 +23,8 @@ export default function ProductList({ products, showPrices, filters = true }: { 
   const anyOut = products.some((p) => !suggestedOffer(p)?.inStock)
   let items = products
   if (inStockOnly) items = items.filter((p) => suggestedOffer(p)?.inStock)
-  if (sort === 'price') items = [...items].sort((a, b) => (suggestedOffer(a)?.price ?? 0) - (suggestedOffer(b)?.price ?? 0))
+  // A price on request sorts after every priced product.
+  if (sort === 'price') items = [...items].sort((a, b) => (suggestedOffer(a)?.price ?? Infinity) - (suggestedOffer(b)?.price ?? Infinity))
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
@@ -145,7 +146,9 @@ function Row({ product, showPrices }: { product: AppProduct; showPrices: boolean
           )}
           {offer && !offer.inStock && <span className="font-semibold text-red-700"> · אזל</span>}
         </span>
-        {showPrices && offer?.price != null ? (
+        {showPrices && offer?.quoteOnly ? (
+          <span className="text-[14px] font-semibold text-ink">מחיר בהצעה מהספק</span>
+        ) : showPrices && offer?.price != null ? (
           <span className="text-[15px]">
             <b className="tnum text-base font-extrabold">{money(offer.price)}</b>{' '}
             <small className="text-[12.5px] text-muted">
@@ -162,8 +165,18 @@ function Row({ product, showPrices }: { product: AppProduct; showPrices: boolean
         )}
       </Link>
       <span>
-        {!showPrices ? null : line ? (
+        {!showPrices ? null : line?.quote_id ? (
+          <span className="text-[12.5px] font-semibold text-ok-ink">בהזמנה, לפי הצעה</span>
+        ) : line ? (
           <Stepper value={packs} onChange={setPacks} small tone="cart" label={product.name} />
+        ) : offer?.quoteOnly ? (
+          <Link
+            href={`/app/product/${product.id}?quote=1`}
+            aria-label={`בקש הצעת מחיר על ${product.name}`}
+            className="grid h-[42px] w-[42px] place-items-center rounded-xl border-[1.5px] border-hair bg-white text-navy"
+          >
+            <FileText size={19} />
+          </Link>
         ) : (
           <button
             type="button"
@@ -200,13 +213,28 @@ function TableRow({ product, showPrices }: { product: AppProduct; showPrices: bo
       <td className="px-3 py-2.5">{pack ?? '—'}</td>
       {showPrices && (
         <td className="px-3 py-2.5 text-end">
-          <b className="tnum">{offer?.price != null ? money(offer.price) : '—'}</b> <span className="text-muted">/{product.unit}</span>
+          {offer?.quoteOnly ? (
+            <span className="font-semibold text-muted">בהצעה</span>
+          ) : (
+            <>
+              <b className="tnum">{offer?.price != null ? money(offer.price) : '—'}</b> <span className="text-muted">/{product.unit}</span>
+            </>
+          )}
         </td>
       )}
       {showPrices && <td className="tnum px-3 py-2.5 text-end">{offer?.price != null && offer.packQty ? money(offer.price * offer.packQty) : '—'}</td>}
       <td className="px-3 py-2.5 text-end">
-        {!showPrices ? null : line ? (
+        {!showPrices ? null : line?.quote_id ? (
+          <span className="text-[13px] font-semibold text-ok-ink">בהזמנה, לפי הצעה</span>
+        ) : line ? (
           <Stepper value={packs} onChange={setPacks} small tone="cart" label={product.name} />
+        ) : offer?.quoteOnly ? (
+          <Link
+            href={`/app/product/${product.id}?quote=1`}
+            className="inline-flex h-[38px] items-center gap-1 rounded-[11px] border-[1.5px] border-hair bg-white px-3 text-sm font-bold"
+          >
+            <FileText size={16} /> הצעה
+          </Link>
         ) : (
           <button
             type="button"

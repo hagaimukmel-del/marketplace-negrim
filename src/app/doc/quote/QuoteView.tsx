@@ -58,15 +58,17 @@ export default function QuoteView({ buyer }: { buyer: DocParty }) {
   for (const item of cart.items) {
     const product = products.find((p) => p.id === item.id)
     const offer: AppOffer | null = product ? product.offers.find((o) => o.supplierId === item.supplier_id) ?? suggestedOffer(product) : null
-    // A product no supplier sells any more has no price to quote
-    if (!product || !offer || offer.price == null) continue
+    // A product no supplier sells any more has no price to quote. A line the
+    // supplier quoted (T-023) prints at the quoted price.
+    const unitPrice = item.quote_id ? item.base_price_excl_vat : offer?.price
+    if (!product || !offer || unitPrice == null) continue
     const group = groups.get(offer.supplierId) ?? { supplierId: offer.supplierId, name: offer.supplierName, logoUrl: offer.supplierLogo, terms: offer.terms, leadDays: offer.leadDays, lines: [] }
     group.lines.push({
       name: product.name,
       quantity: quantityText({ quantity: item.quantity, unit: product.unit, packLabel: offer.packLabel, packQty: offer.packQty }),
-      unitPrice: offer.price,
+      unitPrice,
       unit: product.unit,
-      lineTotal: round2(offer.price * item.quantity),
+      lineTotal: round2(unitPrice * item.quantity),
     })
     groups.set(offer.supplierId, group)
   }

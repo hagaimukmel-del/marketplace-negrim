@@ -37,7 +37,10 @@ operator did inside a self-run supplier's account.
   `admin_actions`: hiding/showing an offer, merging duplicate products, opening the console
   (`open_supplier_console`), revealing an order's lines for support (`reveal_order_lines`).
 - `/admin/suppliers` shows each supplier's message thread count and how many wait for its answer;
-  message content is never shown to the admin.
+  message content is never shown to the admin. The same list marks a quote-only supplier and
+  counts its quote requests and unanswered ones, never the quoted price (T-023). A self-run
+  quote-only supplier's prices are not sent to `/admin/products` and stay out of the report
+  averages.
 - A self-run supplier's order lines are not sent to `/admin/orders` until the operator clicks
   "הצג שורות לתמיכה", and his entry token is never sent to the admin pages; the operator can
   mail it to the address on file instead.

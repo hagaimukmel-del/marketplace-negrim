@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { Check, MapPin, MessageCircle, MessageSquare, Phone, Send, PackageCheck, Inbox } from 'lucide-react'
 import { formatIls, withVat } from '@/lib/vat'
 import { statusInfo } from '@/lib/order-status'
-import { callApi, jsonInit, whatsappLink, type SupplierOrder, type SupplierQuestion } from '../types'
+import { callApi, jsonInit, whatsappLink, type SupplierOrder, type SupplierQuestion, type SupplierQuotes } from '../types'
+import QuoteRequests from './QuoteRequests'
 import type { Notify } from '../SupplierApp'
 
 type Filter = 'pending' | 'active' | 'done' | 'all'
@@ -419,10 +420,12 @@ function Questions({ questions }: { questions: SupplierQuestion[] }) {
 export default function OrdersTab({
   orders,
   questions,
+  quotes,
   notify,
 }: {
   orders: SupplierOrder[]
   questions: SupplierQuestion[]
+  quotes: SupplierQuotes
   notify: Notify
 }) {
   const router = useRouter()
@@ -457,6 +460,7 @@ export default function OrdersTab({
 
   return (
     <div className="space-y-3">
+      <QuoteRequests quotes={quotes} notify={notify} />
       <Questions questions={questions} />
 
       <div className="-mx-4 overflow-x-auto px-4">

@@ -13,8 +13,14 @@ function nowMs(): number {
 }
 
 /** One product: the price as the anchor, who sells it and why, and one add action. */
-export default async function AppProduct({ params }: { params: Promise<{ id: string }> }) {
-  const [{ id }, carpenter, admin] = await Promise.all([params, getSessionCarpenter(), isAdmin()])
+export default async function AppProduct({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ quote?: string }>
+}) {
+  const [{ id }, { quote }, carpenter, admin] = await Promise.all([params, searchParams, getSessionCarpenter(), isAdmin()])
   const showPrices = Boolean(carpenter) || admin
   const [product] = await loadProducts({ showPrices, ids: [id], city: carpenter?.city })
   if (!product) notFound()
@@ -78,6 +84,7 @@ export default async function AppProduct({ params }: { params: Promise<{ id: str
       docs={docs}
       product={product}
       showPrices={showPrices}
+      askQuote={quote === '1'}
       last={last}
       now={nowMs()}
       crumbs={{ topId: top?.id ?? null, top: top?.name ?? 'קטלוג', sub: sub?.name ?? null }}

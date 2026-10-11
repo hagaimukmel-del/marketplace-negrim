@@ -1,5 +1,5 @@
 # 5 · Catalogue & pricing
-Verified: 2026-10-08
+Verified: 2026-10-11
 
 ## Purpose
 What can be bought and at what price: canonical products, each supplier's offer on them,
@@ -35,6 +35,10 @@ See CLAUDE.md §6, "The catalogue's shape". Most important:
 - Delivery regions (`suppliers.delivery_regions`, `lib/delivery.ts`): with the carpentry's city,
   `loadProducts` marks each offer `delivers` and never suggests a supplier outside the carpentry's
   region while another one reaches it. bestOffer() decides among the rest. Empty = unknown.
+- Price mode (`suppliers.price_mode`, `lib/price-mode.ts`, T-023): a supplier on 'quote' keeps its
+  prices in `supplier_offers`, but every reader outside its own console leaves them out
+  (`price: null`, `quoteOnly: true`) and they never decide the suggested offer. Carpenters ask for
+  a quote (`quote_requests`); `/api/orders` orders from such a supplier only at an answered quote.
 
 ## Status
 Live but thin: essentially one supplier, mostly adhesives (about 30 offers from the sheet). Most

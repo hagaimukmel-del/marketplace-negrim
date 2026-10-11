@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
   const suggestions: Record<string, AppProduct[]> = {}
   for (const supplierId of supplierIds) {
     suggestions[supplierId] = all
-      .filter((p) => !wanted.has(p.id) && p.offers.some((o) => o.supplierId === supplierId && o.inStock))
+      .filter((p) => !wanted.has(p.id) && p.offers.some((o) => o.supplierId === supplierId && o.inStock && !o.quoteOnly))
       .slice(0, 3)
   }
 

@@ -213,6 +213,19 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
+    // "להציג מחירים / רק הצעת מחיר" (T-023), on its own too (migration
+    // 20261011140000). Prices are never touched: switching back is instant.
+    if ('price_mode' in body) {
+      if (body.price_mode !== 'shown' && body.price_mode !== 'quote') {
+        return NextResponse.json({ error: 'מצב מחירים לא מוכר' }, { status: 400 })
+      }
+      const { error: modeError } = await supabase.from('suppliers').update({ price_mode: body.price_mode }).eq('id', supplier.id)
+      if (modeError) {
+        console.error('Supplier price mode update failed:', modeError)
+        return NextResponse.json({ error: 'לא הצלחתי לשמור את מצב המחירים' }, { status: 500 })
+      }
+    }
+
     const { error } = await supabase.from('suppliers').update(update).eq('id', supplier.id)
 
     if (error) {
