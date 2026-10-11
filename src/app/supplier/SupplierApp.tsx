@@ -10,7 +10,7 @@ import SalesTab from './tabs/SalesTab'
 import PromoTab from './tabs/PromoTab'
 import UploadDocuments from './UploadDocuments'
 import type { Sales } from './sales'
-import type { CatalogPick, CategoryOption, ProductItem, SupplierDocs, SupplierOrder, SupplierProfile, SupplierPromo, SupplierQuestion, Tab } from './types'
+import type { CatalogPick, CategoryOption, ProductItem, SupplierDocs, SupplierOrder, SupplierProfile, SupplierPromo, SupplierQuestion, SupplierQuotes, Tab } from './types'
 
 export type Notify = (text: string, kind?: 'ok' | 'error') => void
 
@@ -104,6 +104,7 @@ export default function SupplierApp({
   sales,
   documents,
   promo,
+  quotes,
 }: {
   initialTab: Tab
   profile: SupplierProfile
@@ -115,6 +116,7 @@ export default function SupplierApp({
   sales: Sales
   documents: SupplierDocs
   promo: SupplierPromo
+  quotes: SupplierQuotes
 }) {
   const [tab, setTab] = useState<Tab>(initialTab)
   const [toast, setToast] = useState<{ text: string; kind: 'ok' | 'error' } | null>(null)
@@ -133,6 +135,9 @@ export default function SupplierApp({
   }
 
   const waiting = orders.filter((order) => order.status === 'pending').length
+  const openQuotes = quotes.quotes.filter((quote) => quote.state === 'requested').length
+  // The badge on "הזמנות": orders to confirm and quote requests to answer.
+  const badge = waiting + openQuotes
 
   const checklist: ChecklistItem[] = [
     { label: 'להעלות לוגו', done: Boolean(profile.logo_url), tab: 'business' },
@@ -167,6 +172,7 @@ export default function SupplierApp({
           {waiting > 0
             ? `${waiting === 1 ? 'הזמנה אחת מחכה' : `${waiting} הזמנות מחכות`} לאישור שלך.`
             : 'אין הזמנות שמחכות לאישור.'}
+          {openQuotes > 0 && ` ${openQuotes === 1 ? 'בקשת הצעת מחיר אחת מחכה' : `${openQuotes} בקשות הצעת מחיר מחכות`} לתשובה.`}
         </p>
       </div>
 
@@ -189,13 +195,13 @@ export default function SupplierApp({
             >
               <Icon size={16} />
               <span title={label}>{short}</span>
-              {key === 'orders' && waiting > 0 && (
+              {key === 'orders' && badge > 0 && (
                 <span
                   className={`tnum rounded-full px-1.5 text-xs font-bold ${
                     active ? 'bg-white text-stone-900' : 'bg-emerald-700 text-white'
                   }`}
                 >
-                  {waiting}
+                  {badge}
                 </span>
               )}
             </button>
@@ -204,7 +210,7 @@ export default function SupplierApp({
       </nav>
 
       <div>
-        {tab === 'orders' && <OrdersTab orders={orders} questions={questions} notify={notify} />}
+        {tab === 'orders' && <OrdersTab orders={orders} questions={questions} quotes={quotes} notify={notify} />}
         {tab === 'products' && (
           <ProductsTab products={products} categories={categories} catalog={catalog} notify={notify} />
         )}
@@ -233,9 +239,9 @@ export default function SupplierApp({
               >
                 <Icon size={21} strokeWidth={active ? 2.4 : 1.8} />
                 {short}
-                {key === 'orders' && waiting > 0 && (
+                {key === 'orders' && badge > 0 && (
                   <span className="tnum absolute top-1 end-[12%] flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-700 px-1 text-[10px] font-bold text-white">
-                    {waiting}
+                    {badge}
                   </span>
                 )}
               </button>

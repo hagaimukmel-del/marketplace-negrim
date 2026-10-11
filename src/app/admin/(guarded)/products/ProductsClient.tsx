@@ -26,6 +26,8 @@ interface Product {
   mpn: string | null
   base_unit: string
   base_price_excl_vat: number
+  /** The supplier quotes only and runs its own account: the price is not sent here (T-023). */
+  price_hidden?: boolean
   stock_qty: number | null
   pack_label: string | null
   pack_qty: number | null
@@ -164,7 +166,7 @@ function ProductRow({
             </p>
           </div>
           <div className="shrink-0 text-end">
-            <p className="tnum font-bold text-stone-900">{formatIls(price)}</p>
+            <p className="tnum font-bold text-stone-900">{product.price_hidden ? 'הצעת מחיר' : formatIls(price)}</p>
             <p className="text-xs text-stone-400">
               ל{unitLabel(product.base_unit)} · {product.stock_qty ?? 0} במלאי
             </p>
@@ -249,7 +251,7 @@ function EditPanel({
       name_he: form.name_he,
       name_en: form.name_en,
       sku: form.sku,
-      base_price_excl_vat: form.price,
+      ...(product.price_hidden ? {} : { base_price_excl_vat: form.price }),
       stock_qty: form.stock,
       category_id: form.category_id,
       description_he: form.description_he,
@@ -337,12 +339,16 @@ function EditPanel({
           <span className="text-sm font-medium text-stone-700">
             מחיר ל{unitLabel(form.base_unit)} ללא מע״מ
           </span>
-          <input
-            inputMode="decimal"
-            value={form.price}
-            onChange={(e) => set('price', e.target.value)}
-            className="tnum mt-1 h-11 w-full rounded-lg border border-stone-300 bg-white px-3"
-          />
+          {product.price_hidden ? (
+            <p className="mt-1 flex h-11 items-center rounded-lg bg-stone-100 px-3 text-sm text-stone-600">הספק עובד עם הצעות מחיר, המחיר לא מוצג</p>
+          ) : (
+            <input
+              inputMode="decimal"
+              value={form.price}
+              onChange={(e) => set('price', e.target.value)}
+              className="tnum mt-1 h-11 w-full rounded-lg border border-stone-300 bg-white px-3"
+            />
+          )}
         </label>
 
         <label className="block">
@@ -645,7 +651,7 @@ function SupplierLinks({
           {offers.map((row) => (
             <li key={row.offer_id} className="flex flex-wrap items-center gap-x-3 py-1.5">
               <span className="font-medium text-stone-900">{row.supplier_name ?? 'ספק'}</span>
-              <span className="tnum text-stone-700">{formatIls(Number(row.base_price_excl_vat))}</span>
+              <span className="tnum text-stone-700">{row.price_hidden ? 'הצעת מחיר' : formatIls(Number(row.base_price_excl_vat))}</span>
               <span className="tnum text-xs text-stone-500">מלאי {row.stock_qty ?? 0}</span>
               {!row.is_active && <span className="text-xs text-stone-400">מוסתר</span>}
             </li>

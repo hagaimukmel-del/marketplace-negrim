@@ -18,12 +18,19 @@ export interface CartItem {
   pack_qty?: number | null
   /** In base units: 50 for two 25 kg sacks. */
   quantity: number
+  /**
+   * An answered quote this line orders at (T-023). Its price and quantity are
+   * the quote's and do not change in the cart; the server re-reads the quote.
+   */
+  quote_id?: string
   addedAt: number
 }
 
 interface CartContextType {
   items: CartItem[]
   addItem: (item: Omit<CartItem, 'addedAt' | 'quantity'>, quantity: number) => void
+  /** Put an answered quote in the cart, in place of any line for the same product. */
+  addQuote: (item: Omit<CartItem, 'addedAt'> & { quote_id: string }) => void
   removeItem: (id: string) => void
   updateQuantity: (id: string, quantity: number) => void
   /** Move a line to another supplier's offer, at that supplier's price. */
@@ -81,6 +88,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const addItem = (item: Omit<CartItem, 'addedAt' | 'quantity'>, quantity: number) => {
     setItems((prev) => {
       const existing = prev.find((i) => i.id === item.id)
+      // A line at a quoted price is not topped up at the list price: the new
+      // add replaces it.
+      if (existing?.quote_id) {
+        return prev.map((i) => (i.id === item.id ? { ...item, quantity, addedAt: Date.now() } : i))
+      }
       if (existing) {
         logEvent('item_quantity_updated', {
           product: item.name_he,
@@ -106,6 +118,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         },
       ]
     })
+  }
+
+  const addQuote: CartContextType['addQuote'] = (item) => {
+    logEvent('quote_added_to_cart', { product: item.name_he, quantity: item.quantity })
+    setItems((prev) => [...prev.filter((i) => i.id !== item.id), { ...item, addedAt: Date.now() }])
   }
 
   const removeItem = (id: string) => {
@@ -162,6 +179,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const value: CartContextType = {
     items,
     addItem,
+    addQuote,
     removeItem,
     updateQuantity,
     switchSupplier,

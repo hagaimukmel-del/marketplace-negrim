@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { loadPriceModes } from '@/lib/price-mode'
 import ReportsClient, {
   type CategoryReport,
   type Period,
@@ -47,7 +48,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
     .limit(50000)
   if (since) lineQuery = lineQuery.gte('orders.created_at', since)
 
-  const [{ data: products }, { data: suppliers }, { data: categories }, { data: lines }] = await Promise.all([
+  const [{ data: products }, { data: suppliers }, { data: categories }, { data: lines }, modes] = await Promise.all([
     supabase
       .from('products')
       .select('id, name_he, category_id, is_active, supplier_offers(supplier_id, price_excl_vat, stock_qty, is_active)')
@@ -55,7 +56,11 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
     supabase.from('suppliers').select('id, company_name, status'),
     supabase.from('categories').select('id, name_he, parent_category_id, sort_order'),
     lineQuery,
+    loadPriceModes(),
   ])
+  // A supplier who quotes only (T-023) has no public price, so its list price
+  // stays out of every average and index here.
+  const priced = (offer: OfferRow) => offer.is_active && !modes.quoteOnly.has(offer.supplier_id)
 
   const categoryById = new Map((categories ?? []).map((category) => [category.id, category]))
   const topOf = (categoryId: string | null) => {
@@ -91,11 +96,12 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   const offersBySupplier = new Map<string, number>()
 
   for (const product of products ?? []) {
-    const live = ((product.supplier_offers ?? []) as OfferRow[]).filter((offer) => offer.is_active)
+    const all = ((product.supplier_offers ?? []) as OfferRow[]).filter((offer) => offer.is_active)
+    const live = all.filter(priced)
     const prices = live.map((offer) => Number(offer.price_excl_vat))
     const avg = mean(prices)
+    for (const offer of all) offersBySupplier.set(offer.supplier_id, (offersBySupplier.get(offer.supplier_id) ?? 0) + 1)
     for (const offer of live) {
-      offersBySupplier.set(offer.supplier_id, (offersBySupplier.get(offer.supplier_id) ?? 0) + 1)
       if (live.length > 1 && avg) {
         const list = ratios.get(offer.supplier_id) ?? []
         list.push(Number(offer.price_excl_vat) / avg)
@@ -103,7 +109,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
       }
     }
     const sales = salesByProduct.get(product.id)
-    if (live.length === 0 && !sales) continue
+    if (all.length === 0 && !sales) continue
 
     const top = topOf(product.category_id)
     const leaf = product.category_id ? categoryById.get(product.category_id) : undefined
@@ -111,11 +117,11 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
       id: product.id,
       name: product.name_he,
       category: top ? (leaf && leaf.id !== top.id ? `${top.name_he} › ${leaf.name_he}` : top.name_he) : 'ללא קטגוריה',
-      suppliers: live.length,
+      suppliers: all.length,
       minPrice: prices.length ? Math.min(...prices) : null,
       avgPrice: avg,
       maxPrice: prices.length ? Math.max(...prices) : null,
-      stock: live.reduce((sum, offer) => sum + offer.stock_qty, 0),
+      stock: all.reduce((sum, offer) => sum + offer.stock_qty, 0),
       qty: sales?.qty ?? 0,
       orders: sales?.orders.size ?? 0,
       revenue: sales?.revenue ?? 0,
@@ -154,7 +160,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
       for (const product of inTop) {
         const offers = ((product.supplier_offers ?? []) as OfferRow[]).filter((offer) => offer.is_active)
         offers.forEach((offer) => supplierIds.add(offer.supplier_id))
-        const avg = mean(offers.map((offer) => Number(offer.price_excl_vat)))
+        const avg = mean(offers.filter(priced).map((offer) => Number(offer.price_excl_vat)))
         if (avg != null) avgPrices.push(avg)
         const sales = salesByProduct.get(product.id)
         if (sales) {

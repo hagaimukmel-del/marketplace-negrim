@@ -119,6 +119,13 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
     }
 
     const pack = item.pack_qty && item.pack_qty > 1 ? ` · ${item.pack_label ?? 'חבילה'} ${item.pack_qty} ${item.unit}` : ''
+    if (item.quote_only) {
+      say(`${item.name_he}\nמחיר בהצעה מהספק${pack}\nספק: ${item.supplier_name}`, [
+        { label: 'בקש הצעת מחיר', action: 'open-page', value: `/app/product/${item.id}?quote=1` },
+        { label: 'שאלה לספק', action: 'contact-supplier', value: item.supplier_id, item },
+      ])
+      return
+    }
     say(
       `${item.name_he}\n₪${item.base_price_excl_vat} ל${item.unit} לפני מע״מ${pack}\nספק: ${item.supplier_name}`,
       [
@@ -134,6 +141,10 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
     const item = action.item
     if (!item) {
       say('לא הצלחתי להוסיף לעגלה — חסרים פרטי מחיר. נסה לחפש שוב.')
+      return
+    }
+    if (item.quote_only) {
+      say('את המוצר הזה מזמינים לפי הצעת מחיר מהספק.', [{ label: 'בקש הצעת מחיר', action: 'open-page', value: `/app/product/${item.id}?quote=1` }])
       return
     }
     const { quantity, ...line } = item

@@ -2,12 +2,87 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check } from 'lucide-react'
+import { Check, Eye, FileText } from 'lucide-react'
 import { REGIONS } from '@/lib/regions'
 import { callApi, jsonInit, PAYMENT_TERMS, type SupplierProfile } from '../types'
 import type { Notify } from '../SupplierApp'
 
 const INPUT = 'mt-1 h-12 w-full rounded-lg border border-stone-300 bg-white px-3'
+
+/**
+ * "להציג מחירים / רק הצעת מחיר" (T-023). Saved on its own, the moment it is
+ * chosen. Prices are never deleted: a supplier who switches back shows them
+ * again at once. Appears once the database has migration 20261011140000.
+ */
+function PriceMode({ mode, notify }: { mode: 'shown' | 'quote'; notify: Notify }) {
+  const router = useRouter()
+  const [current, setCurrent] = useState(mode)
+  const [busy, setBusy] = useState(false)
+
+  const choose = async (next: 'shown' | 'quote') => {
+    if (next === current || busy) return
+    setBusy(true)
+    try {
+      await callApi('/api/supplier/profile', jsonInit('PATCH', { price_mode: next }))
+      setCurrent(next)
+      notify(next === 'quote' ? 'מעכשיו נגרים מבקשים ממך הצעת מחיר' : 'המחירים מוצגים שוב לנגרים')
+      router.refresh()
+    } catch (err) {
+      notify(err instanceof Error ? err.message : 'השמירה נכשלה', 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const options = [
+    {
+      key: 'shown' as const,
+      Icon: Eye,
+      title: 'להציג מחירים',
+      text: 'נגרייה רשומה רואה את המחיר שלך לפני מע״מ ומזמינה מיד.',
+    },
+    {
+      key: 'quote' as const,
+      Icon: FileText,
+      title: 'רק הצעת מחיר',
+      text: 'המחירים שלך לא מוצגים לאף אחד. נגרייה מבקשת הצעה לכמות, ואתה עונה בלשונית ההזמנות.',
+    },
+  ]
+
+  return (
+    <section className="rounded-xl border border-stone-200 bg-white p-4">
+      <h2 className="font-bold text-stone-900">מחירים באתר</h2>
+      <p className="mt-0.5 text-sm text-stone-600">המחירון שלך נשמר בשני המצבים, ואפשר לעבור ביניהם בכל רגע.</p>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="מחירים באתר">
+        {options.map(({ key, Icon, title, text }) => {
+          const active = current === key
+          return (
+            <button
+              key={key}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => choose(key)}
+              disabled={busy}
+              className={`flex items-start gap-3 rounded-xl border p-3 text-start ${
+                active ? 'border-emerald-700 bg-emerald-50 ring-1 ring-emerald-700' : 'border-stone-300 bg-white hover:bg-stone-50'
+              }`}
+            >
+              <Icon size={20} className={`mt-0.5 shrink-0 ${active ? 'text-emerald-800' : 'text-stone-500'}`} />
+              <span className="min-w-0">
+                <span className="flex items-center gap-1.5 font-semibold text-stone-900">
+                  {title}
+                  {active && <Check size={15} className="text-emerald-800" />}
+                </span>
+                <span className="mt-0.5 block text-sm text-stone-600">{text}</span>
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
 
 /**
  * How this supplier trades: which payment terms they accept, the smallest
@@ -83,6 +158,8 @@ export default function TermsTab({ profile, notify }: { profile: SupplierProfile
   }
 
   return (
+    <div className="space-y-4">
+    {profile.price_mode && <PriceMode mode={profile.price_mode} notify={notify} />}
     <form onSubmit={save} className="space-y-4">
       <section className="rounded-xl border border-stone-200 bg-white p-4">
         <h2 className="font-bold text-stone-900">תנאי תשלום</h2>
@@ -209,5 +286,6 @@ export default function TermsTab({ profile, notify }: { profile: SupplierProfile
         {busy ? 'שומר…' : dirty ? 'שמור תנאים' : 'הכל שמור'}
       </button>
     </form>
+    </div>
   )
 }

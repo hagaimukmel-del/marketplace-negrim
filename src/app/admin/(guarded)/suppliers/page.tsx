@@ -1,13 +1,15 @@
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import SuppliersClient, { type SupplierRow } from './SuppliersClient'
 import { threadCountsBySupplier } from '@/lib/messages'
+import { quoteCountsBySupplier } from '@/lib/quotes-server'
+import { loadPriceModes } from '@/lib/price-mode'
 
 export const dynamic = 'force-dynamic'
 
 export default async function SuppliersPage() {
   const supabase = getSupabaseAdmin()
 
-  const [{ data }, { data: offers }, { data: lines }, threads] = await Promise.all([
+  const [{ data }, { data: offers }, { data: lines }, threads, quotes, modes] = await Promise.all([
     supabase
       .from('suppliers')
       // One literal, not a concatenation: PostgREST infers the row type from the
@@ -20,6 +22,8 @@ export default async function SuppliersPage() {
     supabase.from('supplier_offers').select('supplier_id').limit(20000),
     supabase.from('order_items').select('supplier_id, order_id').not('supplier_id', 'is', null).limit(50000),
     threadCountsBySupplier(),
+    quoteCountsBySupplier(),
+    loadPriceModes(),
   ])
 
   const offersBy = new Map<string, number>()
@@ -44,6 +48,8 @@ export default async function SuppliersPage() {
     offer_count: offersBy.get(row.id) ?? 0,
     order_count: ordersBy.get(row.id)?.size ?? 0,
     threads: threads.get(row.id) ?? { total: 0, unanswered: 0 },
+    quote_only: modes.quoteOnly.has(row.id),
+    quotes: quotes.bySupplier.get(row.id) ?? { total: 0, open: 0 },
   }))
 
   return <SuppliersClient rows={rows} />

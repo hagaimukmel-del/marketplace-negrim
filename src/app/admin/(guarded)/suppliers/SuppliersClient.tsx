@@ -47,6 +47,10 @@ export interface SupplierRow {
   order_count: number
   /** Message threads with carpentries and how many wait for the supplier. Never their content. */
   threads: { total: number; unanswered: number }
+  /** Chose "רק הצעת מחיר" (T-023). */
+  quote_only: boolean
+  /** Quote requests it got and how many wait for an answer. Never the quoted price. */
+  quotes: { total: number; open: number }
 }
 
 /** The row as the form wants it: every field a string, nulls as empty. */
@@ -280,6 +284,9 @@ function SupplierCard({
             {row.city ?? 'ללא עיר'} · {row.offer_count} מוצרים · {row.order_count} הזמנות
             {row.threads.total > 0 && ` · ${row.threads.total} שיחות`}
             {row.threads.unanswered > 0 && ` (${row.threads.unanswered} בלי מענה)`}
+            {row.quote_only && ' · רק הצעת מחיר'}
+            {row.quotes.total > 0 && ` · ${row.quotes.total} בקשות הצעה`}
+            {row.quotes.open > 0 && ` (${row.quotes.open} בלי מענה)`}
           </span>
         </span>
         <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${TONE[row.status] ?? ''}`}>

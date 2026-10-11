@@ -20,7 +20,7 @@
 ```bash
 git pull
 npm ci
-npm run db:push:staging   # admin_actions, supplier_delivery, order_confirmation, messages, supplier_order_recipients, promo_weeks
+npm run db:push:staging   # admin_actions, supplier_delivery, order_confirmation, messages, supplier_order_recipients, promo_weeks, price_quotes
 # בדיקה ידנית בסטייג'ינג (skill: nagarim-smoke-test): הודעות, אישור עם שורה חסרה, אזורי חלוקה
 npm run db:push           # פרודקשן
 npm run db:types
@@ -34,7 +34,11 @@ npm run db:types
 בדף הבית, בקטגוריה ובסוכן, ואישור שבועות ב-`/admin/promotions`. מיגרציה שישית:
 `20261011130000_promo_weeks`. עדיין פתוח ב-T-024: הודעת ההיכרות השבועית לא לוקחת את מוצר השבוע.
 
-**איפה עצרנו:** שלב 4 בתוכנית — ספק שני חי (גיוס, מחירון, מתג מחירים/הצעת מחיר T-023).
+עדכון 11.10 (ערב): מתג "להציג מחירים / רק הצעת מחיר" לכל ספק ובקשות הצעת מחיר (T-023) נבנו
+בלי לחכות לספק שני. מיגרציה שביעית: `20261011140000_price_quotes`. לבדוק בסטייג'ינג: ספק עובר
+ל"רק הצעת מחיר", נגר מבקש הצעה, הספק עונה, הנגר מוסיף לעגלה ושולח.
+
+**איפה עצרנו:** שלב 4 בתוכנית — ספק שני חי (גיוס ומחירון).
 מחכה לספק אמיתי ומחירון מהבעלים. אחריו: 5 פיילוט ומדידה.
 פתוחים קטנים: הסוכן לא מתחשב באזור חלוקה (T-026), קישור האישור במייל מאשר רק הכל (T-029).
 

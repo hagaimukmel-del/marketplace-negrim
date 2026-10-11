@@ -6,6 +6,7 @@ import { bestOffer, unitLabel } from '@/lib/catalog'
 import { loadProducts } from '@/lib/app/catalog-server'
 import { searchProducts } from '@/lib/catalog-search'
 import { loadCurrentPromo, recordPromoEvent } from '@/lib/promo'
+import { loadPriceModes } from '@/lib/price-mode'
 
 type ProductSpec = Database['public']['Tables']['product_specifications']['Row']
 
@@ -55,6 +56,8 @@ export interface ChatCartItem {
   pack_qty: number | null
   /** In base units: one pack, or the supplier's minimum if larger. */
   quantity: number
+  /** The supplier quotes only (T-023): no price, and the carpenter asks for a quote instead of adding it. */
+  quote_only?: boolean
 }
 
 export interface ActionButton {
@@ -71,13 +74,14 @@ function cartItemOf(product: MatchedProduct): ChatCartItem | undefined {
   return {
     id: product.productId,
     name_he: product.productName,
-    base_price_excl_vat: offer.priceExclVat,
+    base_price_excl_vat: offer.priceExclVat ?? 0,
     supplier_id: offer.supplierId,
     supplier_name: offer.supplierName,
     unit: unitLabel(product.baseUnit),
     pack_label: offer.packLabel ?? null,
     pack_qty: offer.packQty ?? null,
     quantity: Math.ceil(Math.max(offer.minOrderQty || 1, step) / step) * step,
+    ...(offer.priceExclVat == null ? { quote_only: true } : {}),
   }
 }
 
@@ -134,7 +138,8 @@ export interface MatchedProduct {
   offers?: Array<{
     supplierId: string
     supplierName: string
-    priceExclVat: number // per base unit, as stored
+    /** Per base unit, as stored. Null for a supplier who quotes only (T-023): never sent to the browser. */
+    priceExclVat: number | null
     packLabel?: string | null
     packQty?: number | null // כמה base_units בחבילה
     stockQty: number
@@ -292,6 +297,7 @@ async function findMatchingProducts(
     .sort((a, b) => b.confidence - a.confidence)
     .slice(0, 5) // Top 5 matches
 
+  const modes = await loadPriceModes()
   for (const product of topProducts) {
     // Fetch live offer data
     const { data: offers, error: offersError } = await supabase
@@ -327,16 +333,18 @@ async function findMatchingProducts(
     if (offers && offers.length > 0) {
       // Only approved suppliers; bestOffer() decides which one leads, same as the catalogue
       const approved = offers.filter((offer) => offer.suppliers?.status === 'approved')
+      // A quote-only supplier's price never decides who leads (T-023).
+      const priced = approved.filter((offer) => !modes.quoteOnly.has(offer.supplier_id))
       // The promoted product sells from the supplier who booked the week.
       const best =
         (product.promoted && approved.find((offer) => offer.supplier_id === promo?.supplierId)) ||
-        bestOffer({ supplier_offers: approved })
+        bestOffer({ supplier_offers: priced.length ? priced : approved })
       product.offers = [...approved]
         .sort((a, b) => (a === best ? -1 : b === best ? 1 : 0))
         .map((offer) => ({
           supplierId: offer.supplier_id,
           supplierName: offer.suppliers?.company_name || 'Unknown Supplier',
-          priceExclVat: Number(offer.price_excl_vat),
+          priceExclVat: modes.quoteOnly.has(offer.supplier_id) ? null : Number(offer.price_excl_vat),
           packLabel: offer.pack_label,
           packQty: offer.pack_qty,
           stockQty: offer.stock_qty,
@@ -474,7 +482,7 @@ function generateResponse(
       response += '\n\nאפשרויות רכש:'
       for (const offer of product.offers.slice(0, 2)) {
         response += `\n- **${offer.supplierName}**`
-        response += ` • ${formatPrice(offer.priceExclVat, product.baseUnit, offer.packQty)} לפני מע״מ`
+        response += offer.priceExclVat == null ? ' • מחיר בהצעה מהספק' : ` • ${formatPrice(offer.priceExclVat, product.baseUnit, offer.packQty)} לפני מע״מ`
 
         // stock_qty is a placeholder on synced rows, so stock is never shown
         const lead = formatLeadTime(offer.leadTimeDays)
@@ -506,7 +514,7 @@ function generateResponse(
     // Show price and supplier as main info
     if (product.offers && product.offers.length > 0) {
       const bestOffer = product.offers[0]
-      response += ` — ${formatPrice(bestOffer.priceExclVat, product.baseUnit, bestOffer.packQty)}`
+      response += bestOffer.priceExclVat == null ? ' — מחיר בהצעה' : ` — ${formatPrice(bestOffer.priceExclVat, product.baseUnit, bestOffer.packQty)}`
       response += ` (${bestOffer.supplierName})`
       // No stock badge: stock_qty is a placeholder on synced rows
     }
@@ -660,7 +668,11 @@ export async function processProcurementRequest(
     } else if (matches.length === 1) {
       // Single result - add to cart, only when there is an offer to buy
       const item = cartItemOf(matches[0])
-      if (item) {
+      // The agent only prepares: a quote-only product goes to its page, where
+      // the carpenter asks for the quote and sends it.
+      if (item?.quote_only) {
+        actions.push({ label: 'בקש הצעת מחיר', action: 'open-page', value: `/app/product/${matches[0].productId}?quote=1` })
+      } else if (item) {
         actions.push({
           label: '➕ הוסף לעגלה',
           action: 'add-to-cart',

@@ -1,5 +1,5 @@
 # 2 · Carpenter purchasing app (`/app`)
-Verified: 2026-10-08
+Verified: 2026-10-11
 
 ## Purpose
 Where a carpenter buys: browse the catalogue, compare suppliers on a product, build a cart that
@@ -13,6 +13,7 @@ splits per supplier, send purchase orders, track them, and reorder.
 | `/app/product/[id]` | Product page: offers, **"השוואת ספקים"** and **"החלף ספק"** when more than one supplier sells it, "הזול במלאי" badge, last-ordered supplier |
 | `/app/order` | Cart ("עגלה" in the menu) → send. Grouped by supplier, with each supplier's minimum shown when it isn't met plus suggestions to close the gap (`POST /api/app/quote`). Links to `/doc/quote`, a printable price quote per supplier |
 | `/app/orders`, `/app/orders/[id]` | Order history and status (`/api/app/orders/[id]`, `/api/carpenter/orders`). The order page links to `/doc/order/[id]` |
+| `/app/quotes` | "הצעות מחיר" (T-023): requests sent, answers to add to the cart or turn down (`/api/carpenter/quotes`, `/api/carpenter/quotes/[id]`). A request is sent from the product page ("בקש הצעת מחיר" for a quote-only supplier, "הזמנה גדולה? בקשו הצעת מחיר" otherwise; `?quote=1` opens it on arrival, which the agent uses). In the desktop menu with a count of answered quotes; on a phone, a card on `/app/orders` and the orders dot |
 | `/app/account` | Profile (`/api/carpenter/profile`) |
 | `/app/demo` | Static marketing/demo page. Uses emoji and old styling |
 | `/carpenter/*` | Redirects to `/app/*` (`next.config.ts`) |

@@ -11,6 +11,7 @@ const config = {
   joinIp: { maxAttempts: 10, windowMs: 60 * 60 * 1000 }, // 10 sign-ups per hour, per network
   supplierQuestion: { maxAttempts: 10, windowMs: 60 * 60 * 1000 }, // 10 questions per hour, per carpenter
   promoEvent: { maxAttempts: 300, windowMs: 60 * 60 * 1000 }, // "מוצר השבוע" views and adds, per network
+  quoteRequest: { maxAttempts: 20, windowMs: 60 * 60 * 1000 }, // 20 quote requests per hour, per carpenter (T-023)
   message: { maxAttempts: 60, windowMs: 60 * 60 * 1000 }, // 60 messages per hour, per carpentry or supplier (key 'msg:<id>')
 }
 

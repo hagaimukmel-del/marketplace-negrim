@@ -6,6 +6,8 @@ import { loadOrderCc } from '@/lib/order-recipients'
 import { loadSupplierDocs } from '@/lib/supplier-documents'
 import { computeSales } from './sales'
 import { loadPromoWeeks } from '@/lib/promo'
+import { loadSupplierQuotes } from '@/lib/quotes-server'
+import { priceModeOf } from '@/lib/price-mode'
 import { addDays, bookableWeeks, currentWeek } from '@/lib/promo-weeks'
 import SupplierApp from './SupplierApp'
 import {
@@ -139,6 +141,9 @@ export default async function SupplierHome({
     loadPromoWeeks({ from: addDays(currentWeek(), -26 * 7), to: bookableWeeks().at(-1)!, supplierId: supplier.id }),
     loadPromoWeeks({ from: bookableWeeks()[0], to: bookableWeeks().at(-1)!, statuses: ['requested', 'approved'] }),
   ])
+
+  // Quote requests and the price mode (T-023, migration 20261011140000).
+  const [quotes, priceMode] = await Promise.all([loadSupplierQuotes(supplier.id), priceModeOf(supplier.id)])
 
   // Lines the supplier said it could not supply (migration 20261008140000).
   // Read on their own so a database without the column just has none.
@@ -283,7 +288,8 @@ export default async function SupplierHome({
   }))
 
   const waiting = orders.filter((order) => order.status === 'pending').length
-  const initialTab: Tab = isTab(tab) ? tab : waiting > 0 ? 'orders' : 'products'
+  const openQuotes = quotes.quotes.some((quote) => quote.state === 'requested')
+  const initialTab: Tab = isTab(tab) ? tab : waiting > 0 || openQuotes ? 'orders' : 'products'
 
   return (
     <SupplierApp
@@ -310,6 +316,7 @@ export default async function SupplierHome({
         free_delivery_from_excl_vat: delivery.bySupplier.get(supplier.id)?.freeFromExclVat ?? null,
         order_cc_ready: orderCc.ready,
         order_cc_emails: orderCc.bySupplier.get(supplier.id) ?? [],
+        price_mode: priceMode,
       }}
       products={products}
       orders={orders}
@@ -319,6 +326,7 @@ export default async function SupplierHome({
       sales={computeSales(orders, new Date())}
       documents={documents}
       promo={{ ready: myWeeks.ready, weeks: myWeeks.weeks, taken: liveWeeks.weeks.map((week) => week.weekStart) }}
+      quotes={quotes}
     />
   )
 }

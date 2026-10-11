@@ -10,6 +10,7 @@ import ProductImage from '@/components/app/ProductImage'
 import Stepper from '@/components/app/Stepper'
 import { BackLink } from '@/components/app/ui'
 import SupplierLogo from '@/components/app/SupplierLogo'
+import QuoteRequest from '@/components/app/QuoteRequest'
 
 /** A technical sheet or guide a supplier attached to this product (product_documents). */
 export interface ProductDoc {
@@ -48,9 +49,12 @@ export default function ProductView({
   now,
   crumbs,
   docs,
+  askQuote = false,
 }: {
   product: AppProduct
   docs: ProductDoc[]
+  /** Arrived from the agent's "בקש הצעת מחיר": open the request at once. */
+  askQuote?: boolean
   showPrices: boolean
   last: LastPurchase | null
   now: number
@@ -67,6 +71,8 @@ export default function ProductView({
   const lastPacks = last ? Math.round(last.quantity / step) : null
   const pack = packText(offer.packLabel, offer.packQty, product.unit)
   const total = (offer.price ?? 0) * packs * step
+  // The chosen supplier answers with quotes only (T-023): the buy box asks for one.
+  const quoting = showPrices && offer.quoteOnly
 
   const choose = (id: string) => {
     setSupplierId(id)
@@ -97,7 +103,14 @@ export default function ProductView({
 
   const priceBlock = (
     <section className="grid gap-1.5 rounded-2xl border border-hair bg-white px-4 py-3.5">
-      {showPrices && offer.price != null ? (
+      {quoting ? (
+        <div className="grid gap-0.5">
+          <b className="text-[22px] font-extrabold leading-tight">מחיר בהצעה מהספק</b>
+          <span className="text-sm text-muted">
+            {offer.supplierName} נותן מחיר לפי כמות. מבקשים הצעה, והיא מגיעה במייל ובהצעות המחיר שלך.
+          </span>
+        </div>
+      ) : showPrices && offer.price != null ? (
         <>
           <div className="flex flex-wrap items-baseline gap-2">
             <b className="tnum text-[32px] font-extrabold leading-none">{money(offer.price)}</b>
@@ -113,6 +126,19 @@ export default function ProductView({
         <div className="text-[15px] text-muted">
           המחיר מוצג לנגריות רשומות. <Link href="/join" className="font-bold text-brand-ink">כניסה / הרשמה</Link>
         </div>
+      )}
+      {showPrices && !quoting && (
+        <QuoteRequest
+          key={`large-${offer.supplierId}`}
+          product={{ id: product.id, name: product.name, unit: product.unit }}
+          offer={offer}
+          packs={Math.max(packs, 10)}
+          trigger={(open) => (
+            <button type="button" onClick={open} className="w-fit text-[13.5px] font-semibold text-brand-ink">
+              הזמנה גדולה? בקשו הצעת מחיר
+            </button>
+          )}
+        />
       )}
       <div className="mt-1.5 flex flex-wrap items-center gap-2 border-t border-hair pt-2.5 text-[15px]">
         <span className="inline-flex items-center gap-1.5 font-bold">
@@ -236,6 +262,24 @@ export default function ProductView({
     </button>
   )
 
+  const quoteButton = (full: boolean) => (
+    <QuoteRequest
+      key={`quote-${offer.supplierId}-${full ? 'desk' : 'phone'}`}
+      product={{ id: product.id, name: product.name, unit: product.unit }}
+      offer={offer}
+      packs={packs}
+      trigger={(open) => (
+        <button
+          type="button"
+          onClick={open}
+          className={`inline-flex h-12 items-center justify-center gap-1.5 rounded-[11px] bg-brand px-4 font-bold text-navy hover:bg-brand-hover ${full ? 'w-full' : 'flex-1'}`}
+        >
+          <FileText size={18} /> {full ? 'בקש הצעת מחיר' : 'בקש הצעה'}
+        </button>
+      )}
+    />
+  )
+
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4 pb-24 md:pb-0">
       <BackLink href={crumbs.topId ? `/app/catalog/${crumbs.topId}` : '/app/catalog'} label={crumbs.sub ? `${crumbs.top} › ${crumbs.sub}` : crumbs.top} />
@@ -277,7 +321,7 @@ export default function ProductView({
                           {o.delivers === false && <><span className="text-[13px] font-semibold text-attn">לא מגיע לאזור שלך</span>{' '}</>}
                           <Reason product={product} offer={o} />
                         </td>
-                        <td className="tnum px-3 py-2.5 font-bold">{o.price != null ? money(o.price) : '—'}</td>
+                        <td className="tnum px-3 py-2.5 font-bold">{o.price != null ? money(o.price) : o.quoteOnly ? <span className="font-semibold text-muted">בהצעה</span> : '—'}</td>
                         <td className="px-3 py-2.5">{packText(o.packLabel, o.packQty, product.unit) ?? '—'}</td>
                         <td className="px-3 py-2.5">{o.leadDays != null ? `עד ${o.leadDays} ימים` : '—'}</td>
                         <td className="px-3 py-2.5">{termsText(o.terms)}</td>
@@ -315,14 +359,14 @@ export default function ProductView({
             <div className="flex items-center gap-3">
               <Stepper value={packs} onChange={(n) => { setPacks(Math.max(1, n)); setAdded(false) }} min={1} label={product.name} />
               <div>
-                <b className="tnum text-[22px]">{money(total)}</b>
+                {!quoting && <b className="tnum text-[22px]">{money(total)}</b>}
                 <div className="text-[13px] text-muted">
                   <span className="tnum">{packs * step}</span> {product.unit}
                   {lastPacks && packs === lastPacks ? ' · כמו בפעם הקודמת' : ''}
                 </div>
               </div>
             </div>
-            {addButton(true)}
+            {quoting ? quoteButton(true) : addButton(true)}
           </section>
         )}
       </div>
@@ -332,14 +376,19 @@ export default function ProductView({
         <div className="fixed inset-x-0 bottom-[72px] z-30 flex items-center gap-2.5 border-t border-hair bg-white/[.98] px-4 py-2.5 shadow-[0_-6px_16px_rgba(30,42,59,.06)] md:hidden">
           <Stepper value={packs} onChange={(n) => { setPacks(Math.max(1, n)); setAdded(false) }} min={1} label={product.name} />
           <div className="grid leading-tight">
-            <b className="tnum text-[17px]">{money(total)}</b>
+            {!quoting && <b className="tnum text-[17px]">{money(total)}</b>}
             <small className="text-[12.5px] text-muted">
               <span className="tnum">{packs * step}</span> {product.unit}
               {lastPacks && packs === lastPacks ? ' · כמו פעם קודמת' : ''}
             </small>
           </div>
-          {addButton(false)}
+          {quoting ? quoteButton(false) : addButton(false)}
         </div>
+      )}
+
+      {/* From the agent's "בקש הצעת מחיר": the request opens on arrival. */}
+      {askQuote && quoting && (
+        <QuoteRequest product={{ id: product.id, name: product.name, unit: product.unit }} offer={offer} packs={packs} defaultOpen trigger={() => null} />
       )}
 
       {/* Supplier sheet (phone) */}
@@ -378,7 +427,7 @@ export default function ProductView({
                       </small>
                     </span>
                     <span className="grid justify-items-end leading-tight">
-                      <b className="tnum text-lg font-extrabold">{o.price != null ? money(o.price) : '—'}</b>
+                      <b className="tnum text-lg font-extrabold">{o.price != null ? money(o.price) : o.quoteOnly ? 'בהצעה' : '—'}</b>
                       <small className="inline-flex items-center gap-1 text-xs text-muted">
                         ל{product.unit} <Reason product={product} offer={o} />
                       </small>

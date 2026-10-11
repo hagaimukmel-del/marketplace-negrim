@@ -24,6 +24,8 @@ interface Line {
   price: number
   step: number
   total: number
+  /** The supplier now quotes only, and this line has no quote to order at (T-023). */
+  needsQuote: boolean
 }
 
 interface Group {
@@ -146,8 +148,10 @@ export default function OrderView({ profile }: { profile: { address: string; cit
   const lines: Line[] = cart.items.map((item) => {
     const product = quote?.products.find((p) => p.id === item.id) ?? null
     const offer = product ? product.offers.find((o) => o.supplierId === item.supplier_id) ?? suggestedOffer(product) : null
-    const price = offer?.price ?? item.base_price_excl_vat
-    return { item, product, offer, price, step: stepOf(offer ?? { packQty: item.pack_qty ?? null }), total: price * item.quantity }
+    // A quoted line keeps the quote's price; the server re-reads it from the quote.
+    const price = item.quote_id ? item.base_price_excl_vat : offer?.price ?? item.base_price_excl_vat
+    const needsQuote = !item.quote_id && Boolean(offer?.quoteOnly)
+    return { item, product, offer, price, step: stepOf(offer ?? { packQty: item.pack_qty ?? null }), total: price * item.quantity, needsQuote }
   })
 
   const groupMap = new Map<string, Group>()
@@ -191,6 +195,7 @@ export default function OrderView({ profile }: { profile: { address: string; cit
             base_price_excl_vat: line.price,
             quantity: line.item.quantity,
             supplier_id: line.offer?.supplierId ?? line.item.supplier_id,
+            quote_id: line.item.quote_id,
           })),
         }),
       })
@@ -215,7 +220,7 @@ export default function OrderView({ profile }: { profile: { address: string; cit
       </span>
     </button>
   ) : (
-    <button type="button" onClick={send} disabled={sending || !quote || !address || !profile?.emailVerified} className="flex h-12 w-full items-center justify-center rounded-[11px] bg-brand px-3 font-bold text-navy hover:bg-brand-hover disabled:opacity-60">
+    <button type="button" onClick={send} disabled={sending || !quote || !address || !profile?.emailVerified || lines.some((line) => line.needsQuote)} className="flex h-12 w-full items-center justify-center rounded-[11px] bg-brand px-3 font-bold text-navy hover:bg-brand-hover disabled:opacity-60">
       {sending ? 'שולח…' : groups.length > 1 ? `שליחת ${groups.length} הזמנות רכש` : 'שליחת הזמנת רכש'}
     </button>
   )
@@ -291,10 +296,25 @@ export default function OrderView({ profile }: { profile: { address: string; cit
                       <div className="text-[13px] text-muted">
                         {packText(line.offer?.packLabel ?? line.item.pack_label ?? null, line.offer?.packQty ?? line.item.pack_qty ?? null, unit) ?? unit} ·{' '}
                         <span className="tnum">{money(line.price)}</span> ל{unit}
+                        {line.item.quote_id && <b className="font-semibold text-ok-ink"> · לפי הצעת מחיר</b>}
                       </div>
+                      {line.needsQuote && (
+                        <div className="mt-1 text-[13.5px] text-attn">
+                          {line.offer?.supplierName ?? 'הספק'} עובד עכשיו עם הצעות מחיר.{' '}
+                          <Link href={`/app/product/${line.item.id}?quote=1`} className="font-bold text-brand-ink">
+                            בקש הצעה
+                          </Link>
+                        </div>
+                      )}
                       <div className="mt-1.5 flex flex-wrap items-center gap-3.5">
-                        <Stepper value={packs} min={1} small label={line.item.name_he} onChange={(n) => cart.updateQuantity(line.item.id, Math.max(1, n) * line.step)} />
-                        {line.product && line.product.offers.length > 1 && (
+                        {line.item.quote_id ? (
+                          <span className="tnum text-sm font-semibold">
+                            {packs} × {packText(line.item.pack_label ?? null, line.item.pack_qty ?? null, unit) ?? unit}
+                          </span>
+                        ) : (
+                          <Stepper value={packs} min={1} small label={line.item.name_he} onChange={(n) => cart.updateQuantity(line.item.id, Math.max(1, n) * line.step)} />
+                        )}
+                        {!line.item.quote_id && line.product && line.product.offers.length > 1 && (
                           <button type="button" onClick={() => setSheet(line.item.id)} className="text-sm font-semibold text-brand-ink">
                             החלף ספק
                           </button>
@@ -438,7 +458,7 @@ export default function OrderView({ profile }: { profile: { address: string; cit
                   <button
                     key={o.supplierId}
                     type="button"
-                    disabled={!o.inStock}
+                    disabled={!o.inStock || o.quoteOnly}
                     aria-pressed={chosen}
                     onClick={() => {
                       cart.switchSupplier(sheetProduct.id, {
@@ -462,8 +482,8 @@ export default function OrderView({ profile }: { profile: { address: string; cit
                       </small>
                     </span>
                     <span className="grid justify-items-end leading-tight">
-                      <b className="tnum text-lg font-extrabold">{o.price != null ? money(o.price) : '—'}</b>
-                      <small className="text-xs text-muted">{o.inStock ? `ל${sheetProduct.unit}` : 'אזל'}</small>
+                      <b className="tnum text-lg font-extrabold">{o.price != null ? money(o.price) : o.quoteOnly ? 'בהצעה' : '—'}</b>
+                      <small className="text-xs text-muted">{o.quoteOnly ? 'מדף המוצר' : o.inStock ? `ל${sheetProduct.unit}` : 'אזל'}</small>
                     </span>
                   </button>
                 )

@@ -6,8 +6,10 @@ export interface AppOffer {
   supplierId: string
   supplierName: string
   supplierLogo: string | null
-  /** Per base unit, excl VAT. Null when this viewer may not see prices. */
+  /** Per base unit, excl VAT. Null when this viewer may not see prices, or the supplier quotes only. */
   price: number | null
+  /** The supplier chose "רק הצעת מחיר": the carpenter asks for a quote instead of adding to the cart (T-023). */
+  quoteOnly: boolean
   packLabel: string | null
   packQty: number | null
   inStock: boolean
@@ -48,7 +50,9 @@ export function suggestedOffer(product: AppProduct): AppOffer | null {
 export function sortedOffers(product: AppProduct): AppOffer[] {
   return [...product.offers].sort((a, b) => {
     if (a.inStock !== b.inStock) return a.inStock ? -1 : 1
-    return (a.price ?? 0) - (b.price ?? 0)
+    // A price-on-request offer sorts after every priced one.
+    if (a.price == null || b.price == null) return a.price == null ? (b.price == null ? 0 : 1) : -1
+    return a.price - b.price
   })
 }
 
