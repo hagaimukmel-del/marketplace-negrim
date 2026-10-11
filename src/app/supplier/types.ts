@@ -4,9 +4,11 @@
  * tabs can read it.
  */
 
-export type Tab = 'orders' | 'products' | 'sales' | 'business' | 'terms' | 'documents'
+import type { PromoWeek } from '@/lib/promo-weeks'
 
-export const TABS: readonly Tab[] = ['orders', 'products', 'sales', 'business', 'terms', 'documents']
+export type Tab = 'orders' | 'products' | 'sales' | 'promo' | 'business' | 'terms' | 'documents'
+
+export const TABS: readonly Tab[] = ['orders', 'products', 'sales', 'promo', 'business', 'terms', 'documents']
 
 export function isTab(value: unknown): value is Tab {
   return typeof value === 'string' && (TABS as readonly string[]).includes(value)
@@ -150,6 +152,15 @@ export interface SupplierDoc {
 export interface SupplierDocs {
   sheets: SupplierDoc[]
   catalogs: SupplierDoc[]
+}
+
+/** The "מנוי ופרסום" tab: this supplier's bookings, and which weeks are taken by anyone. */
+export interface SupplierPromo {
+  /** False on a database without migration 20261011130000; booking waits for it. */
+  ready: boolean
+  weeks: PromoWeek[]
+  /** Bookable weeks already held by a request or an approval, from any supplier. Dates only. */
+  taken: string[]
 }
 
 export interface CategoryOption {

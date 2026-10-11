@@ -8,11 +8,12 @@ terms and documents. No password needed.
 ## Entry points
 | Route | What |
 |---|---|
-| `/supplier` | Console with tabs: Orders, Products, Sales (מכירות), Documents (מסמכים), Business, Terms (`src/app/supplier/tabs/*`, `UploadDocuments.tsx`). The Orders tab opens with carpenters' questions from the agent chat (last 20, `supplier_contact_requests`) |
+| `/supplier` | Console with tabs: Orders, Products, Sales (מכירות), Subscription & promotion (מנוי ופרסום), Documents (מסמכים), Business, Terms (`src/app/supplier/tabs/*`, `UploadDocuments.tsx`). The Orders tab opens with carpenters' questions from the agent chat (last 20, `supplier_contact_requests`) |
 | `POST /api/supplier/documents/upload` | Documents tab: attach a spec sheet/guide to a product the supplier has an offer on (`product_documents`, bucket `product_documents`); `replaces` swaps out an older sheet |
 | `DELETE /api/supplier/documents/[id]?kind=sheet\|catalog` | Delete one of the supplier's own files (row + storage object) |
 | `POST /api/supplier/documents/catalog` | A PDF catalogue for the whole business: `supplier_documents` row, file under `catalogs/<supplier id>/` in the public `product_documents` bucket. Shown on the product page of every product the supplier sells |
 | `GET /api/supplier/pricelist` | "הורד מחירון": active offers as CSV with the import's own headers, so it goes back in through "ייבוא מאקסל" |
+| `POST/DELETE /api/supplier/promo` | Book a week of "מוצר השבוע" for an active product (from next week, 12 ahead), or cancel a booking still waiting for approval (T-024) |
 | `POST /api/supplier/offers` | Quick edit (עריכה מהירה): up to 500 price / stock / shown changes in one save |
 | `/supplier/enter` + `/api/supplier/session` | Link → cookie session (six months); approval is re-checked on every request |
 | `/api/supplier/login-link` | Re-sends the link to the address on file only |
@@ -46,6 +47,9 @@ terms and documents. No password needed.
 - Extra order recipients (`suppliers.order_cc_emails`, up to 5, migration 20261011120000) get a
   copy of each new-order email without the confirm button; confirming and messages stay with
   `suppliers.email`. Hidden on a database without the column (`lib/order-recipients.ts`).
+- The subscription tier shown in "מנוי ופרסום" is computed from the supplier's active offers
+  (`planFor`, `lib/supplier-plans.ts`); nothing is billed on the site. Taken weeks are shown
+  without the other supplier's name.
 - Business catalogues are told apart from the operator's knowledge-base files by the
   `catalogs/` path prefix (`lib/supplier-documents.ts`); the console never lists or deletes the
   operator's `supplier-documents` bucket files.

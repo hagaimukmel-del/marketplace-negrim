@@ -7,6 +7,8 @@ import { loadCategoryTree, loadProducts } from '@/lib/app/catalog-server'
 import ProductList from '@/components/app/ProductList'
 import CategoryGlyph from '@/components/app/CategoryGlyph'
 import { BackLink } from '@/components/app/ui'
+import PromotedCard from '@/components/app/PromotedCard'
+import { loadCurrentPromo, promotedSlot } from '@/lib/promo'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,7 +22,7 @@ export default async function AppCategory({
 }) {
   const [{ id }, { b }, carpenter, admin] = await Promise.all([params, searchParams, getSessionCarpenter(), isAdmin()])
   const showPrices = Boolean(carpenter) || admin
-  const products = await loadProducts({ showPrices, city: carpenter?.city })
+  const [products, promo] = await Promise.all([loadProducts({ showPrices, city: carpenter?.city }), loadCurrentPromo()])
   const tree = await loadCategoryTree(products)
   const top = tree.find((node) => node.id === id)
   if (!top) notFound()
@@ -29,6 +31,8 @@ export default async function AppCategory({
   const branches = top.children.filter((child) => child.count > 0)
   const branch = branches.find((child) => child.id === b) ?? null
   const shown = branch ? inTop.filter((p) => p.subId === branch.id) : inTop
+  // "מוצר השבוע" at the top of its own category, and of its branch (T-024).
+  const slot = promotedSlot(shown, promo)
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
@@ -72,6 +76,7 @@ export default async function AppCategory({
               </div>
             </nav>
           )}
+          {slot && <PromotedCard slot={slot} placement="category" showPrices={showPrices} />}
           <ProductList products={shown} showPrices={showPrices} />
         </>
       )}

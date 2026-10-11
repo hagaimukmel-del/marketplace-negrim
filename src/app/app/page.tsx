@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { loadCarpenterOrders } from '@/lib/app/orders-server'
 import { loadCategoryTree, loadProducts, loadReorder } from '@/lib/app/catalog-server'
 import { redirect } from 'next/navigation'
+import { loadCurrentPromo, promotedSlot } from '@/lib/promo'
 import HomeView from './HomeView'
 
 export const dynamic = 'force-dynamic'
@@ -24,11 +25,12 @@ export default async function AppHome({ searchParams }: { searchParams: Promise<
   // Home is a carpentry's own screen; a visitor starts on the landing page.
   if (!carpenter) redirect('/')
 
-  const [orders, reorder, products, { data: suppliers }] = await Promise.all([
+  const [orders, reorder, products, { data: suppliers }, promo] = await Promise.all([
     loadCarpenterOrders(carpenter.id),
     loadReorder(carpenter.id, 3),
     loadProducts({ showPrices: true, city: carpenter.city }),
     getSupabaseAdmin().from('suppliers').select('id, company_name, min_order_value_excl_vat').eq('status', 'approved'),
+    loadCurrentPromo(),
   ])
   const categories = await loadCategoryTree(products)
 
@@ -43,6 +45,7 @@ export default async function AppHome({ searchParams }: { searchParams: Promise<
       orders={orders}
       reorder={reorder}
       categories={categories}
+      promoted={promotedSlot(products, promo)}
       minimums={Object.fromEntries((suppliers ?? []).map((s) => [s.id, { name: s.company_name, min: s.min_order_value_excl_vat == null ? null : Number(s.min_order_value_excl_vat) }]))}
     />
   )
