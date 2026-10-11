@@ -3,7 +3,10 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionSupplier } from '@/lib/supplier-auth'
 import { refuseAdminWriteFor } from '@/lib/admin-scope'
 import { PROMO_WEEK_EXCL_VAT } from '@/lib/supplier-plans'
-import { bookableWeeks, isSunday } from '@/lib/promo-weeks'
+import { bookableWeeks, isSunday, weekLabel } from '@/lib/promo-weeks'
+import { isTestName, sendEmail } from '@/lib/email'
+import { PROMO_REQUEST_EMAIL, promoRequestHtml, promoRequestSubject } from '@/lib/emails/promo-request'
+import { money } from '@/lib/app/format'
 
 /**
  * A supplier books a week of "מוצר השבוע" for one of their products (T-024).
@@ -11,7 +14,8 @@ import { bookableWeeks, isSunday } from '@/lib/promo-weeks'
  * The booking waits for the operator's approval in /admin/promotions. One live
  * booking per week is enforced by the database (a partial unique index), so
  * two suppliers picking the same week at once cannot both get it. The price is
- * snapshotted on the row; billing happens outside the site.
+ * snapshotted on the row; billing happens outside the site. The owner is
+ * emailed about each new booking.
  */
 export async function POST(request: NextRequest) {
   const supplier = await getSessionSupplier()
@@ -48,6 +52,24 @@ export async function POST(request: NextRequest) {
     console.error('Promo booking failed:', error)
     return NextResponse.json({ error: 'ההזמנה לא נשמרה' }, { status: 500 })
   }
+
+  // Best-effort: the booking is saved and shows in /admin/promotions either way.
+  const { data: product } = await supabase.from('products').select('name_he').eq('id', productId).maybeSingle()
+  const mail = {
+    supplierName: supplier.company_name,
+    contactName: supplier.contact_name,
+    phone: supplier.phone,
+    productName: product?.name_he ?? 'מוצר',
+    weekText: weekLabel(week),
+    priceText: money(PROMO_WEEK_EXCL_VAT),
+  }
+  await sendEmail({
+    to: PROMO_REQUEST_EMAIL,
+    subject: promoRequestSubject(mail),
+    html: promoRequestHtml(mail),
+    isTest: isTestName(supplier.company_name),
+  }).catch((err) => console.error('Promo request email failed:', err))
+
   return NextResponse.json({ ok: true, id: data.id }, { status: 201 })
 }
 
