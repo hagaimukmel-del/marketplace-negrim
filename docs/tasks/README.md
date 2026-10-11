@@ -56,6 +56,7 @@ python .claude/skills/product-map/scripts/task_index.py
 
 | ID | Pri | Status | Type | Area | Title | Blocked by |
 |---|---|---|---|---|---|---|
+| [T-028](T-028.md) | P1 | in-progress | ops | 10-platform | Apply the 2026-10-08 migrations to staging, then production |  |
 | [T-022](T-022.md) | P2 | in-progress | future | 04-orders-fulfilment | Purchase order and price quote as a file, per supplier | T-007 (agent tool only) |
 | [T-023](T-023.md) | P2 | in-progress | future | 05-catalogue-pricing | Per-supplier price visibility and quote requests (RFQ) | migration 20261011140000 (T-028) |
 | [T-025](T-025.md) | P2 | in-progress | future | 02-carpenter-app | Internal messages between carpenter and supplier |  |
@@ -67,7 +68,6 @@ python .claude/skills/product-map/scripts/task_index.py
 | [T-003](T-003.md) | P1 | open | promise-gap | 03-agent-chat | Agent: understand quantity and supplier preference in one sentence |  |
 | [T-006](T-006.md) | P1 | open | promise-gap | 05-catalogue-pricing | Catalogue breadth: boards, timber, hardware, tools | T-002 |
 | [T-012](T-012.md) | P1 | open | debt | 10-platform | Test data seeded into production by migrations |  |
-| [T-028](T-028.md) | P1 | open | ops | 10-platform | Apply the 2026-10-08 migrations to staging, then production | needs the work PC (env files) |
 | [T-004](T-004.md) | P2 | open | incomplete | 03-agent-chat | Agent: comparison answer | T-002 |
 | [T-005](T-005.md) | P2 | open | promise-gap | 05-catalogue-pricing | Real stock availability |  |
 | [T-007](T-007.md) | P2 | open | decision | 03-agent-chat | Decide: keyword agent vs LLM |  |
