@@ -3,11 +3,13 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionSupplier } from '@/lib/supplier-auth'
 import { refuseAdminWriteFor } from '@/lib/admin-scope'
 import type { Database } from '@/lib/database.types'
+import { thresholdChange } from '@/lib/quote-rules'
+import { loadOfferForThreshold } from '@/lib/special-price'
 
 type OfferUpdate = Database['public']['Tables']['supplier_offers']['Update']
 
 /**
- * A supplier changes their own price, stock or pack.
+ * A supplier changes their own price, stock, pack or special-price threshold.
  *
  * Which supplier is never taken from the request. The id comes from the signed
  * cookie, and the update is filtered on it as well as on the offer id — so a
@@ -73,6 +75,16 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (typeof body.is_active === 'boolean') update.is_active = body.is_active
+
+    // A pack change under a special-price threshold needs the threshold
+    // confirmed in the same save (stage 1 RFQ rules).
+    if ('special_price_min_qty' in body || update.pack_qty !== undefined) {
+      const current = await loadOfferForThreshold(body.offer_id, supplierId)
+      if (!current) return NextResponse.json({ error: 'ההצעה לא נמצאה' }, { status: 404 })
+      const change = thresholdChange(body, current, { packQty: update.pack_qty })
+      if (!change.ok) return NextResponse.json({ error: change.error, code: change.code }, { status: change.status })
+      if (change.fields) Object.assign(update, change.fields)
+    }
 
     const { data, error } = await getSupabaseAdmin()
       .from('supplier_offers')

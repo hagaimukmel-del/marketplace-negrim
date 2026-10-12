@@ -1,5 +1,5 @@
 # 6 · Supplier console (`/supplier`)
-Verified: 2026-10-11
+Verified: 2026-10-12
 
 ## Purpose
 Self-service for an approved supplier: their orders, price list, products, business details,
@@ -55,6 +55,12 @@ terms and documents. No password needed.
   and quote only, saved on the spot through `PATCH /api/supplier/profile` (`price_mode`). The
   supplier's own screens keep showing its prices; nothing is deleted. Hidden on a database
   without migration 20261011140000.
+- Special price for quantity (stage 1 RFQ rules): "מחיר מיוחד מכמות (באריזות)" in the product
+  form, saved through `PATCH/POST /api/supplier/products` as base units with the pack size.
+  Every save that touches the threshold, the pack or the minimum order is checked
+  (`thresholdChange`, `lib/quote-rules.ts`); a pack change under a threshold needs the
+  threshold confirmed in the same save (409 `threshold_review` otherwise), and the form asks for
+  that confirmation. A pack changed by an import leaves the threshold out of use until confirmed.
 - Business catalogues are told apart from the operator's knowledge-base files by the
   `catalogs/` path prefix (`lib/supplier-documents.ts`); the console never lists or deletes the
   operator's `supplier-documents` bucket files.

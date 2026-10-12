@@ -1094,9 +1094,11 @@ export type Database = {
         Row: {
           answered_at: string | null
           carpenter_id: string
+          client_request_id: string | null
           created_at: string
           decided_at: string | null
           id: string
+          kind: string | null
           note: string | null
           order_id: string | null
           product_id: string
@@ -1110,9 +1112,11 @@ export type Database = {
         Insert: {
           answered_at?: string | null
           carpenter_id: string
+          client_request_id?: string | null
           created_at?: string
           decided_at?: string | null
           id?: string
+          kind?: string | null
           note?: string | null
           order_id?: string | null
           product_id: string
@@ -1126,9 +1130,11 @@ export type Database = {
         Update: {
           answered_at?: string | null
           carpenter_id?: string
+          client_request_id?: string | null
           created_at?: string
           decided_at?: string | null
           id?: string
+          kind?: string | null
           note?: string | null
           order_id?: string | null
           product_id?: string
@@ -1492,6 +1498,8 @@ export type Database = {
           price_excl_vat: number
           product_id: string
           source: string
+          special_price_min_qty: number | null
+          special_price_pack_qty: number | null
           stock_qty: number
           supplier_id: string
           supplier_sku: string | null
@@ -1508,6 +1516,8 @@ export type Database = {
           price_excl_vat: number
           product_id: string
           source?: string
+          special_price_min_qty?: number | null
+          special_price_pack_qty?: number | null
           stock_qty?: number
           supplier_id: string
           supplier_sku?: string | null
@@ -1524,6 +1534,8 @@ export type Database = {
           price_excl_vat?: number
           product_id?: string
           source?: string
+          special_price_min_qty?: number | null
+          special_price_pack_qty?: number | null
           stock_qty?: number
           supplier_id?: string
           supplier_sku?: string | null

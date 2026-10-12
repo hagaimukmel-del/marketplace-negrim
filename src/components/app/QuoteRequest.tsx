@@ -4,8 +4,13 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { Check, FileText, X } from 'lucide-react'
 import { packText } from '@/lib/app/format'
+import { quantityText } from '@/lib/quotes'
 import { stepOf, type AppOffer } from '@/lib/app/products'
 import Stepper from './Stepper'
+
+function newRequestId(): string {
+  return typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : ''
+}
 
 /**
  * "בקש הצעת מחיר" (T-023): the carpentry asks one supplier for a price on a
@@ -15,6 +20,11 @@ import Stepper from './Stepper'
  * carpentry adds it to the cart and sends the order.
  *
  * A sheet from the bottom on a phone, a dialog on a computer.
+ *
+ * The quantity starts at, and cannot go below, `minQty` (stage 1 RFQ rules):
+ * the minimum order for a quote-only supplier, the special-price threshold
+ * otherwise. Each opening carries one client_request_id, so a double click or
+ * a retry saves one request; opening it again starts a new one.
  */
 export default function QuoteRequest({
   product,
@@ -22,6 +32,7 @@ export default function QuoteRequest({
   packs: initialPacks = 1,
   trigger,
   defaultOpen = false,
+  minQty = 1,
 }: {
   product: { id: string; name: string; unit: string }
   offer: Pick<AppOffer, 'supplierId' | 'supplierName' | 'packLabel' | 'packQty'>
@@ -30,20 +41,32 @@ export default function QuoteRequest({
   trigger: (open: () => void) => React.ReactNode
   /** Open on arrival, from the agent's "בקש הצעת מחיר". */
   defaultOpen?: boolean
+  /** The least that may be asked for, in base units. */
+  minQty?: number
 }) {
+  const step = stepOf(offer)
+  const minPacks = Math.max(1, Math.ceil(minQty / step - 1e-9))
   const [open, setOpen] = useState(defaultOpen)
-  const [packs, setPacks] = useState(initialPacks)
+  const [packs, setPacks] = useState(Math.max(initialPacks, minPacks))
   const [note, setNote] = useState('')
   const [state, setState] = useState<'idle' | 'sending' | 'sent'>('idle')
   const [error, setError] = useState<string | null>(null)
-  const step = stepOf(offer)
+  const [requestId, setRequestId] = useState(newRequestId)
   const pack = packText(offer.packLabel, offer.packQty, product.unit)
 
   const show = () => {
     setOpen(true)
-    setPacks(initialPacks)
+    setPacks(Math.max(initialPacks, minPacks))
     setState('idle')
     setError(null)
+    setRequestId(newRequestId())
+  }
+
+  // Other details are another request: a retry with the old id would be
+  // refused as a conflict, so an edit starts a new id.
+  const changed = (apply: () => void) => {
+    apply()
+    setRequestId(newRequestId())
   }
 
   const send = async () => {
@@ -53,7 +76,7 @@ export default function QuoteRequest({
       const response = await fetch('/api/carpenter/quotes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ product_id: product.id, supplier_id: offer.supplierId, quantity: packs * step, note }),
+        body: JSON.stringify({ product_id: product.id, supplier_id: offer.supplierId, quantity: packs * step, note, client_request_id: requestId || undefined }),
       })
       const result = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(result.error || 'הבקשה לא נשלחה')
@@ -102,17 +125,22 @@ export default function QuoteRequest({
                   <span className="text-muted"> · {offer.supplierName}</span>
                 </p>
                 <div className="flex flex-wrap items-center gap-3">
-                  <Stepper value={packs} onChange={(n) => setPacks(Math.max(1, n))} min={1} label={product.name} />
+                  <Stepper value={packs} onChange={(n) => changed(() => setPacks(Math.max(minPacks, n)))} min={minPacks} label={product.name} />
                   <span className="text-sm text-muted">
                     {pack ? `${pack} · ` : ''}
                     <span className="tnum">{packs * step}</span> {product.unit}
                   </span>
                 </div>
+                {minPacks * step > 1 && (
+                  <p className="m-0 text-[13px] text-muted">
+                    הכמות המינימלית לבקשה: {quantityText(minPacks * step, product.unit, offer.packLabel, offer.packQty)}
+                  </p>
+                )}
                 <label className="grid gap-1">
                   <span className="text-sm font-semibold">הערה לספק (לא חובה)</span>
                   <textarea
                     value={note}
-                    onChange={(e) => setNote(e.target.value)}
+                    onChange={(e) => changed(() => setNote(e.target.value))}
                     rows={3}
                     maxLength={600}
                     placeholder="לדוגמה: אספקה לאתר בנתניה, צריך עד יום חמישי"

@@ -3,6 +3,7 @@ import 'server-only'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { unitLabel } from '@/lib/catalog'
 import { israelDate, stateOf, type QuoteRequest, type SupplierQuoteRequest } from '@/lib/quotes'
+import type { QuoteKind } from '@/lib/quote-rules'
 
 /**
  * Quote requests on the server (T-023). Every read tolerates the table being
@@ -31,13 +32,15 @@ interface Row {
   carpenters: { business_name: string; contact_name: string | null; phone: string | null; city: string | null } | null
 }
 
-async function load(filter: { carpenterId?: string; supplierId?: string }): Promise<{ ready: boolean; rows: Row[]; packs: Map<string, { label: string | null; qty: number | null }> }> {
+type Packs = Map<string, { label: string | null; qty: number | null }>
+
+async function load(filter: { carpenterId?: string; supplierId?: string }): Promise<{ ready: boolean; rows: Row[]; packs: Packs; kinds: Map<string, QuoteKind> }> {
   const supabase = getSupabaseAdmin()
   let query = supabase.from('quote_requests').select(COLUMNS).order('created_at', { ascending: false }).limit(200)
   if (filter.carpenterId) query = query.eq('carpenter_id', filter.carpenterId)
   if (filter.supplierId) query = query.eq('supplier_id', filter.supplierId)
   const { data, error } = await query
-  if (error) return { ready: false, rows: [], packs: new Map() }
+  if (error) return { ready: false, rows: [], packs: new Map(), kinds: new Map() }
   const rows = (data ?? []) as unknown as Row[]
 
   // The pack each supplier sells it in, so a quantity reads as "4 × דלי 25 ק״ג".
@@ -51,10 +54,22 @@ async function load(filter: { carpenterId?: string; supplierId?: string }): Prom
       packs.set(`${offer.product_id}:${offer.supplier_id}`, { label: offer.pack_label, qty: offer.pack_qty == null ? null : Number(offer.pack_qty) })
     }
   }
-  return { ready: true, rows, packs }
+  // What each request was (migration 20261012090000), read on its own so the
+  // list works without it. Requests from before it have no kind and show none.
+  const kinds = new Map<string, QuoteKind>()
+  if (rows.length) {
+    const { data: kindRows, error: kindError } = await supabase
+      .from('quote_requests')
+      .select('id, kind')
+      .in('id', rows.map((row) => row.id))
+    if (!kindError) {
+      for (const row of kindRows ?? []) if (row.kind === 'quote' || row.kind === 'volume') kinds.set(row.id, row.kind)
+    }
+  }
+  return { ready: true, rows, packs, kinds }
 }
 
-function toQuote(row: Row, packs: Map<string, { label: string | null; qty: number | null }>, today: string): QuoteRequest {
+function toQuote(row: Row, packs: Packs, kinds: Map<string, QuoteKind>, today: string): QuoteRequest {
   const pack = packs.get(`${row.product_id}:${row.supplier_id}`)
   return {
     id: row.id,
@@ -73,22 +88,23 @@ function toQuote(row: Row, packs: Map<string, { label: string | null; qty: numbe
     orderId: row.order_id,
     packLabel: pack?.label ?? null,
     packQty: pack?.qty ?? null,
+    kind: kinds.get(row.id) ?? null,
   }
 }
 
 export async function loadCarpenterQuotes(carpenterId: string): Promise<{ ready: boolean; quotes: QuoteRequest[] }> {
-  const { ready, rows, packs } = await load({ carpenterId })
+  const { ready, rows, packs, kinds } = await load({ carpenterId })
   const today = israelDate()
-  return { ready, quotes: rows.map((row) => toQuote(row, packs, today)) }
+  return { ready, quotes: rows.map((row) => toQuote(row, packs, kinds, today)) }
 }
 
 export async function loadSupplierQuotes(supplierId: string): Promise<{ ready: boolean; quotes: SupplierQuoteRequest[] }> {
-  const { ready, rows, packs } = await load({ supplierId })
+  const { ready, rows, packs, kinds } = await load({ supplierId })
   const today = israelDate()
   return {
     ready,
     quotes: rows.map((row) => ({
-      ...toQuote(row, packs, today),
+      ...toQuote(row, packs, kinds, today),
       carpenter: row.carpenters?.business_name ?? 'נגרייה',
       contactName: row.carpenters?.contact_name ?? null,
       phone: row.carpenters?.phone ?? null,

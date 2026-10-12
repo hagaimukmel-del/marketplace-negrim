@@ -8,6 +8,7 @@ import { computeSales } from './sales'
 import { loadPromoWeeks } from '@/lib/promo'
 import { loadSupplierQuotes } from '@/lib/quotes-server'
 import { priceModeOf } from '@/lib/price-mode'
+import { loadThresholds } from '@/lib/special-price'
 import { addDays, bookableWeeks, currentWeek } from '@/lib/promo-weeks'
 import SupplierApp from './SupplierApp'
 import {
@@ -143,7 +144,7 @@ export default async function SupplierHome({
   ])
 
   // Quote requests and the price mode (T-023, migration 20261011140000).
-  const [quotes, priceMode] = await Promise.all([loadSupplierQuotes(supplier.id), priceModeOf(supplier.id)])
+  const [quotes, priceMode, thresholds] = await Promise.all([loadSupplierQuotes(supplier.id), priceModeOf(supplier.id), loadThresholds({ supplierId: supplier.id })])
 
   // Lines the supplier said it could not supply (migration 20261008140000).
   // Read on their own so a database without the column just has none.
@@ -194,6 +195,8 @@ export default async function SupplierHome({
         packLabel: offer.pack_label,
         packQty: offer.pack_qty == null ? null : Number(offer.pack_qty),
         minOrderQty: Number(offer.min_order_qty),
+        specialMinQty: thresholds.get(offer.id)?.minQty ?? null,
+        specialPackQty: thresholds.get(offer.id)?.setForPackQty ?? null,
         isActive: offer.is_active,
         canEditProduct: product.created_by_supplier_id === supplier.id,
         hasSheet: withSheet.has(offer.product_id),

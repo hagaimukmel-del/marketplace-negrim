@@ -7,6 +7,8 @@
  * quantity, and becomes a normal purchase order when the cart is sent.
  */
 
+import type { QuoteKind } from './quote-rules'
+
 export type QuoteStatus = 'requested' | 'quoted' | 'declined' | 'accepted' | 'rejected' | 'cancelled'
 
 /** What the row says, plus "expired": an answer whose date has passed. */
@@ -44,6 +46,14 @@ export interface QuoteRequest {
   orderId: string | null
   packLabel: string | null
   packQty: number | null
+  /** What was asked for; null on requests from before migration 20261012090000. */
+  kind: QuoteKind | null
+}
+
+/** How a request's kind reads; requests without one show no label. */
+export const QUOTE_KIND_LABEL: Record<QuoteKind, string> = {
+  quote: 'הצעת מחיר',
+  volume: 'מחיר מיוחד לכמות',
 }
 
 /** A request as the supplier sees it: who asked. */

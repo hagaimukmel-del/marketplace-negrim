@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Camera, X, Trash2, Eye, EyeOff, Info } from 'lucide-react'
 import { formatIls, withVat } from '@/lib/vat'
 import { BASE_UNITS, unitLabel } from '@/lib/catalog'
+import { samePack } from '@/lib/quote-rules'
 import { callApi, jsonInit, type CatalogPick, type CategoryOption, type ProductItem } from '../types'
 import type { Notify } from '../SupplierApp'
 
@@ -52,6 +53,11 @@ function Field({
       {hint && <span className="mt-1 block text-xs text-stone-500">{hint}</span>}
     </label>
   )
+}
+
+/** A pack size as a quantity step: no pack is one base unit. */
+function packStep(packQty: number | null): number {
+  return packQty != null && packQty > 0 ? packQty : 1
 }
 
 const INPUT =
@@ -103,6 +109,8 @@ export default function ProductForm({
     pack_label: product?.packLabel ?? '',
     pack_qty: product?.packQty == null ? '' : String(product.packQty),
     min_order_qty: product ? String(product.minOrderQty) : '1',
+    // In packs of the size the threshold was set for, as the supplier typed it.
+    special_packs: product?.specialMinQty != null ? String(Math.round(product.specialMinQty / packStep(product.specialPackQty))) : '',
   }
 
   const [form, setForm] = useState(initial)
@@ -111,12 +119,21 @@ export default function ProductForm({
   const [preview, setPreview] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [thresholdConfirmed, setThresholdConfirmed] = useState(false)
 
   const set = (key: keyof typeof initial, value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }))
 
   const dirty = file !== null || JSON.stringify(form) !== snapshot
   const price = Number(form.price)
+
+  // Special price for quantity (stage 1 RFQ rules): typed in packs, saved in base units.
+  const formPack = form.pack_qty.trim() === '' ? null : Number(form.pack_qty)
+  const specialPacks = form.special_packs.trim() === '' ? null : Number(form.special_packs)
+  const specialQty = specialPacks != null && Number.isFinite(formPack ?? 1) ? specialPacks * packStep(formPack) : null
+  // The threshold exists and the pack it was set for is not the pack being saved:
+  // the supplier confirms what it means now before saving.
+  const thresholdMoved = Boolean(product && product.specialMinQty != null && specialPacks != null && !samePack(product.specialPackQty, formPack))
   const imageShown =
     preview ?? (shared?.imageUrl && !shared.imageUrl.includes('drive.google.com') ? shared.imageUrl : null)
 
@@ -145,6 +162,10 @@ export default function ProductForm({
     setError(null)
     if (!form.name_he.trim()) return setError('צריך שם מוצר')
     if (!Number.isFinite(price) || price <= 0) return setError('צריך מחיר גדול מאפס')
+    if (specialPacks != null && (!Number.isInteger(specialPacks) || specialPacks <= 0)) {
+      return setError('סף המחיר המיוחד: מספר שלם של אריזות')
+    }
+    if (thresholdMoved && !thresholdConfirmed) return setError('גודל האריזה השתנה. אשרו את סף המחיר המיוחד החדש לפני השמירה.')
 
     setBusy(true)
     try {
@@ -155,6 +176,7 @@ export default function ProductForm({
         pack_label: form.pack_label,
         pack_qty: form.pack_qty,
         min_order_qty: form.min_order_qty === '' ? '1' : form.min_order_qty,
+        special_price_min_qty: specialQty == null ? '' : String(specialQty),
       }
       const productFields = {
         name_he: form.name_he,
@@ -399,7 +421,10 @@ export default function ProductForm({
               <input
                 inputMode="decimal"
                 value={form.pack_qty}
-                onChange={(e) => set('pack_qty', e.target.value)}
+                onChange={(e) => {
+                  set('pack_qty', e.target.value)
+                  setThresholdConfirmed(false)
+                }}
                 placeholder="25"
                 className={`tnum ${INPUT}`}
               />
@@ -413,6 +438,42 @@ export default function ProductForm({
                 className={`tnum ${INPUT}`}
               />
             </Field>
+
+            <Field
+              label="מחיר מיוחד מכמות (באריזות)"
+              hint="לא חובה. מכמות זו נגרייה יכולה לבקש ממך מחיר מיוחד. ריק = בלי מחיר מיוחד. כשהמחירים שלך מוסתרים זה לא חל, וקובעת רק כמות המינימום."
+            >
+              <input
+                inputMode="numeric"
+                value={form.special_packs}
+                onChange={(e) => {
+                  set('special_packs', e.target.value)
+                  setThresholdConfirmed(false)
+                }}
+                placeholder="לדוגמה 4"
+                className={`tnum ${INPUT}`}
+              />
+              {specialQty != null && Number.isFinite(specialQty) && specialQty > 0 && (
+                <span className="mt-1 block text-xs text-stone-700">
+                  = {specialPacks} × {form.pack_label.trim() || 'אריזה'}
+                  {formPack && formPack > 1 ? ` (${specialQty} ${unitLabel(form.base_unit)})` : ` ${unitLabel(form.base_unit)}`}
+                </span>
+              )}
+            </Field>
+
+            {product && product.specialMinQty != null && !samePack(product.specialPackQty, formPack) && (
+              <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 sm:col-span-2">
+                <p className="m-0">
+                  גודל האריזה השתנה מאז שקבעתם את הסף ({product.specialMinQty} {unitLabel(form.base_unit)}). עד שתאשרו, נגריות לא יכולות לבקש מחיר מיוחד על המוצר הזה.
+                </p>
+                {specialPacks != null && (
+                  <label className="mt-2 flex items-center gap-2 font-semibold">
+                    <input type="checkbox" checked={thresholdConfirmed} onChange={(e) => setThresholdConfirmed(e.target.checked)} className="h-5 w-5" />
+                    הסף החדש: {specialPacks} × {form.pack_label.trim() || 'אריזה'} ({specialQty} {unitLabel(form.base_unit)}). מאשר.
+                  </label>
+                )}
+              </div>
+            )}
 
             <Field label="מותג / יצרן">
               <input

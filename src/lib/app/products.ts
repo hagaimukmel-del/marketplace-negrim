@@ -16,6 +16,14 @@ export interface AppOffer {
   leadDays: number | null
   terms: string[]
   minOrder: number | null
+  /** The offer's minimum order, in base units. */
+  minOrderQty: number
+  /**
+   * From what quantity, in base units, a special price may be asked for
+   * (stage 1 RFQ rules). Null: no special price on this offer, or the supplier
+   * quotes only, or the pack size changed and the supplier has not confirmed it.
+   */
+  specialMinQty: number | null
   /** Whether the supplier delivers to this carpentry's region; null when either side is unknown. */
   delivers: boolean | null
   /** The offer the catalogue suggests: among suppliers that reach this carpentry, in stock first, then cheapest. */

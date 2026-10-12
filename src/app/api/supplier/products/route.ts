@@ -4,6 +4,8 @@ import { getSessionSupplier } from '@/lib/supplier-auth'
 import { refuseAdminWriteFor } from '@/lib/admin-scope'
 import { BASE_UNITS, type BaseUnit } from '@/lib/catalog'
 import type { Database } from '@/lib/database.types'
+import { thresholdChange } from '@/lib/quote-rules'
+import { loadOfferForThreshold } from '@/lib/special-price'
 
 type ProductInsert = Database['public']['Tables']['products']['Insert']
 type ProductUpdate = Database['public']['Tables']['products']['Update']
@@ -77,6 +79,15 @@ function readOfferFields(body: Record<string, unknown>, requirePrice: boolean): 
 }
 
 /**
+ * The special-price threshold on a new offer (stage 1 RFQ rules), checked
+ * against the pack and minimum order sent with it. Nothing is added to the row
+ * when no threshold is given, so a database without the columns still works.
+ */
+function newOfferThreshold(body: Record<string, unknown>, fields: OfferFields) {
+  return thresholdChange(body, { packQty: fields.packQty ?? null, minOrderQty: fields.minOrderQty ?? 1, threshold: null }, {})
+}
+
+/**
  * A supplier adds a product.
  *
  * The product and the offer are two rows. The product is what the item is and
@@ -104,6 +115,8 @@ export async function POST(request: NextRequest) {
       if (typeof offerFields === 'string') {
         return NextResponse.json({ error: offerFields }, { status: 400 })
       }
+      const threshold = newOfferThreshold(body, offerFields)
+      if (!threshold.ok) return NextResponse.json({ error: threshold.error, code: threshold.code }, { status: threshold.status })
 
       const { data: product } = await supabase
         .from('products')
@@ -126,6 +139,7 @@ export async function POST(request: NextRequest) {
           min_order_qty: offerFields.minOrderQty ?? 1,
           is_active: true,
           source: 'manual',
+          ...(threshold.fields ?? {}),
         })
         .select('id')
         .single()
@@ -156,6 +170,8 @@ export async function POST(request: NextRequest) {
     if (typeof offerFields === 'string') {
       return NextResponse.json({ error: offerFields }, { status: 400 })
     }
+    const threshold = newOfferThreshold(body, offerFields)
+    if (!threshold.ok) return NextResponse.json({ error: threshold.error, code: threshold.code }, { status: threshold.status })
 
     const brand = text(body.brand, 80)
     const mpn = text(body.mpn, 80)
@@ -214,6 +230,7 @@ export async function POST(request: NextRequest) {
       min_order_qty: offerFields.minOrderQty ?? 1,
       is_active: true,
       source: 'manual',
+      ...(threshold.fields ?? {}),
     }
 
     const { data: offer, error: offerError } = await supabase
@@ -347,7 +364,18 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: offerFields }, { status: 400 })
     }
 
-    const offer: OfferUpdate = { updated_at: new Date().toISOString() }
+    // The threshold is checked against the pack and minimum as they will be
+    // after this save, before anything is written.
+    let thresholdFields: OfferUpdate | null = null
+    if ('special_price_min_qty' in body || offerFields.packQty !== undefined || offerFields.minOrderQty !== undefined) {
+      const current = await loadOfferForThreshold(body.offer_id, supplier.id)
+      if (!current) return NextResponse.json({ error: 'המוצר לא נמצא' }, { status: 404 })
+      const change = thresholdChange(body, current, { packQty: offerFields.packQty, minOrderQty: offerFields.minOrderQty })
+      if (!change.ok) return NextResponse.json({ error: change.error, code: change.code }, { status: change.status })
+      thresholdFields = change.fields
+    }
+
+    const offer: OfferUpdate = { updated_at: new Date().toISOString(), ...(thresholdFields ?? {}) }
     if (offerFields.price !== undefined) offer.price_excl_vat = offerFields.price
     if (offerFields.stock !== undefined) offer.stock_qty = offerFields.stock
     if (offerFields.sku !== undefined) offer.supplier_sku = offerFields.sku

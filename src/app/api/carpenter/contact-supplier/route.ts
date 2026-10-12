@@ -14,7 +14,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
  * A carpenter's question to a supplier, from "שאלה לספק" in the agent chat.
  * Stored in supplier_contact_requests (shown in the supplier console) and
  * emailed to the supplier with the carpenter's phone, so the answer goes
- * straight between them. Types: quote_request, inquiry, support.
+ * straight between them. Types: inquiry, support (quote_request is refused;
+ * a price is asked for through /api/carpenter/quotes).
  *
  * It also opens a message thread (T-025), so the supplier can answer inside
  * the site. Best-effort: a database without the messages tables still logs
@@ -40,8 +41,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'invalid productId' }, { status: 400 })
     }
 
+    // A price is asked for through /api/carpenter/quotes, where the quote
+    // rules apply (stage 1 RFQ plan). A free-text "quote_request" here would
+    // go around them, so new ones are refused; old rows keep the type.
+    if (action === 'quote_request') {
+      return NextResponse.json({ error: 'בקשת הצעת מחיר נשלחת מדף המוצר', code: 'use_quote_request' }, { status: 400 })
+    }
     // Mirrors the check constraint on supplier_contact_requests.action_type
-    if (!['quote_request', 'inquiry', 'support'].includes(action)) {
+    if (!['inquiry', 'support'].includes(action)) {
       return NextResponse.json({ error: 'invalid action' }, { status: 400 })
     }
 
