@@ -458,7 +458,7 @@ function generateResponse(
 
   if (matches.length === 1) {
     const product = matches[0]
-    let response = `${partial ? 'לא מצאתי התאמה מדויקת. הכי קרוב:' : 'מצאתי מוצר שמתאים:'}\n\n**${product.productName}**${product.promoted ? ' · מוצר השבוע (קידום בתשלום)' : ''}`
+    let response = `${partial ? 'לא מצאתי התאמה מדויקת. הכי קרוב:' : 'מצאתי מוצר שמתאים:'}\n\n**${product.productName}**${product.promoted ? ' · מוצר השבוע (פרסומת)' : ''}`
 
     // Step 5: Show document evidence
     if (product.documents && product.documents.length > 0) {
@@ -509,7 +509,7 @@ function generateResponse(
   for (let i = 0; i < showLimit; i++) {
     const product = matches[i]
     const number = i + 1
-    response += `\n${number}) **${product.productName}**${product.promoted ? ' · מוצר השבוע (קידום)' : ''}`
+    response += `\n${number}) **${product.productName}**${product.promoted ? ' · מוצר השבוע (פרסומת)' : ''}`
 
     // Show price and supplier as main info
     if (product.offers && product.offers.length > 0) {
