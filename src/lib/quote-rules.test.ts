@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { activeThreshold, checkQuoteRequest, sameRequest, thresholdChange, thresholdNeedsReview, validateThreshold } from './quote-rules'
+import { activeThreshold, checkQuoteRequest, instantQuotePrice, sameRequest, thresholdChange, thresholdNeedsReview, validateThreshold } from './quote-rules'
 
 const label = (q: number) => `${q / 10} × מיכל (${q} ק״ג)`
 
@@ -132,9 +132,46 @@ describe('thresholdChange (supplier saves)', () => {
   it('clears a threshold, and writes nothing when there is none to clear', () => {
     expect(thresholdChange({ special_price_min_qty: '' }, current, {})).toEqual({
       ok: true,
-      fields: { special_price_min_qty: null, special_price_pack_qty: null },
+      fields: { special_price_min_qty: null, special_price_pack_qty: null, special_price_excl_vat: null },
     })
     expect(thresholdChange({ special_price_min_qty: '' }, { ...current, threshold: null }, {})).toEqual({ ok: true, fields: null })
+  })
+})
+
+describe('special price', () => {
+  const current = { packQty: 10, minOrderQty: 10, threshold: { minQty: 40, setForPackQty: 10, price: null } }
+
+  it('is saved with the threshold, rounded to agorot', () => {
+    expect(thresholdChange({ special_price_min_qty: '40', special_price_excl_vat: '18.499' }, current, {})).toEqual({
+      ok: true,
+      fields: { special_price_min_qty: 40, special_price_pack_qty: 10, special_price_excl_vat: 18.5 },
+    })
+  })
+
+  it('can be cleared while the threshold stays', () => {
+    expect(thresholdChange({ special_price_min_qty: '40', special_price_excl_vat: '' }, current, {})).toMatchObject({
+      ok: true,
+      fields: { special_price_min_qty: 40, special_price_excl_vat: null },
+    })
+  })
+
+  it('needs a threshold', () => {
+    expect(thresholdChange({ special_price_min_qty: '', special_price_excl_vat: '18' }, current, {})).toMatchObject({ ok: false, code: 'special_price_invalid' })
+    expect(thresholdChange({ special_price_excl_vat: '18' }, { ...current, threshold: null }, {})).toMatchObject({ ok: false, code: 'special_price_invalid' })
+  })
+
+  it('refuses zero, negatives and nonsense', () => {
+    for (const value of ['0', '-3', 'abc', '5000000']) {
+      expect(thresholdChange({ special_price_min_qty: '40', special_price_excl_vat: value }, current, {})).toMatchObject({ ok: false, code: 'special_price_invalid' })
+    }
+  })
+
+  it('answers at once only from the threshold up, with a price, on the same pack', () => {
+    const t = { minQty: 40, setForPackQty: 10, price: 18.5 }
+    expect(instantQuotePrice(t, 10, 40)).toBe(18.5)
+    expect(instantQuotePrice(t, 10, 30)).toBeNull()
+    expect(instantQuotePrice({ ...t, price: null }, 10, 40)).toBeNull()
+    expect(instantQuotePrice(t, 25, 100)).toBeNull()
   })
 })
 

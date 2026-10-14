@@ -4,12 +4,16 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { isTestName, sendEmail } from '@/lib/email'
 import { unitLabel } from '@/lib/catalog'
-import { quantityText } from '@/lib/quotes'
-import { quoteRequestHtml, quoteRequestSubject } from '@/lib/emails/quote'
+import { israelDate, quantityText, validLabel } from '@/lib/quotes'
+import { quoteAnswerHtml, quoteAnswerSubject, quoteRequestHtml, quoteRequestSubject } from '@/lib/emails/quote'
+import { money } from '@/lib/app/format'
 import { priceModeOf } from '@/lib/price-mode'
-import { checkQuoteRequest } from '@/lib/quote-rules'
+import { checkQuoteRequest, instantQuotePrice } from '@/lib/quote-rules'
 import { saveQuoteRequest, type QuoteRequestStore } from '@/lib/quote-idempotency'
 import { loadThresholds } from '@/lib/special-price'
+
+/** How long an instant answer at the supplier's special price holds. */
+const INSTANT_QUOTE_DAYS = 14
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -29,7 +33,10 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
  * - a supplier who shows prices is asked only for a special price, and only
  *   from the threshold it set on this offer;
  * - a repeated send with the same client_request_id returns the request
- *   already saved when the details match (no second email) and 409 otherwise.
+ *   already saved when the details match (no second email) and 409 otherwise;
+ * - when the supplier set a special price and the request reaches its
+ *   threshold, the request is answered at once with that price, as an
+ *   ordinary quote the carpentry accepts in its quotes (owner, 14.10.2026).
  */
 export async function POST(request: NextRequest) {
   const carpenter = await getSessionCarpenter()
@@ -80,6 +87,9 @@ export async function POST(request: NextRequest) {
   })
   if (!check.ok) return NextResponse.json({ error: check.error, code: check.code }, { status: check.status })
 
+  const threshold = thresholds.get(offer.id) ?? null
+  const instantPrice = check.kind === 'volume' ? instantQuotePrice(threshold, packQty, quantity) : null
+
   const saved = await saveQuoteRequest(supabaseStore(), {
     carpenterId: carpenter.id,
     clientRequestId,
@@ -96,16 +106,38 @@ export async function POST(request: NextRequest) {
   // Sent before: the supplier already has it and is not emailed twice.
   if (saved.status === 'existing') return NextResponse.json({ ok: true, id: saved.id, existing: true }, { status: 200 })
 
+  // The supplier's own special price answers it now; only a request still
+  // waiting is answered, so a retry never overwrites anything.
+  let quoted: { unitPrice: number; validUntil: string } | null = null
+  if (instantPrice != null) {
+    const validUntil = addDays(israelDate(), INSTANT_QUOTE_DAYS)
+    const { data: answered } = await supabase
+      .from('quote_requests')
+      .update({
+        status: 'quoted',
+        quoted_unit_price_excl_vat: instantPrice,
+        valid_until: validUntil,
+        supplier_note: 'המחיר המיוחד שהספק קבע לכמות הזו',
+        answered_at: new Date().toISOString(),
+      })
+      .eq('id', saved.id)
+      .eq('status', 'requested')
+      .select('id')
+    if (answered?.length) quoted = { unitPrice: instantPrice, validUntil }
+  }
+
   // Saved and shown in the console; a lost email must not lose the request.
   let emailed = false
+  const quantityLine = quantityText(quantity, unit, offer.pack_label, packQty)
   if (supplier.email) {
     const details = {
       carpenterName: carpenter.business_name,
       contactName: carpenter.contact_name,
       city: carpenter.city,
       productName: product.name_he,
-      quantityText: quantityText(quantity, unit, offer.pack_label, packQty),
+      quantityText: quantityLine,
       note,
+      instantAnswerText: quoted ? `${money(quoted.unitPrice)} ל${unit}` : null,
     }
     const result = await sendEmail({
       to: supplier.email,
@@ -116,7 +148,36 @@ export async function POST(request: NextRequest) {
     emailed = result.sent
   }
 
-  return NextResponse.json({ ok: true, id: saved.id, emailed }, { status: 201 })
+  // The answer goes to the carpentry as if the supplier had typed it, to an
+  // address it proved, like every other mail to them.
+  const { data: contact } = quoted
+    ? await supabase.from('carpenters').select('email, email_verified_at').eq('id', carpenter.id).maybeSingle()
+    : { data: null }
+  if (quoted && contact?.email && contact.email_verified_at) {
+    const answer = {
+      supplierName: supplier.company_name,
+      productName: product.name_he,
+      quantityText: quantityLine,
+      unitPriceText: `${money(quoted.unitPrice)} ל${unit}`,
+      totalText: money(quoted.unitPrice * quantity),
+      validUntilText: validLabel(quoted.validUntil),
+      supplierNote: 'המחיר המיוחד שהספק קבע לכמות הזו',
+    }
+    await sendEmail({
+      to: contact.email,
+      subject: quoteAnswerSubject(answer),
+      html: quoteAnswerHtml(answer),
+      isTest: isTestName(carpenter.business_name, supplier.company_name),
+    })
+  }
+
+  return NextResponse.json({ ok: true, id: saved.id, emailed, quoted }, { status: 201 })
+}
+
+function addDays(date: string, days: number): string {
+  const d = new Date(`${date}T12:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + days)
+  return d.toISOString().slice(0, 10)
 }
 
 /** Columns missing on a database that has not reached migration 20261012090000. */

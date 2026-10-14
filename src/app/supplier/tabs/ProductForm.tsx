@@ -111,6 +111,7 @@ export default function ProductForm({
     min_order_qty: product ? String(product.minOrderQty) : '1',
     // In packs of the size the threshold was set for, as the supplier typed it.
     special_packs: product?.specialMinQty != null ? String(Math.round(product.specialMinQty / packStep(product.specialPackQty))) : '',
+    special_price: product?.specialPrice != null ? String(product.specialPrice) : '',
   }
 
   const [form, setForm] = useState(initial)
@@ -133,6 +134,7 @@ export default function ProductForm({
   const specialQty = specialPacks != null && Number.isFinite(formPack ?? 1) ? specialPacks * packStep(formPack) : null
   // The threshold exists and the pack it was set for is not the pack being saved:
   // the supplier confirms what it means now before saving.
+  const specialPrice = specialPacks == null || form.special_price.trim() === '' ? null : Number(form.special_price)
   const thresholdMoved = Boolean(product && product.specialMinQty != null && specialPacks != null && !samePack(product.specialPackQty, formPack))
   const imageShown =
     preview ?? (shared?.imageUrl && !shared.imageUrl.includes('drive.google.com') ? shared.imageUrl : null)
@@ -165,6 +167,9 @@ export default function ProductForm({
     if (specialPacks != null && (!Number.isInteger(specialPacks) || specialPacks <= 0)) {
       return setError('סף המחיר המיוחד: מספר שלם של אריזות')
     }
+    if (specialPrice != null && (!Number.isFinite(specialPrice) || specialPrice <= 0)) {
+      return setError('המחיר המיוחד צריך להיות גדול מאפס')
+    }
     if (thresholdMoved && !thresholdConfirmed) return setError('גודל האריזה השתנה. אשרו את סף המחיר המיוחד החדש לפני השמירה.')
 
     setBusy(true)
@@ -177,6 +182,7 @@ export default function ProductForm({
         pack_qty: form.pack_qty,
         min_order_qty: form.min_order_qty === '' ? '1' : form.min_order_qty,
         special_price_min_qty: specialQty == null ? '' : String(specialQty),
+        special_price_excl_vat: specialPrice == null ? '' : String(specialPrice),
       }
       const productFields = {
         name_he: form.name_he,
@@ -460,6 +466,27 @@ export default function ProductForm({
                 </span>
               )}
             </Field>
+
+            {specialPacks != null && (
+              <Field
+                label={`מחיר מיוחד ל${unitLabel(form.base_unit)} ללא מע״מ`}
+                hint={
+                  specialPrice != null && Number.isFinite(specialPrice) && specialPrice > 0
+                    ? specialPrice >= price
+                      ? 'שימו לב: המחיר המיוחד לא נמוך מהמחיר הרגיל.'
+                      : `נגרייה שמבקשת מהכמות הזו מקבלת מיד הצעה ב־${formatIls(specialPrice)} ל${unitLabel(form.base_unit)}, בתוקף 14 יום.`
+                    : 'לא חובה. עם מחיר, בקשה מהכמות הזו נענית מיד במחיר הזה. בלי מחיר, אתם עונים על כל בקשה.'
+                }
+              >
+                <input
+                  inputMode="decimal"
+                  value={form.special_price}
+                  onChange={(e) => set('special_price', e.target.value)}
+                  placeholder="0.00"
+                  className={`tnum ${INPUT}`}
+                />
+              </Field>
+            )}
 
             {product && product.specialMinQty != null && !samePack(product.specialPackQty, formPack) && (
               <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 sm:col-span-2">

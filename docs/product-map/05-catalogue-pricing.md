@@ -48,6 +48,11 @@ See CLAUDE.md §6, "The catalogue's shape". Most important:
   (`special_price_pack_qty`) and is out of use while the pack differs, until the supplier confirms
   it. `client_request_id` makes a repeated send return the saved request (same details) or 409.
   Old requests have no `kind`. No automatic quantity tiers anywhere (`volume_pricing` is unread).
+- Special price value (owner, 14.10, migration `20261014110000_special_price_value`): with the
+  threshold the supplier may set `supplier_offers.special_price_excl_vat` (per base unit). A request
+  that reaches the threshold is then answered at once with it (`instantQuotePrice`), as an ordinary
+  quote valid 14 days that the carpenter accepts from its quotes; supplier and carpenter are mailed.
+  The price is never shown before asking and never changes a cart price by itself.
 
 ## Status
 Live but thin: essentially one supplier, mostly adhesives (about 30 offers from the sheet). Most

@@ -3,8 +3,8 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { Check, FileText, X } from 'lucide-react'
-import { packText } from '@/lib/app/format'
-import { quantityText } from '@/lib/quotes'
+import { money, packText } from '@/lib/app/format'
+import { quantityText, validLabel } from '@/lib/quotes'
 import { stepOf, type AppOffer } from '@/lib/app/products'
 import Stepper from './Stepper'
 
@@ -50,6 +50,8 @@ export default function QuoteRequest({
   const [packs, setPacks] = useState(Math.max(initialPacks, minPacks))
   const [note, setNote] = useState('')
   const [state, setState] = useState<'idle' | 'sending' | 'sent'>('idle')
+  // Answered at once with the supplier's own special price.
+  const [quoted, setQuoted] = useState<{ unitPrice: number; validUntil: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [requestId, setRequestId] = useState(newRequestId)
   const pack = packText(offer.packLabel, offer.packQty, product.unit)
@@ -58,6 +60,7 @@ export default function QuoteRequest({
     setOpen(true)
     setPacks(Math.max(initialPacks, minPacks))
     setState('idle')
+    setQuoted(null)
     setError(null)
     setRequestId(newRequestId())
   }
@@ -80,6 +83,7 @@ export default function QuoteRequest({
       })
       const result = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(result.error || 'הבקשה לא נשלחה')
+      setQuoted(result.quoted ?? null)
       setState('sent')
       setNote('')
     } catch (err) {
@@ -112,8 +116,21 @@ export default function QuoteRequest({
                 <span className="grid h-12 w-12 place-items-center rounded-full bg-ok-soft text-ok">
                   <Check size={26} strokeWidth={2.4} />
                 </span>
-                <b className="text-[17px]">הבקשה נשלחה ל{offer.supplierName}</b>
-                <p className="m-0 max-w-[36ch] text-sm text-muted">כשהספק יענה תקבלו מייל, וההצעה תחכה לכם בהצעות המחיר. משם מוסיפים אותה להזמנה.</p>
+                {quoted ? (
+                  <>
+                    <b className="text-[17px]">
+                      קיבלתם הצעה: <span className="tnum">{money(quoted.unitPrice)}</span> ל{product.unit}
+                    </b>
+                    <p className="m-0 max-w-[36ch] text-sm text-muted">
+                      זה המחיר המיוחד ש{offer.supplierName} קבע לכמות הזו, בתוקף עד {validLabel(quoted.validUntil)}. מוסיפים אותה להזמנה מהצעות המחיר.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <b className="text-[17px]">הבקשה נשלחה ל{offer.supplierName}</b>
+                    <p className="m-0 max-w-[36ch] text-sm text-muted">כשהספק יענה תקבלו מייל, וההצעה תחכה לכם בהצעות המחיר. משם מוסיפים אותה להזמנה.</p>
+                  </>
+                )}
                 <Link href="/app/quotes" className="mt-1 inline-flex h-11 items-center rounded-[11px] bg-brand px-4 font-bold text-navy">
                   להצעות המחיר שלי
                 </Link>

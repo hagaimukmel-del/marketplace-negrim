@@ -197,6 +197,7 @@ export default async function SupplierHome({
         minOrderQty: Number(offer.min_order_qty),
         specialMinQty: thresholds.get(offer.id)?.minQty ?? null,
         specialPackQty: thresholds.get(offer.id)?.setForPackQty ?? null,
+        specialPrice: thresholds.get(offer.id)?.price ?? null,
         isActive: offer.is_active,
         canEditProduct: product.created_by_supplier_id === supplier.id,
         hasSheet: withSheet.has(offer.product_id),

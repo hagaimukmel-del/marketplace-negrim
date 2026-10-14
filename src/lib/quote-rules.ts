@@ -27,6 +27,13 @@ export interface ThresholdFields {
   minQty: number | null
   /** supplier_offers.special_price_pack_qty: the pack size the threshold was set for. */
   setForPackQty: number | null
+  /**
+   * supplier_offers.special_price_excl_vat: the unit price from the threshold
+   * up, per base unit like price_excl_vat. Null = the supplier answers each
+   * request itself. With a price, a request that reaches the threshold is
+   * answered at once with it.
+   */
+  price?: number | null
 }
 
 const EPSILON = 1e-6
@@ -115,6 +122,18 @@ export function checkQuoteRequest(input: {
   return { ok: true, kind: 'volume' }
 }
 
+/**
+ * The price a request is answered with at once: the supplier's special price,
+ * when it set one, the threshold is in use and the request reaches it.
+ * Null = the supplier answers the request itself.
+ */
+export function instantQuotePrice(threshold: ThresholdFields | null | undefined, currentPackQty: number | null, quantity: number): number | null {
+  const min = activeThreshold(threshold, currentPackQty)
+  const price = threshold?.price
+  if (min == null || price == null || !(price > 0)) return null
+  return quantity + EPSILON >= min ? price : null
+}
+
 /** The fields that make two sends "the same request". */
 export interface RequestIdentity {
   supplierId: string
@@ -136,9 +155,26 @@ export function sameRequest(a: RequestIdentity, b: RequestIdentity): boolean {
   )
 }
 
+type ThresholdColumns = {
+  special_price_min_qty?: number | null
+  special_price_pack_qty?: number | null
+  special_price_excl_vat?: number | null
+}
+
 export type ThresholdChange =
-  | { ok: true; fields: { special_price_min_qty: number | null; special_price_pack_qty: number | null } | null }
+  | { ok: true; fields: ThresholdColumns | null }
   | { ok: false; status: number; code: string; error: string }
+
+/** The special price as sent: undefined = not sent, null = cleared. */
+function readSpecialPrice(body: Record<string, unknown>): number | null | undefined | string {
+  if (!('special_price_excl_vat' in body)) return undefined
+  const raw = body.special_price_excl_vat
+  if (raw === null || raw === '' || raw === undefined) return null
+  const price = Math.round(Number(raw) * 100) / 100
+  if (!Number.isFinite(price) || price <= 0) return 'המחיר המיוחד צריך להיות גדול מאפס'
+  if (price > 1_000_000) return 'המחיר המיוחד גדול מדי'
+  return price
+}
 
 /**
  * What a supplier's save does to the threshold of one of its own offers.
@@ -162,18 +198,40 @@ export function thresholdChange(
   const packQty = next.packQty !== undefined ? next.packQty : current.packQty
   const minOrderQty = next.minOrderQty !== undefined ? next.minOrderQty : current.minOrderQty
 
+  const price = readSpecialPrice(body)
+  if (typeof price === 'string') return { ok: false, status: 400, code: 'special_price_invalid', error: price }
+
   if ('special_price_min_qty' in body) {
     const raw = body.special_price_min_qty
     if (raw === null || raw === '' || raw === undefined) {
-      // Clearing a threshold that is not there writes nothing.
-      return current.threshold?.minQty != null
-        ? { ok: true, fields: { special_price_min_qty: null, special_price_pack_qty: null } }
+      if (price != null) {
+        return { ok: false, status: 400, code: 'special_price_invalid', error: 'מחיר מיוחד צריך גם כמות שממנה הוא חל' }
+      }
+      // Clearing a threshold that is not there writes nothing; the price goes with it.
+      return current.threshold?.minQty != null || current.threshold?.price != null
+        ? { ok: true, fields: { special_price_min_qty: null, special_price_pack_qty: null, special_price_excl_vat: null } }
         : { ok: true, fields: null }
     }
     const minQty = Number(raw)
     const error = validateThreshold({ minQty, packQty, minOrderQty })
     if (error) return { ok: false, status: 400, code: 'threshold_invalid', error }
-    return { ok: true, fields: { special_price_min_qty: minQty, special_price_pack_qty: packQty } }
+    return {
+      ok: true,
+      fields: { special_price_min_qty: minQty, special_price_pack_qty: packQty, ...(price !== undefined ? { special_price_excl_vat: price } : {}) },
+    }
+  }
+
+  // Only the price: it belongs to a threshold that is already there.
+  if (price !== undefined) {
+    if (price != null && current.threshold?.minQty == null) {
+      return { ok: false, status: 400, code: 'special_price_invalid', error: 'מחיר מיוחד צריך גם כמות שממנה הוא חל' }
+    }
+    if (current.threshold?.minQty != null || current.threshold?.price != null) {
+      const change = thresholdChange({}, current, next)
+      if (!change.ok) return change
+      return { ok: true, fields: { ...(change.fields ?? {}), special_price_excl_vat: price } }
+    }
+    return { ok: true, fields: null }
   }
 
   const existing = current.threshold

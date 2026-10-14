@@ -1498,6 +1498,7 @@ export type Database = {
           price_excl_vat: number
           product_id: string
           source: string
+          special_price_excl_vat: number | null
           special_price_min_qty: number | null
           special_price_pack_qty: number | null
           stock_qty: number
@@ -1516,6 +1517,7 @@ export type Database = {
           price_excl_vat: number
           product_id: string
           source?: string
+          special_price_excl_vat?: number | null
           special_price_min_qty?: number | null
           special_price_pack_qty?: number | null
           stock_qty?: number
@@ -1534,6 +1536,7 @@ export type Database = {
           price_excl_vat?: number
           product_id?: string
           source?: string
+          special_price_excl_vat?: number | null
           special_price_min_qty?: number | null
           special_price_pack_qty?: number | null
           stock_qty?: number

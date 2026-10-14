@@ -4,7 +4,8 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import type { ThresholdFields } from '@/lib/quote-rules'
 
 /**
- * Special-price thresholds on supplier offers (migration 20261012090000).
+ * Special-price thresholds on supplier offers (migration 20261012090000) and
+ * the special price itself (20261014110000).
  *
  * Read on their own and tolerantly, like price_mode: on a database without the
  * columns every offer simply has no threshold, so nothing else breaks.
@@ -12,22 +13,31 @@ import type { ThresholdFields } from '@/lib/quote-rules'
 export async function loadThresholds(filter: { offerIds?: string[]; supplierId?: string }): Promise<Map<string, ThresholdFields>> {
   const out = new Map<string, ThresholdFields>()
   if (filter.offerIds && filter.offerIds.length === 0) return out
-  let query = getSupabaseAdmin()
-    .from('supplier_offers')
-    .select('id, special_price_min_qty, special_price_pack_qty')
-    .not('special_price_min_qty', 'is', null)
-    .limit(5000)
-  if (filter.offerIds) query = query.in('id', filter.offerIds)
-  if (filter.supplierId) query = query.eq('supplier_id', filter.supplierId)
-  const { data, error } = await query
+  const read = (columns: string) => {
+    let query = getSupabaseAdmin().from('supplier_offers').select(columns).not('special_price_min_qty', 'is', null).limit(5000)
+    if (filter.offerIds) query = query.in('id', filter.offerIds)
+    if (filter.supplierId) query = query.eq('supplier_id', filter.supplierId)
+    return query
+  }
+  let { data, error } = await read('id, special_price_min_qty, special_price_pack_qty, special_price_excl_vat')
+  // Before migration 20261014110000 there is a threshold but no price.
+  if (error?.code === '42703') ({ data, error } = await read('id, special_price_min_qty, special_price_pack_qty'))
   if (error) return out
-  for (const row of data ?? []) {
+  for (const row of (data ?? []) as unknown as ThresholdRow[]) {
     out.set(row.id, {
       minQty: row.special_price_min_qty == null ? null : Number(row.special_price_min_qty),
       setForPackQty: row.special_price_pack_qty == null ? null : Number(row.special_price_pack_qty),
+      price: row.special_price_excl_vat == null ? null : Number(row.special_price_excl_vat),
     })
   }
   return out
+}
+
+interface ThresholdRow {
+  id: string
+  special_price_min_qty: number | null
+  special_price_pack_qty: number | null
+  special_price_excl_vat?: number | null
 }
 
 /**
