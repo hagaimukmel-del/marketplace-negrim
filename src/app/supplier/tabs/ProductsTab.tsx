@@ -74,14 +74,11 @@ export default function ProductsTab({
   products,
   categories,
   catalog,
-  pricesHidden,
   notify,
 }: {
   products: ProductItem[]
   categories: CategoryOption[]
   catalog: CatalogPick[]
-  /** The supplier shows no prices (price_mode 'quote'). */
-  pricesHidden: boolean
   notify: Notify
 }) {
   const [query, setQuery] = useState('')
@@ -283,7 +280,6 @@ export default function ProductsTab({
           product={editing === 'new' ? null : editing}
           attachTo={editing === 'new' ? attachTo : null}
           categories={categories}
-          pricesHidden={pricesHidden}
           onClose={() => {
             setEditing(null)
             setAttachTo(null)

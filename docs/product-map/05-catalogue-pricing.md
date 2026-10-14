@@ -41,9 +41,10 @@ See CLAUDE.md §6, "The catalogue's shape". Most important:
   a quote (`quote_requests`); `/api/orders` orders from such a supplier only at an answered quote.
 - Quote rules (stage 1 of the 2026-10-12 RFQ plan, `lib/quote-rules.ts`, migration
   `20261012090000_quote_rules`): a request goes to the one supplier chosen. Quote-only supplier:
-  from `min_order_qty` up (`kind = 'quote'`). Priced supplier: only a special price, only from
-  `supplier_offers.special_price_min_qty`, which the supplier sets in packs; no threshold, no
-  special price (`kind = 'volume'`). The threshold is stored with the pack size it was set for
+  from `min_order_qty` up (`kind = 'quote'`); if it also set a threshold, the product page says
+  "יש מחיר מיוחד מ־…" and a request from that quantity up is `kind = 'volume'` (owner, 14.10).
+  Priced supplier: only a special price, only from `supplier_offers.special_price_min_qty`, which
+  the supplier sets in packs; no threshold, no special price (`kind = 'volume'`). The threshold is stored with the pack size it was set for
   (`special_price_pack_qty`) and is out of use while the pack differs, until the supplier confirms
   it. `client_request_id` makes a repeated send return the saved request (same details) or 409.
   Old requests have no `kind`. No automatic quantity tiers anywhere (`volume_pricing` is unread).

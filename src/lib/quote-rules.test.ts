@@ -6,9 +6,15 @@ const label = (q: number) => `${q / 10} × מיכל (${q} ק״ג)`
 describe('checkQuoteRequest', () => {
   const base = { quantity: 40, minOrderQty: 10, packQty: 10, quantityLabel: label }
 
-  it('lets a quote-only supplier be asked from its minimum order, ignoring any threshold', () => {
+  it('lets a quote-only supplier be asked from its minimum order, below any threshold too', () => {
     expect(checkQuoteRequest({ ...base, quoteOnly: true, threshold: { minQty: 100, setForPackQty: 10 } })).toEqual({ ok: true, kind: 'quote' })
     expect(checkQuoteRequest({ ...base, quoteOnly: true, quantity: 10, threshold: null })).toEqual({ ok: true, kind: 'quote' })
+  })
+
+  it('marks a quote-only request that reaches the threshold as a special-price request', () => {
+    expect(checkQuoteRequest({ ...base, quoteOnly: true, quantity: 100, threshold: { minQty: 100, setForPackQty: 10 } })).toEqual({ ok: true, kind: 'volume' })
+    // A threshold set for another pack size is out of use here too.
+    expect(checkQuoteRequest({ ...base, quoteOnly: true, packQty: 25, quantity: 100, threshold: { minQty: 100, setForPackQty: 10 } })).toEqual({ ok: true, kind: 'quote' })
   })
 
   it('refuses a quote-only request below the minimum order', () => {

@@ -48,7 +48,7 @@ vi.mock('@/lib/special-price', () => ({ loadThresholds: async () => thresholds }
 const { loadProducts } = await import('./catalog-server')
 
 describe('loadProducts: prices and special-price thresholds', () => {
-  it('never sends a quote-only supplier\'s price or threshold, and keeps the priced one\'s', async () => {
+  it('never sends a quote-only supplier\'s price, and sends every supplier\'s threshold', async () => {
     thresholds.clear()
     thresholds.set('o1', { minQty: 40, setForPackQty: 10 })
     thresholds.set('o2', { minQty: 40, setForPackQty: 10 })
@@ -56,7 +56,7 @@ describe('loadProducts: prices and special-price thresholds', () => {
     const s1 = product.offers.find((o) => o.supplierId === 'S1')!
     const s2 = product.offers.find((o) => o.supplierId === 'S2')!
     expect(s1).toMatchObject({ price: 50, quoteOnly: false, specialMinQty: 40, minOrderQty: 10 })
-    expect(s2).toMatchObject({ price: null, quoteOnly: true, specialMinQty: null, minOrderQty: 10 })
+    expect(s2).toMatchObject({ price: null, quoteOnly: true, specialMinQty: 40, minOrderQty: 10 })
     // The quote-only price does not leak through which offer is suggested either.
     expect(s1.suggested).toBe(true)
   })

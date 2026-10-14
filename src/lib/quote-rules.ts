@@ -5,7 +5,9 @@
  *
  * Two kinds of request:
  * - 'quote':  the supplier shows no prices (price_mode 'quote'); asking is the
- *             way to buy. Only the offer's minimum order applies.
+ *             way to buy. Only the offer's minimum order applies. If this
+ *             supplier also set a special-price threshold, a request from that
+ *             quantity up is a 'volume' request instead; below it, a 'quote'.
  * - 'volume': the supplier shows prices and set a special-price threshold on
  *             this offer; a carpentry may ask for a special price from that
  *             quantity up. No threshold, no special price.
@@ -99,7 +101,9 @@ export function checkQuoteRequest(input: {
     if (input.quantity + EPSILON < min) {
       return { ok: false, status: 400, code: 'below_min_order', error: `כמות המינימום להזמנה אצל הספק: ${label(min)}` }
     }
-    return { ok: true, kind: 'quote' }
+    // The threshold never blocks a quote-only request; it only marks one that reaches it.
+    const special = activeThreshold(input.threshold, input.packQty)
+    return { ok: true, kind: special != null && input.quantity + EPSILON >= special ? 'volume' : 'quote' }
   }
   const min = activeThreshold(input.threshold, input.packQty)
   if (min == null) {

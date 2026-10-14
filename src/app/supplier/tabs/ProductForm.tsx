@@ -79,7 +79,6 @@ export default function ProductForm({
   product,
   attachTo = null,
   categories,
-  pricesHidden = false,
   onClose,
   notify,
 }: {
@@ -87,11 +86,6 @@ export default function ProductForm({
   /** A catalogue product this supplier is adding their own price to. */
   attachTo?: CatalogPick | null
   categories: CategoryOption[]
-  /**
-   * The supplier shows no prices: carpentries ask for a quote from the minimum
-   * order, and a special-price threshold does not apply, so it is not offered.
-   */
-  pricesHidden?: boolean
   onClose: () => void
   notify: Notify
 }) {
@@ -445,34 +439,27 @@ export default function ProductForm({
               />
             </Field>
 
-            {pricesHidden ? (
-              <p className="m-0 rounded-lg bg-stone-50 p-3 text-sm text-stone-700 sm:col-span-2">
-                המחירים שלך מוסתרים, ולכן נגריות מבקשות ממך הצעת מחיר מכמות המינימום ומעלה. מחיר מיוחד מכמות זמין רק כשהמחירים מוצגים
-                (בלשונית &quot;תנאי סחר&quot;).
-              </p>
-            ) : (
-              <Field
-                label="מחיר מיוחד מכמות (באריזות)"
-                hint="לא חובה. מכמות זו נגרייה יכולה לבקש ממך מחיר מיוחד. ריק = בלי מחיר מיוחד."
-              >
-                <input
-                  inputMode="numeric"
-                  value={form.special_packs}
-                  onChange={(e) => {
-                    set('special_packs', e.target.value)
-                    setThresholdConfirmed(false)
-                  }}
-                  placeholder="לדוגמה 4"
-                  className={`tnum ${INPUT}`}
-                />
-                {specialQty != null && Number.isFinite(specialQty) && specialQty > 0 && (
-                  <span className="mt-1 block text-xs text-stone-700">
-                    = {specialPacks} × {form.pack_label.trim() || 'אריזה'}
-                    {formPack && formPack > 1 ? ` (${specialQty} ${unitLabel(form.base_unit)})` : ` ${unitLabel(form.base_unit)}`}
-                  </span>
-                )}
-              </Field>
-            )}
+            <Field
+              label="מחיר מיוחד מכמות (באריזות)"
+              hint="לא חובה. מכמות זו נגרייה יכולה לבקש ממך מחיר מיוחד. ריק = בלי מחיר מיוחד. כשהמחירים שלך מוסתרים, נגריות מבקשות הצעה מכמות המינימום ורואות שמכמות זו יש מחיר מיוחד."
+            >
+              <input
+                inputMode="numeric"
+                value={form.special_packs}
+                onChange={(e) => {
+                  set('special_packs', e.target.value)
+                  setThresholdConfirmed(false)
+                }}
+                placeholder="לדוגמה 4"
+                className={`tnum ${INPUT}`}
+              />
+              {specialQty != null && Number.isFinite(specialQty) && specialQty > 0 && (
+                <span className="mt-1 block text-xs text-stone-700">
+                  = {specialPacks} × {form.pack_label.trim() || 'אריזה'}
+                  {formPack && formPack > 1 ? ` (${specialQty} ${unitLabel(form.base_unit)})` : ` ${unitLabel(form.base_unit)}`}
+                </span>
+              )}
+            </Field>
 
             {product && product.specialMinQty != null && !samePack(product.specialPackQty, formPack) && (
               <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 sm:col-span-2">
