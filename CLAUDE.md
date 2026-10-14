@@ -108,7 +108,7 @@ Last verified 2026-10-03 by running the checks, not from memory. Re-verify befor
 | `supabase gen types typescript` | **Done.** `npm run db:types` regenerates `src/lib/database.types.ts`; hand-written aliases live in `lib/db.ts` so they survive regeneration |
 | No `any` | `npx eslint src`: 29 errors, 19 warnings, mostly `no-explicit-any` (many in the chat/agent files). Treat lint-clean as "no new errors" |
 | `npm run type-check` / `build` clean | `tsc --noEmit` passes. Every Vercel deploy from 28.09 to 03.10 failed on tsc errors, so run it before pushing |
-| No test suite | `npm test` is a stub. Verification = `type-check` + `build` + the `nagarim-smoke-test` skill on staging |
+| No test suite | `npm test` runs Vitest (since 2026-10-12), so far only the quote-request rules and their routes. Verification = `npm test` + `type-check` + `build` + the `nagarim-smoke-test` skill on staging |
 
 **Resolved since this file was written — do not re-report these:**
 - `orders.items_json` is gone. Orders are `orders` → `order_items` with `unit_price_excl_vat`

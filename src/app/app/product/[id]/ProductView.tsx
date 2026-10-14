@@ -10,6 +10,7 @@ import ProductImage from '@/components/app/ProductImage'
 import Stepper from '@/components/app/Stepper'
 import { BackLink } from '@/components/app/ui'
 import SupplierLogo from '@/components/app/SupplierLogo'
+import { quantityText } from '@/lib/quotes'
 import QuoteRequest from '@/components/app/QuoteRequest'
 
 /** A technical sheet or guide a supplier attached to this product (product_documents). */
@@ -127,15 +128,17 @@ export default function ProductView({
           המחיר מוצג לנגריות רשומות. <Link href="/join" className="font-bold text-brand-ink">כניסה / הרשמה</Link>
         </div>
       )}
-      {showPrices && !quoting && (
+      {/* A special price for quantity, only from the threshold this supplier set (stage 1 RFQ rules). */}
+      {showPrices && !quoting && offer.specialMinQty != null && (
         <QuoteRequest
           key={`large-${offer.supplierId}`}
           product={{ id: product.id, name: product.name, unit: product.unit }}
           offer={offer}
-          packs={Math.max(packs, 10)}
+          packs={packs}
+          minQty={offer.specialMinQty}
           trigger={(open) => (
-            <button type="button" onClick={open} className="w-fit text-[13.5px] font-semibold text-brand-ink">
-              הזמנה גדולה? בקשו הצעת מחיר
+            <button type="button" onClick={open} className="w-fit text-start text-[13.5px] font-semibold text-brand-ink">
+              מחיר מיוחד מ־{quantityText(offer.specialMinQty!, product.unit, offer.packLabel, offer.packQty)}: בקשו הצעה
             </button>
           )}
         />
@@ -268,6 +271,7 @@ export default function ProductView({
       product={{ id: product.id, name: product.name, unit: product.unit }}
       offer={offer}
       packs={packs}
+      minQty={offer.minOrderQty}
       trigger={(open) => (
         <button
           type="button"
@@ -388,7 +392,7 @@ export default function ProductView({
 
       {/* From the agent's "בקש הצעת מחיר": the request opens on arrival. */}
       {askQuote && quoting && (
-        <QuoteRequest product={{ id: product.id, name: product.name, unit: product.unit }} offer={offer} packs={packs} defaultOpen trigger={() => null} />
+        <QuoteRequest product={{ id: product.id, name: product.name, unit: product.unit }} offer={offer} packs={packs} minQty={offer.minOrderQty} defaultOpen trigger={() => null} />
       )}
 
       {/* Supplier sheet (phone) */}

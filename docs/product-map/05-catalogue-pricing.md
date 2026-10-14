@@ -1,5 +1,5 @@
 # 5 · Catalogue & pricing
-Verified: 2026-10-11
+Verified: 2026-10-12
 
 ## Purpose
 What can be bought and at what price: canonical products, each supplier's offer on them,
@@ -22,7 +22,7 @@ categories, product knowledge and documents, and the ways prices get in.
 
 ## Data
 `products` (canonical, no price), `supplier_offers` (price excl. VAT per base unit, stock, pack,
-MOQ, lead time), `categories` (10 roots + subcategories; the roots were seeded by migration `20260914160000_category_groups`, there is no `category_groups` table), `volume_pricing`,
+MOQ, lead time), `categories` (10 roots + subcategories; the roots were seeded by migration `20260914160000_category_groups`, there is no `category_groups` table), `volume_pricing` (kept, no longer read since 2026-10-12),
 `import_batches`, `product_specifications`, `product_documents`, `supplier_documents(_products)`,
 `supplier_products` (verify use).
 
@@ -39,6 +39,14 @@ See CLAUDE.md §6, "The catalogue's shape". Most important:
   prices in `supplier_offers`, but every reader outside its own console leaves them out
   (`price: null`, `quoteOnly: true`) and they never decide the suggested offer. Carpenters ask for
   a quote (`quote_requests`); `/api/orders` orders from such a supplier only at an answered quote.
+- Quote rules (stage 1 of the 2026-10-12 RFQ plan, `lib/quote-rules.ts`, migration
+  `20261012090000_quote_rules`): a request goes to the one supplier chosen. Quote-only supplier:
+  from `min_order_qty` up (`kind = 'quote'`). Priced supplier: only a special price, only from
+  `supplier_offers.special_price_min_qty`, which the supplier sets in packs; no threshold, no
+  special price (`kind = 'volume'`). The threshold is stored with the pack size it was set for
+  (`special_price_pack_qty`) and is out of use while the pack differs, until the supplier confirms
+  it. `client_request_id` makes a repeated send return the saved request (same details) or 409.
+  Old requests have no `kind`. No automatic quantity tiers anywhere (`volume_pricing` is unread).
 
 ## Status
 Live but thin: essentially one supplier, mostly adhesives (about 30 offers from the sheet). Most

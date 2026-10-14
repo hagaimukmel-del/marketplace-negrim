@@ -74,6 +74,10 @@ export interface ProductItem {
   packLabel: string | null
   packQty: number | null
   minOrderQty: number
+  /** Special price for quantity from this many base units; null = none (stage 1 RFQ rules). */
+  specialMinQty: number | null
+  /** The pack size the threshold was set for; when it differs from packQty the threshold waits for confirmation. */
+  specialPackQty: number | null
   isActive: boolean
   /** Only the supplier who created a product may change what is shared. */
   canEditProduct: boolean

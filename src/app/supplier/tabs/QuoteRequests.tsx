@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { FileText, Phone } from 'lucide-react'
 import { formatIls } from '@/lib/vat'
-import { QUOTE_MAX_VALID_DAYS, QUOTE_STATE_LABEL, israelDate, quantityText, validLabel, type SupplierQuoteRequest } from '@/lib/quotes'
+import { QUOTE_KIND_LABEL, QUOTE_MAX_VALID_DAYS, QUOTE_STATE_LABEL, israelDate, quantityText, validLabel, type SupplierQuoteRequest } from '@/lib/quotes'
 import { callApi, jsonInit, type SupplierQuotes } from '../types'
 import type { Notify } from '../SupplierApp'
 
@@ -49,6 +49,7 @@ function Answer({ quote, notify }: { quote: SupplierQuoteRequest; notify: Notify
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-stone-900">{quote.productName}</p>
+          {quote.kind && <p className="text-xs font-semibold text-emerald-700">{QUOTE_KIND_LABEL[quote.kind]}</p>}
           <p className="text-sm text-stone-600">
             {quantityText(quote.quantity, quote.unit, quote.packLabel, quote.packQty)} · {quote.carpenter}
             {quote.city ? `, ${quote.city}` : ''} · {when(quote.createdAt)}

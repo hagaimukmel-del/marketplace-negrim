@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Check, FileText, ShoppingBag } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { money } from '@/lib/app/format'
-import { QUOTE_STATE_LABEL, quantityText, validLabel, type QuoteRequest } from '@/lib/quotes'
+import { QUOTE_KIND_LABEL, QUOTE_STATE_LABEL, quantityText, validLabel, type QuoteRequest } from '@/lib/quotes'
 
 function when(iso: string): string {
   return new Date(iso).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric', timeZone: 'Asia/Jerusalem' })
@@ -109,6 +109,7 @@ export default function QuotesView({ ready, quotes }: { ready: boolean; quotes: 
                     {quote.productName}
                   </Link>
                   <span className="text-sm text-muted">{quote.supplierName}</span>
+                  {quote.kind === 'volume' && <span className="text-xs font-semibold text-brand-ink">{QUOTE_KIND_LABEL.volume}</span>}
                 </div>
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
                   <b className="tnum text-[22px] font-extrabold">{money(total)}</b>
@@ -160,7 +161,8 @@ export default function QuotesView({ ready, quotes }: { ready: boolean; quotes: 
                 <div className="grid min-w-0 flex-1 leading-snug">
                   <b className="truncate">{quote.productName}</b>
                   <small className="text-[13px] text-muted">
-                    {quote.supplierName} · {quantityText(quote.quantity, quote.unit, quote.packLabel, quote.packQty)} · נשלחה {when(quote.createdAt)}
+                    {quote.supplierName} · {quantityText(quote.quantity, quote.unit, quote.packLabel, quote.packQty)}
+                    {quote.kind === 'volume' ? ` · ${QUOTE_KIND_LABEL.volume}` : ''} · נשלחה {when(quote.createdAt)}
                   </small>
                 </div>
                 <button

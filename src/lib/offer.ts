@@ -198,15 +198,11 @@ export async function loadOfferPage(token: string): Promise<OfferPageData | null
       .sort((a, b) => Number(bestOffer(b)?.price_excl_vat ?? 0) - Number(bestOffer(a)?.price_excl_vat ?? 0))
   }
 
-  const tierIds = [
-    ...wantedIds,
-    ...suggestionRows.map((p) => p.id),
-  ]
-  const { data: tiers } = tierIds.length
-    ? await supabase.from('volume_pricing').select('*').in('product_id', tierIds)
-    : { data: [] as Tables['volume_pricing']['Row'][] }
-
-  const allTiers = tiers ?? []
+  // Automatic quantity tiers (volume_pricing) are no longer shown or applied
+  // (owner, 2026-10-12): a lower price for quantity is asked from the supplier
+  // as a special-price quote. The table and its rows are kept, unread, until
+  // its dependencies are reviewed; restore the query here to bring tiers back.
+  const allTiers: Tables['volume_pricing']['Row'][] = []
 
   return {
     carpenter,

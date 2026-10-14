@@ -4,6 +4,8 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { bestOffer, unitLabel, type Offer } from '@/lib/catalog'
 import { deliversTo, loadDelivery, regionsForCity } from '@/lib/delivery'
 import { loadPriceModes } from '@/lib/price-mode'
+import { activeThreshold } from '@/lib/quote-rules'
+import { loadThresholds } from '@/lib/special-price'
 import type { AppProduct, CategoryNode } from './products'
 
 interface CategoryRow {
@@ -87,7 +89,8 @@ export async function loadProducts(opts: { showPrices: boolean; ids?: string[]; 
     .limit(1000)
   if (opts.ids) query = query.in('id', opts.ids.length ? opts.ids : ['00000000-0000-0000-0000-000000000000'])
 
-  const [{ data }, cats, delivery, modes] = await Promise.all([query, categories(), loadDelivery(), loadPriceModes()])
+  // Only offers that have a threshold come back, so this stays small.
+  const [{ data }, cats, delivery, modes, thresholds] = await Promise.all([query, categories(), loadDelivery(), loadPriceModes(), loadThresholds({})])
   const carpenterRegions = regionsForCity(opts.city)
   const byId = new Map(cats.map((row) => [row.id, row]))
 
@@ -128,6 +131,12 @@ export async function loadProducts(opts: { showPrices: boolean; ids?: string[]; 
         leadDays: offer.lead_time_days ?? offer.suppliers.default_lead_time_days,
         terms: offer.suppliers.payment_terms ?? [],
         minOrder: offer.suppliers.min_order_value_excl_vat == null ? null : Number(offer.suppliers.min_order_value_excl_vat),
+        minOrderQty: Number(offer.min_order_qty) > 0 ? Number(offer.min_order_qty) : 1,
+        // A special price for quantity: only from a supplier who shows prices,
+        // and only while the threshold matches the current pack (stage 1 RFQ rules).
+        specialMinQty: modes.quoteOnly.has(offer.supplier_id)
+          ? null
+          : activeThreshold(thresholds.get(offer.id), offer.pack_qty == null ? null : Number(offer.pack_qty)),
         delivers: delivers.get(offer.id) ?? null,
         suggested: offer.id === best?.id,
       })),
