@@ -6,7 +6,7 @@ import type { ThresholdFields } from '@/lib/quote-rules'
 // What the database and the session hold for each test.
 const db = vi.hoisted(() => ({
   priceMode: 'shown' as 'shown' | 'quote' | null,
-  thresholds: new Map<string, { minQty: number | null; setForPackQty: number | null }>(),
+  thresholds: new Map<string, { minQty: number | null; setForPackQty: number | null; price?: number | null }>(),
   offer: null as Record<string, unknown> | null,
   quotes: [] as Record<string, unknown>[],
   calls: [] as unknown[],
@@ -32,6 +32,13 @@ vi.mock('@/lib/supabase-admin', () => ({
         )
         return { data: found ?? null, error: null }
       }
+      if (call.table === 'quote_requests' && call.op === 'update') {
+        const row = db.quotes.find((q) => q.id === filterValue(call, 'eq', 'id') && (q.status ?? 'requested') === filterValue(call, 'eq', 'status'))
+        if (!row) return { data: [], error: null }
+        Object.assign(row, call.payload as Record<string, unknown>)
+        return { data: [{ id: row.id }], error: null }
+      }
+      if (call.table === 'carpenters') return { data: { email: 'shop@example.com', email_verified_at: '2026-10-01' }, error: null }
       if (call.table === 'quote_requests' && call.op === 'insert') {
         const row = call.payload as Record<string, unknown>
         if (row.client_request_id && db.quotes.some((q) => q.carpenter_id === row.carpenter_id && q.client_request_id === row.client_request_id)) {
@@ -142,6 +149,40 @@ describe('POST /api/carpenter/quotes', () => {
     const ok = await post({ product_id: PRODUCT, supplier_id: SUPPLIER, quantity: 10 })
     expect(ok.status).toBe(201)
     expect(db.quotes[0]).toMatchObject({ kind: 'quote' })
+  })
+
+  it('answers at once with the supplier\'s special price when the request reaches the threshold', async () => {
+    db.thresholds.set('o1', { minQty: 40, setForPackQty: 10, price: 18.5 })
+    const response = await post({ product_id: PRODUCT, supplier_id: SUPPLIER, quantity: 50, client_request_id: KEY })
+    expect(response.status).toBe(201)
+    const body = await response.json()
+    expect(body.quoted).toMatchObject({ unitPrice: 18.5 })
+    expect(db.quotes[0]).toMatchObject({ kind: 'volume', status: 'quoted', quoted_unit_price_excl_vat: 18.5 })
+    // The supplier is told it was answered, and the carpentry gets the answer.
+    expect(sendEmail).toHaveBeenCalledTimes(2)
+    // A repeated send does not answer or mail again.
+    await post({ product_id: PRODUCT, supplier_id: SUPPLIER, quantity: 50, client_request_id: KEY })
+    expect(sendEmail).toHaveBeenCalledTimes(2)
+  })
+
+  it('answers a quote-only supplier\'s request at once only from the threshold up', async () => {
+    db.priceMode = 'quote'
+    db.thresholds.set('o1', { minQty: 40, setForPackQty: 10, price: 18.5 })
+    const small = await post({ product_id: PRODUCT, supplier_id: SUPPLIER, quantity: 20 })
+    expect((await small.json()).quoted).toBeNull()
+    expect(db.quotes[0]).toMatchObject({ kind: 'quote' })
+    expect(db.quotes[0].status).toBeUndefined()
+    const large = await post({ product_id: PRODUCT, supplier_id: SUPPLIER, quantity: 40 })
+    expect((await large.json()).quoted).toMatchObject({ unitPrice: 18.5 })
+    expect(db.quotes[1]).toMatchObject({ kind: 'volume', status: 'quoted' })
+  })
+
+  it('leaves the request to the supplier when the threshold has no price', async () => {
+    db.thresholds.set('o1', { minQty: 40, setForPackQty: 10, price: null })
+    const response = await post({ product_id: PRODUCT, supplier_id: SUPPLIER, quantity: 40 })
+    expect((await response.json()).quoted).toBeNull()
+    expect(db.quotes[0].status).toBeUndefined()
+    expect(sendEmail).toHaveBeenCalledTimes(1)
   })
 
   it('sends only to the supplier named, and refuses one that does not sell it', async () => {

@@ -44,6 +44,8 @@ export interface QuoteRequestEmail {
   productName: string
   quantityText: string
   note: string | null
+  /** Set when the request was answered at once with the supplier's special price. */
+  instantAnswerText?: string | null
 }
 
 export function quoteRequestSubject(q: QuoteRequestEmail): string {
@@ -58,9 +60,14 @@ export function quoteRequestHtml(q: QuoteRequestEmail): string {
      ${who ? `<div style="color:#57534e;padding-top:2px">${who}</div>` : ''}
      <div style="padding-top:10px">${escapeHtml(q.productName)}</div>
      <div style="color:#57534e">כמות: <strong style="color:#1c1917">${escapeHtml(q.quantityText)}</strong></div>
-     ${q.note ? `<div style="margin-top:10px;background:#fafaf9;border-radius:8px;padding:12px;white-space:pre-wrap">${escapeHtml(q.note)}</div>` : ''}`,
-    { href: `${siteUrl()}/supplier?tab=orders`, label: 'לענות עם מחיר' },
-    'עונים באתר במחיר ליחידה ללא מע״מ ועד מתי הוא בתוקף. הנגרייה מקבלת את ההצעה ויכולה להזמין לפיה.'
+     ${q.note ? `<div style="margin-top:10px;background:#fafaf9;border-radius:8px;padding:12px;white-space:pre-wrap">${escapeHtml(q.note)}</div>` : ''}
+     ${q.instantAnswerText ? `<div style="margin-top:10px;background:#ecfdf5;border-radius:8px;padding:12px">נענתה אוטומטית במחיר המיוחד שקבעת: <strong>${escapeHtml(q.instantAnswerText)}</strong></div>` : ''}`,
+    q.instantAnswerText
+      ? { href: `${siteUrl()}/supplier?tab=orders`, label: 'לבקשות שלי' }
+      : { href: `${siteUrl()}/supplier?tab=orders`, label: 'לענות עם מחיר' },
+    q.instantAnswerText
+      ? 'אין צורך לענות. אם הנגרייה תאשר, ההזמנה תגיע אליך כרגיל. המחיר המיוחד מתעדכן בטופס המוצר.'
+      : 'עונים באתר במחיר ליחידה ללא מע״מ ועד מתי הוא בתוקף. הנגרייה מקבלת את ההצעה ויכולה להזמין לפיה.'
   )
 }
 

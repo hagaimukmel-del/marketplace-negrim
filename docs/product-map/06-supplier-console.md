@@ -61,6 +61,8 @@ terms and documents. No password needed.
   (`thresholdChange`, `lib/quote-rules.ts`); a pack change under a threshold needs the
   threshold confirmed in the same save (409 `threshold_review` otherwise), and the form asks for
   that confirmation. A pack changed by an import leaves the threshold out of use until confirmed.
+  Under the threshold, "מחיר מיוחד ל… ללא מע״מ" (optional): with it, requests from the threshold up
+  are answered at once at that price; clearing the threshold clears the price.
 - Business catalogues are told apart from the operator's knowledge-base files by the
   `catalogs/` path prefix (`lib/supplier-documents.ts`); the console never lists or deletes the
   operator's `supplier-documents` bucket files.

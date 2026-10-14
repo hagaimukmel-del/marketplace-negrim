@@ -78,6 +78,8 @@ export interface ProductItem {
   specialMinQty: number | null
   /** The pack size the threshold was set for; when it differs from packQty the threshold waits for confirmation. */
   specialPackQty: number | null
+  /** The special price per base unit, excl. VAT; null = the supplier answers each request itself. */
+  specialPrice: number | null
   isActive: boolean
   /** Only the supplier who created a product may change what is shared. */
   canEditProduct: boolean
