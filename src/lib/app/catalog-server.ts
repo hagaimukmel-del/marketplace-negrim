@@ -132,11 +132,10 @@ export async function loadProducts(opts: { showPrices: boolean; ids?: string[]; 
         terms: offer.suppliers.payment_terms ?? [],
         minOrder: offer.suppliers.min_order_value_excl_vat == null ? null : Number(offer.suppliers.min_order_value_excl_vat),
         minOrderQty: Number(offer.min_order_qty) > 0 ? Number(offer.min_order_qty) : 1,
-        // A special price for quantity: only from a supplier who shows prices,
-        // and only while the threshold matches the current pack (stage 1 RFQ rules).
-        specialMinQty: modes.quoteOnly.has(offer.supplier_id)
-          ? null
-          : activeThreshold(thresholds.get(offer.id), offer.pack_qty == null ? null : Number(offer.pack_qty)),
+        // A special price for quantity, from any supplier who set a threshold, only
+        // while the threshold matches the current pack (stage 1 RFQ rules). It is a
+        // quantity, never a price, so it is safe for a quote-only supplier too.
+        specialMinQty: activeThreshold(thresholds.get(offer.id), offer.pack_qty == null ? null : Number(offer.pack_qty)),
         delivers: delivers.get(offer.id) ?? null,
         suggested: offer.id === best?.id,
       })),

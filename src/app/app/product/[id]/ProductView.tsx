@@ -110,6 +110,11 @@ export default function ProductView({
           <span className="text-sm text-muted">
             {offer.supplierName} נותן מחיר לפי כמות. מבקשים הצעה, והיא מגיעה במייל ובהצעות המחיר שלך.
           </span>
+          {offer.specialMinQty != null && (
+            <span className="text-[13.5px] font-semibold text-brand-ink">
+              יש מחיר מיוחד מ־{quantityText(offer.specialMinQty, product.unit, offer.packLabel, offer.packQty)}
+            </span>
+          )}
         </div>
       ) : showPrices && offer.price != null ? (
         <>
