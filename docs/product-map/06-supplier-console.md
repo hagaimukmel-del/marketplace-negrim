@@ -61,6 +61,8 @@ terms and documents. No password needed.
   (`thresholdChange`, `lib/quote-rules.ts`); a pack change under a threshold needs the
   threshold confirmed in the same save (409 `threshold_review` otherwise), and the form asks for
   that confirmation. A pack changed by an import leaves the threshold out of use until confirmed.
+  A supplier whose prices are hidden (`price_mode` 'quote') is not offered the field: the form
+  says requests come from the minimum order and points to the "תנאי סחר" tab.
 - Business catalogues are told apart from the operator's knowledge-base files by the
   `catalogs/` path prefix (`lib/supplier-documents.ts`); the console never lists or deletes the
   operator's `supplier-documents` bucket files.

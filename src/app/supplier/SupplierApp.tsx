@@ -212,7 +212,13 @@ export default function SupplierApp({
       <div>
         {tab === 'orders' && <OrdersTab orders={orders} questions={questions} quotes={quotes} notify={notify} />}
         {tab === 'products' && (
-          <ProductsTab products={products} categories={categories} catalog={catalog} notify={notify} />
+          <ProductsTab
+            products={products}
+            categories={categories}
+            catalog={catalog}
+            pricesHidden={profile.price_mode === 'quote'}
+            notify={notify}
+          />
         )}
         {tab === 'sales' && <SalesTab sales={sales} />}
         {tab === 'promo' && <PromoTab promo={promo} products={products} notify={notify} />}
