@@ -66,6 +66,7 @@ export default function HomeView({
   categories,
   minimums,
   promoted = null,
+  workOpen = false,
 }: {
   greeting: string
   now: number
@@ -75,6 +76,8 @@ export default function HomeView({
   minimums: Minimums
   /** This week's "מוצר השבוע", shown under the greeting (T-024). */
   promoted?: PromotedSlot | null
+  /** The work board is open: its card drops "בקרוב". */
+  workOpen?: boolean
 }) {
   const cart = useCart()
   const actions = actionsFor(orders, cart.items, minimums, now)
@@ -91,7 +94,7 @@ export default function HomeView({
         <CategoryList categories={categories} />
         <HowItWorks />
         <Metzion />
-        <WorkNetwork />
+        <WorkNetwork open={workOpen} />
       </div>
     )
   }
@@ -134,7 +137,7 @@ export default function HomeView({
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5">
           <CategoryStrip categories={categories} />
           <Metzion />
-          <WorkNetwork />
+          <WorkNetwork open={workOpen} />
         </div>
       </div>
     </div>
@@ -467,8 +470,8 @@ function Metzion() {
   )
 }
 
-/** "נגרים עובדים ביחד" before it ships: points at the coming-soon page. */
-function WorkNetwork() {
+/** "נגרים עובדים ביחד": the board, or its coming-soon page until it opens. */
+function WorkNetwork({ open }: { open: boolean }) {
   return (
     <Link href="/app/work" className="flex items-center gap-3 rounded-xl border border-[#8CC9C2] bg-[#E2F0EF] px-3.5 py-3">
       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] bg-white text-[#0E5E5E]">
@@ -478,7 +481,7 @@ function WorkNetwork() {
         <b className="block text-[15px]">נגרים עובדים ביחד</b>
         <span className="text-[13.5px] text-[#0B5A5A]">עבודות בין נגריות, למצוא עזרה או לעזור</span>
       </span>
-      <span className="shrink-0 rounded-full bg-brand px-2.5 py-0.5 text-xs font-extrabold text-navy">בקרוב</span>
+      {!open && <span className="shrink-0 rounded-full bg-brand px-2.5 py-0.5 text-xs font-extrabold text-navy">בקרוב</span>}
     </Link>
   )
 }

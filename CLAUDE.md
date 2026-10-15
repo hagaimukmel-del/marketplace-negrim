@@ -94,6 +94,12 @@ working around it. The live site doesn't depend on either PC: **Vercel deploys e
   excl. VAT: up to 50 products 1,300 ₪, up to 150 1,900 ₪, above 150 2,500 ₪. Billing starts January
   2027 (may slip) and happens outside the site. No commission on orders; the `supplier_commission` /
   `commission_rate` snapshots stay but are not billed. Later: a paid weekly promotion slot, 690 ₪ a week.
+- **Exception, approved by the owner 2026-10-15: the work network charges carpentries.**
+  נגרים עובדים ביחד (product map 11) will sell a fixed-term subscription in the site: half a year
+  350 ₪ or a year 470 ₪ excl. VAT, paid up front (card installments allowed), no auto-renewal. This
+  is a service fee, not payment for goods; the goods rules above still hold. No payment provider is
+  connected yet: everyone gets `founding` (free) during the launch, and `work_subscriptions` holds
+  the columns billing will fill.
 
 ## 6. Current State vs Target — read before assuming
 Last verified 2026-10-03 by running the checks, not from memory. Re-verify before trusting it.
@@ -131,6 +137,9 @@ Last verified 2026-10-03 by running the checks, not from memory. Re-verify befor
 **Features added since 09.09 — know they exist before building something similar:**
 - **המציאון** (`/app/metzion`, `lib/metzion.ts`): carpenter-to-carpenter listings; the deal
   happens directly between carpenters, the platform only connects them (spec in `TODO.md`).
+- **נגרים עובדים ביחד** (`/app/work`, `lib/work.ts`, `/admin/work`): a job board between
+  carpentries, phase 1. Hidden from carpenters until `WORK_BOARD_OPEN=true`. Migration
+  `20261015130000_work_network` is on staging and production (T-030). Product map 11.
 - **Agent chat** (`components/chat`, `lib/procurement-agent.ts`, `/api/carpenter/search`): a
   Hebrew search assistant. **No LLM.** Intent parsing is keyword matching (see its `TODO`).
   "פנה לספק" writes `supplier_contact_requests` (migration not applied yet, see `HANDOFF.md`)

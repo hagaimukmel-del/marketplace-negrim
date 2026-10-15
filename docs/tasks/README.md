@@ -52,7 +52,7 @@ python .claude/skills/product-map/scripts/task_index.py
 ## Index
 
 <!-- INDEX:START -->
-24 open of 29.
+25 open of 30.
 
 | ID | Pri | Status | Type | Area | Title | Blocked by |
 |---|---|---|---|---|---|---|
@@ -73,6 +73,7 @@ python .claude/skills/product-map/scripts/task_index.py
 | [T-007](T-007.md) | P2 | open | decision | 03-agent-chat | Decide: keyword agent vs LLM |  |
 | [T-014](T-014.md) | P2 | open | debt | 05-catalogue-pricing | Supplier SKU, brand and mpn data |  |
 | [T-021](T-021.md) | P2 | open | debt | 07-admin-console | Admin supplier-document upload always fails |  |
+| [T-030](T-030.md) | P2 | open | ops | 11-work-network | Work board phase 1 - check on staging, merge, then open the board |  |
 | [T-013](T-013.md) | P3 | open | debt | 05-catalogue-pricing | Product images: rehost from Google Drive |  |
 | [T-015](T-015.md) | P3 | open | debt | 01-public-onboarding | Delete legacy /auth/login and /auth/signup |  |
 | [T-016](T-016.md) | P3 | open | debt | 10-platform | Lint errors |  |

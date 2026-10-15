@@ -56,6 +56,7 @@ export default function AppShell({
   quotes,
   initial,
   signedIn,
+  workOpen = false,
   children,
 }: {
   /** No carpentry signed in: the avatar becomes the way in. */
@@ -68,6 +69,8 @@ export default function AppShell({
   quotes: number
   /** First letter of the carpentry, for the avatar. */
   initial: string
+  /** The work board is open (WORK_BOARD_OPEN): drops "בקרוב" from its link. */
+  workOpen?: boolean
   children: React.ReactNode
 }) {
   const pathname = usePathname() ?? '/app'
@@ -126,7 +129,7 @@ export default function AppShell({
             <SideLink href="/app/messages" label="הודעות" active={is('/app/messages')} icon={<MessageSquare size={19} />} count={unread} />
           )}
           <SideLink href="/app/metzion" label="מציאון" active={is('/app/metzion')} icon={<Recycle size={19} />} />
-          <SideLink href="/app/work" label="עבודות · בקרוב" active={is('/app/work')} icon={<Handshake size={19} />} />
+          <SideLink href="/app/work" label={workOpen ? 'עבודות' : 'עבודות · בקרוב'} active={is('/app/work')} icon={<Handshake size={19} />} />
           <SideLink href={signedIn ? '/app/account' : '/join'} label={signedIn ? 'הנגרייה שלי' : 'כניסה / הרשמה'} active={is('/app/account')} icon={<UserRound size={19} />} />
         </nav>
       </aside>

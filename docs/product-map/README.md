@@ -21,7 +21,7 @@ Last verified against the code: **2026-10-03**.
 | 8 | המציאון (`/app/metzion`) | [08-metzion.md](08-metzion.md) | carpenters | live |
 | 9 | Campaigns, offer pages, raffle | [09-campaigns-offers.md](09-campaigns-offers.md) | operator → carpenters | live, older |
 | 10 | Platform: auth, email, data, envs | [10-platform.md](10-platform.md) | developers | live |
-| 11 | נגרים עובדים ביחד (`/app/work`) | [11-work-network.md](11-work-network.md) | carpenters | coming soon |
+| 11 | נגרים עובדים ביחד (`/app/work`) | [11-work-network.md](11-work-network.md) | carpenters | phase 1 built, closed until launch |
 
 **State** = `live` (works and is reachable) · `partial` (reachable, some promised behaviour
 missing) · `dormant` (built but not exercised, e.g. waits for a second supplier) · `legacy`

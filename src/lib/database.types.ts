@@ -1764,6 +1764,223 @@ export type Database = {
           },
         ]
       }
+      work_job_reports: {
+        Row: {
+          created_at: string
+          id: string
+          job_id: string
+          note: string | null
+          reason: string
+          reporter_id: string | null
+          resolved_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_id: string
+          note?: string | null
+          reason: string
+          reporter_id?: string | null
+          resolved_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_id?: string
+          note?: string | null
+          reason?: string
+          reporter_id?: string | null
+          resolved_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_job_reports_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "work_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_job_reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_jobs: {
+        Row: {
+          carpenter_id: string
+          close_outcome: string | null
+          closed_at: string | null
+          closed_with_carpenter_id: string | null
+          created_at: string
+          description: string
+          due_date: string
+          expires_at: string
+          id: string
+          image_url: string | null
+          job_type: string
+          material: string | null
+          quantity: string
+          region: string
+          removed_reason: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          carpenter_id: string
+          close_outcome?: string | null
+          closed_at?: string | null
+          closed_with_carpenter_id?: string | null
+          created_at?: string
+          description: string
+          due_date: string
+          expires_at: string
+          id?: string
+          image_url?: string | null
+          job_type: string
+          material?: string | null
+          quantity: string
+          region: string
+          removed_reason?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          carpenter_id?: string
+          close_outcome?: string | null
+          closed_at?: string | null
+          closed_with_carpenter_id?: string | null
+          created_at?: string
+          description?: string
+          due_date?: string
+          expires_at?: string
+          id?: string
+          image_url?: string | null
+          job_type?: string
+          material?: string | null
+          quantity?: string
+          region?: string
+          removed_reason?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_jobs_carpenter_id_fkey"
+            columns: ["carpenter_id"]
+            isOneToOne: false
+            referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_jobs_closed_with_carpenter_id_fkey"
+            columns: ["closed_with_carpenter_id"]
+            isOneToOne: false
+            referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_profiles: {
+        Row: {
+          carpenter_id: string
+          created_at: string
+          job_types: string[]
+          machines: string | null
+          notify_email: boolean
+          regions: string[]
+          updated_at: string
+        }
+        Insert: {
+          carpenter_id: string
+          created_at?: string
+          job_types?: string[]
+          machines?: string | null
+          notify_email?: boolean
+          regions?: string[]
+          updated_at?: string
+        }
+        Update: {
+          carpenter_id?: string
+          created_at?: string
+          job_types?: string[]
+          machines?: string | null
+          notify_email?: boolean
+          regions?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_profiles_carpenter_id_fkey"
+            columns: ["carpenter_id"]
+            isOneToOne: true
+            referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_subscriptions: {
+        Row: {
+          cancel_fee_excl_vat: number | null
+          cancelled_at: string | null
+          carpenter_id: string
+          created_at: string
+          ends_at: string | null
+          installments: number | null
+          payment_ref: string | null
+          plan: string | null
+          price_excl_vat: number | null
+          refund_excl_vat: number | null
+          starts_at: string | null
+          status: string
+          updated_at: string
+          vat_rate: number | null
+        }
+        Insert: {
+          cancel_fee_excl_vat?: number | null
+          cancelled_at?: string | null
+          carpenter_id: string
+          created_at?: string
+          ends_at?: string | null
+          installments?: number | null
+          payment_ref?: string | null
+          plan?: string | null
+          price_excl_vat?: number | null
+          refund_excl_vat?: number | null
+          starts_at?: string | null
+          status: string
+          updated_at?: string
+          vat_rate?: number | null
+        }
+        Update: {
+          cancel_fee_excl_vat?: number | null
+          cancelled_at?: string | null
+          carpenter_id?: string
+          created_at?: string
+          ends_at?: string | null
+          installments?: number | null
+          payment_ref?: string | null
+          plan?: string | null
+          price_excl_vat?: number | null
+          refund_excl_vat?: number | null
+          starts_at?: string | null
+          status?: string
+          updated_at?: string
+          vat_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_subscriptions_carpenter_id_fkey"
+            columns: ["carpenter_id"]
+            isOneToOne: true
+            referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
