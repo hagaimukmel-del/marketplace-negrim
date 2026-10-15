@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Bell, ClipboardList, FileText, Home, LayoutGrid, MessageSquare, Recycle, Search, ShoppingBag, Sparkles, UserRound } from 'lucide-react'
+import { Bell, ClipboardList, FileText, Handshake, Home, LayoutGrid, MessageSquare, Recycle, Search, ShoppingBag, Sparkles, UserRound } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { LogoMark } from '@/components/brand/Logo'
 import { ChatContainer } from '@/components/chat/ChatContainer'
@@ -126,6 +126,7 @@ export default function AppShell({
             <SideLink href="/app/messages" label="הודעות" active={is('/app/messages')} icon={<MessageSquare size={19} />} count={unread} />
           )}
           <SideLink href="/app/metzion" label="מציאון" active={is('/app/metzion')} icon={<Recycle size={19} />} />
+          <SideLink href="/app/work" label="עבודות · בקרוב" active={is('/app/work')} icon={<Handshake size={19} />} />
           <SideLink href={signedIn ? '/app/account' : '/join'} label={signedIn ? 'הנגרייה שלי' : 'כניסה / הרשמה'} active={is('/app/account')} icon={<UserRound size={19} />} />
         </nav>
       </aside>
