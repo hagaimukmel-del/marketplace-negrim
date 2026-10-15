@@ -37,6 +37,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     .from('promo_weeks')
     .select('id', { count: 'exact', head: true })
     .eq('status', 'requested')
+  // Reports on the work board; zero on a database without its tables yet.
+  const { count: workReports } = await supabase
+    .from('work_job_reports')
+    .select('id', { count: 'exact', head: true })
+    .is('resolved_at', null)
 
   const nav: NavItem[] = [
     // Orders first: it is the screen with work waiting on it every day.
@@ -50,6 +55,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: '/admin/suppliers', label: 'ספקים', count: pendingSuppliers ?? 0 },
     { href: '/admin/carpenters', label: 'נגריות' },
     { href: '/admin/metzion', label: 'מציאון', count: openReports ?? 0 },
+    { href: '/admin/work', label: 'עבודות', count: workReports ?? 0 },
   ]
 
   return (

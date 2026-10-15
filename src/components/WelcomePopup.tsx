@@ -38,7 +38,7 @@ function markSeen() {
  * again. It sits under the terms gate (z-60), so someone who still has to
  * accept the terms does that first and meets the welcome after.
  */
-export default function WelcomePopup() {
+export default function WelcomePopup({ workOpen = false }: { workOpen?: boolean }) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const button = useRef<HTMLButtonElement>(null)
@@ -105,7 +105,7 @@ export default function WelcomePopup() {
           <div className="rounded-lg bg-brand-soft px-3 py-2 text-attn">
             <p className="font-bold">כרגע השימוש באתר ללא תשלום. מוזמנים להירשם!</p>
             <p className="mt-1 text-sm">
-              בקרוב:{' '}
+              {workOpen ? 'חדש:' : 'בקרוב:'}{' '}
               <Link href="/app/work" onClick={close} className="font-bold underline">
                 נגרים עובדים ביחד
               </Link>

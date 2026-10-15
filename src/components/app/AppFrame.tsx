@@ -6,6 +6,7 @@ import { attentionOf } from '@/lib/app/orders'
 import { unreadCount } from '@/lib/messages'
 import { answeredQuoteCount } from '@/lib/quotes-server'
 import TermsGate from '@/components/TermsGate'
+import { workBoardOpen } from '@/lib/work-server'
 import AppShell from './AppShell'
 
 function nowMs(): number {
@@ -28,7 +29,7 @@ export default async function AppFrame({ children }: { children: React.ReactNode
   const needsTerms = carpenter && !admin && !acceptedCurrentTerms(carpenter.terms_version)
 
   return (
-    <AppShell attention={attention} unread={unread} quotes={quotes} signedIn={Boolean(carpenter)} initial={(carpenter?.business_name ?? 'נ').trim().charAt(0)}>
+    <AppShell attention={attention} unread={unread} quotes={quotes} signedIn={Boolean(carpenter)} workOpen={workBoardOpen()} initial={(carpenter?.business_name ?? 'נ').trim().charAt(0)}>
       {children}
       {needsTerms && <TermsGate role="carpenter" />}
     </AppShell>
