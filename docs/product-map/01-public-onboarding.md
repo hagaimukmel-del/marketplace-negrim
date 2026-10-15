@@ -14,11 +14,12 @@ applications. A visitor can browse products without prices; prices appear after 
 | `/carpenter/enter/[token]` + `/api/carpenter/session` | Link → carpenter cookie session, the carpenter counterpart of `/supplier/enter` |
 | `/supplier/join` → `POST /api/supplier-join` | Supplier application; the operator approves it in `/admin/suppliers` |
 | `/terms` → `POST /api/terms/accept` | Terms; acceptance is mandatory at registration (`TermsGate`, `lib/terms.ts` version) |
+| Every page except `/admin`, `/supplier`, `/doc` | Launch-period welcome popup (`components/WelcomePopup.tsx`, mounted in the root layout). Once per visit (sessionStorage), new and returning visitors alike; sits under `TermsGate`. Says the site is free to use during the launch and gives the feedback address |
 | `/auth/login`, `/auth/signup` | **Legacy** pages from an abandoned account model. Nothing links to them |
 
 ## Code
 `src/app/page.tsx`, `src/app/Landing.tsx`, `src/app/join/`, `src/app/o/[token]/`, `src/app/supplier/join/`,
-`src/components/TermsGate.tsx`, `lib/carpenter-auth.ts`, `lib/carpenter-session.ts`,
+`src/components/TermsGate.tsx`, `src/components/WelcomePopup.tsx`, `lib/carpenter-auth.ts`, `lib/carpenter-session.ts`,
 `lib/terms.ts`, `lib/regions.ts` (region picked at registration), emails in `lib/emails/carpenter.ts`
 and `lib/emails/supplier-application.ts`.
 
