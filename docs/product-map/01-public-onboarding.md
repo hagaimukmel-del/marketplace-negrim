@@ -14,7 +14,7 @@ applications. A visitor can browse products without prices; prices appear after 
 | `/carpenter/enter/[token]` + `/api/carpenter/session` | Link → carpenter cookie session, the carpenter counterpart of `/supplier/enter` |
 | `/supplier/join` → `POST /api/supplier-join` | Supplier application; the operator approves it in `/admin/suppliers` |
 | `/terms` → `POST /api/terms/accept` | Terms; acceptance is mandatory at registration (`TermsGate`, `lib/terms.ts` version) |
-| Every page except `/admin`, `/supplier`, `/doc` | Launch-period welcome popup (`components/WelcomePopup.tsx`, mounted in the root layout). Once per visit (sessionStorage), new and returning visitors alike; sits under `TermsGate`. Says the site is free to use during the launch and gives the feedback address |
+| Every page except `/admin`, `/supplier`, `/doc` | Launch-period welcome popup (`components/WelcomePopup.tsx`, mounted in the root layout). Once per visit (sessionStorage), new and returning visitors alike; sits under `TermsGate`. Says the site is free for everyone (and so is the work network, which opens soon) and gives the feedback address |
 | `/auth/login`, `/auth/signup` | **Legacy** pages from an abandoned account model. Nothing links to them |
 
 ## Code
