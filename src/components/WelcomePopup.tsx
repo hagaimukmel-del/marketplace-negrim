@@ -101,9 +101,10 @@ export default function WelcomePopup() {
 
         <div className="mt-4 space-y-3 text-[15px] leading-relaxed text-stone-700">
           <p>אנחנו בתקופת הרצה, וזה בדיוק הזמן שלכם להיכנס, להכיר ולהשפיע.</p>
-          <p className="rounded-lg bg-brand-soft px-3 py-2 font-bold text-attn">
-            כרגע כל השירותים באתר ללא תשלום!
-          </p>
+          <div className="rounded-lg bg-brand-soft px-3 py-2 text-attn">
+            <p className="font-bold">כרגע השימוש באתר ללא תשלום. מוזמנים להירשם!</p>
+            <p className="mt-1 text-sm">בקרוב: נגרים עובדים ביחד, המקום למצוא עזרה בעבודה או לעזור לנגרייה אחרת.</p>
+          </div>
           <p>יש לכם רעיון לשיפור? משהו חסר או לא עובד כמו שצריך? אנחנו כאן ומקשיבים.</p>
           <p>
             <a href={`mailto:${FEEDBACK_EMAIL}`} dir="ltr" className="font-semibold text-navy underline">
