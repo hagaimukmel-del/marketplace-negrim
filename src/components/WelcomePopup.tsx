@@ -10,7 +10,7 @@ const FEEDBACK_EMAIL = 'nagarim.b2b@gmail.com'
 
 /**
  * Areas the welcome is not for: the operator's console, the supplier's
- * console (the "free for now" line is written to carpenters), and the
+ * console (the "free for everyone" line is written to carpenters), and the
  * printable purchase-order and quote documents.
  */
 const SKIP_PREFIXES = ['/admin', '/supplier', '/doc']
@@ -103,13 +103,14 @@ export default function WelcomePopup({ workOpen = false }: { workOpen?: boolean 
         <div className="mt-4 space-y-3 text-[15px] leading-relaxed text-stone-700">
           <p>אנחנו בתקופת הרצה, וזה בדיוק הזמן שלכם להיכנס, להכיר ולהשפיע.</p>
           <div className="rounded-lg bg-brand-soft px-3 py-2 text-attn">
-            <p className="font-bold">כרגע השימוש באתר ללא תשלום. מוזמנים להירשם!</p>
+            <p className="font-bold">האתר חינם לכולם! מוזמנים להירשם.</p>
             <p className="mt-1 text-sm">
-              {workOpen ? 'חדש:' : 'בקרוב:'}{' '}
+              גם{' '}
               <Link href="/app/work" onClick={close} className="font-bold underline">
                 נגרים עובדים ביחד
               </Link>
-              , המקום למצוא עזרה בעבודה או לעזור לנגרייה אחרת.
+              , המקום לשיתופי פעולה בין נגריות, פתוח לכולם ללא תשלום
+              {workOpen ? '.' : '. הלוח נפתח בקרוב, ואפשר כבר להצטרף.'}
             </p>
           </div>
           <p>יש לכם רעיון לשיפור? משהו חסר או לא עובד כמו שצריך? אנחנו כאן ומקשיבים.</p>
