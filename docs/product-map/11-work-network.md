@@ -25,7 +25,7 @@ posting, profile, reports, admin) is built; conversations (phase 2), email notif
 `src/app/admin/(guarded)/work/*`. Tests: `src/lib/work*.test.ts`, `src/app/api/work/*/route.test.ts`.
 
 ## Data
-Migration `20261015130000_work_network` (not applied yet, T-030): `work_profiles`, `work_jobs`,
+Migration `20261015130000_work_network` (on staging and production since 2026-10-15): `work_profiles`, `work_jobs`,
 `work_job_reports`, `work_subscriptions`, bucket `work-images` (public, one photo per job). RLS on,
 no policy: server only. `work_jobs` has two FKs to `carpenters`, so embeds name
 `carpenters!work_jobs_carpenter_id_fkey`.
@@ -42,8 +42,8 @@ no policy: server only. `work_jobs` has two FKs to `carpenters`, so embeds name
 - The service's colour is dark teal (#0E5E5E).
 
 ## Status
-Phase 1 built, behind `WORK_BOARD_OPEN`, waiting on the migration (T-030). Spec and mockups:
+Phase 1 built, behind `WORK_BOARD_OPEN`; migration applied, flow check on staging and launch open (T-030). Spec and mockups:
 project files `work-network/spec-v2.md` and the owner's consultation doc.
 
 ## Open tasks
-- T-030 Apply the migration, then open the board.
+- T-030 Check on staging, merge, then open the board.
