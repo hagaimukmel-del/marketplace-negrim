@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AuthProvider } from "@/lib/auth-context";
 import { CartProvider } from "@/lib/cart-context";
+import WelcomePopup from "@/components/WelcomePopup";
 import "./globals.css";
 
 /**
@@ -56,6 +57,7 @@ export default function RootLayout({
             {children}
           </CartProvider>
         </AuthProvider>
+        <WelcomePopup />
       </body>
     </html>
   );
