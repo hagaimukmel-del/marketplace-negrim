@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LogoMark } from '@/components/brand/Logo'
 
@@ -103,7 +104,13 @@ export default function WelcomePopup() {
           <p>אנחנו בתקופת הרצה, וזה בדיוק הזמן שלכם להיכנס, להכיר ולהשפיע.</p>
           <div className="rounded-lg bg-brand-soft px-3 py-2 text-attn">
             <p className="font-bold">כרגע השימוש באתר ללא תשלום. מוזמנים להירשם!</p>
-            <p className="mt-1 text-sm">בקרוב: נגרים עובדים ביחד, המקום למצוא עזרה בעבודה או לעזור לנגרייה אחרת.</p>
+            <p className="mt-1 text-sm">
+              בקרוב:{' '}
+              <Link href="/app/work" onClick={close} className="font-bold underline">
+                נגרים עובדים ביחד
+              </Link>
+              , המקום למצוא עזרה בעבודה או לעזור לנגרייה אחרת.
+            </p>
           </div>
           <p>יש לכם רעיון לשיפור? משהו חסר או לא עובד כמו שצריך? אנחנו כאן ומקשיבים.</p>
           <p>
