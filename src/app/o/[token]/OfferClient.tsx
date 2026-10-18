@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, Check, ClipboardList, LayoutGrid, Minus, Plus } from 'lucide-react'
+import { ArrowRight, Check, ClipboardList, Home, LayoutGrid, Minus, Plus } from 'lucide-react'
 import { rememberCarpenter } from '@/lib/carpenter-session'
 import type { OfferProduct } from '@/lib/offer'
 import { round2, withVat, VAT_RATE } from '@/lib/vat'
@@ -321,9 +321,15 @@ export default function OfferClient({
 
   return (
     <div className={`grid grid-cols-[minmax(0,1fr)] gap-5 pt-1 ${lines.length > 0 ? 'pb-44 md:pb-36' : ''}`}>
-      <section>
-        <div className="text-[15px] font-medium text-muted">הדף האישי שלך</div>
-        <h1 className="m-0 mt-0.5 text-[28px] font-extrabold leading-tight text-navy md:text-[34px]">{carpenterName}</h1>
+      <section className="flex flex-wrap items-end gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="text-[15px] font-medium text-muted">הדף האישי שלך</div>
+          <h1 className="m-0 mt-0.5 text-[28px] font-extrabold leading-tight text-navy md:text-[34px]">{carpenterName}</h1>
+        </div>
+        <Link href="/app" className="inline-flex h-11 items-center gap-1.5 rounded-[11px] bg-navy px-4 font-bold text-white">
+          <Home size={17} />
+          למסך הבית
+        </Link>
       </section>
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-5 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] md:items-start md:gap-6">

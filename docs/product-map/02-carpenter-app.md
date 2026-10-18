@@ -28,6 +28,8 @@ Reads `products`, `supplier_offers`, `suppliers` (server-side), `categories`; wr
 `order_items` via area 4.
 
 ## Rules & invariants
+- Every `/app` page is read fresh from the database; `src/app/app/loading.tsx` shows a skeleton the
+  moment a link is tapped, so a tap never looks ignored. Keep it when adding pages.
 - Messages (`/app/messages`, bell in `AppShell`): threads with suppliers per question or order,
   `lib/messages.ts`. A carpentry writes to an approved supplier or about its own order.
 - The product page lists technical sheets (`product_documents`) from suppliers that sell the

@@ -1,4 +1,5 @@
 import 'server-only'
+import { cache } from 'react'
 
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { bestOffer, unitLabel, type Offer } from '@/lib/catalog'
@@ -44,12 +45,14 @@ const PRODUCT_COLUMNS =
   'supplier_offers!inner(id, supplier_id, supplier_sku, price_excl_vat, stock_qty, pack_label, pack_qty, min_order_qty, lead_time_days, ' +
   'suppliers!inner(status, company_name, logo_url, payment_terms, min_order_value_excl_vat, default_lead_time_days))'
 
-async function categories(): Promise<CategoryRow[]> {
+// Cached per request: a page that loads products and then the category tree
+// reads the table once instead of twice, one round trip fewer.
+const categories = cache(async (): Promise<CategoryRow[]> => {
   const { data } = await getSupabaseAdmin()
     .from('categories')
     .select('id, name_he, parent_category_id, sort_order, icon, is_active')
   return ((data ?? []) as CategoryRow[]).filter((row) => row.is_active !== false)
-}
+})
 
 function attributesOf(raw: unknown): [string, string][] {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return []

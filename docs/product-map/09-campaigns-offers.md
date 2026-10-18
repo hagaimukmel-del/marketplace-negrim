@@ -9,7 +9,7 @@ measured. A raffle among carpenters is the engagement tool.
 ## Entry points
 | Route | What |
 |---|---|
-| `/o/[token]` | Personal offer / entry page (`lib/offer.ts`, `loadOfferPage`) |
+| `/o/[token]` | Personal offer page (`lib/offer.ts`, `loadOfferPage`). Shown only while a campaign is active; otherwise the link lands on `/app` |
 | `POST /api/offer/event`, `POST /api/offer/intent` | Measurement: page events and order intents |
 | `/admin/campaigns` (`/api/admin/campaigns`) | Build and track campaigns |
 | `/admin/promotions` (`/api/admin/promo`) | "מוצר השבוע": approve or reject a supplier's weekly booking, see each week's results |

@@ -110,6 +110,16 @@ export default function AppShell({
         </Link>
         <nav className="grid gap-0.5" aria-label="ניווט ראשי">
           <SideLink href="/app" label="בית" active={is('/app')} icon={<Home size={19} />} />
+          {/* The work network stands out from the purchasing items: it is a different kind of place */}
+          <Link
+            href="/app/work"
+            aria-current={is('/app/work') ? 'page' : undefined}
+            className={`my-1 flex items-center gap-2.5 rounded-[10px] bg-[#0E5E5E] px-2.5 py-2 text-[15px] font-bold text-white hover:bg-[#0B4F4F] ${is('/app/work') ? 'ring-2 ring-[#7FC8C2]' : ''}`}
+          >
+            <Handshake size={19} className="shrink-0" />
+            <span className="whitespace-nowrap">נגרים עובדים ביחד</span>
+            {!workOpen && <span className="ms-auto rounded-full bg-white/20 px-1.5 text-[11px] font-bold">בקרוב</span>}
+          </Link>
           <SideLink href="/app/catalog" label="קטלוג" active={catalogActive} icon={<LayoutGrid size={19} />} />
           <SideLink href="/app/order" label="עגלה" active={cartActive} icon={<ShoppingBag size={19} />} count={lines} />
           <button
@@ -129,7 +139,6 @@ export default function AppShell({
             <SideLink href="/app/messages" label="הודעות" active={is('/app/messages')} icon={<MessageSquare size={19} />} count={unread} />
           )}
           <SideLink href="/app/metzion" label="מציאון" active={is('/app/metzion')} icon={<Recycle size={19} />} />
-          <SideLink href="/app/work" label={workOpen ? 'עבודות' : 'עבודות · בקרוב'} active={is('/app/work')} icon={<Handshake size={19} />} />
           <SideLink href={signedIn ? '/app/account' : '/join'} label={signedIn ? 'הנגרייה שלי' : 'כניסה / הרשמה'} active={is('/app/account')} icon={<UserRound size={19} />} />
         </nav>
       </aside>
@@ -143,6 +152,15 @@ export default function AppShell({
           </Link>
           <span className="flex-1" />
           {signedIn && <BellLink unread={unread} />}
+          <Link
+            href="/app/work"
+            aria-label="נגרים עובדים ביחד"
+            aria-current={is('/app/work') ? 'page' : undefined}
+            className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[#0E5E5E] px-2.5 text-sm font-bold text-white"
+          >
+            <Handshake size={19} />
+            <span className="hidden min-[400px]:inline">עובדים ביחד</span>
+          </Link>
           <Link href="/app/catalog?focus=search" aria-label="חיפוש" className="grid h-10 w-10 place-items-center rounded-xl border border-hair bg-white text-navy">
             <Search size={20} />
           </Link>
@@ -178,9 +196,19 @@ export default function AppShell({
             <Sparkles size={18} />
             שאל את הסוכן
           </button>
+          <Link
+            href="/app/work"
+            aria-label="נגרים עובדים ביחד"
+            aria-current={is('/app/work') ? 'page' : undefined}
+            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-[11px] bg-[#0E5E5E] px-3.5 text-[15px] font-bold text-white hover:bg-[#0B4F4F]"
+          >
+            <Handshake size={18} />
+            <span className="hidden lg:inline">נגרים עובדים ביחד</span>
+            <span className="lg:hidden">ביחד</span>
+          </Link>
           <span className="flex-1" />
           {signedIn && <BellLink unread={unread} />}
-          <Link href="/app/order" className="inline-flex h-11 items-center gap-2 rounded-[11px] bg-brand px-4 font-bold text-navy hover:bg-brand-hover">
+          <Link href="/app/order" className="inline-flex h-11 shrink-0 items-center gap-2 rounded-[11px] bg-brand px-4 font-bold text-navy hover:bg-brand-hover">
             <ShoppingBag size={18} />
             {lines ? (
               <>
@@ -191,7 +219,7 @@ export default function AppShell({
             )}
           </Link>
           {signedIn ? (
-            <Link href="/app/account" aria-label="הנגרייה שלי" className="grid h-9 w-9 place-items-center rounded-full bg-navy font-bold text-white">
+            <Link href="/app/account" aria-label="הנגרייה שלי" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-navy font-bold text-white">
               {initial}
             </Link>
           ) : (
