@@ -16,7 +16,7 @@ posting, profile, reports, admin) is built; conversations (phase 2), email notif
 | `/app/work/mine` | The poster's jobs: close with an outcome, or remove |
 | `/app/work/profile` | Capabilities profile. Open before the board; the first save is joining (founding) |
 | `/admin/work` | Launch condition (profiles, open jobs), close outcomes, open reports, all jobs. Nav item "עבודות" with the open-report count |
-| `/app` home card, sidebar "עבודות", welcome popup | Say "בקרוב" until the board opens |
+| `/app` home card, teal sidebar item (second, after בית), teal button in the top bar of every app page, welcome popup | Say "בקרוב" until the board opens |
 
 ## Code
 `src/lib/work.ts` (closed lists, validation, expiry, `subscriptionGrants`, `toBoardJob`),

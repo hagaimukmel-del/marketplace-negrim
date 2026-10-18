@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { loadOfferPage, logEvent, markSeen } from '@/lib/offer'
 import OfferClient from './OfferClient'
 
@@ -31,6 +31,11 @@ export default async function OfferPage({ params }: { params: Promise<{ token: s
     campaign_id: campaign?.id ?? null,
     product_id: featured?.id ?? null,
   })
+
+  // Without a campaign this page is only a short list of products, and the
+  // carpentry's place is its home screen. A campaign keeps the page: it is
+  // what the link was sent for.
+  if (!campaign) redirect(`/carpenter/link/${encodeURIComponent(token)}`)
 
   return (
     <OfferClient
