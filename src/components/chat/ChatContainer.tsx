@@ -7,24 +7,8 @@ import { useCart } from '@/lib/cart-context'
 import { ChatMessage, Message } from './ChatMessage'
 import type { ActionButton } from '@/lib/procurement-agent'
 import { STATUS_LABEL, type OrderStatus } from '@/lib/app/orders'
-
-// Shortcuts the chat answers itself. Kept narrow on purpose: "הזמנה של דבק" or
-// "יש בקטלוג דבק PUR?" are product searches and must reach the agent.
-const PREVIOUS_PRODUCTS = /בפעם שעברה|כמו בפעם|זה שקניתי|מה קניתי/
-const ORDER_HISTORY = /ההזמנות שלי|הזמנות קודמות|היסטוריית הזמנות|מה הזמנתי|my orders|order history/i
-const PAGES: [RegExp, string][] = [
-  [/מציאון/, '/app/metzion'],
-  [/עגלה/, '/app/order'],
-  [/פרופיל|הפרטים שלי|החשבון שלי/, '/app/account'],
-  [/הזמנות/, '/app/orders'],
-  [/קטלוג/, '/app/catalog'],
-]
-/** "קח אותי לעגלה", "איפה המציאון?", or just "עגלה": a request to go somewhere, not a search. */
-function pageFor(text: string): string | null {
-  const isGoTo = /^(איפה|קח אותי|תעביר אותי|פתח|עבור ל|go to|where)/i.test(text) || text.split(/\s+/).length <= 2
-  if (!isGoTo) return null
-  return PAGES.find(([pattern]) => pattern.test(text))?.[1] ?? null
-}
+import { ORDER_HISTORY, PREVIOUS_PRODUCTS, pageFor } from '@/lib/agent-shortcuts'
+import { formatUnitPrice } from '@/lib/agent-quantity'
 
 interface ChatContainerProps {
   isOpen: boolean
@@ -127,7 +111,7 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
       return
     }
     say(
-      `${item.name_he}\n₪${item.base_price_excl_vat} ל${item.unit} לפני מע״מ${pack}\nספק: ${item.supplier_name}`,
+      `${item.name_he}\n${formatUnitPrice(item.base_price_excl_vat, item.unit)} לפני מע״מ${pack}\nספק: ${item.supplier_name}\nכמות לעגלה: ${item.quantity} ${item.unit}`,
       [
         { label: '➕ הוסף לעגלה', action: 'add-to-cart', value: item.id, item },
         productPage,
@@ -149,7 +133,7 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
     }
     const { quantity, ...line } = item
     cart.addItem({ ...line, name_en: '' }, quantity)
-    say(`✅ הוספתי לעגלה: ${item.name_he}`)
+    say(`✅ הוספתי לעגלה: ${item.name_he}, ${quantity} ${item.unit}. אפשר לשנות כמות בעגלה.`, [{ label: 'לעגלה', action: 'open-page', value: '/app/order' }])
   }
 
   // The question itself comes as the next message, so the supplier gets the
@@ -343,13 +327,13 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
     <div className="fixed inset-0 z-50 bg-black/40 md:bg-black/20" onClick={onClose}>
       <div
         role="dialog"
-        aria-label="סוכן חכם"
+        aria-label="הסוכן של נגרים B2B"
         className="absolute inset-x-0 bottom-0 flex max-h-[80vh] flex-col rounded-t-2xl bg-white shadow-2xl md:inset-x-auto md:end-0 md:top-0 md:h-dvh md:max-h-none md:w-[420px] md:rounded-none md:rounded-s-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-          <h2 className="font-bold text-slate-900">🧠 סוכן חכם</h2>
+          <h2 className="font-bold text-slate-900">הסוכן של נגרים B2B</h2>
           <button
             onClick={onClose}
             aria-label="סגור"
@@ -363,7 +347,7 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
           {messages.length === 0 ? (
             <div className="text-center text-slate-500 pt-8">
-              <p className="text-sm">👋 שלום! מה אתה מחפש היום?</p>
+              <p className="text-sm">{'שלום! מה אתה מחפש היום? אפשר לכתוב גם כמות, למשל "דבק PUR 20 ק״ג".'}</p>
             </div>
           ) : (
             messages.map((msg) => (

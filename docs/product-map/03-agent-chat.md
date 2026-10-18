@@ -1,5 +1,5 @@
 # 3 · Agent chat (search assistant)
-Verified: 2026-10-07
+Verified: 2026-10-18
 
 ## Purpose
 A Hebrew chat inside the carpenter app: the carpenter writes what they need, the assistant finds
@@ -9,15 +9,23 @@ supplier ("שאלה לספק"). Marketed publicly as "הסוכן של נגרים
 ## Entry points
 | Where | What |
 |---|---|
-| Chat panel in `AppShell` | `components/chat/ChatContainer.tsx`, `ChatMessage.tsx`. Opened from a floating bubble (phone: round; desktop: "שאל את הסוכן" pill; both hidden on the cart), a button beside the desktop search bar, and the sidebar |
+| Chat panel in `AppShell` | `components/chat/ChatContainer.tsx`, `ChatMessage.tsx`, titled "הסוכן של נגרים B2B". Opened from a floating bubble (phone: round; desktop: "שאל את הסוכן" pill; both hidden on the cart), a button beside the desktop search bar, and the sidebar |
 | `POST /api/carpenter/search` | Runs the procurement agent on a message |
 | `GET /api/carpenter/previous-products` | "What did I order last time" |
 | `POST /api/carpenter/contact-supplier` | "שאלה לספק": stores a `supplier_contact_requests` row and emails the supplier (approved suppliers only, 10 per carpenter per hour, in memory) |
 | `/api/carpenter/documents/retrieve` | Product documents; requires a signed-in carpenter |
 
 ## Code
-`lib/procurement-agent.ts` (intent → search → response type: selection / clarification /
-comparison / order_confirmation / supplier_contact), `components/chat/*`. The agent adds to the cart and sends the carpenter to `/app/order`; it never creates orders itself.
+`lib/procurement-agent.ts` (written quantity → search → one answer with buttons), `components/chat/*`.
+The offers are the catalogue's own (`loadProducts` with the carpentry's city): the suggested
+offer leads, so the agent names the same supplier and price as the catalogue, prefers suppliers
+that deliver to the carpentry (T-026), and marks one that doesn't ("לא מגיע לאזור שלך"). A
+supplier in "הצעה בלבד" mode (T-023) shows no price; its button is "בקש הצעת מחיר", which opens
+the product page. "מוצר השבוע" (T-024) leads, labelled, when the search lands in its category.
+A quantity written with a unit ("20 ק״ג", "3 דליים", `lib/agent-quantity.ts`) goes into the cart
+rounded up to whole packs and the supplier's minimum; a quantity in another unit than the
+product's is ignored and the answer says so. A bare number is never a quantity (it is usually a
+model number). The API returns only the answer text and its buttons. The agent adds to the cart and sends the carpenter to `/app/order`; it never creates orders itself.
 Product matching is `searchProducts()` in `lib/catalog-search.ts`, the same function the
 catalogue search bar uses (Hebrew normalization, prefixes, plurals, a seed synonym list), over
 live products only. The catalogue results page has "שאל את הסוכן" (`AskAgentButton`, which opens
@@ -28,9 +36,11 @@ message goes to that supplier instead of search ("ביטול" cancels), and the 
 with the carpenter's phone, WhatsApp and, once verified, their email as reply-to. It also lists in the
 supplier console's orders tab. A search with no match says so and offers the catalogue; a partial
 match says it is the closest, not a match.
-Before searching, the chat answers three narrow shortcuts itself (`ChatContainer.tsx`): "בפעם שעברה"
-lists past products with links, "ההזמנות שלי" lists orders with Hebrew statuses, and a short
-"קח אותי ל..." / one-word page name opens that page. Anything else, "הזמנה של דבק" included, is a
+Before searching, the chat answers three narrow shortcuts itself (`lib/agent-shortcuts.ts`): "בפעם שעברה"
+lists past products with links, "ההזמנות שלי" lists orders with Hebrew statuses, and
+"קח אותי ל..." / the page name alone opens that page ("קטלוג דבקים" and "גלגלי עגלה" are searches).
+A mic button (browser speech recognition) fills the input where the browser supports it; untested on phones (T-001).
+Tests: `lib/agent-chat.test.ts`. Anything else, "הזמנה של דבק" included, is a
 search. Every search logs one `agent.search` line (carpenter id, message, state, match count) for
 the Vercel logs; messages are cut at 300 characters.
 
@@ -51,8 +61,9 @@ Partial. Search, option selection, add-to-cart and the product-page link were te
 on the staging preview on 05.10 ("צריך אקרילי לבן" → found, added to cart). On 07.10 the agent was
 run on 50 phrases over the staging catalogue (fixes: "KS351" without a space, Hebrew brand names,
 the empty "לא מצאתי" answer, the result count). "שאלה לספק" was tested by the owner on staging on 07.10; its
-table is on both databases. Missing: voice, supplier preference and quantity
-in one sentence, and an agent-level comparison answer (the `comparison` type is declared but not built).
+table is on both databases. 18.10: stage 0 fixes (delivery region, quantity, navigation
+shortcuts, one documents query instead of up to ten) passed tests and build; not yet run on staging. Missing: voice
+ordering, several products and a supplier preference in one sentence, and an agent-level comparison answer.
 
 ## Open tasks
-T-001, T-003, T-004, T-007, T-011, T-017
+T-001, T-003, T-004, T-007, T-011

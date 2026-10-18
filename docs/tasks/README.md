@@ -52,7 +52,7 @@ python .claude/skills/product-map/scripts/task_index.py
 ## Index
 
 <!-- INDEX:START -->
-25 open of 30.
+25 open of 31.
 
 | ID | Pri | Status | Type | Area | Title | Blocked by |
 |---|---|---|---|---|---|---|
@@ -67,6 +67,7 @@ python .claude/skills/product-map/scripts/task_index.py
 | [T-001](T-001.md) | P1 | open | promise-gap | 03-agent-chat | Voice ordering in under a minute |  |
 | [T-003](T-003.md) | P1 | open | promise-gap | 03-agent-chat | Agent: understand quantity and supplier preference in one sentence |  |
 | [T-006](T-006.md) | P1 | open | promise-gap | 05-catalogue-pricing | Catalogue breadth: boards, timber, hardware, tools | T-002 |
+| [T-011](T-011.md) | P1 | open | ops | 03-agent-chat | End-to-end test of the agent chat on staging | env files (work PC) |
 | [T-012](T-012.md) | P1 | open | debt | 10-platform | Test data seeded into production by migrations |  |
 | [T-004](T-004.md) | P2 | open | incomplete | 03-agent-chat | Agent: comparison answer | T-002 |
 | [T-005](T-005.md) | P2 | open | promise-gap | 05-catalogue-pricing | Real stock availability |  |
@@ -77,13 +78,13 @@ python .claude/skills/product-map/scripts/task_index.py
 | [T-013](T-013.md) | P3 | open | debt | 05-catalogue-pricing | Product images: rehost from Google Drive |  |
 | [T-015](T-015.md) | P3 | open | debt | 01-public-onboarding | Delete legacy /auth/login and /auth/signup |  |
 | [T-016](T-016.md) | P3 | open | debt | 10-platform | Lint errors |  |
-| [T-017](T-017.md) | P3 | open | incomplete | 03-agent-chat | Product documents visible to all carpenters |  |
 | [T-019](T-019.md) | P3 | open | decision | 10-platform | CLAUDE.md rules vs reality: Zod, @supabase/ssr, Server Components |  |
 | [T-029](T-029.md) | P3 | open | incomplete | 04-orders-fulfilment | Email confirm link can only confirm all of an order |  |
-| [T-011](T-011.md) | P1 | blocked | ops | 03-agent-chat | End-to-end test of the agent chat on staging | env files (work PC) |
+| [T-031](T-031.md) | P3 | open | debt | 10-platform | Rate limits survive across serverless instances |  |
 | [T-008](T-008.md) | P0 | done | ops | 03-agent-chat | Apply migration supplier_contact_requests |  |
 | [T-010](T-010.md) | P2 | done | incomplete | 03-agent-chat | "פנה לספק" should notify the supplier | T-008 |
 | [T-020](T-020.md) | P2 | done | future | 01-public-onboarding | Email the account owner when a new device signs in |  |
+| [T-017](T-017.md) | P3 | done | incomplete | 03-agent-chat | Product documents visible to all carpenters |  |
 | [T-018](T-018.md) | P3 | done | debt | 02-carpenter-app | Legacy /order search page | T-001 |
 | [T-027](T-027.md) | P3 | done | incomplete | 04-orders-fulfilment | Supplier logo on the purchase order and in the carpenter app |  |
 <!-- INDEX:END -->
