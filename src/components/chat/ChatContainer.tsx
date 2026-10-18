@@ -283,7 +283,8 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
       const response = await fetch('/api/carpenter/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: query }),
+        // The last turns, so Claude can read a follow-up like "תוסיף גם את השני"
+        body: JSON.stringify({ message: query, history: messages.filter((m) => !m.isLoading).slice(-6).map((m) => ({ role: m.role, text: m.content })) }),
       })
 
       // Signed out: the agent is for registered carpenters, so invite them in

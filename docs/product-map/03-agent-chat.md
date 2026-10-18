@@ -15,6 +15,17 @@ supplier ("שאלה לספק"). Marketed publicly as "הסוכן של נגרים
 | `POST /api/carpenter/contact-supplier` | "שאלה לספק": stores a `supplier_contact_requests` row and emails the supplier (approved suppliers only, 10 per carpenter per hour, in memory) |
 | `/api/carpenter/documents/retrieve` | Product documents; requires a signed-in carpenter |
 
+## Claude layer (T-007, stage 1)
+`lib/agent-llm.ts`: when `ANTHROPIC_API_KEY` is set (and `AGENT_LLM` is not `off`), Claude reads
+the message and the last six turns and calls four tools: `search_catalogue`, `prepare_cart`,
+`get_order_status`, `get_quotes`. The tools reuse the keyword agent's own catalogue search,
+offers and quantity rules, so products, prices and cart lines come from the catalogue and never
+from Claude's text; the buttons are built from tool results only. Claude never sends an order.
+No key, 30 answers per carpenter per hour exceeded (in memory), a refusal, a timeout or any
+error: `null`, and the keyword agent answers. The log line `agent.llm` has tokens and time per
+question, and `agent.search` has `engine` (`claude` or `keywords`). Not yet measured on real
+sentences; needs the 50-sentence test set before it is called live.
+
 ## Code
 `lib/procurement-agent.ts` (written quantity → search → one answer with buttons), `components/chat/*`.
 The offers are the catalogue's own (`loadProducts` with the carpentry's city): the suggested

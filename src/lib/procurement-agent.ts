@@ -12,7 +12,8 @@ import { answerStatus } from '@/lib/agent-status'
 import { cartQuantity, formatUnitPrice, parseQuantity, type WrittenQuantity } from '@/lib/agent-quantity'
 
 /**
- * Procurement agent for carpenters. Keyword matching, not an LLM (T-007).
+ * Procurement agent for carpenters, by keyword matching. Claude answers first
+ * when it is configured (lib/agent-llm.ts, T-007); this is its fallback.
  *
  * 1. Read a written quantity, if any ("20 ק״ג").
  * 2. Search the catalogue with the catalogue's own search (lib/catalog-search).
@@ -20,7 +21,7 @@ import { cartQuantity, formatUnitPrice, parseQuantity, type WrittenQuantity } fr
  *    and buttons that carry the product, so the chat itself stays stateless.
  */
 
-type ConversationState = 'results_single' | 'results_multiple' | 'results_order' | 'status' | 'no_results' | 'done'
+export type ConversationState = 'results_single' | 'results_multiple' | 'results_order' | 'status' | 'no_results' | 'done'
 
 /**
  * A cart line, built server-side from the offer the carpenter was shown.
@@ -66,9 +67,11 @@ export interface ProcurementResponse {
   /** How many products the answer shows, for the log line. */
   matchCount: number
   actions: ActionButton[]
+  /** Which agent answered, for the log line: Claude, or the keyword matching it falls back to. */
+  engine?: 'claude' | 'keywords'
 }
 
-interface MatchedOffer {
+export interface MatchedOffer {
   supplierId: string
   supplierName: string
   /** Per base unit, as stored. Null for a supplier who quotes only (T-023). */
@@ -81,7 +84,7 @@ interface MatchedOffer {
   delivers: boolean | null
 }
 
-interface MatchedProduct {
+export interface MatchedProduct {
   productId: string
   productName: string
   baseUnit: string
@@ -92,7 +95,7 @@ interface MatchedProduct {
   documents: { title_he: string; doc_type: string; file_url: string }[]
 }
 
-const SHOW_LIMIT = 4
+export const SHOW_LIMIT = 4
 
 function offerOf(offer: AppOffer): MatchedOffer {
   return {
@@ -119,7 +122,7 @@ function offersOf(product: AppProduct, promotedSupplierId: string | null): Match
   return (lead ? [lead, ...rest] : rest).slice(0, 3).map(offerOf)
 }
 
-function cartItemOf(product: MatchedProduct, written: WrittenQuantity | null): ChatCartItem | undefined {
+export function cartItemOf(product: MatchedProduct, written: WrittenQuantity | null): ChatCartItem | undefined {
   const offer = product.offers[0]
   if (!offer) return undefined
   const { quantity } = cartQuantity(written, { baseUnit: product.baseUnit, packQty: offer.packQty, minOrderQty: offer.minOrderQty })
@@ -142,7 +145,7 @@ function cartItemOf(product: MatchedProduct, written: WrittenQuantity | null): C
  * the search bar return the same products for the same words. Live products
  * only, with offers exactly as the catalogue builds them for this carpentry.
  */
-async function findMatchingProducts(
+export async function findMatchingProducts(
   live: AppProduct[],
   current: CurrentPromo | null,
   message: string,
@@ -187,7 +190,7 @@ async function findMatchingProducts(
   return { matches, total, partial, promo: promo && { weekId: promo.weekId } }
 }
 
-function matchOf(product: AppProduct, leadSupplierId: string | null, promoted = false): MatchedProduct {
+export function matchOf(product: AppProduct, leadSupplierId: string | null, promoted = false): MatchedProduct {
   return {
     productId: product.id,
     productName: product.name,
