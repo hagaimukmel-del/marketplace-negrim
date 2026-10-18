@@ -56,6 +56,7 @@ python .claude/skills/product-map/scripts/task_index.py
 
 | ID | Pri | Status | Type | Area | Title | Blocked by |
 |---|---|---|---|---|---|---|
+| [T-003](T-003.md) | P1 | in-progress | promise-gap | 03-agent-chat | Agent: understand quantity and supplier preference in one sentence |  |
 | [T-028](T-028.md) | P1 | in-progress | ops | 10-platform | Apply the 2026-10-08 migrations to staging, then production |  |
 | [T-022](T-022.md) | P2 | in-progress | future | 04-orders-fulfilment | Purchase order and price quote as a file, per supplier | T-007 (agent tool only) |
 | [T-023](T-023.md) | P2 | in-progress | future | 05-catalogue-pricing | Per-supplier price visibility and quote requests (RFQ) | migration 20261011140000 (T-028) |
@@ -65,7 +66,6 @@ python .claude/skills/product-map/scripts/task_index.py
 | [T-002](T-002.md) | P0 | open | promise-gap | 05-catalogue-pricing | Onboard a second live supplier |  |
 | [T-009](T-009.md) | P0 | open | ops | 10-platform | Rotate the staging service_role key |  |
 | [T-001](T-001.md) | P1 | open | promise-gap | 03-agent-chat | Voice ordering in under a minute |  |
-| [T-003](T-003.md) | P1 | open | promise-gap | 03-agent-chat | Agent: understand quantity and supplier preference in one sentence |  |
 | [T-006](T-006.md) | P1 | open | promise-gap | 05-catalogue-pricing | Catalogue breadth: boards, timber, hardware, tools | T-002 |
 | [T-011](T-011.md) | P1 | open | ops | 03-agent-chat | End-to-end test of the agent chat on staging | env files (work PC) |
 | [T-012](T-012.md) | P1 | open | debt | 10-platform | Test data seeded into production by migrations |  |

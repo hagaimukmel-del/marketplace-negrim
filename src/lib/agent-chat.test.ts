@@ -3,6 +3,7 @@ import { cartQuantity, formatUnitPrice, parseQuantity } from './agent-quantity'
 import { ORDER_HISTORY, PREVIOUS_PRODUCTS, pageFor } from './agent-shortcuts'
 import { searchProducts } from './catalog-search'
 import type { AppProduct } from './app/products'
+import { refineQuery, splitItems, supplierPreference } from './agent-request'
 
 describe('pageFor', () => {
   it('opens a page asked for by name or with a go-to phrase', () => {
@@ -104,5 +105,51 @@ describe('search with a quantity', () => {
     const { products, partial } = searchProducts([product('a', 'דבק PUR לקנטים'), product('b', 'לכה אקרילית')], 'דבק PUR 20 ק״ג')
     expect(partial).toBe(false)
     expect(products.map((p) => p.id)).toEqual(['a'])
+  })
+})
+
+describe('splitItems', () => {
+  it('splits on commas and on a word that starts with ו', () => {
+    expect(splitItems('לוח לבן וצירים, 20 יחידות')).toEqual([
+      { query: 'לוח לבן', quantity: { amount: 20, unit: 'unit', text: '20 יחידות' } },
+      { query: 'צירים', quantity: { amount: 20, unit: 'unit', text: '20 יחידות' } },
+    ])
+    expect(splitItems('דבק PUR 20 ק״ג, מדלל 5 ליטר')).toEqual([
+      { query: 'דבק PUR', quantity: { amount: 20, unit: 'kg', text: '20 ק״ג' } },
+      { query: 'מדלל', quantity: { amount: 5, unit: 'liter', text: '5 ליטר' } },
+    ])
+  })
+
+  it('keeps a colour, hooks and a single product in one piece', () => {
+    expect(splitItems('סיליקון שקוף ולבן').map((item) => item.query)).toEqual(['סיליקון שקוף ולבן'])
+    expect(splitItems('מתלה ווים').map((item) => item.query)).toEqual(['מתלה ווים'])
+    expect(splitItems('דבק PUR')).toHaveLength(1)
+  })
+})
+
+describe('supplierPreference', () => {
+  const names = ['גלעד', 'עצי השרון', 'איתמיר דבקים']
+
+  it('finds the supplier after a preference word and removes the clause', () => {
+    expect(supplierPreference('לוח לבן, העדפה לספק גלעד', names)).toEqual({ supplierName: 'גלעד', rest: 'לוח לבן' })
+    expect(supplierPreference('צירים מעדיף את עצי השרון', names)).toEqual({ supplierName: 'עצי השרון', rest: 'צירים' })
+    expect(supplierPreference('דבק אצל איתמיר', names)?.supplierName).toBe('איתמיר דבקים')
+  })
+
+  it('ignores a supplier name without a preference word, and an unknown supplier', () => {
+    expect(supplierPreference('לוח לבן גלעד', names)).toBeNull()
+    expect(supplierPreference('דבק, העדפה לספק לא קיים', names)).toBeNull()
+  })
+})
+
+describe('refineQuery', () => {
+  it('narrows the last search with a short ו follow-up', () => {
+    expect(refineQuery('סיליקון', 'ובלבן?')).toBe('סיליקון בלבן')
+    expect(refineQuery('ציר', 'ושל בלום')).toBe('ציר בלום')
+  })
+
+  it('leaves a new search alone', () => {
+    expect(refineQuery('סיליקון', 'דבק PUR')).toBeNull()
+    expect(refineQuery(null, 'ובלבן')).toBeNull()
   })
 })

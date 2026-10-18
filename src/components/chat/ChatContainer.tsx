@@ -8,6 +8,7 @@ import { ChatMessage, Message } from './ChatMessage'
 import type { ActionButton } from '@/lib/procurement-agent'
 import { STATUS_LABEL, type OrderStatus } from '@/lib/app/orders'
 import { ORDER_HISTORY, PREVIOUS_PRODUCTS, pageFor } from '@/lib/agent-shortcuts'
+import { refineQuery } from '@/lib/agent-request'
 import { formatUnitPrice } from '@/lib/agent-quantity'
 
 interface ChatContainerProps {
@@ -29,6 +30,8 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
   const [isListening, setIsListening] = useState(false)
   // After "שאלה לספק", the next message is the question for that supplier, not a search
   const [askingSupplier, setAskingSupplier] = useState<{ supplierId: string; supplierName: string; productId: string; productName: string } | null>(null)
+  // The last search, so "ובלבן?" narrows it instead of starting over
+  const lastQuery = useRef<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<any>(null)
   // The panel only renders once opened, so this never runs during server rendering
@@ -134,6 +137,18 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
     const { quantity, ...line } = item
     cart.addItem({ ...line, name_en: '' }, quantity)
     say(`✅ הוספתי לעגלה: ${item.name_he}, ${quantity} ${item.unit}. אפשר לשנות כמות בעגלה.`, [{ label: 'לעגלה', action: 'open-page', value: '/app/order' }])
+  }
+
+  // An order sentence: every line the agent prepared, in one tap
+  const handleAddAll = (action: ActionButton) => {
+    setAskingSupplier(null)
+    const items = (action.items ?? []).filter((item) => !item.quote_only)
+    if (items.length === 0) return
+    for (const { quantity, ...line } of items) cart.addItem({ ...line, name_en: '' }, quantity)
+    say(
+      `✅ הוספתי לעגלה ${items.length === 1 ? 'מוצר אחד' : `${items.length} מוצרים`}:\n${items.map((item) => `${item.name_he}, ${item.quantity} ${item.unit}`).join('\n')}\nאפשר לשנות כמויות בעגלה ולשלוח משם.`,
+      [{ label: 'לעגלה', action: 'open-page', value: '/app/order' }]
+    )
   }
 
   // The question itself comes as the next message, so the supplier gets the
@@ -247,12 +262,12 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
       }
 
       // Call agent API for product search
+      const query = refineQuery(lastQuery.current, userMessageText) ?? userMessageText
+      lastQuery.current = query
       const response = await fetch('/api/carpenter/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: userMessageText,
-        }),
+        body: JSON.stringify({ message: query }),
       })
 
       // Signed out: the agent is for registered carpenters, so invite them in
@@ -359,6 +374,8 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
                 onContactSupplier={handleContactSupplier}
                 onOpenCatalog={handleOpenCatalog}
                 onOpenPage={handleOpenPage}
+                onAddAll={handleAddAll}
+                onAsk={(action) => action.value && void handleSend(action.value)}
               />
             ))
           )}

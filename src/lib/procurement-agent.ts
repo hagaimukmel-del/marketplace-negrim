@@ -5,7 +5,8 @@ import { unitLabel } from '@/lib/catalog'
 import { loadProducts } from '@/lib/app/catalog-server'
 import { sortedOffers, suggestedOffer, type AppOffer, type AppProduct } from '@/lib/app/products'
 import { searchProducts } from '@/lib/catalog-search'
-import { loadCurrentPromo, recordPromoEvent } from '@/lib/promo'
+import { loadCurrentPromo, recordPromoEvent, type CurrentPromo } from '@/lib/promo'
+import { splitItems, supplierPreference } from '@/lib/agent-request'
 import { cartQuantity, formatUnitPrice, parseQuantity, type WrittenQuantity } from '@/lib/agent-quantity'
 
 /**
@@ -17,7 +18,7 @@ import { cartQuantity, formatUnitPrice, parseQuantity, type WrittenQuantity } fr
  *    and buttons that carry the product, so the chat itself stays stateless.
  */
 
-type ConversationState = 'results_single' | 'results_multiple' | 'no_results' | 'done'
+type ConversationState = 'results_single' | 'results_multiple' | 'results_order' | 'no_results' | 'done'
 
 /**
  * A cart line, built server-side from the offer the carpenter was shown.
@@ -44,6 +45,8 @@ export interface ActionButton {
   action: string
   value?: string
   item?: ChatCartItem
+  /** "הוסף הכול לעגלה": every line of an order sentence (T-003). */
+  items?: ChatCartItem[]
 }
 
 export interface ProcurementRequest {
@@ -138,10 +141,11 @@ function cartItemOf(product: MatchedProduct, written: WrittenQuantity | null): C
  * only, with offers exactly as the catalogue builds them for this carpentry.
  */
 async function findMatchingProducts(
+  live: AppProduct[],
+  current: CurrentPromo | null,
   message: string,
-  city: string | null
+  preferredSupplier: string | null
 ): Promise<{ matches: MatchedProduct[]; total: number; partial: boolean; promo: { weekId: string } | null }> {
-  const [live, current] = await Promise.all([loadProducts({ showPrices: true, city }), loadCurrentPromo()])
   const { products: found, partial } = searchProducts(live, message)
 
   // "מוצר השבוע" goes first, labelled, when the search lands in its main
@@ -160,17 +164,10 @@ async function findMatchingProducts(
     }
   }
 
-  const top = hits.slice(0, SHOW_LIMIT)
-  const matches: MatchedProduct[] = top.map((product, i) => {
+  const matches: MatchedProduct[] = hits.slice(0, SHOW_LIMIT).map((product, i) => {
     const promoted = promo !== null && i === 0
-    return {
-      productId: product.id,
-      productName: product.name,
-      baseUnit: product.baseUnit,
-      promoted,
-      offers: offersOf(product, promoted ? promo!.supplierId : null),
-      documents: [],
-    }
+    // The carpenter's own choice of supplier comes before the paid slot's
+    return matchOf(product, preferredSupplier ?? (promoted ? promo!.supplierId : null), promoted)
   })
 
   // Documents only matter for a single answer, where they are listed
@@ -186,6 +183,48 @@ async function findMatchingProducts(
   }
 
   return { matches, total, partial, promo: promo && { weekId: promo.weekId } }
+}
+
+function matchOf(product: AppProduct, leadSupplierId: string | null, promoted = false): MatchedProduct {
+  return {
+    productId: product.id,
+    productName: product.name,
+    baseUnit: product.baseUnit,
+    promoted,
+    offers: offersOf(product, leadSupplierId),
+    documents: [],
+  }
+}
+
+interface OrderLine {
+  /** The words the carpenter wrote for this item. */
+  query: string
+  quantity: WrittenQuantity | null
+  /** The best full match, or null when nothing matches every word. */
+  match: MatchedProduct | null
+  /** Other products that match every word too. */
+  more: number
+}
+
+/**
+ * Several products in one sentence (T-003): each part is searched on its own
+ * and must match every word, or it is reported as not found. Null when the
+ * sentence does not split into at least two parts, or none of them is found.
+ */
+function findOrderLines(live: AppProduct[], message: string, preferredSupplierId: string | null): OrderLine[] | null {
+  const items = splitItems(message)
+  if (items.length < 2) return null
+  const lines = items.map((item): OrderLine => {
+    const { products, partial } = searchProducts(live, item.query)
+    const best = partial ? null : products[0] ?? null
+    return {
+      query: item.query,
+      quantity: item.quantity,
+      match: best && matchOf(best, preferredSupplierId),
+      more: partial ? 0 : Math.max(products.length - 1, 0),
+    }
+  })
+  return lines.some((line) => line.match) ? lines : null
 }
 
 function formatLeadTime(days: number | null): string {
@@ -276,6 +315,52 @@ function generateResponse(
 }
 
 /**
+ * The answer to an order sentence: one line per product, the quantity that
+ * goes into the cart, and one button that adds them all. The carpenter sends
+ * the order from the cart, as always; the agent never sends one.
+ */
+function orderLinesResponse(lines: OrderLine[], preferredName: string | null, preferredId: string | null): ProcurementResponse {
+  const found = lines.filter((line): line is OrderLine & { match: MatchedProduct } => line.match !== null)
+  let message = `הכנתי ${found.length === 1 ? 'מוצר אחד' : `${found.length} מוצרים`} לעגלה:\n`
+  const actions: ActionButton[] = []
+  const items: ChatCartItem[] = []
+
+  found.forEach((line, i) => {
+    const product = line.match
+    const offer = product.offers[0]
+    const unit = unitLabel(product.baseUnit)
+    const item = cartItemOf(product, line.quantity)
+    message += `\n${i + 1}) **${product.productName}**`
+    if (offer) {
+      message += offer.priceExclVat == null ? ' · מחיר בהצעה' : ` · ${formatUnitPrice(offer.priceExclVat, unit)}`
+      message += ` (${offer.supplierName})`
+      if (preferredId && offer.supplierId !== preferredId) message += ` · ${preferredName} לא מציע את המוצר`
+      if (offer.delivers === false) message += ' · לא מגיע לאזור שלך'
+    }
+    if (item && !item.quote_only) {
+      const { ignored } = cartQuantity(line.quantity, { baseUnit: product.baseUnit, packQty: offer?.packQty ?? null, minOrderQty: offer?.minOrderQty ?? 1 })
+      message += `\n   כמות: ${item.quantity} ${unit}${ignored && line.quantity ? ` (את "${line.quantity.text}" לא הצלחתי להמיר)` : ''}`
+      items.push(item)
+    } else if (item?.quote_only) {
+      message += '\n   לפי הצעת מחיר מהספק, לא נכנס לעגלה'
+      actions.push({ label: `בקש הצעת מחיר: ${product.productName}`, action: 'open-page', value: `/app/product/${product.productId}?quote=1` })
+    }
+    if (line.more > 0) {
+      message += `\n   יש עוד ${line.more} ${line.more === 1 ? 'אפשרות' : 'אפשרויות'}`
+      actions.push({ label: `אפשרויות ל"${line.query}"`, action: 'ask', value: [line.query, line.quantity?.text].filter(Boolean).join(' ') })
+    }
+  })
+
+  const missing = lines.filter((line) => !line.match)
+  if (missing.length > 0) message += `\n\nלא מצאתי בקטלוג: ${missing.map((line) => `"${line.query}"`).join(', ')}.`
+  if (items.length > 0) {
+    message += '\n\nבדוק את הכמויות ולחץ "הוסף הכול לעגלה". את ההזמנה שולחים מהעגלה.'
+    actions.unshift({ label: items.length === 1 ? '➕ הוסף לעגלה' : `➕ הוסף הכול לעגלה (${items.length})`, action: 'add-all', items })
+  }
+  return { success: true, message, state: 'results_order', matchCount: found.length, actions }
+}
+
+/**
  * Products from the carpenter's recent orders, newest first, for
  * "כמו בפעם שעברה". Reads only this carpenter's orders.
  */
@@ -299,14 +384,37 @@ export async function getPreviousProducts(carpenterId: string, limit = 5) {
 
 export async function processProcurementRequest(request: ProcurementRequest): Promise<ProcurementResponse> {
   try {
-    const written = parseQuantity(request.userMessage)
-    const { matches, total, partial, promo } = await findMatchingProducts(request.userMessage, request.city ?? null)
+    const [live, current] = await Promise.all([loadProducts({ showPrices: true, city: request.city ?? null }), loadCurrentPromo()])
+
+    // "העדפה לספק X": that supplier's offer leads wherever it sells the product
+    const preference = supplierPreference(
+      request.userMessage,
+      live.flatMap((product) => product.offers.map((offer) => offer.supplierName))
+    )
+    const preferredId = preference
+      ? live.flatMap((product) => product.offers).find((offer) => offer.supplierName === preference.supplierName)?.supplierId ?? null
+      : null
+    const text = preference?.rest || request.userMessage
+
+    // One product, matched on every word, is the common case. Only when the
+    // whole sentence matches nothing fully is it read as several products.
+    const whole = searchProducts(live, text)
+    if (whole.partial || whole.products.length === 0) {
+      const lines = findOrderLines(live, text, preferredId)
+      if (lines) return orderLinesResponse(lines, preference?.supplierName ?? null, preferredId)
+    }
+
+    const written = parseQuantity(text)
+    const { matches, total, partial, promo } = await findMatchingProducts(live, current, text, preferredId)
     if (promo && matches[0]?.promoted) {
       await recordPromoEvent({ weekId: promo.weekId, kind: 'view', placement: 'agent', carpenterId: request.carpenterId ?? null })
     }
 
     const state: ConversationState = matches.length === 0 ? 'no_results' : matches.length === 1 ? 'results_single' : 'results_multiple'
-    const message = generateResponse(request.userMessage, matches, { total, partial, written })
+    let message = generateResponse(text, matches, { total, partial, written })
+    if (preference && preferredId && matches.length === 1 && matches[0].offers[0]?.supplierId !== preferredId) {
+      message += `\n\n${preference.supplierName} לא מציע את המוצר הזה, אז מוצג הספק שהקטלוג מציע.`
+    }
     const actions: ActionButton[] = []
 
     if (state === 'results_multiple') {
