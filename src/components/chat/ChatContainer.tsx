@@ -32,6 +32,8 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
   const [askingSupplier, setAskingSupplier] = useState<{ supplierId: string; supplierName: string; productId: string; productName: string } | null>(null)
   // The last search, so "ובלבן?" narrows it instead of starting over
   const lastQuery = useRef<string | null>(null)
+  // The latest handleSend, for the speech callbacks set up once on mount
+  const sendRef = useRef<((text: string) => void) | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<any>(null)
   // The panel only renders once opened, so this never runs during server rendering
@@ -46,15 +48,29 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
       recognitionRef.current.continuous = false
       recognitionRef.current.interimResults = true
 
-      recognitionRef.current.onstart = () => setIsListening(true)
-      recognitionRef.current.onend = () => setIsListening(false)
+      // What was said, final once the browser is sure of it. When the
+      // carpenter stops talking it is sent, so speaking needs no extra tap.
+      let spoken = ''
+      recognitionRef.current.onstart = () => {
+        spoken = ''
+        setIsListening(true)
+      }
+      recognitionRef.current.onend = () => {
+        setIsListening(false)
+        const text = spoken.trim()
+        spoken = ''
+        if (text) sendRef.current?.(text)
+      }
 
       recognitionRef.current.onresult = (event: any) => {
         let transcript = ''
-        for (let i = event.resultIndex; i < event.results.length; i++) {
+        let final = ''
+        for (let i = 0; i < event.results.length; i++) {
           transcript += event.results[i][0].transcript
+          if (event.results[i].isFinal) final += event.results[i][0].transcript
         }
         if (transcript) setInput(transcript)
+        if (final) spoken = final
       }
     }
   }, [])
@@ -241,11 +257,11 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
         const orderResponse = await fetch('/api/carpenter/orders')
         if (orderResponse.ok) {
           const { orders } = (await orderResponse.json()) as {
-            orders: { order_number: string; status: OrderStatus; order_items: { product_name_he: string; quantity: number }[] }[]
+            orders: { short_number: number; status: OrderStatus; order_items: { product_name_he: string; quantity: number }[] }[]
           }
           const ordersText = orders
             .slice(0, 5)
-            .map((order) => `${order.order_number} · ${STATUS_LABEL[order.status] ?? order.status}\n${order.order_items.map((item) => `${item.product_name_he} ×${item.quantity}`).join(', ')}`)
+            .map((order) => `#${order.short_number} · ${STATUS_LABEL[order.status] ?? order.status}\n${order.order_items.map((item) => `${item.product_name_he} ×${item.quantity}`).join(', ')}`)
             .join('\n\n')
           say(
             orders.length > 0 ? `ההזמנות האחרונות שלך:\n\n${ordersText}` : 'עוד לא שלחת הזמנות.',
@@ -321,6 +337,7 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
 
   // Lets the shell hand over a search from the search bar, asked like a typed message
   useEffect(() => {
+    sendRef.current = (text) => void handleSend(text)
     if (!askRef) return
     askRef.current = (query) => void handleSend(query)
   })

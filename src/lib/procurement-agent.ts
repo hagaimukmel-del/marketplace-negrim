@@ -7,6 +7,8 @@ import { sortedOffers, suggestedOffer, type AppOffer, type AppProduct } from '@/
 import { searchProducts } from '@/lib/catalog-search'
 import { loadCurrentPromo, recordPromoEvent, type CurrentPromo } from '@/lib/promo'
 import { splitItems, supplierPreference } from '@/lib/agent-request'
+import { statusQuestion } from '@/lib/agent-shortcuts'
+import { answerStatus } from '@/lib/agent-status'
 import { cartQuantity, formatUnitPrice, parseQuantity, type WrittenQuantity } from '@/lib/agent-quantity'
 
 /**
@@ -18,7 +20,7 @@ import { cartQuantity, formatUnitPrice, parseQuantity, type WrittenQuantity } fr
  *    and buttons that carry the product, so the chat itself stays stateless.
  */
 
-type ConversationState = 'results_single' | 'results_multiple' | 'results_order' | 'no_results' | 'done'
+type ConversationState = 'results_single' | 'results_multiple' | 'results_order' | 'status' | 'no_results' | 'done'
 
 /**
  * A cart line, built server-side from the offer the carpenter was shown.
@@ -384,6 +386,13 @@ export async function getPreviousProducts(carpenterId: string, limit = 5) {
 
 export async function processProcurementRequest(request: ProcurementRequest): Promise<ProcurementResponse> {
   try {
+    // "מה מצב ההצעות שלי", "הזמנה 1048 אושרה?": the carpentry's own rows, not a search
+    const status = statusQuestion(request.userMessage)
+    if (status) {
+      const { message, actions } = await answerStatus(status, request.carpenterId)
+      return { success: true, message, state: 'status', matchCount: 0, actions }
+    }
+
     const [live, current] = await Promise.all([loadProducts({ showPrices: true, city: request.city ?? null }), loadCurrentPromo()])
 
     // "העדפה לספק X": that supplier's offer leads wherever it sells the product

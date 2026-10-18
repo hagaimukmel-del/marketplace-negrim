@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { cartQuantity, formatUnitPrice, parseQuantity } from './agent-quantity'
-import { ORDER_HISTORY, PREVIOUS_PRODUCTS, pageFor } from './agent-shortcuts'
+import { ORDER_HISTORY, PREVIOUS_PRODUCTS, pageFor, statusQuestion } from './agent-shortcuts'
 import { searchProducts } from './catalog-search'
 import type { AppProduct } from './app/products'
 import { refineQuery, splitItems, supplierPreference } from './agent-request'
@@ -151,5 +151,21 @@ describe('refineQuery', () => {
   it('leaves a new search alone', () => {
     expect(refineQuery('סיליקון', 'דבק PUR')).toBeNull()
     expect(refineQuery(null, 'ובלבן')).toBeNull()
+  })
+})
+
+describe('statusQuestion', () => {
+  it('reads a question about quotes or an order number', () => {
+    expect(statusQuestion('מה מצב ההצעות שלי?')).toEqual({ kind: 'quotes' })
+    expect(statusQuestion('הצעות המחיר שלי')).toEqual({ kind: 'quotes' })
+    expect(statusQuestion('ההצעה נענתה?')).toEqual({ kind: 'quotes' })
+    expect(statusQuestion('הזמנה 1048 אושרה?')).toEqual({ kind: 'order', number: 1048 })
+    expect(statusQuestion('מה עם הזמנה #1050')).toEqual({ kind: 'order', number: 1050 })
+  })
+
+  it('leaves an order for a product to the search', () => {
+    expect(statusQuestion('הזמנה 20 ק״ג דבק')).toBeNull()
+    expect(statusQuestion('הזמנה של דבק')).toBeNull()
+    expect(statusQuestion('הצעת מחיר על דבק PUR')).toBeNull()
   })
 })

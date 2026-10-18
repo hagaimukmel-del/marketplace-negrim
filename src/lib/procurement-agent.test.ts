@@ -51,11 +51,34 @@ const CATALOGUE: AppProduct[] = [
 
 vi.mock('@/lib/app/catalog-server', () => ({ loadProducts: async () => CATALOGUE }))
 vi.mock('@/lib/promo', () => ({ loadCurrentPromo: async () => null, recordPromoEvent: async () => undefined }))
+// Order #1048 belongs to this carpenter; any other number is someone else's or none
 vi.mock('@/lib/supabase-admin', () => ({
   getSupabaseAdmin: () => {
-    const chain = { select: () => chain, eq: () => chain, order: () => chain, limit: async () => ({ data: [], error: null }) }
+    const filters: Record<string, unknown> = {}
+    const chain = {
+      select: () => chain,
+      eq: (column: string, value: unknown) => ((filters[column] = value), chain),
+      order: () => chain,
+      limit: async () => ({ data: [], error: null }),
+      maybeSingle: async () => ({
+        data:
+          filters.carpenter_id === 'c1' && filters.short_number === 1048
+            ? { id: 'o1', short_number: 1048, status: 'confirmed', suppliers: { company_name: 'גלעד' } }
+            : null,
+        error: null,
+      }),
+    }
     return { from: () => chain }
   },
+}))
+vi.mock('@/lib/quotes-server', () => ({
+  loadCarpenterQuotes: async () => ({
+    ready: true,
+    quotes: [
+      { productName: 'דבק PUR לקנטים', supplierName: 'גלעד', state: 'quoted', unitPrice: 21.5, unit: 'ק״ג', validUntil: '2026-11-14' },
+      { productName: 'לכה', supplierName: 'דרום', state: 'requested', unitPrice: null, unit: 'ליטר', validUntil: null },
+    ],
+  }),
 }))
 
 const { processProcurementRequest } = await import('./procurement-agent')
@@ -113,5 +136,22 @@ describe('processProcurementRequest', () => {
   it('says when the preferred supplier does not sell the product', async () => {
     const answer = await ask('לוח לבן, מעדיף את דרום')
     expect(answer.message).toContain('דרום לא מציע את המוצר הזה')
+  })
+})
+
+describe('status questions', () => {
+  it('answers an order number from the carpenter\'s own orders', async () => {
+    const answer = await ask('הזמנה 1048 אושרה?')
+    expect(answer.state).toBe('status')
+    expect(answer.message).toBe('הזמנה #1048 מגלעד: אושרה.')
+    expect(answer.actions[0].value).toBe('/app/orders/o1')
+    expect((await ask('הזמנה 999 אושרה?')).message).toContain('לא מצאתי אצלך הזמנה #999')
+  })
+
+  it('lists quote requests with the quoted price', async () => {
+    const answer = await ask('מה מצב ההצעות שלי')
+    expect(answer.message).toContain('יש לך הצעה אחת שנענתה')
+    expect(answer.message).toContain('₪21.50 לק״ג לפני מע״מ · בתוקף עד 14.11')
+    expect(answer.message).toContain('מחכה לתשובת הספק')
   })
 })

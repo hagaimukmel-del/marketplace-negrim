@@ -47,7 +47,12 @@ match says it is the closest, not a match.
 Before searching, the chat answers three narrow shortcuts itself (`lib/agent-shortcuts.ts`): "בפעם שעברה"
 lists past products with links, "ההזמנות שלי" lists orders with Hebrew statuses, and
 "קח אותי ל..." / the page name alone opens that page ("קטלוג דבקים" and "גלגלי עגלה" are searches).
-A mic button (browser speech recognition) fills the input where the browser supports it; untested on phones (T-001).
+The agent answers two status questions from the carpentry's own rows (`lib/agent-status.ts`):
+"מה מצב ההצעות שלי" lists quote requests with their state and any quoted price, and "הזמנה 1048
+אושרה?" gives that order's status with a link (communication center spec, stage 6; drafting a
+quote request from the chat is not built).
+A mic button (browser speech recognition) fills the input where the browser supports it and sends
+the message when the carpenter stops talking; untested on phones (T-001).
 Tests: `lib/agent-chat.test.ts`, `lib/procurement-agent.test.ts`. Anything else, "הזמנה של דבק" included, is a
 search. Every search logs one `agent.search` line (carpenter id, message, state, match count) for
 the Vercel logs; messages are cut at 300 characters.
