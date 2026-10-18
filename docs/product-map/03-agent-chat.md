@@ -26,6 +26,15 @@ error: `null`, and the keyword agent answers. The log line `agent.llm` has token
 question, and `agent.search` has `engine` (`claude` or `keywords`). Not yet measured on real
 sentences; needs the 50-sentence test set before it is called live.
 
+## Voice (T-001)
+The mic uses the browser's recogniser (he-IL) by default. On an iPhone it garbles trade words
+("PUR" as "pour"/"QR", "קנטים" as "Canteen", 2026-10-18). With `OPENAI_API_KEY` set (and
+`AGENT_STT` not `off`), `GET /api/carpenter/transcribe` reports `enabled` and the mic records
+instead (tap to start, tap to send, 15 s limit); `POST` sends the recording to the transcription
+service with a hint of trade words and catalogue brands (`lib/agent-transcribe.ts`) and returns the
+text, which goes through the same send path. 60 recordings per carpenter per hour. Recordings are
+not stored. Not yet compared with the browser on real sentences.
+
 ## Code
 `lib/procurement-agent.ts` (written quantity → search → one answer with buttons), `components/chat/*`.
 The offers are the catalogue's own (`loadProducts` with the carpentry's city): the suggested

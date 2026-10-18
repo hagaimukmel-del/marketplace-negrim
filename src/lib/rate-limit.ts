@@ -13,6 +13,7 @@ const config = {
   promoEvent: { maxAttempts: 300, windowMs: 60 * 60 * 1000 }, // "מוצר השבוע" views and adds, per network
   quoteRequest: { maxAttempts: 20, windowMs: 60 * 60 * 1000 }, // 20 quote requests per hour, per carpenter (T-023)
   agentLlm: { maxAttempts: 30, windowMs: 60 * 60 * 1000 }, // 30 Claude answers per hour, per carpenter; then the keyword agent answers
+  transcribe: { maxAttempts: 60, windowMs: 60 * 60 * 1000 }, // 60 recordings per hour, per carpenter
   message: { maxAttempts: 60, windowMs: 60 * 60 * 1000 }, // 60 messages per hour, per carpentry or supplier (key 'msg:<id>')
 }
 
