@@ -19,6 +19,8 @@ interface ChatMessageProps {
   onContactSupplier?: (action: ActionButton) => void
   onOpenCatalog?: (action: ActionButton) => void
   onOpenPage?: (action: ActionButton) => void
+  onAddAll?: (action: ActionButton) => void
+  onAsk?: (action: ActionButton) => void
 }
 
 /**
@@ -41,7 +43,7 @@ function withMarkup(text: string) {
   })
 }
 
-export function ChatMessage({ message, onOptionSelect, onAddToCart, onContactSupplier, onOpenCatalog, onOpenPage }: ChatMessageProps) {
+export function ChatMessage({ message, onOptionSelect, onAddToCart, onContactSupplier, onOpenCatalog, onOpenPage, onAddAll, onAsk }: ChatMessageProps) {
   const isUser = message.role === 'user'
 
   return (
@@ -79,6 +81,10 @@ export function ChatMessage({ message, onOptionSelect, onAddToCart, onContactSup
                         onOpenCatalog?.(action)
                       } else if (action.action === 'open-page') {
                         onOpenPage?.(action)
+                      } else if (action.action === 'add-all') {
+                        onAddAll?.(action)
+                      } else if (action.action === 'ask') {
+                        onAsk?.(action)
                       }
                     }}
                     className={`text-xs px-2 py-1 rounded ${

@@ -1,44 +1,26 @@
 import 'server-only'
 
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
-import type { Database } from '@/lib/database.types'
-import { bestOffer, unitLabel } from '@/lib/catalog'
+import { unitLabel } from '@/lib/catalog'
 import { loadProducts } from '@/lib/app/catalog-server'
+import { sortedOffers, suggestedOffer, type AppOffer, type AppProduct } from '@/lib/app/products'
 import { searchProducts } from '@/lib/catalog-search'
-import { loadCurrentPromo, recordPromoEvent } from '@/lib/promo'
-import { loadPriceModes } from '@/lib/price-mode'
-
-type ProductSpec = Database['public']['Tables']['product_specifications']['Row']
+import { loadCurrentPromo, recordPromoEvent, type CurrentPromo } from '@/lib/promo'
+import { splitItems, supplierPreference } from '@/lib/agent-request'
+import { statusQuestion } from '@/lib/agent-shortcuts'
+import { answerStatus } from '@/lib/agent-status'
+import { cartQuantity, formatUnitPrice, parseQuantity, type WrittenQuantity } from '@/lib/agent-quantity'
 
 /**
- * Procurement Agent for carpenters
+ * Procurement agent for carpenters. Keyword matching, not an LLM (T-007).
  *
- * Flow:
- * 1. Parse intent from user request (Hebrew text)
- * 2. Search products for matches
- * 3. Select response type based on matches
- * 4. Generate natural Hebrew response with options
+ * 1. Read a written quantity, if any ("20 ק״ג").
+ * 2. Search the catalogue with the catalogue's own search (lib/catalog-search).
+ * 3. Answer in Hebrew with the offers the catalogue would show this carpentry,
+ *    and buttons that carry the product, so the chat itself stays stateless.
  */
 
-type ConversationState =
-  | 'greeting'
-  | 'clarifying'
-  | 'searching'
-  | 'results_single'
-  | 'results_multiple'
-  | 'comparing'
-  | 'no_results'
-  | 'refining'
-  | 'done'
-
-type ResponseType =
-  | 'simple_result'
-  | 'multiple_results'
-  | 'clarifying'
-  | 'no_results'
-  | 'recommendation'
-  | 'dont_know'
-  | 'comparison'
+type ConversationState = 'results_single' | 'results_multiple' | 'results_order' | 'status' | 'no_results' | 'done'
 
 /**
  * A cart line, built server-side from the offer the carpenter was shown.
@@ -54,7 +36,7 @@ export interface ChatCartItem {
   unit: string
   pack_label: string | null
   pack_qty: number | null
-  /** In base units: one pack, or the supplier's minimum if larger. */
+  /** In base units: the written quantity in whole packs, else one pack or the supplier's minimum if larger. */
   quantity: number
   /** The supplier quotes only (T-023): no price, and the carpenter asks for a quote instead of adding it. */
   quote_only?: boolean
@@ -65,12 +47,82 @@ export interface ActionButton {
   action: string
   value?: string
   item?: ChatCartItem
+  /** "הוסף הכול לעגלה": every line of an order sentence (T-003). */
+  items?: ChatCartItem[]
 }
 
-function cartItemOf(product: MatchedProduct): ChatCartItem | undefined {
-  const offer = product.offers?.[0]
+export interface ProcurementRequest {
+  userMessage: string
+  carpenterId: string
+  /** The carpentry's city, so the agent suggests the same supplier the catalogue does (T-026). */
+  city?: string | null
+}
+
+/** What the chat receives: the answer and its buttons, nothing else. */
+export interface ProcurementResponse {
+  success: boolean
+  message: string
+  state: ConversationState
+  /** How many products the answer shows, for the log line. */
+  matchCount: number
+  actions: ActionButton[]
+}
+
+interface MatchedOffer {
+  supplierId: string
+  supplierName: string
+  /** Per base unit, as stored. Null for a supplier who quotes only (T-023). */
+  priceExclVat: number | null
+  packLabel: string | null
+  packQty: number | null
+  minOrderQty: number
+  leadTimeDays: number | null
+  /** False when the supplier does not deliver to this carpentry's region. */
+  delivers: boolean | null
+}
+
+interface MatchedProduct {
+  productId: string
+  productName: string
+  baseUnit: string
+  /** This week's "מוצר השבוע", put first because the search is in its field (T-024). */
+  promoted: boolean
+  /** The offer the catalogue suggests first, then the rest in the catalogue's order, up to 3. */
+  offers: MatchedOffer[]
+  documents: { title_he: string; doc_type: string; file_url: string }[]
+}
+
+const SHOW_LIMIT = 4
+
+function offerOf(offer: AppOffer): MatchedOffer {
+  return {
+    supplierId: offer.supplierId,
+    supplierName: offer.supplierName,
+    priceExclVat: offer.price,
+    packLabel: offer.packLabel,
+    packQty: offer.packQty,
+    minOrderQty: offer.minOrderQty,
+    leadTimeDays: offer.leadDays,
+    delivers: offer.delivers,
+  }
+}
+
+/**
+ * The offers in the order the catalogue shows them to this carpentry: the
+ * suggested one first (it already prefers suppliers that deliver here), the
+ * promoted supplier first for "מוצר השבוע".
+ */
+function offersOf(product: AppProduct, promotedSupplierId: string | null): MatchedOffer[] {
+  const lead =
+    (promotedSupplierId && product.offers.find((offer) => offer.supplierId === promotedSupplierId)) || suggestedOffer(product)
+  const rest = sortedOffers(product).filter((offer) => offer !== lead)
+  return (lead ? [lead, ...rest] : rest).slice(0, 3).map(offerOf)
+}
+
+function cartItemOf(product: MatchedProduct, written: WrittenQuantity | null): ChatCartItem | undefined {
+  const offer = product.offers[0]
   if (!offer) return undefined
-  const step = offer.packQty && offer.packQty > 0 ? offer.packQty : 1
+  const { quantity } = cartQuantity(written, { baseUnit: product.baseUnit, packQty: offer.packQty, minOrderQty: offer.minOrderQty })
   return {
     id: product.productId,
     name_he: product.productName,
@@ -78,188 +130,25 @@ function cartItemOf(product: MatchedProduct): ChatCartItem | undefined {
     supplier_id: offer.supplierId,
     supplier_name: offer.supplierName,
     unit: unitLabel(product.baseUnit),
-    pack_label: offer.packLabel ?? null,
-    pack_qty: offer.packQty ?? null,
-    quantity: Math.ceil(Math.max(offer.minOrderQty || 1, step) / step) * step,
+    pack_label: offer.packLabel,
+    pack_qty: offer.packQty,
+    quantity,
     ...(offer.priceExclVat == null ? { quote_only: true } : {}),
   }
 }
 
-export interface ProcurementRequest {
-  userMessage: string
-  carpenterId: string
-}
-
-export interface OrderPreview {
-  productId: string
-  productName: string
-  quantity: number
-  unitPrice: number
-  lineTotal: number
-}
-
-export interface ProcurementResponse {
-  success: boolean
-  message: string
-  state: ConversationState
-  matchedProducts?: MatchedProduct[]
-  followUp?: {
-    type: 'selection' | 'clarification' | 'comparison' | 'order_confirmation' | 'supplier_contact' | 'none'
-    options?: string[]
-  }
-  actions?: ActionButton[]
-  orderPreview?: {
-    items: OrderPreview[]
-    subtotalExclVat: number
-    vatAmount: number
-    totalInclVat: number
-  }
-  supplierContact?: {
-    supplierId: string
-    supplierName: string
-    action: 'quote_request' | 'inquiry' | 'support'
-  }
-}
-
-export interface MatchedProduct {
-  productId: string
-  productName: string
-  baseUnit: string // יחידה אטומית: unit/kg/liter/meter/sqm
-  specs: Array<{
-    key: string
-    value: string
-    unit?: string | null
-  }>
-  sourceDocuments: string[]
-  confidence: number
-  /** This week's "מוצר השבוע", put first because the search is in its field (T-024). */
-  promoted?: boolean
-  // Live data (Step 4)
-  offers?: Array<{
-    supplierId: string
-    supplierName: string
-    /** Per base unit, as stored. Null for a supplier who quotes only (T-023): never sent to the browser. */
-    priceExclVat: number | null
-    packLabel?: string | null
-    packQty?: number | null // כמה base_units בחבילה
-    stockQty: number
-    minOrderQty: number
-    leadTimeDays?: number | null
-    isActive: boolean
-  }>
-  // Step 5: Document citations
-  documents?: Array<{
-    id: string
-    title_he: string
-    doc_type: string
-    file_url: string
-    extracted_text?: string | null
-  }>
-}
-
 /**
- * Intent: What the carpenter is looking for
- */
-interface ParsedIntent {
-  category?: string // adhesive, wood, tool, etc
-  material?: string // birch, pine, oak, etc
-  application?: string // bonding, finishing, etc
-  quantity?: string
-  confidence: number
-  rawText: string
-}
-
-/**
- * Parse user request to extract intent
- *
- * Example: "אני צריך דבק לבירץ׳"
- * Output: { category: 'דבק', material: 'birch', confidence: 0.9 }
- */
-function parseIntent(userMessage: string): ParsedIntent {
-  const hebrew = userMessage.toLowerCase()
-
-  // Simple pattern matching for MVP
-  // TODO: Replace with Claude API for better understanding
-
-  const intent: ParsedIntent = {
-    rawText: userMessage,
-    confidence: 0.5,
-  }
-
-  // Category keywords - use Hebrew words instead of English
-  if (hebrew.includes('דבק') || hebrew.includes('glue') || hebrew.includes('adhesive') || hebrew.includes('דבקים') || hebrew.includes('דביק')) {
-    intent.category = 'דבק'
-    intent.confidence += 0.2
-  } else if (
-    hebrew.includes('צבע') ||
-    hebrew.includes('פוליש') ||
-    hebrew.includes('varnish') ||
-    hebrew.includes('צבעים') ||
-    hebrew.includes('צביעה') ||
-    hebrew.includes('לכה')
-  ) {
-    intent.category = 'צבע'
-    intent.confidence += 0.2
-  } else if (hebrew.includes('כלי') || hebrew.includes('tool') || hebrew.includes('כלים')) {
-    intent.category = 'כלי'
-    intent.confidence += 0.2
-  }
-
-  // Product types or use cases (קנקוטיים/קנטים = edge banding machines, לוחות = boards)
-  if (hebrew.includes('קנקוט') || hebrew.includes('קנט') || hebrew.includes('canister') || hebrew.includes('edge')) {
-    // User is asking about glue for edge banding machines (קנטים)
-    // Don't change category, just boost confidence for adhesive matches
-    if (intent.category === 'adhesive') {
-      intent.confidence += 0.1
-    }
-  }
-  if (hebrew.includes('לוח') || hebrew.includes('board')) {
-    intent.category = 'finishing'
-    intent.confidence += 0.15
-  }
-
-  // Material keywords
-  if (hebrew.includes('בירץ') || hebrew.includes('birch')) {
-    intent.material = 'birch'
-    intent.confidence += 0.2
-  } else if (hebrew.includes('אורן') || hebrew.includes('pine')) {
-    intent.material = 'pine'
-    intent.confidence += 0.2
-  } else if (hebrew.includes('אלון') || hebrew.includes('oak')) {
-    intent.material = 'oak'
-    intent.confidence += 0.2
-  }
-
-  // Application keywords
-  if (hebrew.includes('הדבק') || hebrew.includes('bond') || hebrew.includes('glue')) {
-    intent.application = 'bonding'
-    intent.confidence += 0.1
-  } else if (hebrew.includes('סיים') || hebrew.includes('finish')) {
-    intent.application = 'finishing'
-    intent.confidence += 0.1
-  }
-
-  // Quantity
-  const qtyMatch = hebrew.match(/(\d+)\s*(ק״ג|קילו|kg|ליטר|liter)/i)
-  if (qtyMatch) {
-    intent.quantity = qtyMatch[0]
-    intent.confidence += 0.1
-  }
-
-  return intent
-}
-
-/**
- * Find products with the catalogue's own search (lib/catalog-search), so the
- * chat and the search bar return the same products for the same words. Only
- * live products: an active offer from an approved supplier.
+ * Products for the message, from the catalogue's own search, so the chat and
+ * the search bar return the same products for the same words. Live products
+ * only, with offers exactly as the catalogue builds them for this carpentry.
  */
 async function findMatchingProducts(
-  intent: ParsedIntent
-): Promise<{ matches: MatchedProduct[]; total: number; partial: boolean; promo: { weekId: string; supplierId: string } | null }> {
-  const supabase = getSupabaseAdmin()
-  const [live, current] = await Promise.all([loadProducts({ showPrices: true }), loadCurrentPromo()])
-  const { products: found, partial } = searchProducts(live, intent.rawText)
+  live: AppProduct[],
+  current: CurrentPromo | null,
+  message: string,
+  preferredSupplier: string | null
+): Promise<{ matches: MatchedProduct[]; total: number; partial: boolean; promo: { weekId: string } | null }> {
+  const { products: found, partial } = searchProducts(live, message)
 
   // "מוצר השבוע" goes first, labelled, when the search lands in its main
   // category. A paid slot, never a silent ranking change (T-024).
@@ -277,413 +166,289 @@ async function findMatchingProducts(
     }
   }
 
-  const productMap = new Map<string, MatchedProduct>()
-  hits.slice(0, 5).forEach((product, i) => {
-    productMap.set(product.id, {
-      productId: product.id,
-      productName: product.name,
-      baseUnit: product.baseUnit,
-      specs: [{ key: 'יחידת בסיס', value: product.unit }],
-      sourceDocuments: [],
-      // Search order is the ranking; a partial match is never a confident one
-      confidence: (partial ? 0.5 : 1) - i * 0.05,
-      promoted: promo !== null && i === 0,
-      offers: [],
-    })
+  const matches: MatchedProduct[] = hits.slice(0, SHOW_LIMIT).map((product, i) => {
+    const promoted = promo !== null && i === 0
+    // The carpenter's own choice of supplier comes before the paid slot's
+    return matchOf(product, preferredSupplier ?? (promoted ? promo!.supplierId : null), promoted)
   })
 
-  // Step 4: Fetch live offer data for each matched product
-  const topProducts = Array.from(productMap.values())
-    .sort((a, b) => b.confidence - a.confidence)
-    .slice(0, 5) // Top 5 matches
-
-  const modes = await loadPriceModes()
-  for (const product of topProducts) {
-    // Fetch live offer data
-    const { data: offers, error: offersError } = await supabase
-      .from('supplier_offers')
-      .select(
-        `
-        id,
-        supplier_id,
-        supplier_sku,
-        price_excl_vat,
-        pack_label,
-        pack_qty,
-        stock_qty,
-        min_order_qty,
-        lead_time_days,
-        is_active,
-        suppliers (
-          id,
-          company_name,
-          status
-        )
-      `
-      )
-      .eq('product_id', product.productId)
-      .eq('is_active', true)
-      .order('stock_qty', { ascending: false })
-
-    if (offersError) {
-      console.error('Offers query error:', offersError)
-      continue
-    }
-
-    if (offers && offers.length > 0) {
-      // Only approved suppliers; bestOffer() decides which one leads, same as the catalogue
-      const approved = offers.filter((offer) => offer.suppliers?.status === 'approved')
-      // A quote-only supplier's price never decides who leads (T-023).
-      const priced = approved.filter((offer) => !modes.quoteOnly.has(offer.supplier_id))
-      // The promoted product sells from the supplier who booked the week.
-      const best =
-        (product.promoted && approved.find((offer) => offer.supplier_id === promo?.supplierId)) ||
-        bestOffer({ supplier_offers: priced.length ? priced : approved })
-      product.offers = [...approved]
-        .sort((a, b) => (a === best ? -1 : b === best ? 1 : 0))
-        .map((offer) => ({
-          supplierId: offer.supplier_id,
-          supplierName: offer.suppliers?.company_name || 'Unknown Supplier',
-          priceExclVat: modes.quoteOnly.has(offer.supplier_id) ? null : Number(offer.price_excl_vat),
-          packLabel: offer.pack_label,
-          packQty: offer.pack_qty,
-          stockQty: offer.stock_qty,
-          minOrderQty: offer.min_order_qty,
-          leadTimeDays: offer.lead_time_days,
-          isActive: offer.is_active,
-        }))
-        .slice(0, 3) // Top 3 suppliers per product
-    }
-
-    // Step 5: Fetch product documents for citations
-    // TODO: Add access control layer — currently all documents are shown to all carpenters.
-    // Future: check document visibility settings and supplier-carpenter relationship.
-    const { data: docs, error: docsError } = await supabase
+  // Documents only matter for a single answer, where they are listed
+  if (matches.length === 1) {
+    const { data: docs, error } = await getSupabaseAdmin()
       .from('product_documents')
-      .select('id, title_he, doc_type, file_url, extracted_text')
-      .eq('product_id', product.productId)
+      .select('title_he, doc_type, file_url')
+      .eq('product_id', matches[0].productId)
       .order('uploaded_at', { ascending: false })
-      .limit(3) // Top 3 documents per product
+      .limit(2)
+    if (error) console.error('Agent documents error:', error)
+    matches[0].documents = docs ?? []
+  }
 
-    if (!docsError && docs && docs.length > 0) {
-      product.documents = docs.map((doc: any) => ({
-        id: doc.id,
-        title_he: doc.title_he,
-        doc_type: doc.doc_type,
-        file_url: doc.file_url,
-        extracted_text: doc.extracted_text,
-      }))
+  return { matches, total, partial, promo: promo && { weekId: promo.weekId } }
+}
+
+function matchOf(product: AppProduct, leadSupplierId: string | null, promoted = false): MatchedProduct {
+  return {
+    productId: product.id,
+    productName: product.name,
+    baseUnit: product.baseUnit,
+    promoted,
+    offers: offersOf(product, leadSupplierId),
+    documents: [],
+  }
+}
+
+interface OrderLine {
+  /** The words the carpenter wrote for this item. */
+  query: string
+  quantity: WrittenQuantity | null
+  /** The best full match, or null when nothing matches every word. */
+  match: MatchedProduct | null
+  /** Other products that match every word too. */
+  more: number
+}
+
+/**
+ * Several products in one sentence (T-003): each part is searched on its own
+ * and must match every word, or it is reported as not found. Null when the
+ * sentence does not split into at least two parts, or none of them is found.
+ */
+function findOrderLines(live: AppProduct[], message: string, preferredSupplierId: string | null): OrderLine[] | null {
+  const items = splitItems(message)
+  if (items.length < 2) return null
+  const lines = items.map((item): OrderLine => {
+    const { products, partial } = searchProducts(live, item.query)
+    const best = partial ? null : products[0] ?? null
+    return {
+      query: item.query,
+      quantity: item.quantity,
+      match: best && matchOf(best, preferredSupplierId),
+      more: partial ? 0 : Math.max(products.length - 1, 0),
     }
-  }
-
-  return { matches: topProducts, total, partial, promo }
+  })
+  return lines.some((line) => line.match) ? lines : null
 }
 
-/**
- * Select response type based on search results and intent
- */
-function selectResponseType(intent: ParsedIntent, results: MatchedProduct[]): ResponseType {
-  if (results.length === 0) {
-    return intent.confidence < 0.5 ? 'clarifying' : 'no_results'
-  }
-
-  if (results.length === 1) {
-    return 'simple_result'
-  }
-
-  if (results.length > 1 && results.length <= 4) {
-    return 'multiple_results'
-  }
-
-  return 'multiple_results'
-}
-
-/**
- * Format price in Hebrew
- */
-// price_excl_vat is already per base unit (see supplier_offers) — never divide it by pack_qty
-function formatPrice(price: number, baseUnit?: string, packQty?: number | null): string {
-  const unit = getUnitLabel(baseUnit || 'unit')
-  const perUnit = Number.isInteger(price) ? price.toString() : price.toFixed(2)
-  const packInfo = packQty && packQty > 1 ? ` (חבילה: ${packQty} ${unit})` : ''
-  return `₪${perUnit} / ${unit}${packInfo}`
-}
-
-function getUnitLabel(baseUnit: string): string {
-  const labels: Record<string, string> = {
-    unit: 'יח׳',
-    kg: 'ק״ג',
-    liter: 'ליטר',
-    meter: 'מטר',
-    sqm: 'מ״ר',
-  }
-  return labels[baseUnit] || baseUnit
-}
-
-/**
- * Format lead time in Hebrew
- */
-function formatLeadTime(days?: number | null): string {
+function formatLeadTime(days: number | null): string {
   if (days == null) return ''
   if (days === 0) return 'היום'
   if (days === 1) return 'מחר'
   return `${days} ימים`
 }
 
-/**
- * Map doc type to Hebrew label
- */
-function getDocTypeLabel(docType: string): string {
-  const labels: Record<string, string> = {
-    spec_sheet: 'דף טכני',
-    usage_guide: 'הנחיות שימוש',
-    image: 'תמונה',
-    datasheet: 'דטאשיט',
-    other: 'מסמך',
-  }
-  return labels[docType] || 'מסמך'
+const DOC_LABELS: Record<string, string> = {
+  spec_sheet: 'דף טכני',
+  usage_guide: 'הנחיות שימוש',
+  image: 'תמונה',
+  datasheet: 'דטאשיט',
+  other: 'מסמך',
 }
 
-/**
- * Generate natural Hebrew response with live data
- */
+/** "20 ק״ג → 4 דליים של 5 ק״ג", or why the written quantity was not used. */
+function quantityLine(product: MatchedProduct, written: WrittenQuantity | null): string {
+  const offer = product.offers[0]
+  if (!written || !offer) return ''
+  const unit = unitLabel(product.baseUnit)
+  const { quantity, ignored } = cartQuantity(written, { baseUnit: product.baseUnit, packQty: offer.packQty, minOrderQty: offer.minOrderQty })
+  if (ignored) return `\n\nאת הכמות "${written.text}" לא הצלחתי להמיר: המוצר נמכר לפי ${unit}. לעגלה ייכנסו ${quantity} ${unit}, ואפשר לשנות שם.`
+  const packs = offer.packQty && offer.packQty > 1 ? ` (${quantity / offer.packQty} × ${offer.packLabel ?? 'אריזה'} של ${offer.packQty} ${unit})` : ''
+  return `\n\nכמות לעגלה: ${quantity} ${unit}${packs}`
+}
+
 function generateResponse(
-  intent: ParsedIntent,
+  message: string,
   matches: MatchedProduct[],
-  { total, partial }: { total: number; partial: boolean }
+  { total, partial, written }: { total: number; partial: boolean; written: WrittenQuantity | null }
 ): string {
   if (matches.length === 0) {
-    return `לא מצאתי בקטלוג מוצר שמתאים ל"${intent.rawText.trim()}".\nנסה מילה אחרת, שם יצרן או מק״ט, או עיין בקטלוג לפי קטגוריות.`
+    return `לא מצאתי בקטלוג מוצר שמתאים ל"${message.trim()}".\nנסה מילה אחרת, שם יצרן או מק״ט, או עיין בקטלוג לפי קטגוריות.`
   }
 
   if (matches.length === 1) {
     const product = matches[0]
+    const unit = unitLabel(product.baseUnit)
     let response = `${partial ? 'לא מצאתי התאמה מדויקת. הכי קרוב:' : 'מצאתי מוצר שמתאים:'}\n\n**${product.productName}**${product.promoted ? ' · מוצר השבוע (קידום בתשלום)' : ''}`
 
-    // Step 5: Show document evidence
-    if (product.documents && product.documents.length > 0) {
-      response += '\n\n📄 **מסמכים טכניים:**'
-      for (const doc of product.documents.slice(0, 2)) {
-        const label = getDocTypeLabel(doc.doc_type)
-        response += `\n- ${label}: [${doc.title_he}](${doc.file_url})`
+    if (product.documents.length > 0) {
+      response += '\n\nמסמכים טכניים:'
+      for (const doc of product.documents) {
+        response += `\n- ${DOC_LABELS[doc.doc_type] ?? 'מסמך'}: [${doc.title_he}](${doc.file_url})`
       }
     }
 
-    if (product.specs.length > 0) {
-      response += '\n\nמפרטים:'
-      for (const spec of product.specs.slice(0, 3)) {
-        const unit = spec.unit ? ` ${spec.unit}` : ''
-        response += `\n- ${spec.key}: ${spec.value}${unit}`
-      }
-    }
-
-    // Step 4: Show live offer data
-    if (product.offers && product.offers.length > 0) {
+    if (product.offers.length > 0) {
       response += '\n\nאפשרויות רכש:'
       for (const offer of product.offers.slice(0, 2)) {
         response += `\n- **${offer.supplierName}**`
-        response += offer.priceExclVat == null ? ' • מחיר בהצעה מהספק' : ` • ${formatPrice(offer.priceExclVat, product.baseUnit, offer.packQty)} לפני מע״מ`
-
+        response += offer.priceExclVat == null ? ' • מחיר בהצעה מהספק' : ` • ${formatUnitPrice(offer.priceExclVat, unit)} לפני מע״מ`
+        if (offer.packQty && offer.packQty > 1) response += ` • ${offer.packLabel ?? 'אריזה'} ${offer.packQty} ${unit}`
         // stock_qty is a placeholder on synced rows, so stock is never shown
         const lead = formatLeadTime(offer.leadTimeDays)
         if (lead) response += ` • אספקה: ${lead}`
+        if (offer.delivers === false) response += ' • לא מגיע לאזור שלך'
       }
     } else {
       response += '\n\nאין כרגע ספק שמציע את המוצר הזה.'
     }
-
-    if (product.sourceDocuments.length > 0) {
-      response += `\n\nהמידע מתוך ${product.sourceDocuments.length} מסמכי ספק`
-    }
-    return response
+    return response + quantityLine(product, written)
   }
 
-  // Multiple matches - show up to 4 options with numbers
-  const showLimit = Math.min(4, matches.length)
+  const showLimit = Math.min(SHOW_LIMIT, matches.length)
   let response = partial
     ? 'לא מצאתי מוצר שמתאים לכל המילים. אלה הקרובים ביותר:\n'
     : total > showLimit
       ? `מצאתי ${total} מוצרים. הנה ${showLimit} הראשונים:\n`
       : `מצאתי ${total} מוצרים שמתאימים:\n`
 
-  for (let i = 0; i < showLimit; i++) {
-    const product = matches[i]
-    const number = i + 1
-    response += `\n${number}) **${product.productName}**${product.promoted ? ' · מוצר השבוע (קידום)' : ''}`
-
-    // Show price and supplier as main info
-    if (product.offers && product.offers.length > 0) {
-      const bestOffer = product.offers[0]
-      response += bestOffer.priceExclVat == null ? ' — מחיר בהצעה' : ` — ${formatPrice(bestOffer.priceExclVat, product.baseUnit, bestOffer.packQty)}`
-      response += ` (${bestOffer.supplierName})`
-      // No stock badge: stock_qty is a placeholder on synced rows
+  matches.slice(0, showLimit).forEach((product, i) => {
+    response += `\n${i + 1}) **${product.productName}**${product.promoted ? ' · מוצר השבוע (קידום)' : ''}`
+    const offer = product.offers[0]
+    if (offer) {
+      response += offer.priceExclVat == null ? ' · מחיר בהצעה' : ` · ${formatUnitPrice(offer.priceExclVat, unitLabel(product.baseUnit))}`
+      response += ` (${offer.supplierName})`
     }
+  })
 
-    // Show if has documents
-    if (product.documents && product.documents.length > 0) {
-      response += ` 📄`
-    }
-  }
-
-  response += `\n\nבחר מוצר מהרשימה, או כתוב עוד פרטים כדי לצמצם.`
+  response +=
+    total > showLimit && !partial
+      ? '\n\nבחר מוצר מהרשימה, או כתוב מותג, מק״ט או גודל כדי לצמצם.'
+      : '\n\nבחר מוצר מהרשימה, או כתוב עוד פרטים כדי לצמצם.'
   return response
 }
 
 /**
- * Retrieve carpenter's recent orders
+ * The answer to an order sentence: one line per product, the quantity that
+ * goes into the cart, and one button that adds them all. The carpenter sends
+ * the order from the cart, as always; the agent never sends one.
  */
-export async function getOrderHistory(carpenterId: string) {
-  const supabase = getSupabaseAdmin()
+function orderLinesResponse(lines: OrderLine[], preferredName: string | null, preferredId: string | null): ProcurementResponse {
+  const found = lines.filter((line): line is OrderLine & { match: MatchedProduct } => line.match !== null)
+  let message = `הכנתי ${found.length === 1 ? 'מוצר אחד' : `${found.length} מוצרים`} לעגלה:\n`
+  const actions: ActionButton[] = []
+  const items: ChatCartItem[] = []
 
-  const { data: orders, error: ordersError } = await supabase
-    .from('orders')
-    .select(
-      `
-      id,
-      order_number,
-      short_number,
-      status,
-      subtotal_excl_vat,
-      total_amount,
-      created_at,
-      order_items (
-        product_id,
-        product_name_he,
-        quantity
-      )
-    `
-    )
-    .eq('carpenter_id', carpenterId)
-    .order('created_at', { ascending: false })
-    .limit(10)
+  found.forEach((line, i) => {
+    const product = line.match
+    const offer = product.offers[0]
+    const unit = unitLabel(product.baseUnit)
+    const item = cartItemOf(product, line.quantity)
+    message += `\n${i + 1}) **${product.productName}**`
+    if (offer) {
+      message += offer.priceExclVat == null ? ' · מחיר בהצעה' : ` · ${formatUnitPrice(offer.priceExclVat, unit)}`
+      message += ` (${offer.supplierName})`
+      if (preferredId && offer.supplierId !== preferredId) message += ` · ${preferredName} לא מציע את המוצר`
+      if (offer.delivers === false) message += ' · לא מגיע לאזור שלך'
+    }
+    if (item && !item.quote_only) {
+      const { ignored } = cartQuantity(line.quantity, { baseUnit: product.baseUnit, packQty: offer?.packQty ?? null, minOrderQty: offer?.minOrderQty ?? 1 })
+      message += `\n   כמות: ${item.quantity} ${unit}${ignored && line.quantity ? ` (את "${line.quantity.text}" לא הצלחתי להמיר)` : ''}`
+      items.push(item)
+    } else if (item?.quote_only) {
+      message += '\n   לפי הצעת מחיר מהספק, לא נכנס לעגלה'
+      actions.push({ label: `בקש הצעת מחיר: ${product.productName}`, action: 'open-page', value: `/app/product/${product.productId}?quote=1` })
+    }
+    if (line.more > 0) {
+      message += `\n   יש עוד ${line.more} ${line.more === 1 ? 'אפשרות' : 'אפשרויות'}`
+      actions.push({ label: `אפשרויות ל"${line.query}"`, action: 'ask', value: [line.query, line.quantity?.text].filter(Boolean).join(' ') })
+    }
+  })
 
-  if (ordersError) {
-    console.error('Order history error:', ordersError)
-    return []
+  const missing = lines.filter((line) => !line.match)
+  if (missing.length > 0) message += `\n\nלא מצאתי בקטלוג: ${missing.map((line) => `"${line.query}"`).join(', ')}.`
+  if (items.length > 0) {
+    message += '\n\nבדוק את הכמויות ולחץ "הוסף הכול לעגלה". את ההזמנה שולחים מהעגלה.'
+    actions.unshift({ label: items.length === 1 ? '➕ הוסף לעגלה' : `➕ הוסף הכול לעגלה (${items.length})`, action: 'add-all', items })
   }
-
-  return orders || []
+  return { success: true, message, state: 'results_order', matchCount: found.length, actions }
 }
 
 /**
- * Find products from carpenter's previous orders
- * Used for "כמו בפעם שעברה" queries
+ * Products from the carpenter's recent orders, newest first, for
+ * "כמו בפעם שעברה". Reads only this carpenter's orders.
  */
 export async function getPreviousProducts(carpenterId: string, limit = 5) {
-  const supabase = getSupabaseAdmin()
-
-  const { data: orders, error: ordersError } = await supabase
+  const { data: orders, error } = await getSupabaseAdmin()
     .from('orders')
-    .select(
-      `
-      order_items (
-        product_id,
-        product_name_he,
-        quantity
-      )
-    `
-    )
+    .select('order_items (product_id, product_name_he, quantity)')
     .eq('carpenter_id', carpenterId)
     .order('created_at', { ascending: false })
     .limit(5)
 
-  if (ordersError || !orders) {
-    return []
+  if (error || !orders) return []
+
+  // The first time a product appears is its most recent order
+  const seen = new Map<string, { product_id: string; product_name_he: string; quantity: number }>()
+  for (const item of orders.flatMap((order) => order.order_items ?? [])) {
+    if (item.product_id && !seen.has(item.product_id)) seen.set(item.product_id, { ...item, product_id: item.product_id })
   }
-
-  // Flatten order items from all orders
-  const allItems = orders.flatMap((order: any) => order.order_items || [])
-
-  // Deduplicate by product_id and take most recent
-  const uniqueItems = Array.from(
-    new Map(allItems.map((item: any) => [item.product_id, item])).values()
-  )
-
-  return uniqueItems.slice(0, limit)
+  return [...seen.values()].slice(0, limit)
 }
 
-/**
- * Main agent function
- */
-export async function processProcurementRequest(
-  request: ProcurementRequest
-): Promise<ProcurementResponse> {
+export async function processProcurementRequest(request: ProcurementRequest): Promise<ProcurementResponse> {
   try {
-    // 1. Parse intent
-    const intent = parseIntent(request.userMessage)
+    // "מה מצב ההצעות שלי", "הזמנה 1048 אושרה?": the carpentry's own rows, not a search
+    const status = statusQuestion(request.userMessage)
+    if (status) {
+      const { message, actions } = await answerStatus(status, request.carpenterId)
+      return { success: true, message, state: 'status', matchCount: 0, actions }
+    }
 
-    // 2. Find matching products
-    const { matches, total, partial, promo } = await findMatchingProducts(intent)
+    const [live, current] = await Promise.all([loadProducts({ showPrices: true, city: request.city ?? null }), loadCurrentPromo()])
+
+    // "העדפה לספק X": that supplier's offer leads wherever it sells the product
+    const preference = supplierPreference(
+      request.userMessage,
+      live.flatMap((product) => product.offers.map((offer) => offer.supplierName))
+    )
+    const preferredId = preference
+      ? live.flatMap((product) => product.offers).find((offer) => offer.supplierName === preference.supplierName)?.supplierId ?? null
+      : null
+    const text = preference?.rest || request.userMessage
+
+    // One product, matched on every word, is the common case. Only when the
+    // whole sentence matches nothing fully is it read as several products.
+    const whole = searchProducts(live, text)
+    if (whole.partial || whole.products.length === 0) {
+      const lines = findOrderLines(live, text, preferredId)
+      if (lines) return orderLinesResponse(lines, preference?.supplierName ?? null, preferredId)
+    }
+
+    const written = parseQuantity(text)
+    const { matches, total, partial, promo } = await findMatchingProducts(live, current, text, preferredId)
     if (promo && matches[0]?.promoted) {
       await recordPromoEvent({ weekId: promo.weekId, kind: 'view', placement: 'agent', carpenterId: request.carpenterId ?? null })
     }
 
-    // 3. Select response type
-    const responseType = selectResponseType(intent, matches)
-
-    // 4. Map to conversation state
-    let state: ConversationState = 'searching'
-    let followUpType: 'selection' | 'clarification' | 'comparison' | 'none' = 'none'
-
-    switch (responseType) {
-      case 'simple_result':
-        state = 'results_single'
-        followUpType = 'none'
-        break
-      case 'multiple_results':
-        state = 'results_multiple'
-        followUpType = 'selection'
-        break
-      case 'clarifying':
-        state = 'clarifying'
-        followUpType = 'clarification'
-        break
-      case 'no_results':
-        state = 'no_results'
-        followUpType = 'none'
-        break
+    const state: ConversationState = matches.length === 0 ? 'no_results' : matches.length === 1 ? 'results_single' : 'results_multiple'
+    let message = generateResponse(text, matches, { total, partial, written })
+    if (preference && preferredId && matches.length === 1 && matches[0].offers[0]?.supplierId !== preferredId) {
+      message += `\n\n${preference.supplierName} לא מציע את המוצר הזה, אז מוצג הספק שהקטלוג מציע.`
     }
-
-    // 5. Generate response
-    const message = generateResponse(intent, matches, { total, partial })
-
-    // 6. Prepare action buttons based on result type
     const actions: ActionButton[] = []
 
-    if (followUpType === 'selection') {
-      // Multiple results - show numbered selection buttons
-      const optionCount = Math.min(4, matches.length)
-      for (let i = 0; i < optionCount; i++) {
-        const number = i + 1
-        // The chat is stateless: the button carries the product, so choosing
-        // it never goes back through search as the bare text "2"
-        const item = cartItemOf(matches[i])
+    if (state === 'results_multiple') {
+      // The chat is stateless: the button carries the product, so choosing
+      // it never goes back through search as the bare text "2"
+      matches.slice(0, SHOW_LIMIT).forEach((product, i) => {
         actions.push({
-          label: `${number}) ${matches[i].productName}`,
-          action: `select-${number}`,
-          value: matches[i].productId,
-          item,
+          label: `${i + 1}) ${product.productName}`,
+          action: `select-${i + 1}`,
+          value: product.productId,
+          item: cartItemOf(product, written),
         })
-      }
-    } else if (matches.length === 1) {
-      // Single result - add to cart, only when there is an offer to buy
-      const item = cartItemOf(matches[0])
+      })
+    } else if (state === 'results_single') {
+      const product = matches[0]
+      const item = cartItemOf(product, written)
       // The agent only prepares: a quote-only product goes to its page, where
       // the carpenter asks for the quote and sends it.
       if (item?.quote_only) {
-        actions.push({ label: 'בקש הצעת מחיר', action: 'open-page', value: `/app/product/${matches[0].productId}?quote=1` })
+        actions.push({ label: 'בקש הצעת מחיר', action: 'open-page', value: `/app/product/${product.productId}?quote=1` })
       } else if (item) {
-        actions.push({
-          label: '➕ הוסף לעגלה',
-          action: 'add-to-cart',
-          value: matches[0].productId,
-          item,
-        })
+        actions.push({ label: '➕ הוסף לעגלה', action: 'add-to-cart', value: product.productId, item })
       }
-      actions.push({ label: 'לדף המוצר', action: 'open-page', value: `/app/product/${matches[0].productId}` })
-      if (item) {
-        actions.push({ label: 'שאלה לספק', action: 'contact-supplier', value: item.supplier_id, item })
-      }
+      actions.push({ label: 'לדף המוצר', action: 'open-page', value: `/app/product/${product.productId}` })
+      if (item) actions.push({ label: 'שאלה לספק', action: 'contact-supplier', value: item.supplier_id, item })
     }
 
     // The same words in the search bar show the full list
@@ -693,23 +458,9 @@ export async function processProcurementRequest(
       actions.push({ label: 'כל התוצאות בקטלוג', action: 'open-catalog', value: request.userMessage })
     }
 
-    return {
-      success: true,
-      message,
-      state,
-      matchedProducts: matches,
-      followUp: {
-        type: followUpType,
-        options: followUpType === 'selection' ? Array.from({ length: Math.min(4, matches.length) }, (_, i) => (i + 1).toString()) : undefined,
-      },
-      actions: actions.length > 0 ? actions : [],
-    }
+    return { success: true, message, state, matchCount: matches.length, actions }
   } catch (err) {
     console.error('Agent error:', err)
-    return {
-      success: false,
-      message: 'קרתה שגיאה. נסה שוב בעוד רגע.',
-      state: 'done',
-    }
+    return { success: false, message: 'קרתה שגיאה. נסה שוב בעוד רגע.', state: 'done', matchCount: 0, actions: [] }
   }
 }

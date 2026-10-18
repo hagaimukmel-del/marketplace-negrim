@@ -28,4 +28,4 @@ passed, until `20261005090000_lock_product_knowledge` (applied to staging and pr
 the only public ones besides the catalogue.
 
 ## Open tasks
-T-009, T-012, T-016, T-019, T-028
+T-009, T-012, T-016, T-019, T-028, T-031

@@ -39,12 +39,13 @@ export async function POST(request: NextRequest) {
     const response = await processProcurementRequest({
       userMessage,
       carpenterId: carpenter.id,
+      city: carpenter.city,
     })
 
     // One line per question, so the Vercel logs show what carpenters ask and what they got
     console.info(
       'agent.search',
-      JSON.stringify({ carpenter: carpenter.id, message: userMessage, state: response.state, matches: response.matchedProducts?.length ?? 0 })
+      JSON.stringify({ carpenter: carpenter.id, message: userMessage, state: response.state, matches: response.matchCount })
     )
 
     return NextResponse.json(response, { status: 200 })
