@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
+import { googleConfigured } from '@/lib/google-auth'
 import JoinClient from './JoinClient'
 
 export const dynamic = 'force-dynamic'
@@ -10,5 +11,6 @@ export const dynamic = 'force-dynamic'
  */
 export default async function JoinPage() {
   if (await getSessionCarpenter()) redirect('/app')
-  return <JoinClient />
+  // The Google button shows only once its OAuth client is configured.
+  return <JoinClient googleEnabled={googleConfigured()} />
 }

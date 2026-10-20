@@ -60,15 +60,24 @@ function enterLink(token: string, email: string): string {
 
 // ---- login link ------------------------------------------------------------
 
-export function carpenterLoginSubject(): string {
-  return `קישור כניסה לשוק הנגרים · ${sentAt()}`
+export function carpenterLoginSubject(code?: string): string {
+  // The code in the subject shows in the phone's notification, so it can be
+  // typed without opening the mail at all.
+  return code ? `קוד הכניסה שלכם לשוק הנגרים: ${code}` : `קישור כניסה לשוק הנגרים · ${sentAt()}`
 }
 
-export function carpenterLoginHtml({ businessName, token, email }: { businessName: string; token: string; email: string }): string {
+export function carpenterLoginHtml({ businessName, token, email, code }: { businessName: string; token: string; email: string; code?: string }): string {
   const link = enterLink(token, email)
+  const codeBlock = code
+    ? `
+    <p style="margin:12px 0 0">ביקשתם להיכנס עבור <strong>${escapeHtml(businessName)}</strong>. הקלידו את הקוד בדף שבו ביקשתם אותו:</p>
+    <div dir="ltr" style="margin:14px 0 0;text-align:center;font:bold 34px/1.2 ${FONT};letter-spacing:8px;color:#1c1917;background:#f5f5f4;border-radius:12px;padding:14px">${code}</div>
+    <p style="margin:8px 0 0;font-size:13px;color:#78716c;text-align:center">הקוד תקף ל-10 דקות ולשימוש אחד.</p>
+    <p style="margin:16px 0 0">או לחצו על הכפתור, והמכשיר שבו תפתחו אותו יתחבר:</p>`
+    : `
+    <p style="margin:12px 0 0">ביקשתם קישור כניסה עבור <strong>${escapeHtml(businessName)}</strong>. הקישור מחבר את המכשיר שבו תפתחו אותו — טלפון או מחשב.</p>`
   return shell(`
-    <div style="font:bold 20px ${FONT}">כניסה לשוק הנגרים</div>
-    <p style="margin:12px 0 0">ביקשתם קישור כניסה עבור <strong>${escapeHtml(businessName)}</strong>. הקישור מחבר את המכשיר שבו תפתחו אותו — טלפון או מחשב.</p>
+    <div style="font:bold 20px ${FONT}">כניסה לשוק הנגרים</div>${codeBlock}
     ${button(link, 'כניסה לאתר')}
     <p style="margin:12px 0 0;font-size:12px;color:#78716c">הכפתור לא מופיע? הקישור עצמו:<br>
       <a href="${link}" dir="ltr" style="color:#047857;word-break:break-all">${link}</a></p>

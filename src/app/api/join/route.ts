@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { TERMS_VERSION } from '@/lib/terms'
+import { loginCodeForEmail } from '@/lib/login-code'
 import { isTestName, sendEmail } from '@/lib/email'
 import { carpenterLoginHtml, carpenterLoginSubject, carpenterWelcomeHtml, carpenterWelcomeSubject } from '@/lib/emails/carpenter'
 import { checkRateLimit, getClientIP, getRateLimitHeaders, hashIdentifier } from '@/lib/rate-limit'
@@ -117,10 +118,12 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'החשבון אינו פעיל. צור קשר.' }, { status: 403 })
       }
       if (existing.email) {
+        // The page goes straight to "type the code", so the code is the way in.
+        const code = await loginCodeForEmail(existing.id)
         await sendEmail({
           to: existing.email,
-          subject: carpenterLoginSubject(),
-          html: carpenterLoginHtml({ businessName: existing.business_name, token: existing.token, email: existing.email }),
+          subject: carpenterLoginSubject(code),
+          html: carpenterLoginHtml({ businessName: existing.business_name, token: existing.token, email: existing.email, code }),
           isTest: isTestName(existing.business_name),
         })
       }
