@@ -30,9 +30,9 @@ sentences; needs the 50-sentence test set before it is called live.
 The mic uses the browser's recogniser (he-IL) by default. On an iPhone it garbles trade words
 ("PUR" as "pour"/"QR", "קנטים" as "Canteen", 2026-10-18). With `OPENAI_API_KEY` set (and
 `AGENT_STT` not `off`), `GET /api/carpenter/transcribe` reports `enabled` and the mic records
-instead (tap to start, tap to send, 15 s limit); `POST` sends the recording to the transcription
+instead (tap to start, tap to stop, 15 s limit); `POST` sends the recording to the transcription
 service with a hint of trade words and catalogue brands (`lib/agent-transcribe.ts`) and returns the
-text, which goes through the same send path. 60 recordings per carpenter per hour. Recordings are
+text, which is put in the input: speech never sends by itself, the carpenter reads it and presses send. 60 recordings per carpenter per hour. Recordings are
 not stored. Not yet compared with the browser on real sentences.
 
 ## Code
@@ -71,8 +71,8 @@ The agent answers two status questions from the carpentry's own rows (`lib/agent
 "מה מצב ההצעות שלי" lists quote requests with their state and any quoted price, and "הזמנה 1048
 אושרה?" gives that order's status with a link (communication center spec, stage 6; drafting a
 quote request from the chat is not built).
-A mic button (browser speech recognition) fills the input where the browser supports it and sends
-the message when the carpenter stops talking; untested on phones (T-001).
+A mic button fills the input and never sends by itself: the carpenter reads the text and presses
+send (browser speech recognition, or server transcription, see "Voice" above).
 Tests: `lib/agent-chat.test.ts`, `lib/procurement-agent.test.ts`. Anything else, "הזמנה של דבק" included, is a
 search. Every search logs one `agent.search` line (carpenter id, message, state, match count) for
 the Vercel logs; messages are cut at 300 characters.

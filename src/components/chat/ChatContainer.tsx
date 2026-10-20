@@ -32,8 +32,6 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
   const [askingSupplier, setAskingSupplier] = useState<{ supplierId: string; supplierName: string; productId: string; productName: string } | null>(null)
   // The last search, so "ובלבן?" narrows it instead of starting over
   const lastQuery = useRef<string | null>(null)
-  // The latest handleSend, for the speech callbacks set up once on mount
-  const sendRef = useRef<((text: string) => void) | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<any>(null)
   // Server transcription (T-001): the browser's recogniser garbles trade words, so when the server offers it, the mic records
@@ -52,29 +50,19 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
       recognitionRef.current.continuous = false
       recognitionRef.current.interimResults = true
 
-      // What was said, final once the browser is sure of it. When the
-      // carpenter stops talking it is sent, so speaking needs no extra tap.
-      let spoken = ''
+      // What was said lands in the input, never sent by itself: the carpenter
+      // reads it, fixes a misheard word, and presses send.
       recognitionRef.current.onstart = () => {
-        spoken = ''
         setIsListening(true)
       }
       recognitionRef.current.onend = () => {
         setIsListening(false)
-        const text = spoken.trim()
-        spoken = ''
-        if (text) sendRef.current?.(text)
       }
 
       recognitionRef.current.onresult = (event: any) => {
         let transcript = ''
-        let final = ''
-        for (let i = 0; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript
-          if (event.results[i].isFinal) final += event.results[i][0].transcript
-        }
+        for (let i = 0; i < event.results.length; i++) transcript += event.results[i][0].transcript
         if (transcript) setInput(transcript)
-        if (final) spoken = final
       }
     }
   }, [])
@@ -350,12 +338,11 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
 
   // Lets the shell hand over a search from the search bar, asked like a typed message
   useEffect(() => {
-    sendRef.current = (text) => void handleSend(text)
     if (!askRef) return
     askRef.current = (query) => void handleSend(query)
   })
 
-  // One tap starts recording, the next sends it; it also stops by itself after 15 seconds
+  // One tap starts recording, the next stops it and shows the text in the input; it also stops by itself after 15 seconds
   const recordAndSend = async () => {
     if (recorderRef.current) {
       recorderRef.current.stop()
@@ -380,7 +367,7 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
           const response = await fetch('/api/carpenter/transcribe', { method: 'POST', body: form })
           if (!response.ok) throw new Error('transcribe failed')
           const { text } = (await response.json()) as { text: string }
-          if (text) sendRef.current?.(text)
+          if (text) setInput(text)
         } catch {
           say('לא הצלחתי להבין את ההקלטה. אפשר לנסות שוב או להקליד.')
         } finally {
@@ -492,7 +479,7 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
           </div>
           {isListening && (
             <div className="text-xs text-slate-600 text-center">
-              {serverStt ? 'מקליט... לחצו שוב כשסיימתם' : 'מקשיב... דברו קול בעברית'}
+              {serverStt ? 'מקליט... לחצו שוב כשסיימתם. הטקסט יופיע לבדיקה לפני השליחה' : 'מקשיב... דברו קול בעברית'}
             </div>
           )}
           {isTranscribing && <div className="text-xs text-slate-600 text-center">מתמלל...</div>}
