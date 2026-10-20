@@ -15,6 +15,26 @@ supplier ("שאלה לספק"). Marketed publicly as "הסוכן של נגרים
 | `POST /api/carpenter/contact-supplier` | "שאלה לספק": stores a `supplier_contact_requests` row and emails the supplier (approved suppliers only, 10 per carpenter per hour, in memory) |
 | `/api/carpenter/documents/retrieve` | Product documents; requires a signed-in carpenter |
 
+## Claude layer (T-007, stage 1)
+`lib/agent-llm.ts`: when `ANTHROPIC_API_KEY` is set (and `AGENT_LLM` is not `off`), Claude reads
+the message and the last six turns and calls four tools: `search_catalogue`, `prepare_cart`,
+`get_order_status`, `get_quotes`. The tools reuse the keyword agent's own catalogue search,
+offers and quantity rules, so products, prices and cart lines come from the catalogue and never
+from Claude's text; the buttons are built from tool results only. Claude never sends an order.
+No key, 30 answers per carpenter per hour exceeded (in memory), a refusal, a timeout or any
+error: `null`, and the keyword agent answers. The log line `agent.llm` has tokens and time per
+question, and `agent.search` has `engine` (`claude` or `keywords`). Not yet measured on real
+sentences; needs the 50-sentence test set before it is called live.
+
+## Voice (T-001)
+The mic uses the browser's recogniser (he-IL) by default. On an iPhone it garbles trade words
+("PUR" as "pour"/"QR", "קנטים" as "Canteen", 2026-10-18). With `OPENAI_API_KEY` set (and
+`AGENT_STT` not `off`), `GET /api/carpenter/transcribe` reports `enabled` and the mic records
+instead (tap to start, tap to stop, 15 s limit); `POST` sends the recording to the transcription
+service with a hint of trade words and catalogue brands (`lib/agent-transcribe.ts`) and returns the
+text, which is put in the input: speech never sends by itself, the carpenter reads it and presses send. 60 recordings per carpenter per hour. Recordings are
+not stored. Not yet compared with the browser on real sentences.
+
 ## Code
 `lib/procurement-agent.ts` (written quantity → search → one answer with buttons), `components/chat/*`.
 The offers are the catalogue's own (`loadProducts` with the carpentry's city): the suggested
@@ -51,8 +71,8 @@ The agent answers two status questions from the carpentry's own rows (`lib/agent
 "מה מצב ההצעות שלי" lists quote requests with their state and any quoted price, and "הזמנה 1048
 אושרה?" gives that order's status with a link (communication center spec, stage 6; drafting a
 quote request from the chat is not built).
-A mic button (browser speech recognition) fills the input where the browser supports it and sends
-the message when the carpenter stops talking; untested on phones (T-001).
+A mic button fills the input and never sends by itself: the carpenter reads the text and presses
+send (browser speech recognition, or server transcription, see "Voice" above).
 Tests: `lib/agent-chat.test.ts`, `lib/procurement-agent.test.ts`. Anything else, "הזמנה של דבק" included, is a
 search. Every search logs one `agent.search` line (carpenter id, message, state, match count) for
 the Vercel logs; messages are cut at 300 characters.

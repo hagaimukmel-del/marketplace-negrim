@@ -32,10 +32,12 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
   const [askingSupplier, setAskingSupplier] = useState<{ supplierId: string; supplierName: string; productId: string; productName: string } | null>(null)
   // The last search, so "ובלבן?" narrows it instead of starting over
   const lastQuery = useRef<string | null>(null)
-  // The latest handleSend, for the speech callbacks set up once on mount
-  const sendRef = useRef<((text: string) => void) | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<any>(null)
+  // Server transcription (T-001): the browser's recogniser garbles trade words, so when the server offers it, the mic records
+  const [serverStt, setServerStt] = useState(false)
+  const recorderRef = useRef<MediaRecorder | null>(null)
+  const [isTranscribing, setIsTranscribing] = useState(false)
   // The panel only renders once opened, so this never runs during server rendering
   const [canListen] = useState(() => typeof window !== 'undefined' && Boolean((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition))
 
@@ -48,32 +50,30 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
       recognitionRef.current.continuous = false
       recognitionRef.current.interimResults = true
 
-      // What was said, final once the browser is sure of it. When the
-      // carpenter stops talking it is sent, so speaking needs no extra tap.
-      let spoken = ''
+      // What was said lands in the input, never sent by itself: the carpenter
+      // reads it, fixes a misheard word, and presses send.
       recognitionRef.current.onstart = () => {
-        spoken = ''
         setIsListening(true)
       }
       recognitionRef.current.onend = () => {
         setIsListening(false)
-        const text = spoken.trim()
-        spoken = ''
-        if (text) sendRef.current?.(text)
       }
 
       recognitionRef.current.onresult = (event: any) => {
         let transcript = ''
-        let final = ''
-        for (let i = 0; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript
-          if (event.results[i].isFinal) final += event.results[i][0].transcript
-        }
+        for (let i = 0; i < event.results.length; i++) transcript += event.results[i][0].transcript
         if (transcript) setInput(transcript)
-        if (final) spoken = final
       }
     }
   }, [])
+
+  useEffect(() => {
+    if (!isOpen || typeof MediaRecorder === 'undefined' || !navigator.mediaDevices?.getUserMedia) return
+    fetch('/api/carpenter/transcribe')
+      .then((r) => (r.ok ? r.json() : { enabled: false }))
+      .then((data: { enabled?: boolean }) => setServerStt(Boolean(data.enabled)))
+      .catch(() => setServerStt(false))
+  }, [isOpen])
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -283,7 +283,8 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
       const response = await fetch('/api/carpenter/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: query }),
+        // The last turns, so Claude can read a follow-up like "תוסיף גם את השני"
+        body: JSON.stringify({ message: query, history: messages.filter((m) => !m.isLoading).slice(-6).map((m) => ({ role: m.role, text: m.content })) }),
       })
 
       // Signed out: the agent is for registered carpenters, so invite them in
@@ -337,12 +338,56 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
 
   // Lets the shell hand over a search from the search bar, asked like a typed message
   useEffect(() => {
-    sendRef.current = (text) => void handleSend(text)
     if (!askRef) return
     askRef.current = (query) => void handleSend(query)
   })
 
+  // One tap starts recording, the next stops it and shows the text in the input; it also stops by itself after 15 seconds
+  const recordAndSend = async () => {
+    if (recorderRef.current) {
+      recorderRef.current.stop()
+      return
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const recorder = new MediaRecorder(stream)
+      const chunks: Blob[] = []
+      recorder.ondataavailable = (event) => event.data.size > 0 && chunks.push(event.data)
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((track) => track.stop())
+        clearTimeout(limit)
+        recorderRef.current = null
+        setIsListening(false)
+        const audio = new Blob(chunks, { type: recorder.mimeType })
+        if (audio.size === 0) return
+        setIsTranscribing(true)
+        try {
+          const form = new FormData()
+          form.append('audio', audio)
+          const response = await fetch('/api/carpenter/transcribe', { method: 'POST', body: form })
+          if (!response.ok) throw new Error('transcribe failed')
+          const { text } = (await response.json()) as { text: string }
+          if (text) setInput(text)
+        } catch {
+          say('לא הצלחתי להבין את ההקלטה. אפשר לנסות שוב או להקליד.')
+        } finally {
+          setIsTranscribing(false)
+        }
+      }
+      const limit = setTimeout(() => recorder.state === 'recording' && recorder.stop(), 15_000)
+      recorderRef.current = recorder
+      recorder.start()
+      setIsListening(true)
+    } catch {
+      say('אין לי גישה למיקרופון. אפשר לאשר אותו בהגדרות הדפדפן או להקליד.')
+    }
+  }
+
   const toggleVoice = () => {
+    if (serverStt) {
+      void recordAndSend()
+      return
+    }
     if (!recognitionRef.current) return
     if (isListening) {
       recognitionRef.current.stop()
@@ -411,14 +456,14 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
               className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={isLoading}
             />
-            {canListen && (
+            {(canListen || serverStt) && (
             <button
               onClick={toggleVoice}
               aria-label={isListening ? 'עצור הקלטה' : 'דבר במקום להקליד'}
               className={`p-2 rounded-lg transition ${
                 isListening ? 'bg-red-500 text-white' : 'bg-slate-200 text-slate-700'
               }`}
-              disabled={isLoading}
+              disabled={isLoading || isTranscribing}
             >
               <Mic size={20} />
             </button>
@@ -434,9 +479,10 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
           </div>
           {isListening && (
             <div className="text-xs text-slate-600 text-center">
-              🎤 מקשיב... דברו קול בעברית
+              {serverStt ? 'מקליט... לחצו שוב כשסיימתם. הטקסט יופיע לבדיקה לפני השליחה' : 'מקשיב... דברו קול בעברית'}
             </div>
           )}
+          {isTranscribing && <div className="text-xs text-slate-600 text-center">מתמלל...</div>}
         </div>
       </div>
     </div>
