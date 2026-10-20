@@ -55,6 +55,9 @@ class Query implements PromiseLike<ReturnType<Respond>> {
   gte(column: string, value: unknown) {
     return this.filter('gte', column, value)
   }
+  is(column: string, value: unknown) {
+    return this.filter('is', column, value)
+  }
   order() {
     return this
   }

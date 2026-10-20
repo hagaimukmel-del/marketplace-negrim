@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { findCarpenterByIdentifier, loginCodeForEmail } from '@/lib/login-code'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { isTestName, sendEmail } from '@/lib/email'
 import { carpenterLoginHtml, carpenterLoginSubject } from '@/lib/emails/carpenter'
@@ -7,15 +8,16 @@ import { checkRateLimit, getRateLimitHeaders, getClientIP, hashIdentifier } from
 
 const NEUTRAL = {
   ok: true,
-  message: 'אם הפרטים רשומים אצלנו, שלחנו קישור כניסה למייל של הנגרייה. פתחו אותו במכשיר שבו רוצים להתחבר.',
+  message: 'אם הפרטים רשומים אצלנו, שלחנו למייל של הנגרייה קוד כניסה. הקלידו אותו כאן.',
 }
 
 /**
  * A carpenter's way in on another device.
  *
- * The link is mailed to the address on file, never shown here — so knowing a
- * carpenter's phone number is not enough to get into their account, you also
- * need their inbox. The answer is the same whether or not anyone matched, so
+ * The email carries a six-digit code to type on this page (lib/login-code)
+ * and the link, for opening on any device. Both go to the address on file,
+ * never shown here — so knowing a carpenter's phone number is not enough to
+ * get into their account, you also need their inbox. The answer is the same whether or not anyone matched, so
  * the form cannot be used to find out who is registered.
  *
  * A signed-in carpenter can ask for their own link too ("connect another
@@ -43,14 +45,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    let carpenter: { business_name: string; email: string | null; token: string } | null = null
+    let carpenter: { id: string; business_name: string; email: string | null; token: string } | null = null
 
     if (body.self === true) {
       const session = await getSessionCarpenter()
       if (!session) return NextResponse.json({ error: 'צריך להיות מחובר' }, { status: 401 })
       const { data } = await supabase
         .from('carpenters')
-        .select('business_name, email, token')
+        .select('id, business_name, email, token')
         .eq('id', session.id)
         .maybeSingle()
       carpenter = data
@@ -60,36 +62,20 @@ export async function POST(request: NextRequest) {
     } else {
       const identifier = typeof body.identifier === 'string' ? body.identifier.trim() : ''
       if (!identifier) return NextResponse.json({ error: 'צריך מייל או טלפון' }, { status: 400 })
-
-      if (identifier.includes('@')) {
-        const pattern = identifier.toLowerCase().replace(/[\\%_]/g, (char: string) => `\\${char}`)
-        const { data } = await supabase
-          .from('carpenters')
-          .select('business_name, email, token')
-          .ilike('email', pattern)
-          .eq('is_active', true)
-          .limit(1)
-          .maybeSingle()
-        carpenter = data
-      } else {
-        const digits = identifier.replace(/\D/g, '')
-        if (digits.length < 9) return NextResponse.json({ error: 'מספר טלפון לא תקין' }, { status: 400 })
-        const { data } = await supabase
-          .from('carpenters')
-          .select('business_name, email, token')
-          .eq('phone', digits.slice(-9))
-          .eq('is_active', true)
-          .limit(1)
-          .maybeSingle()
-        carpenter = data
+      if (!identifier.includes('@') && identifier.replace(/\D/g, '').length < 9) {
+        return NextResponse.json({ error: 'מספר טלפון לא תקין' }, { status: 400 })
       }
+      carpenter = await findCarpenterByIdentifier(identifier)
     }
 
     if (carpenter?.email) {
+      // A code only when someone is waiting on a page to type it. "Connect
+      // another device" is opened elsewhere, so the link alone is the way in.
+      const code = body.self === true ? undefined : await loginCodeForEmail(carpenter.id)
       await sendEmail({
         to: carpenter.email,
-        subject: carpenterLoginSubject(),
-        html: carpenterLoginHtml({ businessName: carpenter.business_name, token: carpenter.token, email: carpenter.email }),
+        subject: carpenterLoginSubject(code),
+        html: carpenterLoginHtml({ businessName: carpenter.business_name, token: carpenter.token, email: carpenter.email, code }),
         isTest: isTestName(carpenter.business_name),
       })
     }

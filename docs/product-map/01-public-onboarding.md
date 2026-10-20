@@ -12,6 +12,8 @@ applications. A visitor can browse products without prices; prices appear after 
 | `/join` → `POST /api/join` | Carpenter registration. The only public endpoint that writes. Dedupes on the last 9 phone digits and emails a login link to the address on file. Rate-limited in memory: 3 per phone and 10 per IP per hour |
 | `/o/[token]` | A carpenter's personal link. The token **is** the identity; resolved on the server every time. With no active campaign it goes through `/carpenter/link/[token]` (sets the session cookie) to the carpentry's home `/app`; with a campaign it shows the offer page, which has a "למסך הבית" button |
 | `/carpenter/enter/[token]` + `/api/carpenter/session` | Link → carpenter cookie session, the carpenter counterpart of `/supplier/enter` |
+| `/join` login box → `POST /api/carpenter/login-link`, then `POST /api/carpenter/login-code` | Sign in on a new device: email or phone → a six-digit code mailed to the address on file (with the link) → typed on the same page. `lib/login-code.ts`, table `login_codes` |
+| `/carpenter/google` → `/carpenter/google/callback` | "כניסה עם גוגל": a verified Google email that is a carpentry's email on file signs in. Hidden until `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` are set (`lib/google-auth.ts`). Never creates a carpentry |
 | `/supplier/join` → `POST /api/supplier-join` | Supplier application; the operator approves it in `/admin/suppliers` |
 | `/terms` → `POST /api/terms/accept` | Terms; acceptance is mandatory at registration (`TermsGate`, `lib/terms.ts` version) |
 | Every page except `/admin`, `/supplier`, `/doc` | Launch-period welcome popup (`components/WelcomePopup.tsx`, mounted in the root layout). Once per visit (sessionStorage), new and returning visitors alike; sits under `TermsGate`. Says the site is free for everyone (and so is the work network, which opens soon) and gives the feedback address |
@@ -20,15 +22,15 @@ applications. A visitor can browse products without prices; prices appear after 
 ## Code
 `src/app/page.tsx`, `src/app/Landing.tsx`, `src/app/join/`, `src/app/o/[token]/`, `src/app/supplier/join/`,
 `src/components/TermsGate.tsx`, `src/components/WelcomePopup.tsx`, `lib/carpenter-auth.ts`, `lib/carpenter-session.ts`,
-`lib/terms.ts`, `lib/regions.ts` (region picked at registration), emails in `lib/emails/carpenter.ts`
+`lib/login-code.ts`, `lib/google-auth.ts`, `lib/terms.ts`, `lib/regions.ts` (region picked at registration), emails in `lib/emails/carpenter.ts`
 and `lib/emails/supplier-application.ts`.
 
 ## Data
 `carpenters` (incl. `token`, address, region, source), `suppliers` (applications, `status`), terms
-acceptance columns.
+acceptance columns, `login_codes` (one-time login codes, service role only).
 
 ## Rules & invariants
-- No passwords for carpenters: personal link plus a cookie session; a login link can be re-sent by email (`/api/carpenter/login-link`).
+- No passwords for carpenters: personal link plus a cookie session. A new device gets a one-time code by email (10 minutes, one use, 5 tries, only the latest counts; stored as an HMAC) plus the login link (`/api/carpenter/login-link`). Typing the code or signing in with Google confirms the email, like the link's `?v=`.
 - Every server use re-resolves the token. Never trust a client-supplied carpenter id (CLAUDE.md §6, security model).
 - One phone and one email per carpentry: `/api/join` treats either as "already registered" and mails a login link to the address on file; the profile refuses an email another carpentry holds.
 - Signup mails a welcome email. Every emailed entry link carries `?v=` (an HMAC of token + email, `emailProof()` in `lib/carpenter-auth.ts`); opening it sets `carpenters.email_verified_at`. Changing the email clears it.
@@ -39,4 +41,4 @@ acceptance columns.
 Live. Accessibility statement and terms review before a wide launch are open in `TODO.md`.
 
 ## Open tasks
-T-015
+T-015, T-032, T-033

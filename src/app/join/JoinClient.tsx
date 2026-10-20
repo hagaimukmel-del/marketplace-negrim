@@ -31,7 +31,7 @@ const BENEFITS = ['מחירי ספקים לנגריות, לפני מע״מ', 'ה
  * Registration and login for carpenters. There is no password and no account to
  * manage: the personal link is the account.
  */
-export default function JoinClient() {
+export default function JoinClient({ googleEnabled = false }: { googleEnabled?: boolean }) {
   const router = useRouter()
   const [businessName, setBusinessName] = useState('')
   const [contactName, setContactName] = useState('')
@@ -45,6 +45,8 @@ export default function JoinClient() {
   const [error, setError] = useState<string | null>(null)
   /** Set when the phone was already registered: the masked address the link went to. */
   const [existing, setExisting] = useState<string | null>(null)
+  /** What the existing carpentry matched on, so the login box can take the code. */
+  const [codeFor, setCodeFor] = useState<string | undefined>(undefined)
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -70,6 +72,7 @@ export default function JoinClient() {
       if (data.existing) {
         // Already registered: the way in went to their email, not to this page.
         setExisting(data.emailedTo ?? '')
+        if (data.emailedTo) setCodeFor(data.matchedOn === 'email' ? email : phone)
         setBusy(false)
         window.scrollTo({ top: 0, behavior: 'smooth' })
         return
@@ -106,14 +109,14 @@ export default function JoinClient() {
             <p className="m-0 font-bold">הטלפון או המייל האלה כבר רשומים אצלנו לנגרייה קיימת</p>
             <p className="m-0 mt-1 text-sm">
               {existing
-                ? `שלחנו קישור כניסה ל-${existing}. פתחו אותו במכשיר הזה ותהיו מחוברים.`
+                ? `שלחנו קוד כניסה ל-${existing}. הקלידו אותו כאן למטה ותהיו מחוברים.`
                 : 'אין מייל בפרטי הנגרייה, ולכן לא יכולנו לשלוח קישור. צרו קשר ונעזור.'}
             </p>
             <p className="m-0 mt-1 text-sm">רוצים לרשום נגרייה נוספת? כל נגרייה נרשמת עם טלפון ומייל משלה.</p>
           </div>
         )}
 
-        <CarpenterLoginBox />
+        <CarpenterLoginBox sentTo={codeFor} googleEnabled={googleEnabled} />
       </div>
 
       <form onSubmit={submit} className="grid grid-cols-[minmax(0,1fr)] gap-3.5 rounded-2xl border border-hair bg-white p-4 md:p-5">

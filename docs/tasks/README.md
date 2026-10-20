@@ -52,7 +52,7 @@ python .claude/skills/product-map/scripts/task_index.py
 ## Index
 
 <!-- INDEX:START -->
-25 open of 31.
+27 open of 33.
 
 | ID | Pri | Status | Type | Area | Title | Blocked by |
 |---|---|---|---|---|---|---|
@@ -69,6 +69,7 @@ python .claude/skills/product-map/scripts/task_index.py
 | [T-006](T-006.md) | P1 | open | promise-gap | 05-catalogue-pricing | Catalogue breadth: boards, timber, hardware, tools | T-002 |
 | [T-011](T-011.md) | P1 | open | ops | 03-agent-chat | End-to-end test of the agent chat on staging | env files (work PC) |
 | [T-012](T-012.md) | P1 | open | debt | 10-platform | Test data seeded into production by migrations |  |
+| [T-032](T-032.md) | P1 | open | ops | 01-public-onboarding | Login codes and Google sign-in: apply the migration and configure Google |  |
 | [T-004](T-004.md) | P2 | open | incomplete | 03-agent-chat | Agent: comparison answer | T-002 |
 | [T-005](T-005.md) | P2 | open | promise-gap | 05-catalogue-pricing | Real stock availability |  |
 | [T-007](T-007.md) | P2 | open | decision | 03-agent-chat | Decide: keyword agent vs LLM |  |
@@ -81,6 +82,7 @@ python .claude/skills/product-map/scripts/task_index.py
 | [T-019](T-019.md) | P3 | open | decision | 10-platform | CLAUDE.md rules vs reality: Zod, @supabase/ssr, Server Components |  |
 | [T-029](T-029.md) | P3 | open | incomplete | 04-orders-fulfilment | Email confirm link can only confirm all of an order |  |
 | [T-031](T-031.md) | P3 | open | debt | 10-platform | Rate limits survive across serverless instances |  |
+| [T-033](T-033.md) | P3 | open | future | 01-public-onboarding | Login code by WhatsApp | T-032 |
 | [T-008](T-008.md) | P0 | done | ops | 03-agent-chat | Apply migration supplier_contact_requests |  |
 | [T-010](T-010.md) | P2 | done | incomplete | 03-agent-chat | "פנה לספק" should notify the supplier | T-008 |
 | [T-020](T-020.md) | P2 | done | future | 01-public-onboarding | Email the account owner when a new device signs in |  |
