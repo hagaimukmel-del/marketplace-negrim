@@ -4,8 +4,8 @@ Verified: 2026-10-22
 ## Purpose
 A carpentry with a job it needs help on posts it; a carpentry that fits (type of work, region)
 answers and they coordinate. A standalone service, separate from המציאון. Phase 1 (board,
-posting, profile, reports, admin) is built, and so is phase 2 (conversations with a photo or
-PDF per message); email notifications (phase 3) and billing (phase 4) are not.
+posting, profile, reports, admin) is built, and so are phase 2 (conversations with a photo or
+PDF per message) and phase 3 (email notifications); billing (phase 4) is not.
 
 ## Entry points
 | Route | What |
@@ -16,7 +16,8 @@ PDF per message); email notifications (phase 3) and billing (phase 4) are not.
 | `/app/work/messages/[id]` | One conversation: messages, one photo or PDF per message, "שיתוף הטלפון שלי", block/unblock |
 | `/app/work/new` | Post a job (members, board open) |
 | `/app/work/mine` | The poster's jobs: close with an outcome, or remove |
-| `/app/work/profile` | Capabilities profile. Open before the board; the first save is joining (founding) |
+| `/app/work/profile` | Capabilities profile. Open before the board; the first save is joining (founding). Email opt-in, with the address's verified state and a button that mails a verifying link |
+| `/api/work/unsubscribe?c&t` | One-click stop from the foot of every email, signed per carpentry; no sign-in |
 | `/admin/work` | Launch condition (profiles, open jobs), close outcomes, open reports, all jobs. Nav item "עבודות" with the open-report count |
 | `/app` home card, teal sidebar item (second, after בית), teal button in the top bar of every app page, welcome popup | Say "בקרוב" until the board opens |
 
@@ -24,7 +25,9 @@ PDF per message); email notifications (phase 3) and billing (phase 4) are not.
 `src/lib/work.ts` (closed lists, validation, expiry, `subscriptionGrants`, `toBoardJob`),
 `src/lib/work-server.ts` (`workBoardOpen`, `getWorkViewer`, `loadBoard`, `loadJob`),
 `src/lib/work-chat.ts` (conversation rules, file sniffing), `src/lib/work-chat-server.ts` (every
-conversation read and write, scoped to the asking carpentry),
+conversation read and write, scoped to the asking carpentry), `src/lib/work-notify.ts` (who is
+emailed and when), `src/lib/work-notify-server.ts` (sending, from route handlers inside `after()`),
+`src/lib/emails/work.ts` (the three emails),
 `src/app/api/work/{jobs,profile,report,conversations,files}`, `src/app/api/admin/work`, `src/app/app/work/*`,
 `src/app/admin/(guarded)/work/*`. Tests: `src/lib/work*.test.ts`, `src/app/api/work/*/route.test.ts`.
 
@@ -33,10 +36,13 @@ Migration `20261015130000_work_network` (on staging and production since 2026-10
 `work_job_reports`, `work_subscriptions`, bucket `work-images` (public, one photo per job). RLS on,
 no policy: server only. `work_jobs` has two FKs to `carpenters`, so embeds name
 `carpenters!work_jobs_carpenter_id_fkey`.
-Migration `20261022100000_work_conversations` (staging 2026-10-22; production not yet, T-034):
+Migration `20261022100000_work_conversations` (staging and production since 2026-10-22):
 `work_conversations` (one per job and carpentry that answered, poster/applicant read times,
 `blocked_by`), `work_messages` (body and at most one file), private bucket `work-files`
 (10MB, JPEG/PNG/WEBP/PDF). RLS on, no policy.
+Migration `20261022140000_work_notifications` (staging 2026-10-22; production not yet, T-035):
+`work_notifications`, one row per email decided on (`sent`, `capped`, `failed`), for the daily cap
+and for measuring matches later.
 
 ## Rules & invariants
 - Membership is one function, `subscriptionGrants`: founding yes, active until `ends_at`, else no.
@@ -55,13 +61,18 @@ Migration `20261022100000_work_conversations` (staging 2026-10-22; production no
 - Files: the server checks the first bytes match the claimed type, cleans the name, stores the
   file in the private bucket; downloads go through `/api/work/files/[messageId]`, which checks the
   carpentry is a side and redirects to a 60-second signed link (PDF as a download).
+- Emails (phase 3): a job that fits (type and region in the profile) to every member but the
+  poster; an answer to the poster; a new message to the other side, once per run of unread
+  messages. Only to an active carpentry that opted in and verified its address. At most 5 a day per
+  carpentry, all kinds together; past it nothing is sent until tomorrow (logged `capped`), and the
+  site still has everything. None while the board is closed, none in a blocked conversation.
 
 ## Status
-Phases 1 and 2 built, behind `WORK_BOARD_OPEN`. Phase 1 migration on both databases; phase 2
-migration on staging only (T-034). Flow check on staging and launch open (T-030). Email
-notifications (phase 3) are next: until then a poster learns of an answer only by opening the site. Spec and mockups:
+Phases 1 to 3 built, behind `WORK_BOARD_OPEN`. Phase 1 and 2 migrations on both databases and
+checked on staging; phase 3 migration on staging only (T-035). No daily digest for what the cap
+holds back: it needs a scheduled job, and the site shows everything anyway. Spec and mockups:
 project files `work-network/spec-v2.md` and the owner's consultation doc.
 
 ## Open tasks
 - T-030 Check on staging, merge, then open the board.
-- T-034 Phase 2 conversations: check on staging, then the migration to production.
+- T-035 Phase 3 emails: check on staging, then the migration to production.

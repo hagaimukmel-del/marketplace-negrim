@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { getWorkViewer } from '@/lib/work-server'
 import { loadConversation, sendMessage, setBlocked, sharePhone } from '@/lib/work-chat-server'
+import { notifyConversation } from '@/lib/work-notify-server'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -25,8 +26,11 @@ export async function POST(request: NextRequest, { params }: Params) {
   const files = form.getAll('file').filter((entry) => entry instanceof File && entry.size > 0)
   if (files.length > 1) return NextResponse.json({ error: 'קובץ אחד בכל הודעה' }, { status: 400 })
 
-  const result = await sendMessage(viewer, (await params).id, form.get('body'), files[0] ?? null)
-  return result.ok ? NextResponse.json({ ok: true }) : NextResponse.json({ error: result.error }, { status: result.status })
+  const { id } = await params
+  const result = await sendMessage(viewer, id, form.get('body'), files[0] ?? null)
+  if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status })
+  after(() => notifyConversation(id, result.side).catch((err) => console.error('Work message email failed:', err)))
+  return NextResponse.json({ ok: true })
 }
 
 export async function PATCH(request: NextRequest, { params }: Params) {
