@@ -15,14 +15,11 @@ export const TERMS_VERSION = '2026-10-22'
  */
 export const TERMS_UPDATED_LABEL = '22 באוקטובר 2026'
 
-/**
- * Who runs the site, as the terms and the privacy notice name it.
- * TODO(owner): fill in before this version goes live.
- */
+/** Who runs the site, as the terms and the privacy notice name it (owner, 2026-10-22). */
 export const OPERATOR = {
-  name: '[שם המפעילה — להשלמה]',
-  registration: '[ע.מ / ח.פ — להשלמה]',
-  address: '[כתובת — להשלמה]',
+  name: 'HAGAI MUKMEL',
+  registration: 'עוסק מורשה 300009339',
+  address: 'אור עקיבא, מיקוד 3061878',
 }
 
 export function acceptedCurrentTerms(version: string | null | undefined): boolean {
