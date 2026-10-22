@@ -6,10 +6,24 @@
  * next time they come in — "accepted the terms" means nothing once the terms
  * are different.
  */
-export const TERMS_VERSION = '2026-09-16'
+export const TERMS_VERSION = '2026-10-22'
 
-/** Shown at the top of the terms page. 16.09: the Metzion section was added. */
-export const TERMS_UPDATED_LABEL = '16 בספטמבר 2026'
+/**
+ * Shown at the top of the terms page. 16.09: the Metzion section was added.
+ * 22.10: the operator's identity, sign-in by code and Google, quote requests,
+ * messages, "מוצר השבוע", the work board, and the supplier subscription.
+ */
+export const TERMS_UPDATED_LABEL = '22 באוקטובר 2026'
+
+/**
+ * Who runs the site, as the terms and the privacy notice name it.
+ * TODO(owner): fill in before this version goes live.
+ */
+export const OPERATOR = {
+  name: '[שם המפעילה — להשלמה]',
+  registration: '[ע.מ / ח.פ — להשלמה]',
+  address: '[כתובת — להשלמה]',
+}
 
 export function acceptedCurrentTerms(version: string | null | undefined): boolean {
   return version === TERMS_VERSION

@@ -31,7 +31,7 @@ const BENEFITS = ['מחירים והצעות מחיר מספקים, לפני מ�
  * Registration and login for carpenters. There is no password and no account to
  * manage: the personal link is the account.
  */
-export default function JoinClient({ googleEnabled = false }: { googleEnabled?: boolean }) {
+export default function JoinClient({ googleEnabled = false, contactEmail = null }: { googleEnabled?: boolean; contactEmail?: string | null }) {
   const router = useRouter()
   const [businessName, setBusinessName] = useState('')
   const [contactName, setContactName] = useState('')
@@ -110,7 +110,9 @@ export default function JoinClient({ googleEnabled = false }: { googleEnabled?: 
             <p className="m-0 mt-1 text-sm">
               {existing
                 ? `שלחנו קוד כניסה ל-${existing}. הקלידו אותו כאן למטה ותהיו מחוברים.`
-                : 'אין מייל בפרטי הנגרייה, ולכן לא יכולנו לשלוח קישור. צרו קשר ונעזור.'}
+                : contactEmail
+                  ? `אין מייל בפרטי הנגרייה, ולכן לא יכולנו לשלוח קוד. כתבו לנו ל-${contactEmail} ונעזור.`
+                  : 'אין מייל בפרטי הנגרייה, ולכן לא יכולנו לשלוח קוד. צרו קשר ונעזור.'}
             </p>
             <p className="m-0 mt-1 text-sm">רוצים לרשום נגרייה נוספת? כל נגרייה נרשמת עם טלפון ומייל משלה.</p>
           </div>
