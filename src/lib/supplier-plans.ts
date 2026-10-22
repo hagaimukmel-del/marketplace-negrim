@@ -1,5 +1,5 @@
 /**
- * The supplier subscription (owner, 2026-10-08; CLAUDE.md §5 Revenue model).
+ * The supplier subscription (owner, 2026-10-08, top tier 2,400 on 2026-10-22; CLAUDE.md §5 Revenue model).
  *
  * A monthly fee by how many products the supplier lists, excl. VAT. Billing
  * starts January 2027 (may slip) and happens outside the site: nothing here
@@ -15,7 +15,7 @@ export interface SupplierPlan {
 export const SUPPLIER_PLANS: SupplierPlan[] = [
   { maxProducts: 50, monthlyExclVat: 1300 },
   { maxProducts: 150, monthlyExclVat: 1900 },
-  { maxProducts: null, monthlyExclVat: 2500 },
+  { maxProducts: null, monthlyExclVat: 2400 },
 ]
 
 export const BILLING_STARTS_LABEL = 'ינואר 2027'
