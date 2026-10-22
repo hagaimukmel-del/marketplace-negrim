@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { getWorkViewer } from '@/lib/work-server'
 import { listConversations, startConversation } from '@/lib/work-chat-server'
+import { notifyConversation } from '@/lib/work-notify-server'
 
 /** The carpentry's work conversations, and "אני מעוניין" on a job (opens one with a first message). */
 export async function GET() {
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
   }
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>
   const result = await startConversation(viewer, body.job_id, body.body)
-  return result.ok
-    ? NextResponse.json({ ok: true, id: result.id }, { status: 201 })
-    : NextResponse.json({ error: result.error }, { status: result.status })
+  if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status })
+  after(() => notifyConversation(result.id, 'applicant').catch((err) => console.error('Work answer email failed:', err)))
+  return NextResponse.json({ ok: true, id: result.id }, { status: 201 })
 }

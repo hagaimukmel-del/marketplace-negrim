@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { regionsForCity } from '@/lib/regions'
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getWorkViewer } from '@/lib/work-server'
 import ProfileForm from './ProfileForm'
 
@@ -9,11 +10,16 @@ export const metadata = { title: 'פרופיל יכולות — נגרים עו�
 /**
  * The capabilities profile, open before the board is: filling it is how a
  * carpentry joins, free during the launch. Not listed anywhere; it is for
- * matching (phase 3) and for the poster to see who is answering (phase 2).
+ * matching and email notifications (phase 3) and for the poster to see who is answering (phase 2).
  */
 export default async function WorkProfilePage() {
   const viewer = await getWorkViewer()
   if (!viewer.carpenter) redirect('/app/work')
+  const { data: contact } = await getSupabaseAdmin()
+    .from('carpenters')
+    .select('email, email_verified_at')
+    .eq('id', viewer.carpenter.id)
+    .maybeSingle()
 
   return (
     <ProfileForm
@@ -25,6 +31,8 @@ export default async function WorkProfilePage() {
       }}
       existing={Boolean(viewer.profile)}
       boardOpen={viewer.open}
+      email={contact?.email ?? null}
+      emailVerified={Boolean(contact?.email_verified_at)}
     />
   )
 }

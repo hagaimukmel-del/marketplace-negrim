@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getWorkViewer } from '@/lib/work-server'
+import { notifyJobPosted } from '@/lib/work-notify-server'
 import { OPEN_JOBS_MAX, POSTS_PER_DAY, isCloseOutcome, jobExpiry, readJobFields } from '@/lib/work'
 import type { Database } from '@/lib/database.types'
 
@@ -85,6 +86,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    after(() => notifyJobPosted(id).catch((err) => console.error('Work job emails failed:', err)))
     return NextResponse.json({ ok: true, id }, { status: 201 })
   } catch (err) {
     console.error('Work job create failed:', err)
