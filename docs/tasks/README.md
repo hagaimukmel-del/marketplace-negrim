@@ -52,7 +52,7 @@ python .claude/skills/product-map/scripts/task_index.py
 ## Index
 
 <!-- INDEX:START -->
-27 open of 33.
+27 open of 34.
 
 | ID | Pri | Status | Type | Area | Title | Blocked by |
 |---|---|---|---|---|---|---|
@@ -86,6 +86,7 @@ python .claude/skills/product-map/scripts/task_index.py
 | [T-008](T-008.md) | P0 | done | ops | 03-agent-chat | Apply migration supplier_contact_requests |  |
 | [T-010](T-010.md) | P2 | done | incomplete | 03-agent-chat | "פנה לספק" should notify the supplier | T-008 |
 | [T-020](T-020.md) | P2 | done | future | 01-public-onboarding | Email the account owner when a new device signs in |  |
+| [T-034](T-034.md) | P2 | done | ops | 11-work-network | Work network phase 2 (conversations) - check on staging, migration to production |  |
 | [T-017](T-017.md) | P3 | done | incomplete | 03-agent-chat | Product documents visible to all carpenters |  |
 | [T-018](T-018.md) | P3 | done | debt | 02-carpenter-app | Legacy /order search page | T-001 |
 | [T-027](T-027.md) | P3 | done | incomplete | 04-orders-fulfilment | Supplier logo on the purchase order and in the carpenter app |  |

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Lock } from 'lucide-react'
 import { getWorkViewer, loadBoard } from '@/lib/work-server'
+import { unreadConversations } from '@/lib/work-chat-server'
 import ComingSoon from './ComingSoon'
 import Board from './Board'
 
@@ -50,7 +51,10 @@ export default async function WorkPage({
   }
 
   const filters = await searchParams
-  const jobs = await loadBoard(viewer, filters)
+  const [jobs, unread] = await Promise.all([
+    loadBoard(viewer, filters),
+    viewer.carpenter ? unreadConversations(viewer.carpenter.id) : Promise.resolve(0),
+  ])
 
   return (
     <Board
@@ -60,6 +64,7 @@ export default async function WorkPage({
       member={viewer.member}
       signedIn={Boolean(viewer.carpenter)}
       preview={!viewer.open}
+      unread={unread}
       now={nowMs()}
     />
   )

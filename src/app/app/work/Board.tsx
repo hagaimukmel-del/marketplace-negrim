@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Handshake, Lock, Plus, UserRound } from 'lucide-react'
+import { Handshake, Lock, MessageSquare, Plus, UserRound } from 'lucide-react'
 import { REGIONS, regionName } from '@/lib/regions'
 import { JOB_TYPES, ago, daysLeft, jobTypeName, shortDate, type BoardJob } from '@/lib/work'
 
@@ -60,6 +60,7 @@ export default function Board({
   member,
   signedIn,
   preview,
+  unread = 0,
   now,
 }: {
   jobs: BoardJob[]
@@ -68,6 +69,8 @@ export default function Board({
   member: boolean
   signedIn: boolean
   preview: boolean
+  /** Work conversations waiting for this carpentry. */
+  unread?: number
   now: number
 }) {
   const today = new Date(now)
@@ -86,6 +89,17 @@ export default function Board({
         <h1 className="text-xl font-extrabold text-ink">נגרים עובדים ביחד</h1>
         {signedIn && (
           <div className="ms-auto flex gap-2">
+            <Link
+              href="/app/work/messages"
+              aria-label={unread ? `שיחות, ${unread} לא נקראו` : 'שיחות'}
+              className="relative flex h-10 items-center gap-1 rounded-[11px] border border-hair bg-white px-3 text-sm font-semibold text-ink"
+            >
+              <MessageSquare size={16} />
+              שיחות
+              {unread > 0 && (
+                <span className="tnum grid h-5 min-w-5 place-items-center rounded-full bg-[#0E5E5E] px-1 text-[11px] font-bold text-white">{unread}</span>
+              )}
+            </Link>
             <Link href="/app/work/mine" className="flex h-10 items-center rounded-[11px] border border-hair bg-white px-3 text-sm font-semibold text-ink">
               העבודות שלי
             </Link>

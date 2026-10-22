@@ -5,7 +5,9 @@ import { jobTypeName, shortDate } from '@/lib/work'
 import { getWorkViewer, loadJob } from '@/lib/work-server'
 import { PosterLine, headline } from '../Board'
 import ComingSoon from '../ComingSoon'
+import { answersPerJob, conversationForJob } from '@/lib/work-chat-server'
 import ReportJob from './ReportJob'
+import Interested from './Interested'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'פרטי עבודה — נגרים עובדים ביחד' }
@@ -28,7 +30,8 @@ function Detail({ label, value }: { label: string; value: string }) {
 /**
  * One job. The poster's name comes from the server only for members, the
  * poster and the operator. Answering the job ("אני מעוניין") opens a private
- * conversation, which is phase 2; until then the button says so.
+ * conversation with a first message; a carpentry that already answered goes
+ * back to that conversation instead.
  */
 export default async function WorkJobPage({ params }: { params: Promise<{ id: string }> }) {
   const viewer = await getWorkViewer()
@@ -49,6 +52,12 @@ export default async function WorkJobPage({ params }: { params: Promise<{ id: st
       </div>
     )
   }
+
+  const carpenterId = viewer.carpenter?.id ?? null
+  const [existing, answers] = await Promise.all([
+    carpenterId && !job.mine ? conversationForJob(carpenterId, job.id) : Promise.resolve(null),
+    carpenterId && job.mine ? answersPerJob(carpenterId).then((counts) => counts[job.id] ?? 0) : Promise.resolve(0),
+  ])
 
   const statusNote = !job.live ? (STATUS_NOTE[job.status] ?? 'העבודה ירדה מהלוח במועד שלה.') : null
 
@@ -86,18 +95,28 @@ export default async function WorkJobPage({ params }: { params: Promise<{ id: st
       </section>
 
       {job.mine ? (
-        <Link href="/app/work/mine" className="flex h-12 items-center justify-center rounded-[11px] border border-hair bg-white font-bold text-ink">
-          לסגירת העבודה: העבודות שלי
-        </Link>
-      ) : viewer.member ? (
-        <div className="rounded-2xl border border-[#8CC9C2] bg-[#E2F0EF] p-4 text-center">
-          <button type="button" disabled className="flex h-12 w-full items-center justify-center gap-2 rounded-[11px] bg-[#0E5E5E] font-bold text-white opacity-50">
-            <MessageSquare size={18} />
-            אני מעוניין
-          </button>
-          <p className="mt-2 mb-0 text-sm text-[#0B5A5A]">פנייה בשיחה פרטית בתוך האתר תיפתח בקרוב.</p>
+        <div className="grid gap-2">
+          {answers > 0 && (
+            <Link href="/app/work/messages" className="flex h-12 items-center justify-center gap-2 rounded-[11px] bg-[#0E5E5E] font-bold text-white">
+              <MessageSquare size={18} />
+              {answers === 1 ? 'נגרייה אחת פנתה: לשיחה' : `${answers} נגריות פנו: לשיחות`}
+            </Link>
+          )}
+          <Link href="/app/work/mine" className="flex h-12 items-center justify-center rounded-[11px] border border-hair bg-white font-bold text-ink">
+            לסגירת העבודה: העבודות שלי
+          </Link>
         </div>
-      ) : viewer.carpenter ? (
+      ) : existing ? (
+        <Link href={`/app/work/messages/${existing}`} className="flex h-12 items-center justify-center gap-2 rounded-[11px] bg-[#0E5E5E] font-bold text-white">
+          <MessageSquare size={18} />
+          כבר פניתם: לשיחה
+        </Link>
+      ) : viewer.member && job.live && viewer.open ? (
+        <div className="rounded-2xl border border-[#8CC9C2] bg-[#E2F0EF] p-4 text-center">
+          <Interested jobId={job.id} />
+          <p className="mt-2 mb-0 text-sm text-[#0B5A5A]">שיחה פרטית בתוך האתר. הטלפון שלכם לא נחשף עד שתבחרו לשתף אותו.</p>
+        </div>
+      ) : viewer.carpenter && !viewer.member ? (
         <div className="rounded-2xl border border-[#8CC9C2] bg-[#E2F0EF] p-4 text-center">
           <p className="m-0 flex items-center justify-center gap-2 font-bold text-[#0B5A5A]">
             <Lock size={16} />

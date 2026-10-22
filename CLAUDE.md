@@ -40,6 +40,12 @@ cross-machine handover tasks while it exists.
 only in `hagaimukmel-del/marketplace-negrim` (public). The owner's Telegram bot (GLUE-BOT, another
 account) is a **separate, unrelated project**. Don't reference it here or mix code between them.
 
+**Main email (owner, 2026-10-22):** `nagarim.b2b@gmail.com` is the site's and the company's main
+address. Every owner notice and approval request (new supplier, promo booking, reply-to, the
+staging test inbox) goes there. `hagai.mukmel@gmail.com` only owns the Resend account; never send
+site mail to it. A local `.env.local` without `EMAIL_FROM` falls back to Resend's test sender,
+which can only mail the account owner, so set `EMAIL_FROM=orders@nagarimb2b.com` there too.
+
 **Working across machines:** the owner works on a work PC and a home PC. Always `git pull` first.
 The env files (`.env.local` → staging, `.env.staging.local`, `.env.prod.local`) exist **only on the
 work PC**. Without them there is no dev server, migration or smoke test; say so and stop instead of
