@@ -91,7 +91,7 @@ working around it. The live site doesn't depend on either PC: **Vercel deploys e
   current price. The supplier's confirmed amount — not the submitted amount — is the basis for
   any commission calculation.
 - **Revenue model** (owner, 2026-10-08): a monthly **supplier subscription** by number of products,
-  excl. VAT: up to 50 products 1,300 ₪, up to 150 1,900 ₪, above 150 2,500 ₪. Billing starts January
+  excl. VAT: up to 50 products 1,300 ₪, up to 150 1,900 ₪, above 150 2,400 ₪ (owner, 2026-10-22). Billing starts January
   2027 (may slip) and happens outside the site. No commission on orders; the `supplier_commission` /
   `commission_rate` snapshots stay but are not billed. Later: a paid weekly promotion slot, 690 ₪ a week.
 - **Exception, approved by the owner 2026-10-15: the work network charges carpentries.**
