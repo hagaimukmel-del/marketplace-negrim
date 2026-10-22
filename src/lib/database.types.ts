@@ -1802,6 +1802,67 @@ export type Database = {
           },
         ]
       }
+      work_conversations: {
+        Row: {
+          applicant_id: string
+          applicant_last_read_at: string | null
+          blocked_by: string | null
+          created_at: string
+          id: string
+          job_id: string
+          last_message_at: string
+          last_sender: string
+          poster_id: string
+          poster_last_read_at: string | null
+        }
+        Insert: {
+          applicant_id: string
+          applicant_last_read_at?: string | null
+          blocked_by?: string | null
+          created_at?: string
+          id?: string
+          job_id: string
+          last_message_at?: string
+          last_sender: string
+          poster_id: string
+          poster_last_read_at?: string | null
+        }
+        Update: {
+          applicant_id?: string
+          applicant_last_read_at?: string | null
+          blocked_by?: string | null
+          created_at?: string
+          id?: string
+          job_id?: string
+          last_message_at?: string
+          last_sender?: string
+          poster_id?: string
+          poster_last_read_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_conversations_applicant_id_fkey"
+            columns: ["applicant_id"]
+            isOneToOne: false
+            referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_conversations_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "work_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_conversations_poster_id_fkey"
+            columns: ["poster_id"]
+            isOneToOne: false
+            referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_job_reports: {
         Row: {
           created_at: string
@@ -1918,6 +1979,50 @@ export type Database = {
             columns: ["closed_with_carpenter_id"]
             isOneToOne: false
             referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_messages: {
+        Row: {
+          body: string
+          conversation_id: string
+          created_at: string
+          file_name: string | null
+          file_path: string | null
+          file_size: number | null
+          file_type: string | null
+          id: string
+          sender: string
+        }
+        Insert: {
+          body?: string
+          conversation_id: string
+          created_at?: string
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          sender: string
+        }
+        Update: {
+          body?: string
+          conversation_id?: string
+          created_at?: string
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          sender?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "work_conversations"
             referencedColumns: ["id"]
           },
         ]

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getWorkViewer } from '@/lib/work-server'
+import { answersPerJob } from '@/lib/work-chat-server'
 import MyJobs, { type MyJob } from './MyJobs'
 
 export const dynamic = 'force-dynamic'
@@ -15,12 +16,15 @@ export default async function MyJobsPage() {
   const viewer = await getWorkViewer()
   if (!viewer.carpenter || (!viewer.open && !viewer.admin)) redirect('/app/work')
 
-  const { data } = await getSupabaseAdmin()
-    .from('work_jobs')
-    .select('id, job_type, quantity, material, region, due_date, status, close_outcome, removed_reason, expires_at, created_at')
-    .eq('carpenter_id', viewer.carpenter.id)
-    .order('created_at', { ascending: false })
-    .limit(200)
+  const [{ data }, answers] = await Promise.all([
+    getSupabaseAdmin()
+      .from('work_jobs')
+      .select('id, job_type, quantity, material, region, due_date, status, close_outcome, removed_reason, expires_at, created_at')
+      .eq('carpenter_id', viewer.carpenter.id)
+      .order('created_at', { ascending: false })
+      .limit(200),
+    answersPerJob(viewer.carpenter.id),
+  ])
 
   const jobs: MyJob[] = (data ?? []).map((row) => ({
     id: row.id,
@@ -34,6 +38,7 @@ export default async function MyJobsPage() {
     removedByAdmin: Boolean(row.removed_reason?.startsWith('admin')),
     expiresAt: row.expires_at,
     createdAt: row.created_at,
+    answers: answers[row.id] ?? 0,
   }))
 
   return (

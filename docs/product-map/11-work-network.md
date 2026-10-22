@@ -1,17 +1,19 @@
 # 11 · נגרים עובדים ביחד — job board between carpentries
-Verified: 2026-10-15
+Verified: 2026-10-22
 
 ## Purpose
 A carpentry with a job it needs help on posts it; a carpentry that fits (type of work, region)
 answers and they coordinate. A standalone service, separate from המציאון. Phase 1 (board,
-posting, profile, reports, admin) is built; conversations (phase 2), email notifications
-(phase 3) and billing (phase 4) are not.
+posting, profile, reports, admin) is built, and so is phase 2 (conversations with a photo or
+PDF per message); email notifications (phase 3) and billing (phase 4) are not.
 
 ## Entry points
 | Route | What |
 |---|---|
 | `/app/work` | Closed (`WORK_BOARD_OPEN` unset): the "בקרוב" page with a profile CTA. Open, or for the operator: the board, filtered by region and job type through the query string |
-| `/app/work/[id]` | One job. "אני מעוניין" is a disabled placeholder until phase 2. Report button |
+| `/app/work/[id]` | One job. "אני מעוניין" opens a conversation with a required first message; a carpentry that already answered goes back to it; the poster sees how many answered. Report button |
+| `/app/work/messages` | The carpentry's conversations: jobs it answered and answers to its own jobs, unread first by weight |
+| `/app/work/messages/[id]` | One conversation: messages, one photo or PDF per message, "שיתוף הטלפון שלי", block/unblock |
 | `/app/work/new` | Post a job (members, board open) |
 | `/app/work/mine` | The poster's jobs: close with an outcome, or remove |
 | `/app/work/profile` | Capabilities profile. Open before the board; the first save is joining (founding) |
@@ -21,7 +23,9 @@ posting, profile, reports, admin) is built; conversations (phase 2), email notif
 ## Code
 `src/lib/work.ts` (closed lists, validation, expiry, `subscriptionGrants`, `toBoardJob`),
 `src/lib/work-server.ts` (`workBoardOpen`, `getWorkViewer`, `loadBoard`, `loadJob`),
-`src/app/api/work/{jobs,profile,report}`, `src/app/api/admin/work`, `src/app/app/work/*`,
+`src/lib/work-chat.ts` (conversation rules, file sniffing), `src/lib/work-chat-server.ts` (every
+conversation read and write, scoped to the asking carpentry),
+`src/app/api/work/{jobs,profile,report,conversations,files}`, `src/app/api/admin/work`, `src/app/app/work/*`,
 `src/app/admin/(guarded)/work/*`. Tests: `src/lib/work*.test.ts`, `src/app/api/work/*/route.test.ts`.
 
 ## Data
@@ -29,6 +33,10 @@ Migration `20261015130000_work_network` (on staging and production since 2026-10
 `work_job_reports`, `work_subscriptions`, bucket `work-images` (public, one photo per job). RLS on,
 no policy: server only. `work_jobs` has two FKs to `carpenters`, so embeds name
 `carpenters!work_jobs_carpenter_id_fkey`.
+Migration `20261022100000_work_conversations` (staging 2026-10-22; production not yet, T-034):
+`work_conversations` (one per job and carpentry that answered, poster/applicant read times,
+`blocked_by`), `work_messages` (body and at most one file), private bucket `work-files`
+(10MB, JPEG/PNG/WEBP/PDF). RLS on, no policy.
 
 ## Rules & invariants
 - Membership is one function, `subscriptionGrants`: founding yes, active until `ends_at`, else no.
@@ -40,10 +48,20 @@ no policy: server only. `work_jobs` has two FKs to `carpenters`, so embeds name
   until the operator restores or removes it.
 - No title, price or client details on a job; the closed type list is the title.
 - The service's colour is dark teal (#0E5E5E).
+- Conversations: only a member answers a live job that is not theirs, 30 new conversations a day.
+  A carpentry whose term ended reads but cannot write. Either side may block; the conversation is
+  then read-only for both until the side that blocked lifts it. A phone is shared only by its own
+  carpentry pressing "שיתוף הטלפון שלי".
+- Files: the server checks the first bytes match the claimed type, cleans the name, stores the
+  file in the private bucket; downloads go through `/api/work/files/[messageId]`, which checks the
+  carpentry is a side and redirects to a 60-second signed link (PDF as a download).
 
 ## Status
-Phase 1 built, behind `WORK_BOARD_OPEN`; migration applied, flow check on staging and launch open (T-030). Spec and mockups:
+Phases 1 and 2 built, behind `WORK_BOARD_OPEN`. Phase 1 migration on both databases; phase 2
+migration on staging only (T-034). Flow check on staging and launch open (T-030). Email
+notifications (phase 3) are next: until then a poster learns of an answer only by opening the site. Spec and mockups:
 project files `work-network/spec-v2.md` and the owner's consultation doc.
 
 ## Open tasks
 - T-030 Check on staging, merge, then open the board.
+- T-034 Phase 2 conversations: check on staging, then the migration to production.

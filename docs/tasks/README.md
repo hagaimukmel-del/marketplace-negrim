@@ -52,7 +52,7 @@ python .claude/skills/product-map/scripts/task_index.py
 ## Index
 
 <!-- INDEX:START -->
-27 open of 33.
+28 open of 34.
 
 | ID | Pri | Status | Type | Area | Title | Blocked by |
 |---|---|---|---|---|---|---|
@@ -63,6 +63,7 @@ python .claude/skills/product-map/scripts/task_index.py
 | [T-023](T-023.md) | P2 | in-progress | future | 05-catalogue-pricing | Per-supplier price visibility and quote requests (RFQ) | migration 20261011140000 (T-028) |
 | [T-025](T-025.md) | P2 | in-progress | future | 02-carpenter-app | Internal messages between carpenter and supplier |  |
 | [T-026](T-026.md) | P2 | in-progress | future | 05-catalogue-pricing | Supplier delivery regions; carpenters see suppliers that deliver to them | T-002 |
+| [T-034](T-034.md) | P2 | in-progress | ops | 11-work-network | Work network phase 2 (conversations) - check on staging, migration to production |  |
 | [T-015](T-015.md) | P3 | in-progress | debt | 01-public-onboarding | Delete legacy /auth/login and /auth/signup |  |
 | [T-024](T-024.md) | P3 | in-progress | future | 09-campaigns-offers | "מוצר השבוע": a paid weekly promotion slot |  |
 | [T-002](T-002.md) | P0 | open | promise-gap | 05-catalogue-pricing | Onboard a second live supplier |  |

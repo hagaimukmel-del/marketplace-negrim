@@ -18,6 +18,8 @@ export interface MyJob {
   removedByAdmin: boolean
   expiresAt: string
   createdAt: string
+  /** Carpentries that answered: one conversation each. */
+  answers: number
 }
 
 function stateOf(job: MyJob, now: number): { label: string; tone: string; active: boolean } {
@@ -84,6 +86,11 @@ export default function MyJobs({ jobs, now }: { jobs: MyJob[]; now: number }) {
                   {regionName(job.region)} · ביצוע עד {shortDate(job.dueDate)}
                 </span>
               </Link>
+              {job.answers > 0 && (
+                <Link href="/app/work/messages" className="shrink-0 rounded-full bg-[#E2F0EF] px-2 py-0.5 text-xs font-bold text-[#0B5A5A]">
+                  {job.answers === 1 ? 'פנייה אחת' : `${job.answers} פניות`}
+                </Link>
+              )}
               <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${state.tone}`}>{state.label}</span>
             </div>
 
