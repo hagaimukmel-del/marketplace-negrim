@@ -10,32 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+    PostgrestVersion: "14.15"
   }
   public: {
     Tables: {
@@ -380,70 +355,43 @@ export type Database = {
           supplier_id?: string
           supplier_last_read_at?: string | null
         }
-        Relationships: []
-      }
-      promo_events: {
-        Row: {
-          carpenter_id: string | null
-          created_at: string
-          id: number
-          kind: string
-          placement: string
-          promo_week_id: string
-        }
-        Insert: {
-          carpenter_id?: string | null
-          created_at?: string
-          id?: never
-          kind: string
-          placement: string
-          promo_week_id: string
-        }
-        Update: {
-          carpenter_id?: string | null
-          created_at?: string
-          id?: never
-          kind?: string
-          placement?: string
-          promo_week_id?: string
-        }
-        Relationships: []
-      }
-      promo_weeks: {
-        Row: {
-          created_at: string
-          decided_at: string | null
-          id: string
-          note: string | null
-          price_excl_vat: number
-          product_id: string
-          status: string
-          supplier_id: string
-          week_start: string
-        }
-        Insert: {
-          created_at?: string
-          decided_at?: string | null
-          id?: string
-          note?: string | null
-          price_excl_vat: number
-          product_id: string
-          status?: string
-          supplier_id: string
-          week_start: string
-        }
-        Update: {
-          created_at?: string
-          decided_at?: string | null
-          id?: string
-          note?: string | null
-          price_excl_vat?: number
-          product_id?: string
-          status?: string
-          supplier_id?: string
-          week_start?: string
-        }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "message_threads_carpenter_id_fkey"
+            columns: ["carpenter_id"]
+            isOneToOne: false
+            referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_threads_contact_request_id_fkey"
+            columns: ["contact_request_id"]
+            isOneToOne: true
+            referencedRelation: "supplier_contact_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_threads_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_threads_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_threads_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       messages: {
         Row: {
@@ -1128,6 +1076,99 @@ export type Database = {
         }
         Relationships: []
       }
+      promo_events: {
+        Row: {
+          carpenter_id: string | null
+          created_at: string
+          id: number
+          kind: string
+          placement: string
+          promo_week_id: string
+        }
+        Insert: {
+          carpenter_id?: string | null
+          created_at?: string
+          id?: never
+          kind: string
+          placement: string
+          promo_week_id: string
+        }
+        Update: {
+          carpenter_id?: string | null
+          created_at?: string
+          id?: never
+          kind?: string
+          placement?: string
+          promo_week_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_events_carpenter_id_fkey"
+            columns: ["carpenter_id"]
+            isOneToOne: false
+            referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promo_events_promo_week_id_fkey"
+            columns: ["promo_week_id"]
+            isOneToOne: false
+            referencedRelation: "promo_weeks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promo_weeks: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          id: string
+          note: string | null
+          price_excl_vat: number
+          product_id: string
+          status: string
+          supplier_id: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          note?: string | null
+          price_excl_vat: number
+          product_id: string
+          status?: string
+          supplier_id: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          note?: string | null
+          price_excl_vat?: number
+          product_id?: string
+          status?: string
+          supplier_id?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_weeks_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promo_weeks_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quote_requests: {
         Row: {
           answered_at: string | null
@@ -1657,11 +1698,11 @@ export type Database = {
           logo_url: string | null
           min_order_value_excl_vat: number | null
           order_cc_emails: string[]
-          price_mode: string
           payment_terms: string[]
           phone: string | null
           phone_key: string | null
           pickup_address: string | null
+          price_mode: string
           rating: number | null
           sells_note: string | null
           source: string
@@ -1690,11 +1731,11 @@ export type Database = {
           logo_url?: string | null
           min_order_value_excl_vat?: number | null
           order_cc_emails?: string[]
-          price_mode?: string
           payment_terms?: string[]
           phone?: string | null
           phone_key?: string | null
           pickup_address?: string | null
+          price_mode?: string
           rating?: number | null
           sells_note?: string | null
           source?: string
@@ -1723,11 +1764,11 @@ export type Database = {
           logo_url?: string | null
           min_order_value_excl_vat?: number | null
           order_cc_emails?: string[]
-          price_mode?: string
           payment_terms?: string[]
           phone?: string | null
           phone_key?: string | null
           pickup_address?: string | null
+          price_mode?: string
           rating?: number | null
           sells_note?: string | null
           source?: string
@@ -2258,9 +2299,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },
