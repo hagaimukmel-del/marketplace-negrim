@@ -9,7 +9,7 @@ const config = {
   login: { maxAttempts: 6, windowMs: 15 * 60 * 1000 }, // 6 attempts per 15 minutes
   loginCode: { maxAttempts: 20, windowMs: 15 * 60 * 1000 }, // 20 typed login codes per 15 minutes, per network
   join: { maxAttempts: 3, windowMs: 60 * 60 * 1000 }, // 3 attempts per hour, per phone
-  joinIp: { maxAttempts: 10, windowMs: 60 * 60 * 1000 }, // 10 sign-ups per hour, per network
+  joinIp: { maxAttempts: 30, windowMs: 60 * 60 * 1000 }, // 30 sign-ups per hour, per network: a launch event shares one Wi-Fi
   supplierQuestion: { maxAttempts: 10, windowMs: 60 * 60 * 1000 }, // 10 questions per hour, per carpenter
   promoEvent: { maxAttempts: 300, windowMs: 60 * 60 * 1000 }, // "מוצר השבוע" views and adds, per network
   quoteRequest: { maxAttempts: 20, windowMs: 60 * 60 * 1000 }, // 20 quote requests per hour, per carpenter (T-023)

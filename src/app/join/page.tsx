@@ -12,5 +12,7 @@ export const dynamic = 'force-dynamic'
 export default async function JoinPage() {
   if (await getSessionCarpenter()) redirect('/app')
   // The Google button shows only once its OAuth client is configured.
-  return <JoinClient googleEnabled={googleConfigured()} />
+  // Where a carpentry we cannot email (no address on file) is told to write.
+  const contactEmail = process.env.CONTACT_EMAIL || process.env.EMAIL_REPLY_TO || null
+  return <JoinClient googleEnabled={googleConfigured()} contactEmail={contactEmail} />
 }

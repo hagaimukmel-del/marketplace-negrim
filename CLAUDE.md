@@ -20,7 +20,8 @@ announced **voice ordering in under a minute** as coming ("בהמשך"). Safe to
 today, and nothing more:
 - A Hebrew chat/search assistant that finds a product, shows the supplier price excl. VAT and adds it to the cart.
 - Purchase orders sent straight to the supplier, who confirms, delivers and invoices.
-- B2B prices excl. VAT, shown after free registration.
+- B2B prices excl. VAT after free registration, or a quote request where the supplier is
+  quote-only (איתמיר stays quote-only at launch, owner 2026-10-22).
 - Reorder ("מה הזמנתי בפעם שעברה").
 - A catalogue that today is mostly adhesives and finishing.
 

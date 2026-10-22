@@ -38,7 +38,12 @@ const nextConfig: NextConfig = {
       moved("/carpenter/account", "/app/account"),
       moved("/carpenter/metzion", "/app/metzion"),
       moved("/carpenter/metzion/:path*", "/app/metzion/:path*"),
-      moved("/demo", "/app/demo"),
+      // The old password sign-in and the early demo page (T-015). Redirects run
+      // before pages, so anyone who still reaches them gets the real way in.
+      moved("/auth/login", "/join"),
+      moved("/auth/signup", "/join"),
+      moved("/demo", "/app"),
+      moved("/app/demo", "/app"),
     ];
   },
 };
