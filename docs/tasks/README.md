@@ -63,6 +63,7 @@ python .claude/skills/product-map/scripts/task_index.py
 | [T-023](T-023.md) | P2 | in-progress | future | 05-catalogue-pricing | Per-supplier price visibility and quote requests (RFQ) | migration 20261011140000 (T-028) |
 | [T-025](T-025.md) | P2 | in-progress | future | 02-carpenter-app | Internal messages between carpenter and supplier |  |
 | [T-026](T-026.md) | P2 | in-progress | future | 05-catalogue-pricing | Supplier delivery regions; carpenters see suppliers that deliver to them | T-002 |
+| [T-015](T-015.md) | P3 | in-progress | debt | 01-public-onboarding | Delete legacy /auth/login and /auth/signup |  |
 | [T-024](T-024.md) | P3 | in-progress | future | 09-campaigns-offers | "מוצר השבוע": a paid weekly promotion slot |  |
 | [T-002](T-002.md) | P0 | open | promise-gap | 05-catalogue-pricing | Onboard a second live supplier |  |
 | [T-009](T-009.md) | P0 | open | ops | 10-platform | Rotate the staging service_role key |  |
@@ -77,7 +78,6 @@ python .claude/skills/product-map/scripts/task_index.py
 | [T-021](T-021.md) | P2 | open | debt | 07-admin-console | Admin supplier-document upload always fails |  |
 | [T-030](T-030.md) | P2 | open | ops | 11-work-network | Work board phase 1 - check on staging, merge, then open the board |  |
 | [T-013](T-013.md) | P3 | open | debt | 05-catalogue-pricing | Product images: rehost from Google Drive |  |
-| [T-015](T-015.md) | P3 | open | debt | 01-public-onboarding | Delete legacy /auth/login and /auth/signup |  |
 | [T-016](T-016.md) | P3 | open | debt | 10-platform | Lint errors |  |
 | [T-019](T-019.md) | P3 | open | decision | 10-platform | CLAUDE.md rules vs reality: Zod, @supabase/ssr, Server Components |  |
 | [T-029](T-029.md) | P3 | open | incomplete | 04-orders-fulfilment | Email confirm link can only confirm all of an order |  |
