@@ -25,7 +25,7 @@ function Field({
   )
 }
 
-const BENEFITS = ['מחירי ספקים לנגריות, לפני מע״מ', 'הזמנת רכש ישירות לכל ספק', 'מעקב אחרי כל הזמנה במקום אחד']
+const BENEFITS = ['מחירים והצעות מחיר מספקים, לפני מע״מ', 'הזמנת רכש ישירות לכל ספק', 'מעקב אחרי כל הזמנה במקום אחד']
 
 /**
  * Registration and login for carpenters. There is no password and no account to

@@ -12,9 +12,9 @@ import Logo from '@/components/brand/Logo'
  */
 
 const FEATURES: { icon: React.ReactNode; title: string; text: string }[] = [
-  { icon: <Search size={22} />, title: 'חיפוש בעברית', text: 'כותבים מה צריך, ומקבלים את המוצר עם מחיר הספק לפני מע״מ.' },
+  { icon: <Search size={22} />, title: 'חיפוש בעברית', text: 'כותבים מה צריך, ומוצאים את המוצר עם מחיר הספק לפני מע״מ או בקשת הצעת מחיר ממנו.' },
   { icon: <Send size={22} />, title: 'הזמנת רכש ישירה לספק', text: 'ההזמנה נשלחת ישר לספק. הוא מאשר, מספק ומוציא לכם חשבונית.' },
-  { icon: <Tag size={22} />, title: 'מחירי B2B', text: 'מחירים לפני מע״מ, גלויים אחרי הרשמה חינם.' },
+  { icon: <Tag size={22} />, title: 'מחירי B2B', text: 'מחיר לפני מע״מ או הצעת מחיר מהספק, אחרי הרשמה חינם.' },
   { icon: <RotateCcw size={22} />, title: 'הזמנה חוזרת', text: 'מה שהזמנתם בפעם שעברה, שוב בלחיצה אחת.' },
 ]
 
@@ -117,7 +117,7 @@ export default function Landing() {
               <PrimaryCta />
               <SecondaryCta />
             </div>
-            <p className="m-0 mt-3 text-sm text-faint">ההרשמה לוקחת פחות מדקה. מחירים מוצגים אחרי ההרשמה.</p>
+            <p className="m-0 mt-3 text-sm text-faint">ההרשמה לוקחת פחות מדקה. מחירים והצעות מחיר אחרי ההרשמה.</p>
           </div>
           <OrderPreview />
         </section>
