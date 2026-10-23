@@ -55,6 +55,23 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
   const [mounted, setMounted] = useState(false)
 
+  const calculateSubtotalExclVat = () => {
+    return round2(
+      items.reduce((sum, item) => sum + item.base_price_excl_vat * item.quantity, 0)
+    )
+  }
+
+  const logEvent = (action: string, data?: Record<string, unknown>) => {
+    const event = {
+      timestamp: new Date().toISOString(),
+      action,
+      data,
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+    }
+    console.log('📊 Event:', event)
+    // TODO: Send to analytics/logging service
+  }
+
   // Load from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('cart-items')
@@ -78,12 +95,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       })
     }
   }, [items, mounted])
-
-  const calculateSubtotalExclVat = () => {
-    return round2(
-      items.reduce((sum, item) => sum + item.base_price_excl_vat * item.quantity, 0)
-    )
-  }
 
   const addItem = (item: Omit<CartItem, 'addedAt' | 'quantity'>, quantity: number) => {
     setItems((prev) => {
@@ -163,17 +174,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const clearCart = () => {
     logEvent('cart_cleared', { itemCount: items.length })
     setItems([])
-  }
-
-  const logEvent = (action: string, data?: Record<string, unknown>) => {
-    const event = {
-      timestamp: new Date().toISOString(),
-      action,
-      data,
-      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
-    }
-    console.log('📊 Event:', event)
-    // TODO: Send to analytics/logging service
   }
 
   const value: CartContextType = {

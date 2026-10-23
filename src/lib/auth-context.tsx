@@ -23,6 +23,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userRole, setUserRole] = useState<'admin' | 'supplier' | 'carpenter' | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const fetchUserRole = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('user_id', userId)
+        .single()
+
+      if (!error && data) {
+        setUserRole(asUserRole(data.role))
+      }
+    } catch (err) {
+      console.error('Error fetching user role:', err)
+    }
+  }
+
   useEffect(() => {
     console.log('[Auth] Initializing auth...')
     supabase.auth.getSession().then(({ data: { session }, error }) => {
@@ -54,22 +70,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => subscription?.unsubscribe()
   }, [])
-
-  const fetchUserRole = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('role')
-        .eq('user_id', userId)
-        .single()
-
-      if (!error && data) {
-        setUserRole(asUserRole(data.role))
-      }
-    } catch (err) {
-      console.error('Error fetching user role:', err)
-    }
-  }
 
   const signUp = async (email: string, password: string, role: UserRole) => {
     console.log('[Auth] SignUp attempt:', email, role)
