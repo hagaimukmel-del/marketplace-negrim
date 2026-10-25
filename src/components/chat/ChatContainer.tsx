@@ -11,6 +11,13 @@ import { ORDER_HISTORY, PREVIOUS_PRODUCTS, pageFor } from '@/lib/agent-shortcuts
 import { refineQuery } from '@/lib/agent-request'
 import { formatUnitPrice } from '@/lib/agent-quantity'
 
+/**
+ * Voice ordering is in development (owner, 2026-10-25): the agent is text
+ * only, and the microphone says so. Set to true to bring the browser's speech
+ * recognition back.
+ */
+const VOICE_READY = false
+
 interface ChatContainerProps {
   isOpen: boolean
   onClose: () => void
@@ -28,6 +35,8 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isListening, setIsListening] = useState(false)
+  // Shown after a tap on the microphone while voice ordering is still in development
+  const [voiceNote, setVoiceNote] = useState(false)
   // After "שאלה לספק", the next message is the question for that supplier, not a search
   const [askingSupplier, setAskingSupplier] = useState<{ supplierId: string; supplierName: string; productId: string; productName: string } | null>(null)
   // The last search, so "ובלבן?" narrows it instead of starting over
@@ -41,6 +50,7 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
 
   // Initialize Web Speech API
   useEffect(() => {
+    if (!VOICE_READY) return
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (SpeechRecognition) {
       recognitionRef.current = new SpeechRecognition()
@@ -411,7 +421,7 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
               className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={isLoading}
             />
-            {canListen && (
+            {VOICE_READY && canListen ? (
             <button
               onClick={toggleVoice}
               aria-label={isListening ? 'עצור הקלטה' : 'דבר במקום להקליד'}
@@ -419,6 +429,14 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
                 isListening ? 'bg-red-500 text-white' : 'bg-slate-200 text-slate-700'
               }`}
               disabled={isLoading}
+            >
+              <Mic size={20} />
+            </button>
+            ) : (
+            <button
+              onClick={() => setVoiceNote(true)}
+              aria-label="הזמנה בקול: בפיתוח"
+              className="p-2 rounded-lg bg-slate-100 text-slate-400 transition"
             >
               <Mic size={20} />
             </button>
@@ -432,6 +450,11 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
               <Send size={20} />
             </button>
           </div>
+          {voiceNote && !VOICE_READY && (
+            <div className="text-xs text-slate-600 text-center">
+              הזמנה בקול בפיתוח. בינתיים כתבו לסוכן מה אתם צריכים.
+            </div>
+          )}
           {isListening && (
             <div className="text-xs text-slate-600 text-center">
               🎤 מקשיב... דברו קול בעברית

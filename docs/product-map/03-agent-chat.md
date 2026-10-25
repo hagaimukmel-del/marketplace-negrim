@@ -51,8 +51,9 @@ The agent answers two status questions from the carpentry's own rows (`lib/agent
 "מה מצב ההצעות שלי" lists quote requests with their state and any quoted price, and "הזמנה 1048
 אושרה?" gives that order's status with a link (communication center spec, stage 6; drafting a
 quote request from the chat is not built).
-A mic button (browser speech recognition) fills the input where the browser supports it and sends
-the message when the carpenter stops talking; untested on phones (T-001).
+Text only since 2026-10-25 (owner): the mic button is greyed and a tap says voice ordering is in
+development. The browser speech recognition behind it is kept and comes back with
+`VOICE_READY = true` in `ChatContainer.tsx`; it was never tested on phones (T-001).
 Tests: `lib/agent-chat.test.ts`, `lib/procurement-agent.test.ts`. Anything else, "הזמנה של דבק" included, is a
 search. Every search logs one `agent.search` line (carpenter id, message, state, match count) for
 the Vercel logs; messages are cut at 300 characters.
