@@ -1,5 +1,5 @@
 # 11 · נגרים עובדים ביחד — job board between carpentries
-Verified: 2026-10-22
+Verified: 2026-10-25
 
 ## Purpose
 A carpentry with a job it needs help on posts it; a carpentry that fits (type of work, region)
@@ -40,7 +40,7 @@ Migration `20261022100000_work_conversations` (staging and production since 2026
 `work_conversations` (one per job and carpentry that answered, poster/applicant read times,
 `blocked_by`), `work_messages` (body and at most one file), private bucket `work-files`
 (10MB, JPEG/PNG/WEBP/PDF). RLS on, no policy.
-Migration `20261022140000_work_notifications` (staging 2026-10-22; production not yet, T-035):
+Migration `20261022140000_work_notifications` (staging 2026-10-22, production 2026-10-25):
 `work_notifications`, one row per email decided on (`sent`, `capped`, `failed`), for the daily cap
 and for measuring matches later.
 
@@ -68,11 +68,11 @@ and for measuring matches later.
   site still has everything. None while the board is closed, none in a blocked conversation.
 
 ## Status
-Phases 1 to 3 built, behind `WORK_BOARD_OPEN`. Phase 1 and 2 migrations on both databases and
-checked on staging; phase 3 migration on staging only (T-035). No daily digest for what the cap
+Phases 1 to 3 live. The board is open to carpenters since 2026-10-25 (`WORK_BOARD_OPEN=true` on
+Vercel production; the owner chose not to wait for 30 profiles and 10 jobs). All three migrations
+are on both databases; phases 1 and 2 were checked on staging, phase 3 by its tests only. No daily digest for what the cap
 holds back: it needs a scheduled job, and the site shows everything anyway. Spec and mockups:
 project files `work-network/spec-v2.md` and the owner's consultation doc.
 
 ## Open tasks
-- T-030 Check on staging, merge, then open the board.
-- T-035 Phase 3 emails: check on staging, then the migration to production.
+- Phase 4 (billing) when a payment provider is chosen.
