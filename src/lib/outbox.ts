@@ -4,6 +4,7 @@ import { after } from 'next/server'
 import { getSupabaseAdmin } from './supabase-admin'
 import { sendEmail } from './email'
 import { outcomeOf, withinDedupeWindow } from './outbox-rules'
+import { reportUndelivered, suppressedAmong, tellOperator } from './email-delivery'
 import type { Database } from './database.types'
 
 type OutboxRow = Database['public']['Tables']['email_outbox']['Row']
@@ -59,6 +60,8 @@ export async function queueEmails(emails: QueuedEmail[]): Promise<number> {
   if (wanted.length === 0) return 0
   const supabase = getSupabaseAdmin()
 
+  // An address that bounced for good, or marked us as spam, is not mailed again.
+  const suppressed = await suppressedAmong(wanted.map((email) => email.to))
   const rows: Database['public']['Tables']['email_outbox']['Insert'][] = []
   for (const email of wanted) {
     if (email.dedupeKey) {
@@ -80,11 +83,14 @@ export async function queueEmails(emails: QueuedEmail[]): Promise<number> {
       reply_to: email.replyTo ?? null,
       notification_id: email.notificationId ?? null,
       dedupe_key: email.dedupeKey ?? null,
+      ...(suppressed.has(email.to.trim().toLowerCase())
+        ? { status: 'bounced', last_error: 'הכתובת חזרה בעבר, לא נשלח שוב' }
+        : {}),
     })
   }
   if (rows.length === 0) return 0
 
-  const { data, error } = await supabase.from('email_outbox').insert(rows).select('id')
+  const { data, error } = await supabase.from('email_outbox').insert(rows).select('id, status, notification_id')
   if (error || !data) {
     console.error('[outbox] queue failed, sending directly', error)
     for (const row of rows) {
@@ -93,7 +99,11 @@ export async function queueEmails(emails: QueuedEmail[]): Promise<number> {
     return rows.length
   }
 
-  const ids = data.map((row) => row.id)
+  // Not sent at all: the sender hears now, not after the retries.
+  for (const row of data.filter((row) => row.status === 'bounced')) await reportUndelivered(row)
+
+  const ids = data.filter((row) => row.status === 'pending').map((row) => row.id)
+  if (ids.length === 0) return rows.length
   // These first, then anything else that is due while we are at it.
   later(async () => {
     await processOutbox({ ids })
@@ -128,29 +138,12 @@ async function sendRow(row: OutboxRow): Promise<'sent' | 'pending' | 'failed' | 
       ...(!result.sent ? { last_error: (result.error ?? result.reason ?? 'unknown').slice(0, 500) } : {}),
     })
     .eq('id', row.id)
-  if (outcome.status === 'failed') await tellOperator(row, result.error ?? result.reason ?? 'unknown')
+  if (outcome.status === 'failed') {
+    // Given up on: the side that caused it and the operator are told, once.
+    await reportUndelivered(row)
+    await tellOperator(row, result.error ?? result.reason ?? 'unknown')
+  }
   return outcome.status
-}
-
-/**
- * The operator hears about a mail that will not go out, once, when it is
- * given up on. Sent directly, not queued: a broken provider must not grow a
- * queue of mails about itself.
- */
-async function tellOperator(row: OutboxRow, error: string): Promise<void> {
-  const operator = process.env.ADMIN_EMAIL || process.env.EMAIL_REPLY_TO
-  if (!operator) return
-  const escape = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  await sendEmail({
-    to: operator,
-    subject: `מייל לא נשלח: ${row.subject}`.slice(0, 200),
-    html: `<div dir="rtl" style="font:14px/1.6 Arial,sans-serif">
-      <p><strong>מייל לא נשלח אחרי ${row.attempts} ניסיונות.</strong></p>
-      <p>אל: ${escape(row.to_email)}<br>נושא: ${escape(row.subject)}<br>סוג: ${escape(row.kind)}</p>
-      <p>שגיאה אחרונה: ${escape(error.slice(0, 300))}</p>
-      <p>ההזמנה או ההודעה עצמה שמורה באתר. כדאי לפנות לנמען בטלפון.</p>
-    </div>`,
-  }).catch((err) => console.error('[outbox] operator alert failed', err))
 }
 
 /**

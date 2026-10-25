@@ -3,6 +3,7 @@
 import { useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { KeyRound } from 'lucide-react'
+import { safeNext } from '@/lib/notification-links'
 
 const NOTICES: Record<string, string> = {
   'link=invalid': 'הקישור שפתחתם אינו תקף. בקשו קוד חדש.',
@@ -94,7 +95,8 @@ export default function CarpenterLoginBox({ sentTo, googleEnabled = false }: { s
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'הכניסה נכשלה')
       // The session cookie is set; refresh so every server component reads it.
-      router.replace('/app')
+      // Back to the screen an email link pointed at, when there is one.
+      router.replace(safeNext(new URLSearchParams(window.location.search).get('next'), '/app') ?? '/app')
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'הכניסה נכשלה')

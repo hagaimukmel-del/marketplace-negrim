@@ -69,9 +69,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'מספר טלפון לא תקין' }, { status: 400 })
     }
 
+    // Orders, quote requests and messages arrive by email; a supplier without
+    // one would see them only when it happens to open the console.
     const email = text(body.email, 160)?.toLowerCase() ?? null
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return NextResponse.json({ error: 'כתובת מייל לא תקינה' }, { status: 400 })
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: email ? 'כתובת מייל לא תקינה' : 'צריך כתובת מייל: אליה מגיעות ההזמנות' }, { status: 400 })
     }
 
     const regions = Array.isArray(body.delivery_regions)

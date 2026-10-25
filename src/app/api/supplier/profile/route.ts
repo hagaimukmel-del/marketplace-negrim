@@ -132,8 +132,9 @@ export async function PATCH(request: NextRequest) {
 
     if ('email' in body) {
       const email = text(body.email, 160)?.toLowerCase() ?? null
-      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        return NextResponse.json({ error: 'כתובת מייל לא תקינה' }, { status: 400 })
+      // Orders arrive at this address; it cannot be emptied, only changed.
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return NextResponse.json({ error: email ? 'כתובת מייל לא תקינה' : 'צריך כתובת מייל: אליה מגיעות ההזמנות' }, { status: 400 })
       }
       update.email = email
     }

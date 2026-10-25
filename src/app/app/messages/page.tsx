@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 /** The carpentry's messages with suppliers (T-025). */
 export default async function AppMessages() {
   const carpenter = await getSessionCarpenter()
-  if (!carpenter) return <SignedOutNotice what="ההודעות" />
+  if (!carpenter) return <SignedOutNotice what="ההודעות" next="/app/messages" />
   const { ready, threads } = await listThreads({ side: 'carpenter', id: carpenter.id })
   return (
     <div className="space-y-3 pt-3">

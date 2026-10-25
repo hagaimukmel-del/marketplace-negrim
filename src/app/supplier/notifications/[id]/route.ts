@@ -12,8 +12,8 @@ import { safeSitePath } from '@/lib/notification-links'
  */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supplier = await getSessionSupplier()
-  if (!supplier) return NextResponse.redirect(new URL('/supplier/join', request.url))
   const { id } = await params
+  if (!supplier) return NextResponse.redirect(new URL(`/supplier/join?next=${encodeURIComponent(`/supplier/notifications/${id}`)}`, request.url))
   const markRead = isOperatorManaged(supplier.source) || !(await isAdmin())
   const link = await openNotification({ side: 'supplier', id: supplier.id }, id, markRead)
   return NextResponse.redirect(new URL(safeSitePath(link, '/supplier/notifications'), request.url))

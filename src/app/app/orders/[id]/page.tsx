@@ -13,8 +13,8 @@ function nowMs(): number {
 /** One order: its state as the anchor, a card only when it wants the carpenter. */
 export default async function AppOrderDetail({ params }: { params: Promise<{ id: string }> }) {
   const carpenter = await getSessionCarpenter()
-  if (!carpenter) return <SignedOutNotice what="פרטי ההזמנה" />
   const { id } = await params
+  if (!carpenter) return <SignedOutNotice what="פרטי ההזמנה" next={`/app/orders/${id}`} />
   const orders = await loadCarpenterOrders(carpenter.id)
   const order = orders.find((o) => o.id === id)
   if (!order) notFound()

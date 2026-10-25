@@ -154,11 +154,12 @@ export default function SupplierJoinPage() {
           </label>
 
           <label className="block">
-            <span className="text-sm font-medium text-stone-700">מייל</span>
+            <span className="text-sm font-medium text-stone-700">מייל (אליו מגיעות ההזמנות)</span>
             <input
               value={form.email}
               onChange={(e) => set('email', e.target.value)}
               type="email"
+              required
               placeholder="dov@itamir.co.il"
               className="mt-1 h-12 w-full rounded-lg border border-stone-300 px-3"
             />

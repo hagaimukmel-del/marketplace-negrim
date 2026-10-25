@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 /** The carpentry's bell: quotes answered, orders confirmed, messages from suppliers. */
 export default async function AppNotifications() {
   const carpenter = await getSessionCarpenter()
-  if (!carpenter) return <SignedOutNotice what="ההתראות" />
+  if (!carpenter) return <SignedOutNotice what="ההתראות" next="/app/notifications" />
   const { ready, items } = await listNotifications({ side: 'carpenter', id: carpenter.id })
   return (
     <div className="space-y-3 pt-3">

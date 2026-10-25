@@ -4,6 +4,8 @@ import { acceptedCurrentTerms } from '@/lib/terms'
 import { unreadCount } from '@/lib/messages'
 import { unreadNotificationCount } from '@/lib/notifications'
 import { kickOutbox } from '@/lib/outbox'
+import { emailProblemFor } from '@/lib/email-delivery'
+import EmailProblemBanner from '@/components/EmailProblemBanner'
 import SupplierNav from './SupplierNav'
 import TermsGate from '@/components/TermsGate'
 
@@ -25,9 +27,13 @@ export const dynamic = 'force-dynamic'
 export default async function SupplierLayout({ children }: { children: React.ReactNode }) {
   const [supplier, admin] = await Promise.all([getSessionSupplier(), isAdmin()])
   const needsTerms = supplier && !admin && !acceptedCurrentTerms(supplier.terms_version)
-  const [unread, notifications] = supplier
-    ? await Promise.all([unreadCount({ side: 'supplier', id: supplier.id }), unreadNotificationCount({ side: 'supplier', id: supplier.id })])
-    : [0, 0]
+  const [unread, notifications, emailProblem] = supplier
+    ? await Promise.all([
+        unreadCount({ side: 'supplier', id: supplier.id }),
+        unreadNotificationCount({ side: 'supplier', id: supplier.id }),
+        emailProblemFor(supplier.email),
+      ])
+    : [0, 0, null]
 
   // Retries due in the email outbox go out while people use the site.
   kickOutbox()
@@ -41,6 +47,7 @@ export default async function SupplierLayout({ children }: { children: React.Rea
         </div>
       )}
       {supplier && <SupplierNav company={supplier.company_name} logo={supplier.logo_url} unread={unread} notifications={notifications} />}
+      {emailProblem && <EmailProblemBanner problem={emailProblem} fixHref="/supplier?tab=business" />}
       <main className="w-full flex-1 px-4 py-5">
         <div className="mx-auto max-w-4xl">{children}</div>
       </main>

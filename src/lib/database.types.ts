@@ -235,6 +235,7 @@ export type Database = {
           attempts: number
           created_at: string
           dedupe_key: string | null
+          delivery_updated_at: string | null
           html: string
           id: string
           is_test: boolean
@@ -254,6 +255,7 @@ export type Database = {
           attempts?: number
           created_at?: string
           dedupe_key?: string | null
+          delivery_updated_at?: string | null
           html: string
           id?: string
           is_test?: boolean
@@ -273,6 +275,7 @@ export type Database = {
           attempts?: number
           created_at?: string
           dedupe_key?: string | null
+          delivery_updated_at?: string | null
           html?: string
           id?: string
           is_test?: boolean
@@ -297,6 +300,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      email_suppressions: {
+        Row: {
+          created_at: string
+          detail: string | null
+          email: string
+          reason: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          email: string
+          reason: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          email?: string
+          reason?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       import_batches: {
         Row: {

@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic'
  */
 export default async function SupplierNotifications() {
   const supplier = await getSessionSupplier()
-  if (!supplier) redirect('/supplier/join')
+  if (!supplier) redirect(`/supplier/join?next=${encodeURIComponent('/supplier/notifications')}`)
   const privateToAdmin = !isOperatorManaged(supplier.source) && (await isAdmin())
   const { ready, items } = await listNotifications({ side: 'supplier', id: supplier.id })
 

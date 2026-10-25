@@ -32,6 +32,7 @@ export type NotificationKind =
   | 'quote_answered'
   | 'quote_declined'
   | 'message_new'
+  | 'email_failed'
 
 export interface NotificationItem {
   id: string
