@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionSupplier } from '@/lib/supplier-auth'
 import { refuseAdminWriteFor } from '@/lib/admin-scope'
 import { PROMO_WEEK_EXCL_VAT } from '@/lib/supplier-plans'
-import { bookableWeeks, isSunday, weekLabel } from '@/lib/promo-weeks'
+import { bookableWeeks, currentWeek, isSunday, weekLabel } from '@/lib/promo-weeks'
 import { isTestName, sendEmail } from '@/lib/email'
 import { PROMO_REQUEST_EMAIL, promoRequestHtml, promoRequestSubject } from '@/lib/emails/promo-request'
 import { money } from '@/lib/app/format'
@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>
   const week = typeof body.week_start === 'string' ? body.week_start : ''
   const productId = typeof body.product_id === 'string' ? body.product_id : ''
+  const showPrice = body.show_price === true
   if (!isSunday(week) || !bookableWeeks().includes(week)) {
     return NextResponse.json({ error: 'אפשר להזמין שבוע מהשבוע הבא ועד 12 שבועות קדימה' }, { status: 400 })
   }
@@ -43,7 +44,14 @@ export async function POST(request: NextRequest) {
 
   const { data, error } = await supabase
     .from('promo_weeks')
-    .insert({ week_start: week, supplier_id: supplier.id, product_id: productId, price_excl_vat: PROMO_WEEK_EXCL_VAT })
+    .insert({
+      week_start: week,
+      supplier_id: supplier.id,
+      product_id: productId,
+      price_excl_vat: PROMO_WEEK_EXCL_VAT,
+      // Only sent when asked for, so a booking still saves before migration 20261011150000.
+      ...(showPrice ? { show_price: true } : {}),
+    })
     .select('id')
     .single()
 
@@ -62,6 +70,7 @@ export async function POST(request: NextRequest) {
     productName: product?.name_he ?? 'מוצר',
     weekText: weekLabel(week),
     priceText: money(PROMO_WEEK_EXCL_VAT),
+    showPrice,
   }
   await sendEmail({
     to: PROMO_REQUEST_EMAIL,
@@ -71,6 +80,30 @@ export async function POST(request: NextRequest) {
   }).catch((err) => console.error('Promo request email failed:', err))
 
   return NextResponse.json({ ok: true, id: data.id }, { status: 201 })
+}
+
+/** Turns the price on the card on or off, on the supplier's own booking that has not ended. */
+export async function PATCH(request: NextRequest) {
+  const supplier = await getSessionSupplier()
+  if (!supplier) return NextResponse.json({ error: 'צריך להיות מחובר' }, { status: 401 })
+  const refused = await refuseAdminWriteFor(supplier)
+  if (refused) return refused
+
+  const body = (await request.json().catch(() => ({}))) as Record<string, unknown>
+  const id = typeof body.id === 'string' ? body.id : ''
+  if (!id || typeof body.show_price !== 'boolean') return NextResponse.json({ error: 'חסרים פרטים' }, { status: 400 })
+
+  const { data } = await getSupabaseAdmin()
+    .from('promo_weeks')
+    .update({ show_price: body.show_price })
+    .eq('id', id)
+    .eq('supplier_id', supplier.id)
+    .in('status', ['requested', 'approved'])
+    .gte('week_start', currentWeek())
+    .select('id')
+    .maybeSingle()
+  if (!data) return NextResponse.json({ error: 'אפשר לשנות רק פרסום שעוד לא הסתיים' }, { status: 404 })
+  return NextResponse.json({ ok: true })
 }
 
 /** Cancels the supplier's own booking while it still waits for approval. */

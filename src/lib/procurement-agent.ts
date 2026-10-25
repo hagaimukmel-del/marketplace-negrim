@@ -267,7 +267,7 @@ function generateResponse(
   if (matches.length === 1) {
     const product = matches[0]
     const unit = unitLabel(product.baseUnit)
-    let response = `${partial ? 'לא מצאתי התאמה מדויקת. הכי קרוב:' : 'מצאתי מוצר שמתאים:'}\n\n**${product.productName}**${product.promoted ? ' · מוצר השבוע (קידום בתשלום)' : ''}`
+    let response = `${partial ? 'לא מצאתי התאמה מדויקת. הכי קרוב:' : 'מצאתי מוצר שמתאים:'}\n\n**${product.productName}**${product.promoted ? ' · מוצר השבוע (פרסומת)' : ''}`
 
     if (product.documents.length > 0) {
       response += '\n\nמסמכים טכניים:'
@@ -301,7 +301,7 @@ function generateResponse(
       : `מצאתי ${total} מוצרים שמתאימים:\n`
 
   matches.slice(0, showLimit).forEach((product, i) => {
-    response += `\n${i + 1}) **${product.productName}**${product.promoted ? ' · מוצר השבוע (קידום)' : ''}`
+    response += `\n${i + 1}) **${product.productName}**${product.promoted ? ' · מוצר השבוע (פרסומת)' : ''}`
     const offer = product.offers[0]
     if (offer) {
       response += offer.priceExclVat == null ? ' · מחיר בהצעה' : ` · ${formatUnitPrice(offer.priceExclVat, unitLabel(product.baseUnit))}`
