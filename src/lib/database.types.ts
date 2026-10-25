@@ -230,6 +230,74 @@ export type Database = {
           },
         ]
       }
+      email_outbox: {
+        Row: {
+          attempts: number
+          created_at: string
+          dedupe_key: string | null
+          html: string
+          id: string
+          is_test: boolean
+          kind: string
+          last_error: string | null
+          locked_at: string | null
+          next_attempt_at: string
+          notification_id: string | null
+          provider_id: string | null
+          reply_to: string | null
+          sent_at: string | null
+          status: string
+          subject: string
+          to_email: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          dedupe_key?: string | null
+          html: string
+          id?: string
+          is_test?: boolean
+          kind: string
+          last_error?: string | null
+          locked_at?: string | null
+          next_attempt_at?: string
+          notification_id?: string | null
+          provider_id?: string | null
+          reply_to?: string | null
+          sent_at?: string | null
+          status?: string
+          subject: string
+          to_email: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          dedupe_key?: string | null
+          html?: string
+          id?: string
+          is_test?: boolean
+          kind?: string
+          last_error?: string | null
+          locked_at?: string | null
+          next_attempt_at?: string
+          notification_id?: string | null
+          provider_id?: string | null
+          reply_to?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          to_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_outbox_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       import_batches: {
         Row: {
           changes: Json
@@ -546,6 +614,90 @@ export type Database = {
             columns: ["reporter_id"]
             isOneToOne: false
             referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          carpenter_id: string | null
+          created_at: string
+          id: string
+          kind: string
+          link: string
+          order_id: string | null
+          quote_request_id: string | null
+          read_at: string | null
+          recipient_side: string
+          supplier_id: string | null
+          thread_id: string | null
+          title: string
+        }
+        Insert: {
+          body?: string | null
+          carpenter_id?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          link: string
+          order_id?: string | null
+          quote_request_id?: string | null
+          read_at?: string | null
+          recipient_side: string
+          supplier_id?: string | null
+          thread_id?: string | null
+          title: string
+        }
+        Update: {
+          body?: string | null
+          carpenter_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          link?: string
+          order_id?: string | null
+          quote_request_id?: string | null
+          read_at?: string | null
+          recipient_side?: string
+          supplier_id?: string | null
+          thread_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_carpenter_id_fkey"
+            columns: ["carpenter_id"]
+            isOneToOne: false
+            referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_quote_request_id_fkey"
+            columns: ["quote_request_id"]
+            isOneToOne: false
+            referencedRelation: "quote_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "message_threads"
             referencedColumns: ["id"]
           },
         ]
@@ -2225,7 +2377,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      claim_email_outbox: {
+        Args: { p_ids?: string[]; p_limit?: number }
+        Returns: Database["public"]["Tables"]["email_outbox"]["Row"][]
+      }
     }
     Enums: {
       [_ in never]: never

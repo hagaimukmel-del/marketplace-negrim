@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionSupplier } from '@/lib/supplier-auth'
 import { refuseAdminWriteFor } from '@/lib/admin-scope'
-import { isTestName, sendEmail } from '@/lib/email'
+import { isTestName } from '@/lib/email'
+import { notify } from '@/lib/notifications'
 import { unitLabel } from '@/lib/catalog'
 import { money } from '@/lib/app/format'
 import { QUOTE_MAX_VALID_DAYS, israelDate, quantityText, validLabel } from '@/lib/quotes'
@@ -54,16 +55,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     .eq('supplier_id', supplier.id)
     // Answered once: the carpentry may already have the price in its cart.
     .eq('status', 'requested')
-    .select('quantity, product_id, carpenters(business_name, email, email_verified_at), products(name_he, base_unit)')
+    .select('carpenter_id, quantity, product_id, carpenters(business_name, email, email_verified_at), products(name_he, base_unit)')
   if (error) return NextResponse.json({ error: 'התשובה לא נשמרה' }, { status: 500 })
   const row = rows?.[0]
   if (!row) return NextResponse.json({ error: 'כבר ענית על הבקשה הזו, או שהנגרייה ביטלה אותה' }, { status: 409 })
 
   const carpenter = row.carpenters as unknown as { business_name: string; email: string | null; email_verified_at: string | null } | null
   const product = row.products as unknown as { name_he: string; base_unit: string } | null
-  let emailed = false
-  // Only to an address the carpentry proved, like every other mail to them.
-  if (carpenter?.email && carpenter.email_verified_at && product) {
+  // Under the carpentry's bell always; by email only to an address it proved,
+  // like every other mail to them.
+  const mailTo = carpenter?.email && carpenter.email_verified_at ? carpenter.email : null
+  if (product) {
     const { data: offer } = await supabase
       .from('supplier_offers')
       .select('pack_label, pack_qty')
@@ -82,14 +84,27 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       validUntilText: update.valid_until ? validLabel(update.valid_until) : null,
       supplierNote: note,
     }
-    const result = await sendEmail({
-      to: carpenter.email,
-      subject: quoteAnswerSubject(details),
-      html: quoteAnswerHtml(details),
-      isTest: isTestName(carpenter.business_name, supplier.company_name),
+    const answered = update.status === 'quoted'
+    await notify({
+      to: { side: 'carpenter', id: row.carpenter_id },
+      kind: answered ? 'quote_answered' : 'quote_declined',
+      title: answered ? `הצעת מחיר מ${supplier.company_name}` : `${supplier.company_name} לא נתן הצעה`,
+      body: answered
+        ? `${product.name_he} · ${details.unitPriceText} · בתוקף עד ${details.validUntilText}`
+        : `${product.name_he}${note ? ` · ${note}` : ''}`,
+      link: '/app/quotes',
+      quoteRequestId: id,
+      email: mailTo
+        ? {
+            to: mailTo,
+            subject: quoteAnswerSubject(details),
+            html: quoteAnswerHtml(details),
+            isTest: isTestName(carpenter?.business_name, supplier.company_name),
+          }
+        : null,
     })
-    emailed = result.sent
   }
+  const emailed = Boolean(mailTo)
 
   return NextResponse.json({ ok: true, emailed })
 }

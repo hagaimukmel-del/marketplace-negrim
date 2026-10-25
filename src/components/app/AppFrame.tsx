@@ -4,6 +4,8 @@ import { acceptedCurrentTerms } from '@/lib/terms'
 import { loadCarpenterOrders } from '@/lib/app/orders-server'
 import { attentionOf } from '@/lib/app/orders'
 import { unreadCount } from '@/lib/messages'
+import { unreadNotificationCount } from '@/lib/notifications'
+import { kickOutbox } from '@/lib/outbox'
 import { answeredQuoteCount } from '@/lib/quotes-server'
 import TermsGate from '@/components/TermsGate'
 import { workBoardOpen } from '@/lib/work-server'
@@ -21,15 +23,22 @@ function nowMs(): number {
  */
 export default async function AppFrame({ children }: { children: React.ReactNode }) {
   const [carpenter, admin] = await Promise.all([getSessionCarpenter(), isAdmin()])
-  const [orders, unread, quotes] = carpenter
-    ? await Promise.all([loadCarpenterOrders(carpenter.id), unreadCount({ side: 'carpenter', id: carpenter.id }), answeredQuoteCount(carpenter.id)])
-    : [[], 0, 0]
+  const [orders, unread, quotes, notifications] = carpenter
+    ? await Promise.all([
+        loadCarpenterOrders(carpenter.id),
+        unreadCount({ side: 'carpenter', id: carpenter.id }),
+        answeredQuoteCount(carpenter.id),
+        unreadNotificationCount({ side: 'carpenter', id: carpenter.id }),
+      ])
+    : [[], 0, 0, 0]
+  // Retries due in the email outbox go out while people use the site.
+  kickOutbox()
   const now = nowMs()
   const attention = orders.filter((order) => attentionOf(order, now)).length
   const needsTerms = carpenter && !admin && !acceptedCurrentTerms(carpenter.terms_version)
 
   return (
-    <AppShell attention={attention} unread={unread} quotes={quotes} signedIn={Boolean(carpenter)} workOpen={workBoardOpen()} initial={(carpenter?.business_name ?? 'נ').trim().charAt(0)}>
+    <AppShell attention={attention} unread={unread} notifications={notifications} quotes={quotes} signedIn={Boolean(carpenter)} workOpen={workBoardOpen()} initial={(carpenter?.business_name ?? 'נ').trim().charAt(0)}>
       {children}
       {needsTerms && <TermsGate role="carpenter" />}
     </AppShell>

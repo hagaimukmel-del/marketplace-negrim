@@ -2,6 +2,8 @@ import { getSessionSupplier } from '@/lib/supplier-auth'
 import { isAdmin } from '@/lib/admin-auth'
 import { acceptedCurrentTerms } from '@/lib/terms'
 import { unreadCount } from '@/lib/messages'
+import { unreadNotificationCount } from '@/lib/notifications'
+import { kickOutbox } from '@/lib/outbox'
 import SupplierNav from './SupplierNav'
 import TermsGate from '@/components/TermsGate'
 
@@ -23,8 +25,12 @@ export const dynamic = 'force-dynamic'
 export default async function SupplierLayout({ children }: { children: React.ReactNode }) {
   const [supplier, admin] = await Promise.all([getSessionSupplier(), isAdmin()])
   const needsTerms = supplier && !admin && !acceptedCurrentTerms(supplier.terms_version)
-  const unread = supplier ? await unreadCount({ side: 'supplier', id: supplier.id }) : 0
+  const [unread, notifications] = supplier
+    ? await Promise.all([unreadCount({ side: 'supplier', id: supplier.id }), unreadNotificationCount({ side: 'supplier', id: supplier.id })])
+    : [0, 0]
 
+  // Retries due in the email outbox go out while people use the site.
+  kickOutbox()
   return (
     <>
       {supplier && admin && (
@@ -34,7 +40,7 @@ export default async function SupplierLayout({ children }: { children: React.Rea
             : `מצב אדמין — אתה מנהל את הממשק של ${supplier.company_name}. שינויים כאן נשמרים אצלו.`}
         </div>
       )}
-      {supplier && <SupplierNav company={supplier.company_name} logo={supplier.logo_url} unread={unread} />}
+      {supplier && <SupplierNav company={supplier.company_name} logo={supplier.logo_url} unread={unread} notifications={notifications} />}
       <main className="w-full flex-1 px-4 py-5">
         <div className="mx-auto max-w-4xl">{children}</div>
       </main>

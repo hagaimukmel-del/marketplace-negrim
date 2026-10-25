@@ -24,12 +24,12 @@ function Wordmark({ onDark = false }: { onDark?: boolean }) {
   )
 }
 
-/** The bell: messages from suppliers the carpenter has not opened yet. */
+/** The bell: everything new from suppliers — quotes, order answers, messages. */
 function BellLink({ unread }: { unread: number }) {
   return (
     <Link
-      href="/app/messages"
-      aria-label={unread ? `הודעות, ${unread} חדשות` : 'הודעות'}
+      href="/app/notifications"
+      aria-label={unread ? `התראות, ${unread} חדשות` : 'התראות'}
       className="relative grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-hair bg-white text-navy"
     >
       <Bell size={20} />
@@ -53,6 +53,7 @@ function BellLink({ unread }: { unread: number }) {
 export default function AppShell({
   attention,
   unread,
+  notifications = 0,
   quotes,
   initial,
   signedIn,
@@ -63,8 +64,10 @@ export default function AppShell({
   signedIn: boolean
   /** Orders that want the carpenter — the dot on "הזמנות". */
   attention: number
-  /** Message threads with an answer the carpenter has not opened — the bell. */
+  /** Message threads with an answer the carpenter has not opened — the dot on "הודעות". */
   unread: number
+  /** Unread notifications — the bell. */
+  notifications?: number
   /** Answered quotes waiting for the carpenter (T-023). */
   quotes: number
   /** First letter of the carpentry, for the avatar. */
@@ -151,7 +154,7 @@ export default function AppShell({
             <Wordmark />
           </Link>
           <span className="flex-1" />
-          {signedIn && <BellLink unread={unread} />}
+          {signedIn && <BellLink unread={notifications} />}
           <Link
             href="/app/work"
             aria-label="נגרים עובדים ביחד"
@@ -207,7 +210,7 @@ export default function AppShell({
             <span className="lg:hidden">ביחד</span>
           </Link>
           <span className="flex-1" />
-          {signedIn && <BellLink unread={unread} />}
+          {signedIn && <BellLink unread={notifications} />}
           <Link href="/app/order" className="inline-flex h-11 shrink-0 items-center gap-2 rounded-[11px] bg-brand px-4 font-bold text-navy hover:bg-brand-hover">
             <ShoppingBag size={18} />
             {lines ? (

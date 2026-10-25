@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Bell, LogOut, Store } from 'lucide-react'
+import { Bell, LogOut, MessageSquare, Store } from 'lucide-react'
 import { LogoMark } from '@/components/brand/Logo'
 
 /**
@@ -13,7 +13,19 @@ import { LogoMark } from '@/components/brand/Logo'
  * The sign-out exists from the first day because the alternative is what we
  * once shipped for the carpenters — a long session and no way to end it.
  */
-export default function SupplierNav({ company, logo, unread }: { company: string; logo: string | null; unread: number }) {
+export default function SupplierNav({
+  company,
+  logo,
+  unread,
+  notifications,
+}: {
+  company: string
+  logo: string | null
+  /** Threads waiting for the supplier. */
+  unread: number
+  /** Unread notifications: new orders, quote requests, messages. */
+  notifications: number
+}) {
   const router = useRouter()
   const [leaving, setLeaving] = useState(false)
 
@@ -57,13 +69,25 @@ export default function SupplierNav({ company, logo, unread }: { company: string
 
         <Link
           href="/supplier/messages"
-          aria-label={unread ? `הודעות, ${unread} חדשות` : 'הודעות'}
+          aria-label={unread ? `הודעות, ${unread} מחכות לתשובה` : 'הודעות'}
           className="relative ms-auto grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-stone-200 text-stone-700 hover:bg-stone-50"
         >
-          <Bell size={19} />
+          <MessageSquare size={19} />
           {unread > 0 && (
             <span className="tnum absolute -end-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-amber-500 px-1 text-[11px] font-bold text-white">
               {unread > 9 ? '9+' : unread}
+            </span>
+          )}
+        </Link>
+        <Link
+          href="/supplier/notifications"
+          aria-label={notifications ? `התראות, ${notifications} חדשות` : 'התראות'}
+          className="relative grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-stone-200 text-stone-700 hover:bg-stone-50"
+        >
+          <Bell size={19} />
+          {notifications > 0 && (
+            <span className="tnum absolute -end-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-amber-500 px-1 text-[11px] font-bold text-white">
+              {notifications > 9 ? '9+' : notifications}
             </span>
           )}
         </Link>

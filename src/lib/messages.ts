@@ -1,7 +1,8 @@
 import 'server-only'
 
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
-import { isTestName, sendEmail } from '@/lib/email'
+import { isTestName } from '@/lib/email'
+import { markNotificationsReadFor, notify } from '@/lib/notifications'
 import { newMessageHtml, newMessageSubject } from '@/lib/emails/new-message'
 
 /**
@@ -131,6 +132,7 @@ export async function loadThread(party: Party, threadId: string): Promise<Thread
       .from('message_threads')
       .update(party.side === 'carpenter' ? { carpenter_last_read_at: new Date().toISOString() } : { supplier_last_read_at: new Date().toISOString() })
       .eq('id', row.id),
+    markNotificationsReadFor(party, { threadId: row.id }),
   ])
   return {
     ...summary(row, party.side),
@@ -147,7 +149,13 @@ function cleanBody(raw: unknown): string | null {
   return body.length > 0 ? body : null
 }
 
-/** Email the other side; best-effort, a failed mail never fails the message. */
+/**
+ * Tell the other side: a line under its bell and an email through the outbox.
+ * Best-effort, a failed notification never fails the message.
+ *
+ * A burst of messages is one bell line (refreshed) and one email per ten
+ * minutes, so a back-and-forth does not bury the other side's inbox.
+ */
 async function notifyOtherSide(row: ThreadRow, from: Side, body: string): Promise<void> {
   try {
     const supabase = getSupabaseAdmin()
@@ -155,20 +163,28 @@ async function notifyOtherSide(row: ThreadRow, from: Side, body: string): Promis
       supabase.from('carpenters').select('business_name, email, email_verified_at').eq('id', row.carpenter_id).maybeSingle(),
       supabase.from('suppliers').select('company_name, email').eq('id', row.supplier_id).maybeSingle(),
     ])
+    const toSide: Side = from === 'carpenter' ? 'supplier' : 'carpenter'
     // A carpentry is mailed only at an address it has proved, like every other carpenter mail
     const to = from === 'carpenter' ? supplier?.email : carpenter?.email_verified_at ? carpenter.email : null
-    if (!to) return
     const fromName = (from === 'carpenter' ? carpenter?.business_name : supplier?.company_name) ?? 'שוק הנגרים'
-    await sendEmail({
-      to,
-      subject: newMessageSubject(fromName, row.subject),
-      html: newMessageHtml({
-        fromName,
-        subject: row.subject,
-        body,
-        path: from === 'carpenter' ? `/supplier/messages/${row.id}` : `/app/messages/${row.id}`,
-      }),
-      isTest: isTestName(carpenter?.business_name, supplier?.company_name),
+    const path = toSide === 'supplier' ? `/supplier/messages/${row.id}` : `/app/messages/${row.id}`
+    await notify({
+      to: { side: toSide, id: toSide === 'supplier' ? row.supplier_id : row.carpenter_id },
+      kind: 'message_new',
+      title: `הודעה חדשה מ${fromName}`,
+      body: `${row.subject} · ${body.slice(0, 120)}`,
+      link: path,
+      threadId: row.id,
+      orderId: row.order_id,
+      email: to
+        ? {
+            to,
+            subject: newMessageSubject(fromName, row.subject),
+            html: newMessageHtml({ fromName, subject: row.subject, body, path }),
+            isTest: isTestName(carpenter?.business_name, supplier?.company_name),
+            dedupeKey: `thread:${row.id}:${toSide}`,
+          }
+        : null,
     })
   } catch (err) {
     console.error('[messages] notify failed', err)

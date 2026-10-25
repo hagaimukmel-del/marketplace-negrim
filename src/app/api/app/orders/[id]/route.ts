@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { notifySupplierOrderDelivered } from '@/lib/notify-order'
 
 /**
  * What a carpentry can say about its own order:
@@ -42,6 +43,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       .maybeSingle()
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     if (!data) return NextResponse.json({ error: 'אפשר לסמן שהתקבלה רק אחרי שהספק אישר' }, { status: 409 })
+    await notifySupplierOrderDelivered(data.id)
     return NextResponse.json({ ok: true })
   }
 
