@@ -5,6 +5,7 @@ import { MessageCircle, Phone, TrendingUp, Users } from 'lucide-react'
 import { formatIls } from '@/lib/vat'
 import { whatsappLink } from '../types'
 import type { Sales } from '../sales'
+import { telUrl } from '@/lib/phone'
 
 function formatDate(value: string): string {
   return new Date(value).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: '2-digit', timeZone: 'Asia/Jerusalem' })
@@ -159,7 +160,7 @@ export default function SalesTab({ sales }: { sales: Sales }) {
                   {customer.phone && (
                     <div className="flex shrink-0 gap-1">
                       <a
-                        href={`tel:${customer.phone}`}
+                        href={telUrl(customer.phone) ?? undefined}
                         aria-label={`להתקשר ל${customer.name}`}
                         className="flex h-10 w-10 items-center justify-center rounded-lg text-stone-600 hover:bg-stone-100"
                       >

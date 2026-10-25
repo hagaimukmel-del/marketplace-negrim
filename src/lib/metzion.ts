@@ -81,19 +81,8 @@ export function daysLeft(expiresAt: string, now = Date.now()): number {
   return Math.ceil((new Date(expiresAt).getTime() - now) / 86_400_000)
 }
 
-/** "050-1234567" from whatever was typed or stored. */
-export function formatPhone(raw: string): string {
-  const digits = raw.replace(/\D/g, '')
-  const local = digits.startsWith('972') ? `0${digits.slice(3)}` : digits.length === 9 ? `0${digits}` : digits
-  return local.length === 10 ? `${local.slice(0, 3)}-${local.slice(3)}` : raw
-}
-
-export function whatsappUrl(phone: string, text: string): string {
-  let digits = phone.replace(/\D/g, '')
-  if (digits.startsWith('0')) digits = `972${digits.slice(1)}`
-  else if (digits.length === 9) digits = `972${digits}`
-  return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`
-}
+// Phone display and the WhatsApp link live in lib/phone.ts, shared with orders and quotes.
+export { formatPhone, telUrl, whatsappUrl } from './phone'
 
 /** How long ago, in words a carpenter would use. */
 export function postedAgo(createdAt: string, now = Date.now()): string {

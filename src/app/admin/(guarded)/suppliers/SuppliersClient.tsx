@@ -19,6 +19,7 @@ import {
   Truck,
   X,
 } from 'lucide-react'
+import { telUrl } from '@/lib/phone'
 import { formatIls } from '@/lib/vat'
 import SupplierForm, { EMPTY_SUPPLIER, type SupplierFields } from './SupplierForm'
 
@@ -307,7 +308,7 @@ function SupplierCard({
           <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-stone-700">
             {row.contact_name && <span>{row.contact_name}</span>}
             {row.phone && (
-              <a href={`tel:${row.phone}`} className="flex items-center gap-1.5 hover:underline">
+              <a href={telUrl(row.phone) ?? undefined} className="flex items-center gap-1.5 hover:underline">
                 <Phone size={14} className="text-stone-400" />
                 <span className="tnum">{row.phone}</span>
               </a>

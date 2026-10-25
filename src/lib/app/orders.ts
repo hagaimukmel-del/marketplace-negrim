@@ -134,3 +134,16 @@ export function quantityText(line: { quantity: number; unit: string; packLabel: 
   }
   return `${line.quantity} ${line.unit}`
 }
+
+/**
+ * The prepared WhatsApp message to the supplier about an order: the number and
+ * the link to the supplier's orders, so the answer can happen on the site.
+ */
+export function supplierOrderMessage(order: Pick<AppOrder, 'shortNumber'>, purpose: 'reminder' | 'question'): string {
+  const site = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://nagarimb2b.com').replace(/\/$/, '')
+  const opening =
+    purpose === 'reminder'
+      ? `שלום, לגבי הזמנה #${order.shortNumber} שנשלחה דרך נגרים B2B. אשמח לאישור.`
+      : `שלום, לגבי הזמנה #${order.shortNumber} שנשלחה דרך נגרים B2B.`
+  return `${opening}\nההזמנה באתר: ${site}/supplier?tab=orders`
+}

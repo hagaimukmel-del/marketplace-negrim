@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Building2, Check, ClipboardList, FileText, MessageCircle, MessageSquare, Phone, Repeat, Truck } from 'lucide-react'
 import { money, termsText, when } from '@/lib/app/format'
-import { attentionOf, orderSteps, quantityText, totalOf, type AppOrder } from '@/lib/app/orders'
+import { attentionOf, orderSteps, quantityText, supplierOrderMessage, totalOf, type AppOrder } from '@/lib/app/orders'
 import { VAT_RATE } from '@/lib/vat'
 import { BackLink, Kicker, StatusDot, Timeline } from '@/components/app/ui'
 import { useReorder } from '@/components/app/useReorder'
-import { whatsappHref } from '../../HomeView'
+import ContactLink from '@/components/app/ContactLink'
+import { whatsappUrl } from '@/lib/phone'
 
 /**
  * The order page. The order's state is the anchor — one calm line under its
@@ -26,7 +27,7 @@ export default function OrderDetail({ order, siblings, now }: { order: AppOrder;
   const supplier = order.supplier
   const diff = order.confirmed != null ? order.confirmed - order.submitted : 0
   const at = (iso: string) => when(iso, now)
-  const whatsapp = whatsappHref(supplier?.phone, `שלום, לגבי הזמנה #${order.shortNumber} מנגרים B2B`)
+  const hasWhatsapp = whatsappUrl(supplier?.phone) != null
 
   const act = async (action: 'seen' | 'received') => {
     setActing(true)
@@ -90,11 +91,9 @@ export default function OrderDetail({ order, siblings, now }: { order: AppOrder;
         <button type="button" disabled={acting} onClick={() => act('seen')} className={primary}>
           ראיתי, מקובל
         </button>
-        {whatsapp && (
-          <a href={whatsapp} target="_blank" rel="noreferrer" className={quiet}>
-            לא מסתדר? שאלה לספק בוואטסאפ
-          </a>
-        )}
+        <ContactLink channel="whatsapp" phone={supplier?.phone} text={supplierOrderMessage(order, 'question')} orderId={order.id} className={quiet}>
+          לא מסתדר? שאלה לספק בוואטסאפ
+        </ContactLink>
       </Card>
     )
   } else if (need === 'waiting') {
@@ -105,16 +104,12 @@ export default function OrderDetail({ order, siblings, now }: { order: AppOrder;
           <span className="text-[13px] text-muted">נשלחה {at(order.createdAt)}</span>
         </div>
         <p className="m-0 mt-2 text-sm font-semibold text-attn">הספק עוד לא אישר את ההזמנה</p>
-        {whatsapp ? (
-          <a href={whatsapp} target="_blank" rel="noreferrer" className={primary}>
-            <MessageCircle size={18} /> תזכורת לספק
-          </a>
-        ) : null}
-        {supplier?.phone && (
-          <a href={`tel:${supplier.phone}`} className={quiet}>
-            או חיוג לספק
-          </a>
-        )}
+        <ContactLink channel="whatsapp" phone={supplier?.phone} text={supplierOrderMessage(order, 'reminder')} orderId={order.id} className={primary}>
+          <MessageCircle size={18} /> תזכורת לספק
+        </ContactLink>
+        <ContactLink channel="phone" phone={supplier?.phone} orderId={order.id} className={hasWhatsapp ? quiet : primary}>
+          {hasWhatsapp ? 'או חיוג לספק' : 'חיוג לספק'}
+        </ContactLink>
       </Card>
     )
   } else if (order.status === 'cancelled' && order.supplierNote) {
@@ -124,11 +119,9 @@ export default function OrderDetail({ order, siblings, now }: { order: AppOrder;
         <div className="mt-2 rounded-[10px] border border-dashed border-[#EBD3AE] bg-white/70 px-2.5 py-2 text-[14.5px] text-[#5B4632]">
           ״{order.supplierNote}״ — {supplier?.name}
         </div>
-        {supplier?.phone && (
-          <a href={`tel:${supplier.phone}`} className={quiet}>
-            לבירור, חיוג לספק
-          </a>
-        )}
+        <ContactLink channel="phone" phone={supplier?.phone} orderId={order.id} className={quiet}>
+          לבירור, חיוג לספק
+        </ContactLink>
       </Card>
     )
   } else if (order.status === 'shipped' || order.status === 'processing' || order.status === 'confirmed') {
@@ -232,16 +225,19 @@ export default function OrderDetail({ order, siblings, now }: { order: AppOrder;
             <Link href={`/app/messages/new?order=${order.id}`} aria-label="הודעה לספק באתר" className="grid h-[38px] w-[38px] place-items-center rounded-xl border border-hair text-navy">
               <MessageSquare size={18} />
             </Link>
-            {supplier.phone && (
-              <a href={`tel:${supplier.phone}`} aria-label="חיוג לספק" className="grid h-[38px] w-[38px] place-items-center rounded-xl border border-hair text-navy">
-                <Phone size={18} />
-              </a>
-            )}
-            {whatsapp && (
-              <a href={whatsapp} target="_blank" rel="noreferrer" aria-label="וואטסאפ לספק" className="grid h-[38px] w-[38px] place-items-center rounded-xl border border-hair text-navy">
-                <MessageCircle size={18} />
-              </a>
-            )}
+            <ContactLink channel="phone" phone={supplier.phone} orderId={order.id} ariaLabel="חיוג לספק" className="grid h-[38px] w-[38px] place-items-center rounded-xl border border-hair text-navy">
+              <Phone size={18} />
+            </ContactLink>
+            <ContactLink
+              channel="whatsapp"
+              phone={supplier.phone}
+              text={supplierOrderMessage(order, 'question')}
+              orderId={order.id}
+              ariaLabel="וואטסאפ לספק"
+              className="grid h-[38px] w-[38px] place-items-center rounded-xl border border-hair text-navy"
+            >
+              <MessageCircle size={18} />
+            </ContactLink>
           </span>
         </Row>
       )}

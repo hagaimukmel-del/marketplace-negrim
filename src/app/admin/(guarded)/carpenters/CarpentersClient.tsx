@@ -20,6 +20,7 @@ import {
   Upload,
   X,
 } from 'lucide-react'
+import { telUrl } from '@/lib/phone'
 
 export interface CarpenterRow {
   id: string
@@ -147,7 +148,7 @@ function Row({
           <dl className="grid gap-3 sm:grid-cols-3">
             <Detail label="טלפון">
               {row.phone ? (
-                <a href={`tel:${row.phone}`} className="tnum flex items-center gap-1.5 hover:underline">
+                <a href={telUrl(row.phone) ?? undefined} className="tnum flex items-center gap-1.5 hover:underline">
                   <Phone size={13} className="text-stone-400" />
                   {row.phone}
                 </a>

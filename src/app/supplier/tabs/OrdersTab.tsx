@@ -9,6 +9,7 @@ import { statusInfo } from '@/lib/order-status'
 import { callApi, jsonInit, whatsappLink, type SupplierOrder, type SupplierQuestion, type SupplierQuotes } from '../types'
 import QuoteRequests from './QuoteRequests'
 import type { Notify } from '../SupplierApp'
+import { telUrl } from '@/lib/phone'
 
 type Filter = 'pending' | 'active' | 'done' | 'all'
 type Action = 'confirm' | 'reject' | 'prepare' | 'ship' | 'deliver'
@@ -108,7 +109,7 @@ function OrderCard({
       <div className="mt-3 flex flex-wrap gap-2">
         {order.phone && (
           <a
-            href={`tel:${order.phone}`}
+            href={telUrl(order.phone) ?? undefined}
             className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 px-3 text-sm font-semibold text-stone-700"
           >
             <Phone size={15} />
@@ -399,7 +400,7 @@ function Questions({ questions }: { questions: SupplierQuestion[] }) {
               <p className="mt-1 whitespace-pre-wrap text-sm text-stone-800">{q.message}</p>
               {q.phone && (
                 <div className="mt-2 flex gap-2">
-                  <a href={`tel:${q.phone}`} className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 px-3 py-1.5 text-sm font-semibold text-stone-800">
+                  <a href={telUrl(q.phone) ?? undefined} className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 px-3 py-1.5 text-sm font-semibold text-stone-800">
                     <Phone size={15} /> {q.contactName ?? q.phone}
                   </a>
                   {whatsapp && (

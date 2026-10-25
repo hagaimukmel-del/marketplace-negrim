@@ -230,6 +230,36 @@ export type Database = {
           },
         ]
       }
+      contact_clicks: {
+        Row: {
+          carpenter_id: string
+          channel: string
+          created_at: string
+          id: string
+          order_id: string | null
+          quote_request_id: string | null
+          supplier_id: string | null
+        }
+        Insert: {
+          carpenter_id: string
+          channel: string
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          quote_request_id?: string | null
+          supplier_id?: string | null
+        }
+        Update: {
+          carpenter_id?: string
+          channel?: string
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          quote_request_id?: string | null
+          supplier_id?: string | null
+        }
+        Relationships: []
+      }
       email_outbox: {
         Row: {
           attempts: number
