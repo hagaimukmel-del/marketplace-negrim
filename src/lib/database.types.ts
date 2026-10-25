@@ -415,6 +415,7 @@ export type Database = {
           last_sender: string
           order_id: string | null
           product_id: string | null
+          quote_request_id: string | null
           status: string
           subject: string
           supplier_id: string
@@ -430,6 +431,7 @@ export type Database = {
           last_sender: string
           order_id?: string | null
           product_id?: string | null
+          quote_request_id?: string | null
           status?: string
           subject: string
           supplier_id: string
@@ -445,6 +447,7 @@ export type Database = {
           last_sender?: string
           order_id?: string | null
           product_id?: string | null
+          quote_request_id?: string | null
           status?: string
           subject?: string
           supplier_id?: string
@@ -491,6 +494,7 @@ export type Database = {
       messages: {
         Row: {
           body: string
+          client_id: string | null
           created_at: string
           id: string
           sender: string
@@ -498,6 +502,7 @@ export type Database = {
         }
         Insert: {
           body: string
+          client_id?: string | null
           created_at?: string
           id?: string
           sender: string
@@ -505,6 +510,7 @@ export type Database = {
         }
         Update: {
           body?: string
+          client_id?: string | null
           created_at?: string
           id?: string
           sender?: string
@@ -2404,6 +2410,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      post_message: {
+        Args: { p_body: string; p_client_id?: string; p_sender: string; p_thread: string }
+        Returns: Database["public"]["Tables"]["messages"]["Row"]
+      }
       claim_email_outbox: {
         Args: { p_ids?: string[]; p_limit?: number }
         Returns: Database["public"]["Tables"]["email_outbox"]["Row"][]

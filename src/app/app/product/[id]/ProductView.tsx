@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { Building2, Check, FileText, Info, Plus, Repeat, X } from 'lucide-react'
+import { Building2, Check, FileText, Info, MessageSquare, Plus, Repeat, X } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { money, packText, termsText, when } from '@/lib/app/format'
 import { sortedOffers, stepOf, suggestedOffer, type AppOffer, type AppProduct } from '@/lib/app/products'
@@ -154,11 +154,18 @@ export default function ProductView({
           {offer.supplierName}
         </span>
         {offer.delivers === false && <span className="text-[13px] font-semibold text-attn">לא מגיע לאזור שלך</span>}
-        {showPrices && (
-          <Link href={`/app/messages/new?supplier=${offer.supplierId}&product=${product.id}`} className="text-[13.5px] font-semibold text-brand-ink">
-            שאלה לספק
-          </Link>
-        )}
+        {/* A question goes into a conversation in the site; signed out, sign in first and come back here. */}
+        <Link
+          href={
+            showPrices
+              ? `/app/messages/new?supplier=${offer.supplierId}&product=${product.id}`
+              : `/join?next=${encodeURIComponent(`/app/product/${product.id}`)}`
+          }
+          className="inline-flex h-9 items-center gap-1.5 rounded-[10px] border-[1.5px] border-hair bg-white px-3 text-[14px] font-bold text-navy"
+        >
+          <MessageSquare size={16} aria-hidden />
+          שאלה לספק
+        </Link>
         {offer.suggested ? <Reason product={product} offer={offer} /> : <span className="text-[13.5px] text-muted">בחרת ספק אחר</span>}
         {product.offers.length > 1 && (
           <button type="button" onClick={() => setSheet(true)} className="ms-auto text-sm font-semibold text-brand-ink md:hidden">

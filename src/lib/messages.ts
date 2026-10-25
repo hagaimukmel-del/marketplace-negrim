@@ -35,6 +35,8 @@ export interface ThreadSummary {
 export interface ThreadMessage {
   id: string
   mine: boolean
+  /** Written by the site ("the supplier confirmed the order"), not by either side. */
+  system: boolean
   body: string
   createdAt: string
 }
@@ -42,6 +44,9 @@ export interface ThreadMessage {
 export interface ThreadDetail extends ThreadSummary {
   orderId: string | null
   productId: string | null
+  quoteRequestId: string | null
+  /** When the other side last opened the thread: my messages before it are read. */
+  otherReadAt: string | null
   messages: ThreadMessage[]
 }
 
@@ -57,6 +62,7 @@ interface ThreadRow {
   supplier_last_read_at: string | null
   order_id: string | null
   product_id: string | null
+  quote_request_id?: string | null
   carpenter_id: string
   supplier_id: string
   carpenters: { business_name: string } | null
@@ -65,7 +71,7 @@ interface ThreadRow {
 }
 
 const THREAD_COLUMNS =
-  'id, subject, status, last_message_at, last_sender, carpenter_last_read_at, supplier_last_read_at, order_id, product_id, carpenter_id, supplier_id, ' +
+  'id, subject, status, last_message_at, last_sender, carpenter_last_read_at, supplier_last_read_at, order_id, product_id, quote_request_id, carpenter_id, supplier_id, ' +
   'carpenters(business_name), suppliers(company_name), orders(short_number, order_number)'
 
 const ownColumn = (side: Side) => (side === 'carpenter' ? 'carpenter_id' : 'supplier_id')
@@ -139,7 +145,15 @@ export async function loadThread(party: Party, threadId: string): Promise<Thread
     unread: false,
     orderId: row.order_id,
     productId: row.product_id,
-    messages: (rows ?? []).map((m) => ({ id: m.id, mine: m.sender === party.side, body: m.body, createdAt: m.created_at })),
+    quoteRequestId: row.quote_request_id ?? null,
+    otherReadAt: party.side === 'carpenter' ? row.supplier_last_read_at : row.carpenter_last_read_at,
+    messages: (rows ?? []).map((m) => ({
+      id: m.id,
+      mine: m.sender === party.side,
+      system: m.sender === 'system',
+      body: m.body,
+      createdAt: m.created_at,
+    })),
   }
 }
 
@@ -191,7 +205,37 @@ async function notifyOtherSide(row: ThreadRow, from: Side, body: string): Promis
   }
 }
 
-async function append(row: ThreadRow, from: Side, body: string, notify = true): Promise<boolean> {
+/** PostgREST's "no such function": a database before migration 20261025140000. */
+function missingFunction(error: { code?: string } | null): boolean {
+  return error?.code === 'PGRST202' || error?.code === '42883'
+}
+
+/**
+ * Save a message and update its thread in one transaction (post_message), so
+ * a message can never be saved without the inbox showing it. A resend with the
+ * same clientId returns the message already saved instead of a second copy.
+ */
+async function append(row: ThreadRow, from: Side, body: string, notify = true, clientId: string | null = null): Promise<boolean> {
+  const supabase = getSupabaseAdmin()
+  const { data, error } = await supabase.rpc('post_message', {
+    p_thread: row.id,
+    p_sender: from,
+    p_body: body,
+    ...(clientId ? { p_client_id: clientId } : {}),
+  })
+  if (missingFunction(error)) return appendWithoutFunction(row, from, body, notify)
+  if (error || !data) {
+    console.error('[messages] post failed', error)
+    return false
+  }
+  // A resend of a message already saved: the other side was told the first time.
+  const fresh = Date.now() - new Date(data.created_at).getTime() < 60_000
+  if (notify && fresh) await notifyOtherSide(row, from, body)
+  return true
+}
+
+/** The two-step write, for a database that does not have post_message yet. */
+async function appendWithoutFunction(row: ThreadRow, from: Side, body: string, notify: boolean): Promise<boolean> {
   const supabase = getSupabaseAdmin()
   const now = new Date().toISOString()
   const { error } = await supabase.from('messages').insert({ thread_id: row.id, sender: from, body })
@@ -212,14 +256,99 @@ async function append(row: ThreadRow, from: Side, body: string, notify = true): 
   return true
 }
 
+/** A message id from the browser, for a safe resend; anything else is ignored. */
+function cleanClientId(raw: unknown): string | null {
+  return typeof raw === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(raw) ? raw.toLowerCase() : null
+}
+
+/**
+ * A line from the site in the conversation about an order or a quote ("the
+ * supplier confirmed the order"). Only when that conversation exists; the bell
+ * carries the news either way. Never throws.
+ */
+export async function postSystemMessage(about: { orderId?: string; quoteRequestId?: string }, body: string): Promise<void> {
+  try {
+    const column = about.orderId ? 'order_id' : 'quote_request_id'
+    const value = about.orderId ?? about.quoteRequestId
+    if (!value) return
+    const supabase = getSupabaseAdmin()
+    const { data: thread } = await supabase.from('message_threads').select('id').eq(column, value).maybeSingle()
+    if (!thread) return
+    const { error } = await supabase.rpc('post_message', { p_thread: thread.id, p_sender: 'system', p_body: body.slice(0, MAX_BODY) })
+    if (error && !missingFunction(error)) console.error('[messages] system message failed', error)
+  } catch (err) {
+    console.error('[messages] system message failed', err)
+  }
+}
+
+/**
+ * Open the conversation of a new quote request: the request itself as a line
+ * from the site, then the carpentry's note as its first message. The supplier
+ * is not notified from here; the quote request already was. Returns the
+ * thread id, or null on a database without quote threads.
+ */
+export async function openQuoteThread(input: {
+  carpenterId: string
+  supplierId: string
+  quoteRequestId: string
+  productId: string
+  subject: string
+  summary: string
+  note: string | null
+}): Promise<string | null> {
+  try {
+    const supabase = getSupabaseAdmin()
+    const { data: existing } = await supabase.from('message_threads').select('id').eq('quote_request_id', input.quoteRequestId).maybeSingle()
+    if (existing) return existing.id
+    const { data: created, error } = await supabase
+      .from('message_threads')
+      .insert({
+        carpenter_id: input.carpenterId,
+        supplier_id: input.supplierId,
+        product_id: input.productId,
+        quote_request_id: input.quoteRequestId,
+        subject: input.subject.slice(0, 200),
+        last_sender: 'carpenter',
+      })
+      .select(THREAD_COLUMNS)
+      .single()
+    if (error || !created) {
+      if (error) console.error('[messages] quote thread not opened', error)
+      return null
+    }
+    const row = created as unknown as ThreadRow
+    await supabase.rpc('post_message', { p_thread: row.id, p_sender: 'system', p_body: input.summary.slice(0, MAX_BODY) })
+    if (input.note) await append(row, 'carpenter', input.note.slice(0, MAX_BODY), false)
+    return row.id
+  } catch (err) {
+    console.error('[messages] quote thread not opened', err)
+    return null
+  }
+}
+
+/** The conversation of each of these quote requests, for links from the quote lists. */
+export async function quoteThreadIds(quoteRequestIds: string[]): Promise<Map<string, string>> {
+  const map = new Map<string, string>()
+  if (quoteRequestIds.length === 0) return map
+  const { data, error } = await getSupabaseAdmin()
+    .from('message_threads')
+    .select('id, quote_request_id')
+    .in('quote_request_id', quoteRequestIds)
+  if (error) return map
+  for (const row of data ?? []) if (row.quote_request_id) map.set(row.quote_request_id, row.id)
+  return map
+}
+
 export type PostResult = { ok: true; threadId: string } | { ok: false; status: number; error: string }
 
-export async function reply(party: Party, threadId: string, rawBody: unknown): Promise<PostResult> {
+export async function reply(party: Party, threadId: string, rawBody: unknown, rawClientId?: unknown): Promise<PostResult> {
   const body = cleanBody(rawBody)
   if (!body) return { ok: false, status: 400, error: 'ההודעה ריקה' }
   const row = await ownThread(party, threadId)
   if (!row) return { ok: false, status: 404, error: 'השיחה לא נמצאה' }
-  return (await append(row, party.side, body)) ? { ok: true, threadId: row.id } : { ok: false, status: 500, error: 'השליחה נכשלה' }
+  return (await append(row, party.side, body, true, cleanClientId(rawClientId)))
+    ? { ok: true, threadId: row.id }
+    : { ok: false, status: 500, error: 'השליחה נכשלה' }
 }
 
 /**

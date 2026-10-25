@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { unitLabel } from '@/lib/catalog'
 import { israelDate, stateOf, type QuoteRequest, type SupplierQuoteRequest } from '@/lib/quotes'
 import type { QuoteKind } from '@/lib/quote-rules'
+import { quoteThreadIds } from './messages'
 
 /**
  * Quote requests on the server (T-023). Every read tolerates the table being
@@ -34,13 +35,13 @@ interface Row {
 
 type Packs = Map<string, { label: string | null; qty: number | null }>
 
-async function load(filter: { carpenterId?: string; supplierId?: string }): Promise<{ ready: boolean; rows: Row[]; packs: Packs; kinds: Map<string, QuoteKind> }> {
+async function load(filter: { carpenterId?: string; supplierId?: string }): Promise<{ ready: boolean; rows: Row[]; packs: Packs; kinds: Map<string, QuoteKind>; threads: Map<string, string> }> {
   const supabase = getSupabaseAdmin()
   let query = supabase.from('quote_requests').select(COLUMNS).order('created_at', { ascending: false }).limit(200)
   if (filter.carpenterId) query = query.eq('carpenter_id', filter.carpenterId)
   if (filter.supplierId) query = query.eq('supplier_id', filter.supplierId)
   const { data, error } = await query
-  if (error) return { ready: false, rows: [], packs: new Map(), kinds: new Map() }
+  if (error) return { ready: false, rows: [], packs: new Map(), kinds: new Map(), threads: new Map() }
   const rows = (data ?? []) as unknown as Row[]
 
   // The pack each supplier sells it in, so a quantity reads as "4 × דלי 25 ק״ג".
@@ -66,10 +67,12 @@ async function load(filter: { carpenterId?: string; supplierId?: string }): Prom
       for (const row of kindRows ?? []) if (row.kind === 'quote' || row.kind === 'volume') kinds.set(row.id, row.kind)
     }
   }
-  return { ready: true, rows, packs, kinds }
+  // The conversation of each request (migration 20261025140000); none before it.
+  const threads = await quoteThreadIds(rows.map((row) => row.id))
+  return { ready: true, rows, packs, kinds, threads }
 }
 
-function toQuote(row: Row, packs: Packs, kinds: Map<string, QuoteKind>, today: string): QuoteRequest {
+function toQuote(row: Row, packs: Packs, kinds: Map<string, QuoteKind>, threads: Map<string, string>, today: string): QuoteRequest {
   const pack = packs.get(`${row.product_id}:${row.supplier_id}`)
   return {
     id: row.id,
@@ -89,22 +92,23 @@ function toQuote(row: Row, packs: Packs, kinds: Map<string, QuoteKind>, today: s
     packLabel: pack?.label ?? null,
     packQty: pack?.qty ?? null,
     kind: kinds.get(row.id) ?? null,
+    threadId: threads.get(row.id) ?? null,
   }
 }
 
 export async function loadCarpenterQuotes(carpenterId: string): Promise<{ ready: boolean; quotes: QuoteRequest[] }> {
-  const { ready, rows, packs, kinds } = await load({ carpenterId })
+  const { ready, rows, packs, kinds, threads } = await load({ carpenterId })
   const today = israelDate()
-  return { ready, quotes: rows.map((row) => toQuote(row, packs, kinds, today)) }
+  return { ready, quotes: rows.map((row) => toQuote(row, packs, kinds, threads, today)) }
 }
 
 export async function loadSupplierQuotes(supplierId: string): Promise<{ ready: boolean; quotes: SupplierQuoteRequest[] }> {
-  const { ready, rows, packs, kinds } = await load({ supplierId })
+  const { ready, rows, packs, kinds, threads } = await load({ supplierId })
   const today = israelDate()
   return {
     ready,
     quotes: rows.map((row) => ({
-      ...toQuote(row, packs, kinds, today),
+      ...toQuote(row, packs, kinds, threads, today),
       carpenter: row.carpenters?.business_name ?? 'נגרייה',
       contactName: row.carpenters?.contact_name ?? null,
       phone: row.carpenters?.phone ?? null,

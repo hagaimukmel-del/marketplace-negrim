@@ -4,6 +4,7 @@ import { getSessionSupplier } from '@/lib/supplier-auth'
 import { refuseAdminWriteFor } from '@/lib/admin-scope'
 import { isTestName } from '@/lib/email'
 import { notify } from '@/lib/notifications'
+import { postSystemMessage } from '@/lib/messages'
 import { unitLabel } from '@/lib/catalog'
 import { money } from '@/lib/app/format'
 import { QUOTE_MAX_VALID_DAYS, israelDate, quantityText, validLabel } from '@/lib/quotes'
@@ -85,6 +86,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       supplierNote: note,
     }
     const answered = update.status === 'quoted'
+    await postSystemMessage(
+      { quoteRequestId: id },
+      (answered ? `הספק נתן הצעה: ${details.unitPriceText}, בתוקף עד ${details.validUntilText}` : 'הספק לא נתן הצעה לבקשה הזו') +
+        (note ? `. הערת הספק: ${note}` : '')
+    )
     await notify({
       to: { side: 'carpenter', id: row.carpenter_id },
       kind: answered ? 'quote_answered' : 'quote_declined',

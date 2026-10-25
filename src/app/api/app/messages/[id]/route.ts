@@ -20,7 +20,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'שלחת הרבה הודעות בשעה האחרונה. נסה שוב מאוחר יותר.' }, { status: 429 })
   }
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>
-  const result = await reply({ side: 'carpenter', id: carpenter.id }, (await params).id, body.body)
+  const result = await reply({ side: 'carpenter', id: carpenter.id }, (await params).id, body.body, body.clientId)
   return result.ok ? NextResponse.json({ ok: true }) : NextResponse.json({ error: result.error }, { status: result.status })
 }
 

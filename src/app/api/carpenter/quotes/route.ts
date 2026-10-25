@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { isTestName } from '@/lib/email'
 import { notify } from '@/lib/notifications'
+import { openQuoteThread, postSystemMessage } from '@/lib/messages'
 import { unitLabel } from '@/lib/catalog'
 import { israelDate, quantityText, validLabel } from '@/lib/quotes'
 import { quoteAnswerHtml, quoteAnswerSubject, quoteRequestHtml, quoteRequestSubject } from '@/lib/emails/quote'
@@ -153,6 +154,18 @@ export async function POST(request: NextRequest) {
   })
   const emailed = Boolean(supplier.email)
 
+  // The request is a conversation: a question about it, the answer and what
+  // follows sit in one thread both sides can open.
+  await openQuoteThread({
+    carpenterId: carpenter.id,
+    supplierId,
+    quoteRequestId: saved.id,
+    productId,
+    subject: `בקשת הצעה: ${product.name_he}`,
+    summary: `בקשת הצעת מחיר: ${product.name_he}, ${quantityLine}`,
+    note,
+  })
+
   // The answer goes to the carpentry as if the supplier had typed it: under
   // its bell, and by email to an address it proved, like every other mail to them.
   if (quoted) {
@@ -166,6 +179,10 @@ export async function POST(request: NextRequest) {
       validUntilText: validLabel(quoted.validUntil),
       supplierNote: 'המחיר המיוחד שהספק קבע לכמות הזו',
     }
+    await postSystemMessage(
+      { quoteRequestId: saved.id },
+      `נענתה אוטומטית במחיר המיוחד של הספק: ${answer.unitPriceText}, בתוקף עד ${answer.validUntilText}`
+    )
     await notify({
       to: { side: 'carpenter', id: carpenter.id },
       kind: 'quote_answered',

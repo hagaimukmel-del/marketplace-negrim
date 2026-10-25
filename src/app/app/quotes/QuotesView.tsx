@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, FileText, ShoppingBag } from 'lucide-react'
+import { Check, FileText, MessageSquare, ShoppingBag } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { money } from '@/lib/app/format'
 import { QUOTE_KIND_LABEL, QUOTE_STATE_LABEL, quantityText, validLabel, type QuoteRequest } from '@/lib/quotes'
@@ -144,6 +144,14 @@ export default function QuotesView({ ready, quotes }: { ready: boolean; quotes: 
                   >
                     לא מתאים לי
                   </button>
+                  {quote.threadId && (
+                    <Link
+                      href={`/app/messages/${quote.threadId}`}
+                      className="inline-flex h-11 items-center gap-1.5 rounded-[11px] px-3 text-sm font-semibold text-muted hover:bg-stone-100"
+                    >
+                      <MessageSquare size={16} /> שיחה על הבקשה
+                    </Link>
+                  )}
                 </div>
               </article>
             )
@@ -165,6 +173,16 @@ export default function QuotesView({ ready, quotes }: { ready: boolean; quotes: 
                     {quote.kind === 'volume' ? ` · ${QUOTE_KIND_LABEL.volume}` : ''} · נשלחה {when(quote.createdAt)}
                   </small>
                 </div>
+                {quote.threadId && (
+                  <Link
+                    href={`/app/messages/${quote.threadId}`}
+                    aria-label="שיחה על הבקשה"
+                    title="שיחה על הבקשה"
+                    className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] text-muted hover:bg-stone-100"
+                  >
+                    <MessageSquare size={17} />
+                  </Link>
+                )}
                 <button
                   type="button"
                   onClick={() => act(quote, 'cancel')}

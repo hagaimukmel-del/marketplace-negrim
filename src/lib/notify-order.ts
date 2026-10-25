@@ -5,6 +5,7 @@ import { isTestName } from './email'
 import { money } from './app/format'
 import { notify } from './notifications'
 import { queueEmail } from './outbox'
+import { postSystemMessage } from './messages'
 import { newOrderHtml, newOrderSubject, type NewOrderLine } from './emails/new-order'
 import { loadOrderCc } from './order-recipients'
 import {
@@ -229,6 +230,9 @@ export async function notifyCarpenterOrderUpdate(
         }
       : null
 
+    // The conversation about this order, when there is one, keeps the story too.
+    await postSystemMessage({ orderId }, order.supplier_note ? `${headline}. הערת הספק: ${order.supplier_note}` : headline)
+
     if (order.carpenter_id) {
       await notify({
         to: { side: 'carpenter', id: order.carpenter_id },
@@ -261,10 +265,12 @@ export async function notifySupplierOrderDelivered(orderId: string): Promise<voi
       .maybeSingle()
     if (!order?.supplier_id) return
     const orderNumber = order.short_number ? `#${order.short_number}` : order.order_number
+    const title = `${order.business_name || order.customer_name || 'הנגרייה'} סימנה שהזמנה ${orderNumber} התקבלה`
+    await postSystemMessage({ orderId }, title)
     await notify({
       to: { side: 'supplier', id: order.supplier_id },
       kind: 'order_delivered',
-      title: `${order.business_name || order.customer_name || 'הנגרייה'} סימנה שהזמנה ${orderNumber} התקבלה`,
+      title,
       link: '/supplier?tab=orders',
       orderId,
     })
