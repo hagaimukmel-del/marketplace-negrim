@@ -33,6 +33,7 @@ export type NotificationKind =
   | 'quote_declined'
   | 'message_new'
   | 'email_failed'
+  | 'reminder'
 
 export interface NotificationItem {
   id: string

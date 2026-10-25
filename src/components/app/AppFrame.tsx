@@ -6,6 +6,7 @@ import { attentionOf } from '@/lib/app/orders'
 import { unreadCount } from '@/lib/messages'
 import { unreadNotificationCount } from '@/lib/notifications'
 import { kickOutbox } from '@/lib/outbox'
+import { kickReminders } from '@/lib/reminders'
 import { carpenterEmailProblem } from '@/lib/email-delivery'
 import EmailProblemBanner from '@/components/EmailProblemBanner'
 import { answeredQuoteCount } from '@/lib/quotes-server'
@@ -36,6 +37,7 @@ export default async function AppFrame({ children }: { children: React.ReactNode
     : [[], 0, 0, 0, null]
   // Retries due in the email outbox go out while people use the site.
   kickOutbox()
+  kickReminders()
   const now = nowMs()
   const attention = orders.filter((order) => attentionOf(order, now)).length
   const needsTerms = carpenter && !admin && !acceptedCurrentTerms(carpenter.terms_version)

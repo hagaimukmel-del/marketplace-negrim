@@ -1,4 +1,4 @@
-import { Bell, CheckCircle2, ClipboardList, FileText, MailWarning, MessageSquare, Truck, XCircle } from 'lucide-react'
+import { AlarmClock, Bell, CheckCircle2, ClipboardList, FileText, MailWarning, MessageSquare, Truck, XCircle } from 'lucide-react'
 import type { NotificationItem, NotificationKind } from '@/lib/notifications'
 
 function when(value: string): string {
@@ -22,6 +22,7 @@ const ICON: Record<NotificationKind, typeof Bell> = {
   quote_declined: XCircle,
   message_new: MessageSquare,
   email_failed: MailWarning,
+  reminder: AlarmClock,
 }
 
 /**

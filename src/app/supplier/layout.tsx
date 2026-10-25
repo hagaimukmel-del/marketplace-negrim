@@ -4,6 +4,7 @@ import { acceptedCurrentTerms } from '@/lib/terms'
 import { unreadCount } from '@/lib/messages'
 import { unreadNotificationCount } from '@/lib/notifications'
 import { kickOutbox } from '@/lib/outbox'
+import { kickReminders } from '@/lib/reminders'
 import { emailProblemFor } from '@/lib/email-delivery'
 import EmailProblemBanner from '@/components/EmailProblemBanner'
 import SupplierNav from './SupplierNav'
@@ -37,6 +38,7 @@ export default async function SupplierLayout({ children }: { children: React.Rea
 
   // Retries due in the email outbox go out while people use the site.
   kickOutbox()
+  kickReminders()
   return (
     <>
       {supplier && admin && (
