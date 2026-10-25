@@ -38,6 +38,7 @@ export interface WaitingRow {
   workingHours: number
   rung: number
   contacted: number
+  handled: boolean
 }
 
 export interface UnreachableRow {
@@ -94,6 +95,12 @@ export async function loadCommunicationHealth(now: Date = new Date()): Promise<C
     supabase.from('contact_clicks').select('order_id').gte('created_at', weekAgo).limit(5000),
   ])
 
+  const waitingKeys = [...(orders.data ?? []).map((o) => `order:${o.id}:handled`), ...(quotes.data ?? []).map((q) => `quote:${q.id}:handled`)]
+  const { data: handledRows } = waitingKeys.length
+    ? await supabase.from('reminder_log').select('key').in('key', waitingKeys)
+    : { data: [] as { key: string }[] }
+  const handled = new Set((handledRows ?? []).map((row) => row.key))
+
   const ready = !week.error
   const counts = { queued: 0, sent: 0, delivered: 0, failed: 0, pending: 0 }
   for (const row of week.data ?? []) {
@@ -124,6 +131,7 @@ export async function loadCommunicationHealth(now: Date = new Date()): Promise<C
       supplier: name(o.suppliers, 'company_name') ?? '—',
       createdAt: o.created_at as string,
       contacted: contactedByOrder.get(o.id) ?? 0,
+      handled: handled.has(`order:${o.id}:handled`),
       ...age(o.created_at as string),
     })),
     ...(quotes.data ?? []).map((q) => ({
@@ -134,6 +142,7 @@ export async function loadCommunicationHealth(now: Date = new Date()): Promise<C
       supplier: name(q.suppliers, 'company_name') ?? '—',
       createdAt: q.created_at,
       contacted: 0,
+      handled: handled.has(`quote:${q.id}:handled`),
       ...age(q.created_at),
     })),
   ].sort((a, b) => b.workingHours - a.workingHours)

@@ -144,6 +144,7 @@ async function remindSupplier(item: Waiting, rung: Rung): Promise<void> {
             action: isOrder ? 'אשר הזמנה' : 'לתשובה באתר',
           }),
           isTest: isTestName(item.supplierName, item.carpenterName),
+          replyTo: process.env.EMAIL_NO_REPLY || null,
         }
       : null,
   })

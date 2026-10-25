@@ -19,6 +19,7 @@ vi.mock('@/lib/carpenter-auth', () => ({
   getSessionCarpenter: async () => ({ id: 'c1', business_name: 'נגריית בדיקה', contact_name: null, city: null }),
 }))
 vi.mock('@/lib/rate-limit', () => ({ checkRateLimit: () => ({ allowed: true }) }))
+vi.mock('@/lib/rate-limit-shared', () => ({ sharedLimitReached: async () => false }))
 vi.mock('@/lib/notifications', () => ({ notify }))
 vi.mock('@/lib/price-mode', () => ({ priceModeOf: async () => db.priceMode }))
 vi.mock('@/lib/special-price', () => ({

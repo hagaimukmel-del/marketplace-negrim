@@ -6,6 +6,7 @@ import { isTestName } from '@/lib/email'
 import { notify } from '@/lib/notifications'
 import { supplierQuestionHtml, supplierQuestionSubject } from '@/lib/emails/supplier-question'
 import { startThread } from '@/lib/messages'
+import { sharedLimitReached } from '@/lib/rate-limit-shared'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Each question is an email in a supplier's inbox
-    if (!checkRateLimit(carpenter.id, 'supplierQuestion').allowed) {
+    if (!checkRateLimit(carpenter.id, 'supplierQuestion').allowed || (await sharedLimitReached('supplierQuestion', { side: 'carpenter', id: carpenter.id }))) {
       return NextResponse.json({ error: 'שלחת הרבה שאלות בשעה האחרונה. נסה שוב מאוחר יותר.' }, { status: 429 })
     }
 

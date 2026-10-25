@@ -168,12 +168,26 @@ export default function CommunicationAdmin({ health }: { health: CommunicationHe
                   {row.carpenter} ← {row.supplier}
                 </span>
                 <span className="tnum text-stone-500">{row.workingHours} שעות עבודה</span>
-                {row.rung > 0 && (
+                {row.rung > 0 && !row.handled && (
                   <span className={`rounded px-1.5 py-0.5 text-xs font-semibold ${row.rung === 3 ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-900'}`}>
                     {RUNG_LABEL[row.rung]}
                   </span>
                 )}
                 {row.contacted > 0 && <span className="text-xs text-stone-500">הנגרייה פנתה בטלפון/וואטסאפ {row.contacted}×</span>}
+                <span className="ms-auto">
+                  {row.handled ? (
+                    <span className="text-xs font-semibold text-emerald-700">טופל טלפונית</span>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={busy === row.id}
+                      onClick={() => act(row.id, { action: 'handled', subject: row.subject, id: row.id }, 'סומן כטופל. התזכורות לפריט הזה נעצרו.')}
+                      className="rounded-lg border border-stone-300 px-2.5 py-1 text-xs font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-50"
+                    >
+                      סמן כטופל טלפונית
+                    </button>
+                  )}
+                </span>
               </li>
             ))}
           </ul>

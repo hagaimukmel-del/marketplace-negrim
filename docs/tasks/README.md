@@ -81,8 +81,8 @@ python .claude/skills/product-map/scripts/task_index.py
 | [T-016](T-016.md) | P3 | open | debt | 10-platform | Lint errors |  |
 | [T-019](T-019.md) | P3 | open | decision | 10-platform | CLAUDE.md rules vs reality: Zod, @supabase/ssr, Server Components |  |
 | [T-029](T-029.md) | P3 | open | incomplete | 04-orders-fulfilment | Email confirm link can only confirm all of an order |  |
-| [T-031](T-031.md) | P3 | open | debt | 10-platform | Rate limits survive across serverless instances |  |
 | [T-033](T-033.md) | P3 | open | future | 01-public-onboarding | Login code by WhatsApp | T-032 |
+| [T-031](T-031.md) | P3 | done | debt | 10-platform | Rate limits survive across serverless instances |  |
 | [T-008](T-008.md) | P0 | done | ops | 03-agent-chat | Apply migration supplier_contact_requests |  |
 | [T-010](T-010.md) | P2 | done | incomplete | 03-agent-chat | "פנה לספק" should notify the supplier | T-008 |
 | [T-020](T-020.md) | P2 | done | future | 01-public-onboarding | Email the account owner when a new device signs in |  |

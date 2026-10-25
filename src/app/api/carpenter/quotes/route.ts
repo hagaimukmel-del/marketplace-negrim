@@ -13,6 +13,7 @@ import { priceModeOf } from '@/lib/price-mode'
 import { checkQuoteRequest, instantQuotePrice } from '@/lib/quote-rules'
 import { saveQuoteRequest, type QuoteRequestStore } from '@/lib/quote-idempotency'
 import { loadThresholds } from '@/lib/special-price'
+import { sharedLimitReached } from '@/lib/rate-limit-shared'
 
 /** How long an instant answer at the supplier's special price holds. */
 const INSTANT_QUOTE_DAYS = 14
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'כמות לא תקינה' }, { status: 400 })
   }
 
-  if (!checkRateLimit(`quote:${carpenter.id}`, 'quoteRequest').allowed) {
+  if (!checkRateLimit(`quote:${carpenter.id}`, 'quoteRequest').allowed || (await sharedLimitReached('quoteRequest', { side: 'carpenter', id: carpenter.id }))) {
     return NextResponse.json({ error: 'שלחת הרבה בקשות בשעה האחרונה. נסה שוב מאוחר יותר.' }, { status: 429 })
   }
 

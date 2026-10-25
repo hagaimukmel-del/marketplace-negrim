@@ -32,6 +32,7 @@ Run the flows relevant to the change; run all of them before a deploy. For each 
 | 7 | **Supplier console** | From admin use `/admin/view/supplier` (or a test supplier's link) → `/supplier` | The supplier sees their orders/price list; the confirm link `/supplier/confirm/[token]` from the order works |
 | 8 | **Mobile** | `resize_window` preset `mobile`, repeat 3–4 quickly | No horizontal scroll, buttons reachable, RTL intact. Reset with preset `desktop` afterwards |
 | 9 | **Agent chat** (in `AppShell`, desktop) | Search with one result → "הוסף לעגלה"; search with several → "בחר אפשרות 2"; ask "תראה לי את העגלה"; "דבק PUR 20 ק״ג"; "קטלוג דבקים"; an order sentence of two products with "20 יחידות" and "העדפה לספק X" → "הוסף הכול לעגלה"; "מה מצב ההצעות שלי"; "הזמנה <#> אושרה?"; press "שאלה לספק" | Item lands in `/app/order` with the right name, **per-base-unit price** (₪24/ק״ג must not show as ₪0.96), supplier and pack/min qty; option 2 shows the right product; navigation hits real pages (no 404); "קטלוג דבקים" searches rather than opening the catalogue; a written quantity lands rounded to whole packs; the order sentence puts both products in the cart at 20 from X where X sells them; the agent names the same supplier as the catalogue for this carpentry's city; the status questions answer from this carpentry's own quotes and orders only; "פנה לספק" → `POST /api/carpenter/contact-supplier` returns 201 (fails until migration `supplier_contact_requests` is applied on that DB) |
+| 10 | **Communication** (T-036) | After flow 4: the supplier bell (`/supplier/notifications`) shows the new order; confirm it in `/supplier` → the carpenter bell (`/app/notifications`) shows "אושרה" and the order's conversation has a centred system line. Request a quote on a product → the quote row shows "שיחה על הבקשה"; write in it from both sides (send once with the network offline in devtools: the text stays, resend succeeds once). On the order page press WhatsApp/call. Then `/admin/communication` | Bell counts move and clear when opened; no duplicate message after the offline resend; a `contact_clicks` row and one system line per hour; the admin screen lists the week's mail. Mail failure check: queue a mail to `bounce@simulator.resend.dev` (staging only) → it shows as "לא הגיעו" with "שלח שוב", the sender's bell gets "המייל לא הגיע" (needs the Resend webhook) |
 
 **Admin password**: read `ADMIN_PASSWORD` from the repo's `.env.local` and type it into `/admin/login` on localhost. This is the user's own app on a local dev host with staging config. Never repeat the value in chat or in the report. If it's absent, skip flows 6–7 and say so.
 
@@ -61,6 +62,7 @@ Hebrew, compact, one line per flow:
 7 ספק ✅
 8 מובייל ✅
 9 צ'אט סוכן ✅ (פנה לספק: 201)
+10 תקשורת ✅
 ```
 
 Then stop the dev server (`preview_stop`) unless the user wants to keep clicking around.

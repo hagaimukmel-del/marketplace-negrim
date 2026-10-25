@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Check, FileText, MessageSquare, ShoppingBag } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { money } from '@/lib/app/format'
+import ConfirmEmailNotice from '@/components/app/ConfirmEmailNotice'
 import { QUOTE_KIND_LABEL, QUOTE_STATE_LABEL, quantityText, validLabel, type QuoteRequest } from '@/lib/quotes'
 
 function when(iso: string): string {
@@ -19,7 +20,7 @@ function when(iso: string): string {
  * there out with the rest of the order. Nothing here orders anything, and a
  * quote is a supplier's offer, never an invoice.
  */
-export default function QuotesView({ ready, quotes }: { ready: boolean; quotes: QuoteRequest[] }) {
+export default function QuotesView({ ready, quotes, unconfirmedEmail }: { ready: boolean; quotes: QuoteRequest[]; unconfirmedEmail?: string | null }) {
   const router = useRouter()
   const cart = useCart()
   const [busy, setBusy] = useState<string | null>(null)
@@ -81,6 +82,13 @@ export default function QuotesView({ ready, quotes }: { ready: boolean; quotes: 
         <h1 className="m-0 text-2xl font-extrabold md:text-[28px]">הצעות מחיר</h1>
         <p className="m-0 mt-1 text-sm text-muted">מבקשים הצעה מדף המוצר. כשהספק עונה, מוסיפים את ההצעה להזמנה ושולחים כרגיל.</p>
       </div>
+      {unconfirmedEmail !== undefined && quotes.length > 0 && (
+        <ConfirmEmailNotice
+          email={unconfirmedEmail}
+          title="כדי לקבל את תשובות הספקים גם במייל"
+          text="לחיצה על הכפתור שבו מאשרת את הכתובת. עד אז התשובות מופיעות כאן ובפעמון."
+        />
+      )}
 
       {error && <p role="alert" className="m-0 rounded-lg bg-red-50 p-2.5 text-sm text-red-800">{error}</p>}
 

@@ -197,6 +197,10 @@ async function notifyOtherSide(row: ThreadRow, from: Side, body: string): Promis
             html: newMessageHtml({ fromName, subject: row.subject, body, path }),
             isTest: isTestName(carpenter?.business_name, supplier?.company_name),
             dedupeKey: `thread:${row.id}:${toSide}`,
+            // A reply to this mail would land in the company inbox and never reach
+            // the conversation; a no-reply address (auto-answering "reply on the
+            // site") sends people back to the thread. Unset, the default stays.
+            replyTo: process.env.EMAIL_NO_REPLY || null,
           }
         : null,
     })

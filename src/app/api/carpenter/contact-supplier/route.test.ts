@@ -5,6 +5,7 @@ const touched = vi.hoisted(() => ({ db: false }))
 
 vi.mock('@/lib/carpenter-auth', () => ({ getSessionCarpenter: async () => ({ id: 'c1', business_name: 'נגריית בדיקה' }) }))
 vi.mock('@/lib/rate-limit', () => ({ checkRateLimit: () => ({ allowed: true }) }))
+vi.mock('@/lib/rate-limit-shared', () => ({ sharedLimitReached: async () => false }))
 vi.mock('@/lib/messages', () => ({ startThread: async () => ({ ok: true, threadId: 't1' }) }))
 vi.mock('@/lib/email', async (importOriginal) => ({ ...(await importOriginal<typeof import('@/lib/email')>()), sendEmail: async () => ({ sent: true }) }))
 vi.mock('@/lib/supabase-admin', () => ({

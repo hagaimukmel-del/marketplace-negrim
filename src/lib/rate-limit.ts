@@ -16,6 +16,11 @@ const config = {
   message: { maxAttempts: 60, windowMs: 60 * 60 * 1000 }, // 60 messages per hour, per carpentry or supplier (key 'msg:<id>')
 }
 
+/** The limit itself, for the shared check in rate-limit-shared.ts. */
+export function limitOf(limitType: keyof typeof config): RateLimitConfig {
+  return config[limitType]
+}
+
 // In-memory store for rate limiting (will reset on server restart)
 // For production, use Redis or a similar distributed cache
 const attempts = new Map<string, { count: number; resetTime: number }>()

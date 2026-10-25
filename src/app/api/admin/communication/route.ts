@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/admin-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { processOutbox } from '@/lib/outbox'
+import { rungKey } from '@/lib/reminder-rules'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -10,6 +11,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
  *   resend      put a failed or bounced mail back in the outbox and send it now
  *   unsuppress  let the site mail an address again (it was fixed, or the
  *               bounce was a one-off on the receiving side)
+ *   handled     the operator called the supplier about a waiting order or
+ *               quote: the reminder ladder stops for it
  * Re-checks the admin cookie itself, like every admin route.
  */
 export async function POST(request: NextRequest) {
@@ -39,6 +42,16 @@ export async function POST(request: NextRequest) {
     const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
     if (!email) return NextResponse.json({ error: 'חסרה כתובת' }, { status: 400 })
     const { error } = await supabase.from('email_suppressions').delete().eq('email', email)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true })
+  }
+
+  if (body?.action === 'handled') {
+    const subject = body.subject === 'order' || body.subject === 'quote' ? (body.subject as 'order' | 'quote') : null
+    const id = typeof body.id === 'string' && UUID.test(body.id) ? body.id : null
+    if (!subject || !id) return NextResponse.json({ error: 'פריט לא תקין' }, { status: 400 })
+    const keys = [...([1, 2, 3] as const).map((rung) => rungKey(subject, id, rung)), `${subject}:${id}:handled`]
+    const { error } = await supabase.from('reminder_log').upsert(keys.map((key) => ({ key })), { onConflict: 'key', ignoreDuplicates: true })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ ok: true })
   }
