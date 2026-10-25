@@ -14,6 +14,7 @@ carpenters, run campaigns and raffles, moderate the Metzion, read reports.
 | `/admin/orders`, `/suppliers`, `/carpenters`, `/products`, `/categories` | Core management |
 | `/admin/campaigns`, `/api/admin/raffle` | Campaigns and raffle draws (area 9) |
 | `/admin/metzion` | Listing moderation and reports |
+| `/admin/communication` → `/api/admin/communication` | "בריאות תקשורת" (T-036 step 6): mail sent/arrived/failed this week, failed mail with resend, blocked addresses with unblock, orders and quotes waiting on a supplier with their reminder rung, unanswered carpenter messages, suppliers and carpentries that cannot be reached (no email, bouncing, no mobile). `lib/communication-health.ts` |
 | `/admin/reports` | Reports |
 | `/admin/view/carpenter`, `/admin/view/supplier` → `/api/admin/view-supplier/[id]` | See the real app as a given carpenter or supplier. The supplier entry token is never rendered; the route sets the session on the server |
 | `/api/admin/email-test` | Send a test email |
