@@ -1126,6 +1126,7 @@ export type Database = {
           note: string | null
           price_excl_vat: number
           product_id: string
+          show_price: boolean
           status: string
           supplier_id: string
           week_start: string
@@ -1137,6 +1138,7 @@ export type Database = {
           note?: string | null
           price_excl_vat: number
           product_id: string
+          show_price?: boolean
           status?: string
           supplier_id: string
           week_start: string
@@ -1148,6 +1150,7 @@ export type Database = {
           note?: string | null
           price_excl_vat?: number
           product_id?: string
+          show_price?: boolean
           status?: string
           supplier_id?: string
           week_start?: string

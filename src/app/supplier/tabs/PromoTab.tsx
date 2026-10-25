@@ -97,6 +97,7 @@ export default function PromoTab({
   const router = useRouter()
   const [picking, setPicking] = useState<string | null>(null)
   const [productId, setProductId] = useState('')
+  const [showPrice, setShowPrice] = useState(false)
   const [busy, setBusy] = useState(false)
 
   const live = products.filter((product) => product.isActive)
@@ -113,13 +114,27 @@ export default function PromoTab({
     if (!picking || !productId) return
     setBusy(true)
     try {
-      await callApi('/api/supplier/promo', jsonInit('POST', { week_start: picking, product_id: productId }))
+      await callApi('/api/supplier/promo', jsonInit('POST', { week_start: picking, product_id: productId, show_price: showPrice }))
       notify('הבקשה נשלחה לאישור')
       setPicking(null)
       setProductId('')
+      setShowPrice(false)
       router.refresh()
     } catch (err) {
       notify(err instanceof Error ? err.message : 'ההזמנה נכשלה', 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const togglePrice = async (week: PromoWeek) => {
+    setBusy(true)
+    try {
+      await callApi('/api/supplier/promo', jsonInit('PATCH', { id: week.id, show_price: !week.showPrice }))
+      notify(week.showPrice ? 'המחיר לא יוצג בפרסומת' : 'המחיר יוצג בפרסומת')
+      router.refresh()
+    } catch (err) {
+      notify(err instanceof Error ? err.message : 'השינוי נכשל', 'error')
     } finally {
       setBusy(false)
     }
@@ -150,7 +165,7 @@ export default function PromoTab({
           </h2>
           <p className="mt-0.5 text-sm text-stone-600">
             מוצר אחד שלך מוצג שבוע שלם בראש דף הבית של כל הנגרים, בראש הקטגוריה שלו, וראשון אצל הסוכן כשמחפשים בתחום.
-            הוא מסומן &quot;מוצר השבוע&quot; כדי שנגר ידע שזה קידום.{' '}
+            הוא מסומן &quot;פרסומת&quot;, ומוצג בלי מחיר אלא אם תבחר להציג אותו.{' '}
             <b className="tnum">{formatIls(PROMO_WEEK_EXCL_VAT)}</b> לשבוע, לפני מע״מ, בחיוב מחוץ לאתר.
           </p>
         </div>
@@ -173,6 +188,16 @@ export default function PromoTab({
                     <div className="min-w-0 flex-1">
                       <p className="tnum font-semibold text-stone-900">{weekLabel(week)}</p>
                       {booking && <p className="truncate text-xs text-stone-500">{booking.productName}</p>}
+                      {booking && (
+                        <button
+                          type="button"
+                          onClick={() => togglePrice(booking)}
+                          disabled={busy}
+                          className="mt-0.5 text-xs font-semibold text-emerald-800 underline underline-offset-2"
+                        >
+                          {booking.showPrice ? 'מחיר מוצג בפרסומת · להסתיר' : 'בלי מחיר בפרסומת · להציג מחיר'}
+                        </button>
+                      )}
                     </div>
                     {booking ? (
                       <div className="flex shrink-0 items-center gap-1">
@@ -199,6 +224,7 @@ export default function PromoTab({
                         onClick={() => {
                           setPicking(week)
                           setProductId('')
+                          setShowPrice(false)
                         }}
                         className="h-9 shrink-0 rounded-lg border border-emerald-700 px-3 text-sm font-semibold text-emerald-800 hover:bg-emerald-50"
                       >
@@ -208,6 +234,15 @@ export default function PromoTab({
                   </div>
                   {picking === week && (
                     <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
+                      <label className="flex items-center gap-2 text-sm text-stone-700 sm:col-span-3">
+                        <input
+                          type="checkbox"
+                          checked={showPrice}
+                          onChange={(e) => setShowPrice(e.target.checked)}
+                          className="h-5 w-5 accent-emerald-700"
+                        />
+                        להציג את המחיר שלי בפרסומת
+                      </label>
                       <select
                         value={productId}
                         onChange={(e) => setProductId(e.target.value)}

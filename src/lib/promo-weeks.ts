@@ -35,6 +35,8 @@ export interface PromoWeek {
   status: PromoStatus
   price: number
   note: string | null
+  /** The supplier's price shows on the card. */
+  showPrice: boolean
   results: PromoResults | null
 }
 
