@@ -4,6 +4,7 @@ import { isAdmin } from '@/lib/admin-auth'
 import { isOperatorManaged, refuseAdminWriteFor, refusedForSelfRun } from '@/lib/admin-scope'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { listThreads, startThread } from '@/lib/messages'
+import { sharedLimitReached } from '@/lib/rate-limit-shared'
 
 /**
  * The supplier's message threads, and a message to a carpentry about an order.
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
   if (!supplier) return NextResponse.json({ error: 'צריך להיות מחובר' }, { status: 401 })
   const refused = await refuseAdminWriteFor(supplier)
   if (refused) return refused
-  if (!checkRateLimit(`msg:${supplier.id}`, 'message').allowed) {
+  if (!checkRateLimit(`msg:${supplier.id}`, 'message').allowed || (await sharedLimitReached('message', { side: 'supplier', id: supplier.id }))) {
     return NextResponse.json({ error: 'נשלחו הרבה הודעות בשעה האחרונה. נסו שוב מאוחר יותר.' }, { status: 429 })
   }
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>

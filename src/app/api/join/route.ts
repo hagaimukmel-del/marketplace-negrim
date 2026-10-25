@@ -5,6 +5,7 @@ import { loginCodeForEmail } from '@/lib/login-code'
 import { isTestName, sendEmail } from '@/lib/email'
 import { carpenterLoginHtml, carpenterLoginSubject, carpenterWelcomeHtml, carpenterWelcomeSubject } from '@/lib/emails/carpenter'
 import { checkRateLimit, getClientIP, getRateLimitHeaders, hashIdentifier } from '@/lib/rate-limit'
+import { validPhoneKey } from '@/lib/phone'
 
 /** "h****l@gmail.com" — enough to recognise your own address, not to read someone else's. */
 function maskEmail(email: string): string {
@@ -29,19 +30,13 @@ function maskEmail(email: string): string {
  */
 
 /** Last nine digits. Israeli mobiles are 10 with the leading 0, or +972 and 9. */
-function normalisePhone(raw: string): string | null {
-  const digits = raw.replace(/\D/g, '')
-  if (digits.length < 9) return null
-  return digits.slice(-9)
-}
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
     const businessName =
       typeof body.business_name === 'string' ? body.business_name.trim() : ''
-    const phone = typeof body.phone === 'string' ? normalisePhone(body.phone) : null
+    const phone = typeof body.phone === 'string' ? validPhoneKey(body.phone) : null
 
     if (!businessName) {
       return NextResponse.json({ error: 'צריך שם נגרייה' }, { status: 400 })

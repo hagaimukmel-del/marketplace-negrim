@@ -10,8 +10,9 @@ export const dynamic = 'force-dynamic'
 
 export default async function AppThread({ params }: { params: Promise<{ id: string }> }) {
   const carpenter = await getSessionCarpenter()
-  if (!carpenter) return <SignedOutNotice what="השיחה" />
-  const thread = await loadThread({ side: 'carpenter', id: carpenter.id }, (await params).id)
+  const { id } = await params
+  if (!carpenter) return <SignedOutNotice what="השיחה" next={`/app/messages/${id}`} />
+  const thread = await loadThread({ side: 'carpenter', id: carpenter.id }, id)
   if (!thread) notFound()
   return (
     <div className="space-y-2 pt-3">

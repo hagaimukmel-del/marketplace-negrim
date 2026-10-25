@@ -209,11 +209,5 @@ export function jsonInit(method: string, body: unknown): RequestInit {
   }
 }
 
-/** An Israeli number as a WhatsApp link, or null if it cannot be one. */
-export function whatsappLink(phone: string | null, text?: string): string | null {
-  if (!phone) return null
-  let digits = phone.replace(/\D/g, '')
-  if (digits.startsWith('0')) digits = `972${digits.slice(1)}`
-  if (digits.length < 11) return null
-  return `https://wa.me/${digits}${text ? `?text=${encodeURIComponent(text)}` : ''}`
-}
+/** An Israeli mobile number as a WhatsApp link (lib/phone.ts), or null. */
+export { whatsappUrl as whatsappLink } from '@/lib/phone'

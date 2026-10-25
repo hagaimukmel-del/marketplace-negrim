@@ -30,7 +30,14 @@ export interface SendResult {
   reason?: 'no-provider' | 'failed'
   redirectedTo?: string
   error?: string
+  /** The provider's HTTP status on a refusal; absent when the request never got an answer. */
+  status?: number
+  /** The provider's id for the message, for matching its delivery webhooks later. */
+  providerId?: string
 }
+
+/** A provider call that hangs must not hold a request or a retry run forever. */
+const SEND_TIMEOUT_MS = 10_000
 
 /** The address a link in an email has to point at. */
 export function siteUrl(): string {
@@ -68,6 +75,7 @@ export async function sendEmail({
   html,
   isTest = false,
   replyTo,
+  idempotencyKey,
 }: {
   to: string
   subject: string
@@ -76,6 +84,8 @@ export async function sendEmail({
   isTest?: boolean
   /** Where "reply" goes when it should reach someone other than the operator. */
   replyTo?: string | null
+  /** The same key never sends twice within 24 hours, so a retry after a lost answer is safe. */
+  idempotencyKey?: string
 }): Promise<SendResult> {
   const apiKey = process.env.RESEND_API_KEY
   // In the staging environment every business is a test business, whatever its
@@ -102,7 +112,9 @@ export async function sendEmail({
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
+        ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
       },
+      signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
       body: JSON.stringify({
         from: process.env.EMAIL_FROM || FALLBACK_FROM,
         to: [recipient],
@@ -116,11 +128,13 @@ export async function sendEmail({
     if (!response.ok) {
       const detail = await response.text()
       console.error('[email] send failed', response.status, detail)
-      return { sent: false, reason: 'failed', error: detail.slice(0, 300) }
+      return { sent: false, reason: 'failed', status: response.status, error: detail.slice(0, 300) }
     }
 
+    const data = (await response.json().catch(() => null)) as { id?: unknown } | null
     return {
       sent: true,
+      ...(typeof data?.id === 'string' ? { providerId: data.id } : {}),
       ...(testRecipient && testRecipient !== to ? { redirectedTo: testRecipient } : {}),
     }
   } catch (err) {

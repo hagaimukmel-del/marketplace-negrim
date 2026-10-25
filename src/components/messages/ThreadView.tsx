@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, RotateCcw, Send } from 'lucide-react'
+import { Check, CheckCheck, RotateCcw, Send } from 'lucide-react'
 import type { ThreadDetail } from '@/lib/messages'
 
 function when(value: string): string {
@@ -15,10 +15,35 @@ function when(value: string): string {
   })
 }
 
+const draftKey = (threadId: string) => `nb-draft:${threadId}`
+
+function readDraft(threadId: string): string {
+  try {
+    return window.localStorage.getItem(draftKey(threadId)) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+function writeDraft(threadId: string, value: string): void {
+  try {
+    if (value) window.localStorage.setItem(draftKey(threadId), value)
+    else window.localStorage.removeItem(draftKey(threadId))
+  } catch {
+    // Private mode or storage off: the draft just is not kept.
+  }
+}
+
 /**
- * One conversation: the messages as bubbles (mine on the start side), a
- * composer that stays reachable above the phone keyboard, and "טופל". Reads
- * again every 30 seconds while open, so an answer shows without a reload.
+ * One conversation: the messages as bubbles (mine on the start side), lines
+ * from the site in the middle, a composer that stays reachable above the
+ * phone keyboard, and "טופל".
+ *
+ * Nothing typed is lost: the draft is kept on the device until it is sent, a
+ * failed send keeps the text and says so, and a retry carries the same id so
+ * the server never saves it twice. It reads again every 30 seconds and the
+ * moment the tab comes back into view, so an answer shows without a reload.
+ * Each of my messages says whether the other side has opened it.
  */
 export default function ThreadView({
   thread,
@@ -35,7 +60,20 @@ export default function ThreadView({
   composerClass?: string
 }) {
   const router = useRouter()
-  const [text, setText] = useState('')
+  const storedDraft = useSyncExternalStore(
+    () => () => {},
+    () => readDraft(thread.id),
+    () => ''
+  )
+  // null until the person types: until then the composer shows the kept draft.
+  const [typed, setTyped] = useState<string | null>(null)
+  const text = typed ?? storedDraft
+  const setText = (value: string) => {
+    setTyped(value)
+    writeDraft(thread.id, value)
+  }
+  // One id per message being sent, kept across retries until it goes through.
+  const pendingId = useRef<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const end = useRef<HTMLDivElement>(null)
@@ -46,7 +84,16 @@ export default function ThreadView({
 
   useEffect(() => {
     const timer = setInterval(() => router.refresh(), 30000)
-    return () => clearInterval(timer)
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') router.refresh()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('online', onVisible)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('online', onVisible)
+    }
   }, [router])
 
   const send = async (event: React.FormEvent) => {
@@ -54,18 +101,22 @@ export default function ThreadView({
     if (!text.trim()) return
     setBusy(true)
     setError(null)
+    pendingId.current ??= crypto.randomUUID()
     try {
       const res = await fetch(`${apiBase}/${thread.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ body: text }),
+        body: JSON.stringify({ body: text, clientId: pendingId.current }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error || 'השליחה נכשלה')
+      pendingId.current = null
       setText('')
       router.refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'השליחה נכשלה')
+      const offline = typeof navigator !== 'undefined' && !navigator.onLine
+      const reason = offline ? 'אין חיבור לאינטרנט' : err instanceof Error && err.message !== 'Failed to fetch' ? err.message : 'השליחה נכשלה'
+      setError(`${reason}. ההודעה לא נשלחה, והיא שמורה כאן. לחצו שוב על שליחה.`)
     } finally {
       setBusy(false)
     }
@@ -109,20 +160,37 @@ export default function ThreadView({
       </header>
 
       <div className="space-y-2 rounded-2xl border border-stone-200 bg-stone-50 p-3">
-        {thread.messages.map((message) => (
-          <div key={message.id} className={`flex ${message.mine ? 'justify-start' : 'justify-end'}`}>
-            <div
-              className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-[15px] leading-relaxed sm:max-w-[70%] ${
-                message.mine ? 'bg-emerald-700 text-white' : 'border border-stone-200 bg-white text-stone-900'
-              }`}
-            >
-              <p className="m-0 whitespace-pre-wrap break-words">{message.body}</p>
-              <span className={`tnum mt-0.5 block text-[11px] ${message.mine ? 'text-emerald-100' : 'text-stone-400'}`}>
-                {when(message.createdAt)}
-              </span>
+        {thread.messages.map((message) =>
+          message.system ? (
+            <p key={message.id} className="mx-auto my-1 max-w-[90%] rounded-full bg-stone-200/70 px-3 py-1 text-center text-[13px] text-stone-700">
+              {message.body}
+              <span className="tnum ms-2 text-[11px] text-stone-500">{when(message.createdAt)}</span>
+            </p>
+          ) : (
+            <div key={message.id} className={`flex ${message.mine ? 'justify-start' : 'justify-end'}`}>
+              <div
+                className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-[15px] leading-relaxed sm:max-w-[70%] ${
+                  message.mine ? 'bg-emerald-700 text-white' : 'border border-stone-200 bg-white text-stone-900'
+                }`}
+              >
+                <p className="m-0 whitespace-pre-wrap break-words">{message.body}</p>
+                <span className={`tnum mt-0.5 flex items-center gap-1 text-[11px] ${message.mine ? 'text-emerald-100' : 'text-stone-400'}`}>
+                  {when(message.createdAt)}
+                  {message.mine &&
+                    (thread.otherReadAt && new Date(thread.otherReadAt) >= new Date(message.createdAt) ? (
+                      <>
+                        <CheckCheck size={13} aria-hidden /> נקרא
+                      </>
+                    ) : (
+                      <>
+                        <Check size={13} aria-hidden /> נשלח
+                      </>
+                    ))}
+                </span>
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        )}
         <div ref={end} />
       </div>
 

@@ -52,13 +52,14 @@ python .claude/skills/product-map/scripts/task_index.py
 ## Index
 
 <!-- INDEX:START -->
-26 open of 35.
+27 open of 36.
 
 | ID | Pri | Status | Type | Area | Title | Blocked by |
 |---|---|---|---|---|---|---|
 | [T-003](T-003.md) | P1 | in-progress | promise-gap | 03-agent-chat | Agent: understand quantity and supplier preference in one sentence |  |
 | [T-028](T-028.md) | P1 | in-progress | ops | 10-platform | Apply the 2026-10-08 migrations to staging, then production |  |
 | [T-032](T-032.md) | P1 | in-progress | ops | 01-public-onboarding | Login codes and Google sign-in: apply the migration and configure Google |  |
+| [T-036](T-036.md) | P1 | in-progress | incomplete | 02-carpenter-app | Reliable supplier-carpenter communication (communication plan, steps 1-7) |  |
 | [T-022](T-022.md) | P2 | in-progress | future | 04-orders-fulfilment | Purchase order and price quote as a file, per supplier | T-007 (agent tool only) |
 | [T-023](T-023.md) | P2 | in-progress | future | 05-catalogue-pricing | Per-supplier price visibility and quote requests (RFQ) | migration 20261011140000 (T-028) |
 | [T-025](T-025.md) | P2 | in-progress | future | 02-carpenter-app | Internal messages between carpenter and supplier |  |
@@ -80,8 +81,8 @@ python .claude/skills/product-map/scripts/task_index.py
 | [T-016](T-016.md) | P3 | open | debt | 10-platform | Lint errors |  |
 | [T-019](T-019.md) | P3 | open | decision | 10-platform | CLAUDE.md rules vs reality: Zod, @supabase/ssr, Server Components |  |
 | [T-029](T-029.md) | P3 | open | incomplete | 04-orders-fulfilment | Email confirm link can only confirm all of an order |  |
-| [T-031](T-031.md) | P3 | open | debt | 10-platform | Rate limits survive across serverless instances |  |
 | [T-033](T-033.md) | P3 | open | future | 01-public-onboarding | Login code by WhatsApp | T-032 |
+| [T-031](T-031.md) | P3 | done | debt | 10-platform | Rate limits survive across serverless instances |  |
 | [T-008](T-008.md) | P0 | done | ops | 03-agent-chat | Apply migration supplier_contact_requests |  |
 | [T-010](T-010.md) | P2 | done | incomplete | 03-agent-chat | "פנה לספק" should notify the supplier | T-008 |
 | [T-020](T-020.md) | P2 | done | future | 01-public-onboarding | Email the account owner when a new device signs in |  |

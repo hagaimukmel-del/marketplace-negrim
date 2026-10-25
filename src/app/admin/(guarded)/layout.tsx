@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { Eye } from 'lucide-react'
 import { isAdmin } from '@/lib/admin-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { communicationProblemCount } from '@/lib/communication-health'
 import AdminNav, { type NavItem } from './AdminNav'
 import LogoutButton from './LogoutButton'
 import Logo from '@/components/brand/Logo'
@@ -43,10 +44,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     .select('id', { count: 'exact', head: true })
     .is('resolved_at', null)
 
+  // Mail that did not arrive this week; zero on a database without the outbox.
+  const mailProblems = await communicationProblemCount()
+
   const nav: NavItem[] = [
     // Orders first: it is the screen with work waiting on it every day.
     { href: '/admin/orders', label: 'הזמנות', count: pendingOrders ?? 0 },
     { href: '/admin', label: 'תוצאות' },
+    { href: '/admin/communication', label: 'בריאות תקשורת', count: mailProblems },
     { href: '/admin/reports', label: 'דוחות' },
     { href: '/admin/products', label: 'מוצרים' },
     { href: '/admin/categories', label: 'קטגוריות' },

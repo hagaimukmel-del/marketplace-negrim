@@ -5,7 +5,8 @@ import { useState } from 'react'
 import { ChevronLeft, Handshake, MessageCircle, Recycle, Search } from 'lucide-react'
 import { useCart, type CartItem } from '@/lib/cart-context'
 import { money, when, packText } from '@/lib/app/format'
-import { attentionOf, totalOf, STATUS_LABEL, type AppOrder } from '@/lib/app/orders'
+import { attentionOf, supplierOrderMessage, totalOf, STATUS_LABEL, type AppOrder } from '@/lib/app/orders'
+import { whatsappUrl } from '@/lib/phone'
 import type { CategoryNode } from '@/lib/app/products'
 import type { ReorderItem } from '@/lib/app/catalog-server'
 import { AttentionLine, Kicker, SectionTitle, StatusDot } from '@/components/app/ui'
@@ -233,15 +234,9 @@ function NextCard({ action, now }: { action: Action; now: number }) {
   )
 }
 
-export function whatsappHref(phone: string | null | undefined, text: string): string | null {
-  const digits = (phone ?? '').replace(/\D/g, '')
-  if (!digits) return null
-  const intl = digits.startsWith('972') ? digits : `972${digits.replace(/^0/, '')}`
-  return `https://wa.me/${intl}?text=${encodeURIComponent(text)}`
-}
 
 function WhatsAppReminder({ order }: { order: AppOrder }) {
-  const href = whatsappHref(order.supplier?.phone, `שלום, לגבי הזמנה #${order.shortNumber} מנגרים B2B — אשמח לאישור. תודה!`)
+  const href = whatsappUrl(order.supplier?.phone, supplierOrderMessage(order, 'reminder'))
   if (!href) {
     return (
       <Link href={`/app/orders/${order.id}`} className="mt-3.5 flex h-12 w-full items-center justify-center rounded-[11px] bg-brand font-bold text-navy">

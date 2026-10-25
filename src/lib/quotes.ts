@@ -48,6 +48,8 @@ export interface QuoteRequest {
   packQty: number | null
   /** What was asked for; null on requests from before migration 20261012090000. */
   kind: QuoteKind | null
+  /** The conversation about this request; null on requests from before migration 20261025140000. */
+  threadId?: string | null
 }
 
 /** How a request's kind reads; requests without one show no label. */

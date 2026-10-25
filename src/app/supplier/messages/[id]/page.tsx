@@ -11,10 +11,11 @@ export const dynamic = 'force-dynamic'
 
 export default async function SupplierThread({ params }: { params: Promise<{ id: string }> }) {
   const supplier = await getSessionSupplier()
-  if (!supplier) redirect('/supplier/join')
+  const { id } = await params
+  if (!supplier) redirect(`/supplier/join?next=${encodeURIComponent(`/supplier/messages/${id}`)}`)
   // Opening a thread marks it read, so the operator must not open a self-run supplier's.
   if (!isOperatorManaged(supplier.source) && (await isAdmin())) redirect('/supplier/messages')
-  const thread = await loadThread({ side: 'supplier', id: supplier.id }, (await params).id)
+  const thread = await loadThread({ side: 'supplier', id: supplier.id }, id)
   if (!thread) notFound()
   return (
     <div className="space-y-2">

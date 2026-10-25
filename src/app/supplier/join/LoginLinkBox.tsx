@@ -19,6 +19,13 @@ export default function LoginLinkBox() {
     () => false
   )
 
+  // The page the supplier was trying to open (an email link while signed out); the entry link returns there.
+  const next = useSyncExternalStore(
+    () => () => {},
+    () => new URLSearchParams(window.location.search).get('next') ?? '',
+    () => ''
+  )
+
   const [email, setEmail] = useState('')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -33,7 +40,7 @@ export default function LoginLinkBox() {
       const response = await fetch('/api/supplier/login-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, next }),
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'השליחה נכשלה')

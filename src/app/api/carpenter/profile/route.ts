@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getCarpenterId } from '@/lib/carpenter-auth'
+import { validPhoneKey } from '@/lib/phone'
 
 /**
  * A carpenter edits their own details.
@@ -11,11 +12,6 @@ import { getCarpenterId } from '@/lib/carpenter-auth'
  */
 
 /** Last nine digits. Israeli mobiles are 10 with the leading 0, or +972 and 9. */
-function normalisePhone(raw: string): string | null {
-  const digits = raw.replace(/\D/g, '')
-  return digits.length >= 9 ? digits.slice(-9) : null
-}
-
 function text(value: unknown, max: number): string | null {
   if (typeof value !== 'string') return null
   const trimmed = value.trim()
@@ -36,7 +32,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'צריך שם נגרייה' }, { status: 400 })
     }
 
-    const phone = typeof body.phone === 'string' ? normalisePhone(body.phone) : null
+    const phone = typeof body.phone === 'string' ? validPhoneKey(body.phone) : null
     if (!phone) {
       return NextResponse.json({ error: 'מספר טלפון לא תקין' }, { status: 400 })
     }

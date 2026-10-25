@@ -2,6 +2,7 @@ import 'server-only'
 
 import { siteUrl } from '../email'
 import { emailLogo } from './brand'
+import { formatPhone, telUrl, whatsappUrl } from '../phone'
 
 /**
  * A carpenter's question to a supplier, from "שאלה לספק" in the agent chat.
@@ -31,15 +32,9 @@ export function supplierQuestionSubject(q: SupplierQuestionEmail): string {
   return q.productName ? `שאלה מ${q.carpenterName} על ${q.productName}` : `שאלה מ${q.carpenterName}`
 }
 
-function whatsapp(phone: string): string | null {
-  let digits = phone.replace(/\D/g, '')
-  if (digits.startsWith('0')) digits = `972${digits.slice(1)}`
-  return digits.length >= 11 ? `https://wa.me/${digits}` : null
-}
-
 export function supplierQuestionHtml(q: SupplierQuestionEmail): string {
   const who = [q.contactName && escapeHtml(q.contactName), q.city && escapeHtml(q.city)].filter(Boolean).join(' · ')
-  const wa = q.phone ? whatsapp(q.phone) : null
+  const wa = whatsappUrl(q.phone)
   const button = (href: string, label: string, colour: string) =>
     `<a href="${href}" style="display:inline-block;background:${colour};color:#ffffff;text-decoration:none;font:bold 15px ${FONT};padding:12px 18px;border-radius:10px;margin:4px">${label}</a>`
 
@@ -60,7 +55,7 @@ export function supplierQuestionHtml(q: SupplierQuestionEmail): string {
         </td></tr>
       </table>
       <div style="text-align:center;padding-top:16px">
-        ${q.phone ? button(`tel:${escapeHtml(q.phone)}`, `להתקשר ${escapeHtml(q.phone)}`, '#1c1917') : ''}
+        ${telUrl(q.phone) ? button(escapeHtml(telUrl(q.phone) ?? ''), `להתקשר ${escapeHtml(formatPhone(q.phone))}`, '#1c1917') : ''}
         ${wa ? button(wa, 'וואטסאפ', '#047857') : ''}
         ${button(`${siteUrl()}/supplier/messages`, 'לענות באתר', '#57534e')}
       </div>

@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { checkRateLimit } from '@/lib/rate-limit'
-import { isTestName, sendEmail } from '@/lib/email'
+import { isTestName } from '@/lib/email'
+import { notify } from '@/lib/notifications'
+import { openQuoteThread, postSystemMessage } from '@/lib/messages'
 import { unitLabel } from '@/lib/catalog'
 import { israelDate, quantityText, validLabel } from '@/lib/quotes'
 import { quoteAnswerHtml, quoteAnswerSubject, quoteRequestHtml, quoteRequestSubject } from '@/lib/emails/quote'
@@ -11,6 +13,7 @@ import { priceModeOf } from '@/lib/price-mode'
 import { checkQuoteRequest, instantQuotePrice } from '@/lib/quote-rules'
 import { saveQuoteRequest, type QuoteRequestStore } from '@/lib/quote-idempotency'
 import { loadThresholds } from '@/lib/special-price'
+import { sharedLimitReached } from '@/lib/rate-limit-shared'
 
 /** How long an instant answer at the supplier's special price holds. */
 const INSTANT_QUOTE_DAYS = 14
@@ -54,7 +57,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'כמות לא תקינה' }, { status: 400 })
   }
 
-  if (!checkRateLimit(`quote:${carpenter.id}`, 'quoteRequest').allowed) {
+  if (!checkRateLimit(`quote:${carpenter.id}`, 'quoteRequest').allowed || (await sharedLimitReached('quoteRequest', { side: 'carpenter', id: carpenter.id }))) {
     return NextResponse.json({ error: 'שלחת הרבה בקשות בשעה האחרונה. נסה שוב מאוחר יותר.' }, { status: 429 })
   }
 
@@ -126,34 +129,48 @@ export async function POST(request: NextRequest) {
     if (answered?.length) quoted = { unitPrice: instantPrice, validUntil }
   }
 
-  // Saved and shown in the console; a lost email must not lose the request.
-  let emailed = false
+  // Saved and shown in the console and under the supplier's bell; the email
+  // goes through the outbox, which retries it.
   const quantityLine = quantityText(quantity, unit, offer.pack_label, packQty)
-  if (supplier.email) {
-    const details = {
-      carpenterName: carpenter.business_name,
-      contactName: carpenter.contact_name,
-      city: carpenter.city,
-      productName: product.name_he,
-      quantityText: quantityLine,
-      note,
-      instantAnswerText: quoted ? `${money(quoted.unitPrice)} ל${unit}` : null,
-    }
-    const result = await sendEmail({
-      to: supplier.email,
-      subject: quoteRequestSubject(details),
-      html: quoteRequestHtml(details),
-      isTest: isTestName(carpenter.business_name, supplier.company_name),
-    })
-    emailed = result.sent
+  const isTest = isTestName(carpenter.business_name, supplier.company_name)
+  const details = {
+    carpenterName: carpenter.business_name,
+    contactName: carpenter.contact_name,
+    city: carpenter.city,
+    productName: product.name_he,
+    quantityText: quantityLine,
+    note,
+    instantAnswerText: quoted ? `${money(quoted.unitPrice)} ל${unit}` : null,
   }
+  await notify({
+    to: { side: 'supplier', id: supplierId },
+    kind: 'quote_new',
+    title: `בקשת הצעת מחיר מ${carpenter.business_name}`,
+    body: `${product.name_he} · ${quantityLine}${quoted ? ' · נענתה אוטומטית במחיר המיוחד שלך' : ''}`,
+    link: '/supplier?tab=orders',
+    quoteRequestId: saved.id,
+    email: supplier.email
+      ? { to: supplier.email, subject: quoteRequestSubject(details), html: quoteRequestHtml(details), isTest }
+      : null,
+  })
+  const emailed = Boolean(supplier.email)
 
-  // The answer goes to the carpentry as if the supplier had typed it, to an
-  // address it proved, like every other mail to them.
-  const { data: contact } = quoted
-    ? await supabase.from('carpenters').select('email, email_verified_at').eq('id', carpenter.id).maybeSingle()
-    : { data: null }
-  if (quoted && contact?.email && contact.email_verified_at) {
+  // The request is a conversation: a question about it, the answer and what
+  // follows sit in one thread both sides can open.
+  await openQuoteThread({
+    carpenterId: carpenter.id,
+    supplierId,
+    quoteRequestId: saved.id,
+    productId,
+    subject: `בקשת הצעה: ${product.name_he}`,
+    summary: `בקשת הצעת מחיר: ${product.name_he}, ${quantityLine}`,
+    note,
+  })
+
+  // The answer goes to the carpentry as if the supplier had typed it: under
+  // its bell, and by email to an address it proved, like every other mail to them.
+  if (quoted) {
+    const { data: contact } = await supabase.from('carpenters').select('email, email_verified_at').eq('id', carpenter.id).maybeSingle()
     const answer = {
       supplierName: supplier.company_name,
       productName: product.name_he,
@@ -163,11 +180,21 @@ export async function POST(request: NextRequest) {
       validUntilText: validLabel(quoted.validUntil),
       supplierNote: 'המחיר המיוחד שהספק קבע לכמות הזו',
     }
-    await sendEmail({
-      to: contact.email,
-      subject: quoteAnswerSubject(answer),
-      html: quoteAnswerHtml(answer),
-      isTest: isTestName(carpenter.business_name, supplier.company_name),
+    await postSystemMessage(
+      { quoteRequestId: saved.id },
+      `נענתה אוטומטית במחיר המיוחד של הספק: ${answer.unitPriceText}, בתוקף עד ${answer.validUntilText}`
+    )
+    await notify({
+      to: { side: 'carpenter', id: carpenter.id },
+      kind: 'quote_answered',
+      title: `הצעת מחיר מ${supplier.company_name}`,
+      body: `${product.name_he} · ${answer.unitPriceText} · בתוקף עד ${answer.validUntilText}`,
+      link: '/app/quotes',
+      quoteRequestId: saved.id,
+      email:
+        contact?.email && contact.email_verified_at
+          ? { to: contact.email, subject: quoteAnswerSubject(answer), html: quoteAnswerHtml(answer), isTest }
+          : null,
     })
   }
 

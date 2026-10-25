@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { loadThread, reply, setHandled } from '@/lib/messages'
+import { sharedLimitReached } from '@/lib/rate-limit-shared'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -16,11 +17,11 @@ export async function GET(_request: NextRequest, { params }: Params) {
 export async function POST(request: NextRequest, { params }: Params) {
   const carpenter = await getSessionCarpenter()
   if (!carpenter) return NextResponse.json({ error: 'צריך להיות מחובר' }, { status: 401 })
-  if (!checkRateLimit(`msg:${carpenter.id}`, 'message').allowed) {
+  if (!checkRateLimit(`msg:${carpenter.id}`, 'message').allowed || (await sharedLimitReached('message', { side: 'carpenter', id: carpenter.id }))) {
     return NextResponse.json({ error: 'שלחת הרבה הודעות בשעה האחרונה. נסה שוב מאוחר יותר.' }, { status: 429 })
   }
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>
-  const result = await reply({ side: 'carpenter', id: carpenter.id }, (await params).id, body.body)
+  const result = await reply({ side: 'carpenter', id: carpenter.id }, (await params).id, body.body, body.clientId)
   return result.ok ? NextResponse.json({ ok: true }) : NextResponse.json({ error: result.error }, { status: result.status })
 }
 

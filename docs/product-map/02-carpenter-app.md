@@ -49,4 +49,4 @@ uploaded (Supabase Storage; Drive links fall back to the category glyph) and the
 supplier, no product shows them.
 
 ## Open tasks
-T-002, T-005, T-006, T-018, T-023, T-024, T-025, T-026, T-027
+T-002, T-005, T-006, T-018, T-023, T-024, T-025, T-026, T-027, T-036

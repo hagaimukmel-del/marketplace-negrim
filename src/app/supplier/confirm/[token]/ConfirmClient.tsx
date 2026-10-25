@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Check, CheckCircle2, Pencil, Phone, MapPin, ArrowRight } from 'lucide-react'
 import { formatIls, withVat } from '@/lib/vat'
 import type { ConfirmView } from '@/lib/supplier-confirm'
+import { telUrl } from '@/lib/phone'
 
 function formatDate(value: string): string {
   return new Date(value).toLocaleDateString('he-IL', {
@@ -88,7 +89,7 @@ export default function ConfirmClient({ token, view }: { token: string; view: Co
         )}
         <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm">
           {view.phone && (
-            <a href={`tel:${view.phone}`} className="flex items-center gap-1.5 text-stone-700">
+            <a href={telUrl(view.phone) ?? undefined} className="flex items-center gap-1.5 text-stone-700">
               <Phone size={14} className="text-stone-400" />
               <span className="tnum">{view.phone}</span>
             </a>

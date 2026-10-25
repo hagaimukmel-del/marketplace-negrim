@@ -230,6 +230,131 @@ export type Database = {
           },
         ]
       }
+      contact_clicks: {
+        Row: {
+          carpenter_id: string
+          channel: string
+          created_at: string
+          id: string
+          order_id: string | null
+          quote_request_id: string | null
+          supplier_id: string | null
+        }
+        Insert: {
+          carpenter_id: string
+          channel: string
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          quote_request_id?: string | null
+          supplier_id?: string | null
+        }
+        Update: {
+          carpenter_id?: string
+          channel?: string
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          quote_request_id?: string | null
+          supplier_id?: string | null
+        }
+        Relationships: []
+      }
+      email_outbox: {
+        Row: {
+          attempts: number
+          created_at: string
+          dedupe_key: string | null
+          delivery_updated_at: string | null
+          html: string
+          id: string
+          is_test: boolean
+          kind: string
+          last_error: string | null
+          locked_at: string | null
+          next_attempt_at: string
+          notification_id: string | null
+          provider_id: string | null
+          reply_to: string | null
+          sent_at: string | null
+          status: string
+          subject: string
+          to_email: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          dedupe_key?: string | null
+          delivery_updated_at?: string | null
+          html: string
+          id?: string
+          is_test?: boolean
+          kind: string
+          last_error?: string | null
+          locked_at?: string | null
+          next_attempt_at?: string
+          notification_id?: string | null
+          provider_id?: string | null
+          reply_to?: string | null
+          sent_at?: string | null
+          status?: string
+          subject: string
+          to_email: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          dedupe_key?: string | null
+          delivery_updated_at?: string | null
+          html?: string
+          id?: string
+          is_test?: boolean
+          kind?: string
+          last_error?: string | null
+          locked_at?: string | null
+          next_attempt_at?: string
+          notification_id?: string | null
+          provider_id?: string | null
+          reply_to?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          to_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_outbox_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_suppressions: {
+        Row: {
+          created_at: string
+          detail: string | null
+          email: string
+          reason: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          email: string
+          reason: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          email?: string
+          reason?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       import_batches: {
         Row: {
           changes: Json
@@ -320,6 +445,7 @@ export type Database = {
           last_sender: string
           order_id: string | null
           product_id: string | null
+          quote_request_id: string | null
           status: string
           subject: string
           supplier_id: string
@@ -335,6 +461,7 @@ export type Database = {
           last_sender: string
           order_id?: string | null
           product_id?: string | null
+          quote_request_id?: string | null
           status?: string
           subject: string
           supplier_id: string
@@ -350,6 +477,7 @@ export type Database = {
           last_sender?: string
           order_id?: string | null
           product_id?: string | null
+          quote_request_id?: string | null
           status?: string
           subject?: string
           supplier_id?: string
@@ -396,6 +524,7 @@ export type Database = {
       messages: {
         Row: {
           body: string
+          client_id: string | null
           created_at: string
           id: string
           sender: string
@@ -403,6 +532,7 @@ export type Database = {
         }
         Insert: {
           body: string
+          client_id?: string | null
           created_at?: string
           id?: string
           sender: string
@@ -410,6 +540,7 @@ export type Database = {
         }
         Update: {
           body?: string
+          client_id?: string | null
           created_at?: string
           id?: string
           sender?: string
@@ -546,6 +677,90 @@ export type Database = {
             columns: ["reporter_id"]
             isOneToOne: false
             referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          carpenter_id: string | null
+          created_at: string
+          id: string
+          kind: string
+          link: string
+          order_id: string | null
+          quote_request_id: string | null
+          read_at: string | null
+          recipient_side: string
+          supplier_id: string | null
+          thread_id: string | null
+          title: string
+        }
+        Insert: {
+          body?: string | null
+          carpenter_id?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          link: string
+          order_id?: string | null
+          quote_request_id?: string | null
+          read_at?: string | null
+          recipient_side: string
+          supplier_id?: string | null
+          thread_id?: string | null
+          title: string
+        }
+        Update: {
+          body?: string | null
+          carpenter_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          link?: string
+          order_id?: string | null
+          quote_request_id?: string | null
+          read_at?: string | null
+          recipient_side?: string
+          supplier_id?: string | null
+          thread_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_carpenter_id_fkey"
+            columns: ["carpenter_id"]
+            isOneToOne: false
+            referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_quote_request_id_fkey"
+            columns: ["quote_request_id"]
+            isOneToOne: false
+            referencedRelation: "quote_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "message_threads"
             referencedColumns: ["id"]
           },
         ]
@@ -1257,6 +1472,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      reminder_log: {
+        Row: {
+          created_at: string
+          key: string
+        }
+        Insert: {
+          created_at?: string
+          key: string
+        }
+        Update: {
+          created_at?: string
+          key?: string
+        }
+        Relationships: []
       }
       raffle_draws: {
         Row: {
@@ -2225,7 +2455,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      post_message: {
+        Args: { p_body: string; p_client_id?: string; p_sender: string; p_thread: string }
+        Returns: Database["public"]["Tables"]["messages"]["Row"]
+      }
+      claim_email_outbox: {
+        Args: { p_ids?: string[]; p_limit?: number }
+        Returns: Database["public"]["Tables"]["email_outbox"]["Row"][]
+      }
     }
     Enums: {
       [_ in never]: never

@@ -11,13 +11,16 @@ const db = vi.hoisted(() => ({
   quotes: [] as Record<string, unknown>[],
   calls: [] as unknown[],
 }))
-const sendEmail = vi.hoisted(() => vi.fn(async () => ({ sent: true })))
+// Every notification the route writes; the ones carrying an email are the mails it queues.
+const notify = vi.hoisted(() => vi.fn<(input: { email?: unknown }) => Promise<void>>(async () => undefined))
+const emails = () => notify.mock.calls.filter(([input]) => input.email)
 
 vi.mock('@/lib/carpenter-auth', () => ({
   getSessionCarpenter: async () => ({ id: 'c1', business_name: 'נגריית בדיקה', contact_name: null, city: null }),
 }))
 vi.mock('@/lib/rate-limit', () => ({ checkRateLimit: () => ({ allowed: true }) }))
-vi.mock('@/lib/email', async (importOriginal) => ({ ...(await importOriginal<typeof import('@/lib/email')>()), sendEmail }))
+vi.mock('@/lib/rate-limit-shared', () => ({ sharedLimitReached: async () => false }))
+vi.mock('@/lib/notifications', () => ({ notify }))
 vi.mock('@/lib/price-mode', () => ({ priceModeOf: async () => db.priceMode }))
 vi.mock('@/lib/special-price', () => ({
   loadThresholds: async () => db.thresholds as Map<string, ThresholdFields>,
@@ -78,7 +81,7 @@ beforeEach(() => {
     products: { name_he: 'דבק', base_unit: 'kg', is_active: true },
     suppliers: { company_name: 'ספק', email: 'supplier@example.com', status: 'approved' },
   }
-  sendEmail.mockClear()
+  notify.mockClear()
 })
 
 describe('POST /api/carpenter/quotes', () => {
@@ -87,7 +90,7 @@ describe('POST /api/carpenter/quotes', () => {
     expect(response.status).toBe(400)
     expect((await response.json()).code).toBe('no_special_price')
     expect(db.quotes).toHaveLength(0)
-    expect(sendEmail).not.toHaveBeenCalled()
+    expect(emails()).toHaveLength(0)
   })
 
   it('refuses below the threshold, in packs', async () => {
@@ -112,7 +115,7 @@ describe('POST /api/carpenter/quotes', () => {
     expect(response.status).toBe(201)
     expect(db.quotes).toHaveLength(1)
     expect(db.quotes[0]).toMatchObject({ kind: 'volume', client_request_id: KEY, supplier_id: SUPPLIER, quantity: 40 })
-    expect(sendEmail).toHaveBeenCalledTimes(1)
+    expect(emails()).toHaveLength(1)
   })
 
   it('returns the same request on a repeated send, without a second email', async () => {
@@ -122,7 +125,7 @@ describe('POST /api/carpenter/quotes', () => {
     expect(again.status).toBe(200)
     expect(await again.json()).toMatchObject({ ok: true, id: 'q1', existing: true })
     expect(db.quotes).toHaveLength(1)
-    expect(sendEmail).toHaveBeenCalledTimes(1)
+    expect(emails()).toHaveLength(1)
   })
 
   it('answers 409 when the same id comes back with other details', async () => {
@@ -159,10 +162,10 @@ describe('POST /api/carpenter/quotes', () => {
     expect(body.quoted).toMatchObject({ unitPrice: 18.5 })
     expect(db.quotes[0]).toMatchObject({ kind: 'volume', status: 'quoted', quoted_unit_price_excl_vat: 18.5 })
     // The supplier is told it was answered, and the carpentry gets the answer.
-    expect(sendEmail).toHaveBeenCalledTimes(2)
+    expect(emails()).toHaveLength(2)
     // A repeated send does not answer or mail again.
     await post({ product_id: PRODUCT, supplier_id: SUPPLIER, quantity: 50, client_request_id: KEY })
-    expect(sendEmail).toHaveBeenCalledTimes(2)
+    expect(emails()).toHaveLength(2)
   })
 
   it('answers a quote-only supplier\'s request at once only from the threshold up', async () => {
@@ -182,7 +185,7 @@ describe('POST /api/carpenter/quotes', () => {
     const response = await post({ product_id: PRODUCT, supplier_id: SUPPLIER, quantity: 40 })
     expect((await response.json()).quoted).toBeNull()
     expect(db.quotes[0].status).toBeUndefined()
-    expect(sendEmail).toHaveBeenCalledTimes(1)
+    expect(emails()).toHaveLength(1)
   })
 
   it('sends only to the supplier named, and refuses one that does not sell it', async () => {

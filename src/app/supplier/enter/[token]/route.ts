@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { buildSupplierCookie, getSupplierId, resolveSupplierToken } from '@/lib/supplier-auth'
 import { isTestName, sendEmail } from '@/lib/email'
 import { deviceLabel, newDeviceHtml, newDeviceSubject } from '@/lib/emails/new-device'
+import { safeNext } from '@/lib/notification-links'
 
 /**
  * The supplier's way in.
@@ -42,7 +43,9 @@ export async function GET(
     }
   }
 
-  const response = NextResponse.redirect(new URL('/supplier', request.url))
+  // Back to the page an email link pointed at, when the supplier was signed out.
+  const next = safeNext(request.nextUrl.searchParams.get('next'), '/supplier')
+  const response = NextResponse.redirect(new URL(next ?? '/supplier', request.url))
   response.cookies.set(buildSupplierCookie(supplier.id))
   return response
 }

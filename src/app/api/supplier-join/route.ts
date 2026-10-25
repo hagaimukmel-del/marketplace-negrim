@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { TERMS_VERSION } from '@/lib/terms'
 import { isRegionKey } from '@/lib/regions'
 import { isTestName, sendEmail } from '@/lib/email'
+import { formatPhone, validPhoneKey } from '@/lib/phone'
 import {
   applicationReceivedHtml,
   applicationReceivedSubject,
@@ -24,12 +25,6 @@ import {
  */
 
 /** Last nine digits. Israeli mobiles are 10 with the leading 0, or +972 and 9. */
-function normalisePhone(raw: string): string | null {
-  const digits = raw.replace(/\D/g, '')
-  if (digits.length < 9) return null
-  return digits.slice(-9)
-}
-
 /** ח.פ / ע.מ is nine digits; eight is accepted because older numbers exist. */
 function normaliseBusinessId(raw: string): string | null {
   const digits = raw.replace(/\D/g, '')
@@ -57,7 +52,7 @@ export async function POST(request: NextRequest) {
     const companyName = text(body.company_name, 120)
     const businessId =
       typeof body.business_id === 'string' ? normaliseBusinessId(body.business_id) : null
-    const phone = typeof body.phone === 'string' ? normalisePhone(body.phone) : null
+    const phone = typeof body.phone === 'string' ? validPhoneKey(body.phone) : null
 
     if (!companyName) {
       return NextResponse.json({ error: 'צריך שם חברה' }, { status: 400 })
@@ -69,9 +64,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'מספר טלפון לא תקין' }, { status: 400 })
     }
 
+    // Orders, quote requests and messages arrive by email; a supplier without
+    // one would see them only when it happens to open the console.
     const email = text(body.email, 160)?.toLowerCase() ?? null
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return NextResponse.json({ error: 'כתובת מייל לא תקינה' }, { status: 400 })
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: email ? 'כתובת מייל לא תקינה' : 'צריך כתובת מייל: אליה מגיעות ההזמנות' }, { status: 400 })
     }
 
     const regions = Array.isArray(body.delivery_regions)
@@ -117,7 +114,7 @@ export async function POST(request: NextRequest) {
       company_name: companyName,
       business_id: businessId,
       contact_name: text(body.contact_name, 120),
-      phone: text(body.phone, 40),
+      phone: formatPhone(text(body.phone, 40)),
       phone_key: phone,
       email,
       city: text(body.city, 80),
@@ -159,7 +156,7 @@ export async function POST(request: NextRequest) {
       companyName,
       businessId,
       contactName: text(body.contact_name, 120),
-      phone: text(body.phone, 40),
+      phone: formatPhone(text(body.phone, 40)),
       email,
       city: text(body.city, 80),
       sellsNote: text(body.sells_note, 600),

@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { checkRateLimit } from '@/lib/rate-limit'
-import { isTestName, sendEmail } from '@/lib/email'
+import { isTestName } from '@/lib/email'
+import { notify } from '@/lib/notifications'
 import { supplierQuestionHtml, supplierQuestionSubject } from '@/lib/emails/supplier-question'
 import { startThread } from '@/lib/messages'
+import { sharedLimitReached } from '@/lib/rate-limit-shared'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -53,7 +55,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Each question is an email in a supplier's inbox
-    if (!checkRateLimit(carpenter.id, 'supplierQuestion').allowed) {
+    if (!checkRateLimit(carpenter.id, 'supplierQuestion').allowed || (await sharedLimitReached('supplierQuestion', { side: 'carpenter', id: carpenter.id }))) {
       return NextResponse.json({ error: 'שלחת הרבה שאלות בשעה האחרונה. נסה שוב מאוחר יותר.' }, { status: 429 })
     }
 
@@ -87,35 +89,46 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
-    await startThread(
+    const thread = await startThread(
       { side: 'carpenter', id: carpenter.id },
       { supplierId: supplier.id, productId: productId || null, contactRequestId: logged.id, body: question, notify: false }
-    ).catch((err) => console.error('Contact supplier: thread not opened', err))
+    ).catch((err) => {
+      console.error('Contact supplier: thread not opened', err)
+      return null
+    })
+    const threadId = thread?.ok ? thread.threadId : null
 
-    // The question is saved and shows in the supplier console; a failed email
-    // must not tell the carpenter it was lost
-    let emailed = false
-    if (supplier.email) {
-      // A reply goes to the carpenter only once they have proved the address
-      const carpenterEmail = contact?.email_verified_at ? contact.email : null
-      const details = {
-        carpenterName: carpenter.business_name,
-        contactName: carpenter.contact_name,
-        phone: carpenter.phone,
-        city: carpenter.city,
-        carpenterEmail,
-        productName: product?.name_he ?? null,
-        question,
-      }
-      const result = await sendEmail({
-        to: supplier.email,
-        subject: supplierQuestionSubject(details),
-        html: supplierQuestionHtml(details),
-        isTest: isTestName(carpenter.business_name, supplier.company_name),
-        replyTo: carpenterEmail,
-      })
-      emailed = result.sent
+    // The question is saved and shows in the supplier console and under its
+    // bell; the email goes through the outbox, which retries it.
+    // A reply goes to the carpenter only once they have proved the address
+    const carpenterEmail = contact?.email_verified_at ? contact.email : null
+    const details = {
+      carpenterName: carpenter.business_name,
+      contactName: carpenter.contact_name,
+      phone: carpenter.phone,
+      city: carpenter.city,
+      carpenterEmail,
+      productName: product?.name_he ?? null,
+      question,
     }
+    await notify({
+      to: { side: 'supplier', id: supplier.id },
+      kind: 'message_new',
+      title: `שאלה מ${carpenter.business_name}`,
+      body: `${product?.name_he ? `${product.name_he} · ` : ''}${question.slice(0, 120)}`,
+      link: threadId ? `/supplier/messages/${threadId}` : '/supplier?tab=orders',
+      threadId,
+      email: supplier.email
+        ? {
+            to: supplier.email,
+            subject: supplierQuestionSubject(details),
+            html: supplierQuestionHtml(details),
+            isTest: isTestName(carpenter.business_name, supplier.company_name),
+            replyTo: carpenterEmail,
+          }
+        : null,
+    })
+    const emailed = Boolean(supplier.email)
 
     return NextResponse.json({ success: true, emailed }, { status: 201 })
   } catch (err) {

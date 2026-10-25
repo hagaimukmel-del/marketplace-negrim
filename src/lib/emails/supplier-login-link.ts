@@ -45,11 +45,14 @@ export function supplierLoginLinkSubject(): string {
 export function supplierLoginLinkHtml({
   companyName,
   token,
+  next = null,
 }: {
   companyName: string
   token: string
+  /** A page in the console to land on after entering. */
+  next?: string | null
 }): string {
-  const link = `${siteUrl()}/supplier/enter/${token}`
+  const link = `${siteUrl()}/supplier/enter/${token}${next ? `?next=${encodeURIComponent(next)}` : ''}`
 
   return `
 <div dir="rtl" style="background:#fafaf9;padding:24px 12px;font:14px/1.6 ${FONT};color:#1c1917">

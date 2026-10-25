@@ -4,6 +4,7 @@ import { isAdmin } from '@/lib/admin-auth'
 import { isOperatorManaged, refuseAdminWriteFor, refusedForSelfRun } from '@/lib/admin-scope'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { loadThread, reply, setHandled } from '@/lib/messages'
+import { sharedLimitReached } from '@/lib/rate-limit-shared'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -21,11 +22,11 @@ export async function POST(request: NextRequest, { params }: Params) {
   if (!supplier) return NextResponse.json({ error: 'צריך להיות מחובר' }, { status: 401 })
   const refused = await refuseAdminWriteFor(supplier)
   if (refused) return refused
-  if (!checkRateLimit(`msg:${supplier.id}`, 'message').allowed) {
+  if (!checkRateLimit(`msg:${supplier.id}`, 'message').allowed || (await sharedLimitReached('message', { side: 'supplier', id: supplier.id }))) {
     return NextResponse.json({ error: 'נשלחו הרבה הודעות בשעה האחרונה. נסו שוב מאוחר יותר.' }, { status: 429 })
   }
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>
-  const result = await reply({ side: 'supplier', id: supplier.id }, (await params).id, body.body)
+  const result = await reply({ side: 'supplier', id: supplier.id }, (await params).id, body.body, body.clientId)
   return result.ok ? NextResponse.json({ ok: true }) : NextResponse.json({ error: result.error }, { status: result.status })
 }
 

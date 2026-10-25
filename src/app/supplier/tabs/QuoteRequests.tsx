@@ -2,11 +2,13 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { FileText, Phone } from 'lucide-react'
+import Link from 'next/link'
+import { FileText, MessageSquare, Phone } from 'lucide-react'
 import { formatIls } from '@/lib/vat'
 import { QUOTE_KIND_LABEL, QUOTE_MAX_VALID_DAYS, QUOTE_STATE_LABEL, israelDate, quantityText, validLabel, type SupplierQuoteRequest } from '@/lib/quotes'
 import { callApi, jsonInit, type SupplierQuotes } from '../types'
 import type { Notify } from '../SupplierApp'
+import { telUrl } from '@/lib/phone'
 
 function addDays(date: string, days: number): string {
   const d = new Date(`${date}T12:00:00Z`)
@@ -55,9 +57,19 @@ function Answer({ quote, notify }: { quote: SupplierQuoteRequest; notify: Notify
             {quote.city ? `, ${quote.city}` : ''} · {when(quote.createdAt)}
           </p>
         </div>
+        {quote.threadId && (
+          <Link
+            href={`/supplier/messages/${quote.threadId}`}
+            aria-label="שיחה על הבקשה"
+            title="שיחה על הבקשה"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-stone-600 hover:bg-stone-100"
+          >
+            <MessageSquare size={17} />
+          </Link>
+        )}
         {quote.phone && (
           <a
-            href={`tel:${quote.phone}`}
+            href={telUrl(quote.phone) ?? undefined}
             aria-label={`להתקשר ל${quote.carpenter}`}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-stone-600 hover:bg-stone-100"
           >
@@ -178,6 +190,11 @@ export default function QuoteRequests({ quotes, notify }: { quotes: SupplierQuot
                     </span>
                   )}
                   <span className="shrink-0 font-semibold text-stone-700">{QUOTE_STATE_LABEL[quote.state]}</span>
+                  {quote.threadId && (
+                    <Link href={`/supplier/messages/${quote.threadId}`} aria-label="שיחה על הבקשה" className="shrink-0 text-stone-500 hover:text-stone-800">
+                      <MessageSquare size={15} />
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>

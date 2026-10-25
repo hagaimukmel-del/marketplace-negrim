@@ -11,6 +11,7 @@ import {
   daysLeft,
   formatPhone,
   postedAgo,
+  telUrl,
   whatsappUrl,
   type MetzionCard,
 } from '@/lib/metzion'
@@ -144,17 +145,19 @@ export default function ListingSheet({ card, onClose }: { card: MetzionCard; onC
             <div className="rounded-xl bg-brand-soft p-3">
               <p className="text-sm text-attn">{contact.name}</p>
               <p dir="ltr" className="tnum text-end text-2xl font-bold text-ink">{formatPhone(contact.phone)}</p>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <a
-                  href={whatsappUrl(contact.phone, message)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex h-12 items-center justify-center gap-2 rounded-[11px] bg-brand font-bold text-navy"
-                >
-                  <MessageCircle size={18} />
-                  וואטסאפ
-                </a>
-                <a href={`tel:${contact.phone}`} className="flex h-12 items-center justify-center gap-2 rounded-[11px] border-[1.5px] border-hair bg-white font-bold text-ink">
+              <div className={`mt-3 grid gap-2 ${whatsappUrl(contact.phone) ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                {whatsappUrl(contact.phone) && (
+                  <a
+                    href={whatsappUrl(contact.phone, message) ?? undefined}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex h-12 items-center justify-center gap-2 rounded-[11px] bg-brand font-bold text-navy"
+                  >
+                    <MessageCircle size={18} />
+                    וואטסאפ
+                  </a>
+                )}
+                <a href={telUrl(contact.phone) ?? `tel:${contact.phone}`} className="flex h-12 items-center justify-center gap-2 rounded-[11px] border-[1.5px] border-hair bg-white font-bold text-ink">
                   <Phone size={18} />
                   חיוג
                 </a>

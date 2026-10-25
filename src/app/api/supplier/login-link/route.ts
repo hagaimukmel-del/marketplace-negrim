@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { isTestName, sendEmail } from '@/lib/email'
 import { supplierLoginLinkHtml, supplierLoginLinkSubject } from '@/lib/emails/supplier-login-link'
+import { safeNext } from '@/lib/notification-links'
 
 /**
  * A registered supplier asks for their way in again.
@@ -22,6 +23,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}))
     const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
+    const next = safeNext(typeof body.next === 'string' ? body.next : null, '/supplier')
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: 'כתובת מייל לא תקינה' }, { status: 400 })
@@ -45,7 +47,7 @@ export async function POST(request: NextRequest) {
       await sendEmail({
         to: supplier.email,
         subject: supplierLoginLinkSubject(),
-        html: supplierLoginLinkHtml({ companyName: supplier.company_name, token: supplier.token }),
+        html: supplierLoginLinkHtml({ companyName: supplier.company_name, token: supplier.token, next }),
         isTest: isTestName(supplier.company_name),
       })
     }

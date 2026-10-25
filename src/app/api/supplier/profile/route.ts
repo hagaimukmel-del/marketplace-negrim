@@ -6,6 +6,7 @@ import { PAYMENT_TERMS } from '@/app/supplier/types'
 import { isRegionKey } from '@/lib/regions'
 import type { Database } from '@/lib/database.types'
 import { cleanOrderCc } from '@/lib/order-recipients'
+import { formatPhone, validPhoneKey } from '@/lib/phone'
 
 type SupplierUpdate = Database['public']['Tables']['suppliers']['Update']
 
@@ -20,11 +21,6 @@ function text(value: unknown, max: number): string | null {
 }
 
 /** Last nine digits, so one business cannot arrive twice under a different format. */
-function normalisePhone(raw: string): string | null {
-  const digits = raw.replace(/\D/g, '')
-  return digits.length >= 9 ? digits.slice(-9) : null
-}
-
 function optionalNumber(
   value: unknown,
   { integer = false }: { integer?: boolean } = {}
@@ -110,7 +106,7 @@ export async function PATCH(request: NextRequest) {
 
     if ('phone' in body) {
       const raw = text(body.phone, 40)
-      const phoneKey = raw ? normalisePhone(raw) : null
+      const phoneKey = raw ? validPhoneKey(raw) : null
       if (!raw || !phoneKey) {
         return NextResponse.json({ error: 'מספר טלפון לא תקין' }, { status: 400 })
       }
@@ -126,14 +122,15 @@ export async function PATCH(request: NextRequest) {
           { status: 409 }
         )
       }
-      update.phone = raw
+      update.phone = formatPhone(raw)
       update.phone_key = phoneKey
     }
 
     if ('email' in body) {
       const email = text(body.email, 160)?.toLowerCase() ?? null
-      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        return NextResponse.json({ error: 'כתובת מייל לא תקינה' }, { status: 400 })
+      // Orders arrive at this address; it cannot be emptied, only changed.
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return NextResponse.json({ error: email ? 'כתובת מייל לא תקינה' : 'צריך כתובת מייל: אליה מגיעות ההזמנות' }, { status: 400 })
       }
       update.email = email
     }
