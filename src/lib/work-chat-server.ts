@@ -337,7 +337,7 @@ export async function sendMessage(
   id: string,
   rawBody: unknown,
   file: FormDataEntryValue | null
-): Promise<{ ok: true } | Failure> {
+): Promise<{ ok: true; side: ChatSide } | Failure> {
   if (!viewer.carpenter) return { ok: false, status: 401, error: 'צריך להיות נגרייה רשומה' }
   const own = await ownConversation(viewer.carpenter.id, id)
   if (!own) return { ok: false, status: 404, error: 'השיחה לא נמצאה' }
@@ -350,7 +350,7 @@ export async function sendMessage(
   if (typeof upload === 'string') return { ok: false, status: 400, error: upload }
   if (!body && !upload) return { ok: false, status: 400, error: 'ההודעה ריקה' }
 
-  return (await append(own.row, own.side, body, upload)) ?? { ok: true }
+  return (await append(own.row, own.side, body, upload)) ?? { ok: true, side: own.side }
 }
 
 /**

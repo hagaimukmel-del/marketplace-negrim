@@ -52,7 +52,7 @@ python .claude/skills/product-map/scripts/task_index.py
 ## Index
 
 <!-- INDEX:START -->
-27 open of 34.
+26 open of 35.
 
 | ID | Pri | Status | Type | Area | Title | Blocked by |
 |---|---|---|---|---|---|---|
@@ -76,7 +76,6 @@ python .claude/skills/product-map/scripts/task_index.py
 | [T-007](T-007.md) | P2 | open | decision | 03-agent-chat | Decide: keyword agent vs LLM |  |
 | [T-014](T-014.md) | P2 | open | debt | 05-catalogue-pricing | Supplier SKU, brand and mpn data |  |
 | [T-021](T-021.md) | P2 | open | debt | 07-admin-console | Admin supplier-document upload always fails |  |
-| [T-030](T-030.md) | P2 | open | ops | 11-work-network | Work board phase 1 - check on staging, merge, then open the board |  |
 | [T-013](T-013.md) | P3 | open | debt | 05-catalogue-pricing | Product images: rehost from Google Drive |  |
 | [T-016](T-016.md) | P3 | open | debt | 10-platform | Lint errors |  |
 | [T-019](T-019.md) | P3 | open | decision | 10-platform | CLAUDE.md rules vs reality: Zod, @supabase/ssr, Server Components |  |
@@ -86,7 +85,9 @@ python .claude/skills/product-map/scripts/task_index.py
 | [T-008](T-008.md) | P0 | done | ops | 03-agent-chat | Apply migration supplier_contact_requests |  |
 | [T-010](T-010.md) | P2 | done | incomplete | 03-agent-chat | "פנה לספק" should notify the supplier | T-008 |
 | [T-020](T-020.md) | P2 | done | future | 01-public-onboarding | Email the account owner when a new device signs in |  |
+| [T-030](T-030.md) | P2 | done | ops | 11-work-network | Work board phase 1 - check on staging, merge, then open the board |  |
 | [T-034](T-034.md) | P2 | done | ops | 11-work-network | Work network phase 2 (conversations) - check on staging, migration to production |  |
+| [T-035](T-035.md) | P2 | done | ops | 11-work-network | Work network phase 3 (email notifications) - check on staging, migration to production |  |
 | [T-017](T-017.md) | P3 | done | incomplete | 03-agent-chat | Product documents visible to all carpenters |  |
 | [T-018](T-018.md) | P3 | done | debt | 02-carpenter-app | Legacy /order search page | T-001 |
 | [T-027](T-027.md) | P3 | done | incomplete | 04-orders-fulfilment | Supplier logo on the purchase order and in the carpenter app |  |

@@ -42,7 +42,76 @@ function Toggles({ options, value, onChange, label }: { options: readonly { key:
  * service; the prices after the launch are stated here so nobody is surprised
  * later, with no payment asked for now.
  */
-export default function ProfileForm({ initial, existing, boardOpen }: { initial: ProfileValues; existing: boolean; boardOpen: boolean }) {
+/**
+ * Where the notifications go. They are sent only to an address the carpentry
+ * proved it reads: opening the link mailed to it marks it verified.
+ */
+function EmailStatus({ email, verified }: { email: string | null; verified: boolean }) {
+  const [state, setState] = useState<'idle' | 'busy' | 'sent' | 'error'>('idle')
+
+  if (!email) {
+    return (
+      <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+        אין מייל בפרטי הנגרייה, ולכן לא נשלח לכם התראות.{' '}
+        <Link href="/app/account" className="font-semibold underline">
+          להוספת מייל
+        </Link>
+      </p>
+    )
+  }
+  if (verified) {
+    return (
+      <p className="text-sm text-muted">
+        ההתראות יישלחו אל <b dir="ltr" className="text-ink">{email}</b> (מאומת). עד 5 מיילים ביום.
+      </p>
+    )
+  }
+
+  const send = async () => {
+    setState('busy')
+    const response = await fetch('/api/carpenter/login-link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ self: true }),
+    }).catch(() => null)
+    setState(response?.ok ? 'sent' : 'error')
+  }
+
+  return (
+    <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+      <p className="m-0">
+        כדי לקבל התראות צריך לאמת את המייל <b dir="ltr">{email}</b>.
+      </p>
+      {state === 'sent' ? (
+        <p className="m-0 mt-2 font-semibold">שלחנו קישור. פתחו אותו מהמייל, והמייל יאומת.</p>
+      ) : (
+        <button
+          type="button"
+          onClick={send}
+          disabled={state === 'busy'}
+          className="mt-2 h-10 rounded-lg border border-amber-300 bg-white px-3 font-semibold text-amber-900 disabled:opacity-50"
+        >
+          {state === 'busy' ? 'שולח…' : 'שלחו לי קישור לאימות'}
+        </button>
+      )}
+      {state === 'error' && <p className="m-0 mt-2 text-red-700">השליחה נכשלה. נסו שוב בעוד רגע.</p>}
+    </div>
+  )
+}
+
+export default function ProfileForm({
+  initial,
+  existing,
+  boardOpen,
+  email,
+  emailVerified,
+}: {
+  initial: ProfileValues
+  existing: boolean
+  boardOpen: boolean
+  email: string | null
+  emailVerified: boolean
+}) {
   const router = useRouter()
   const [form, setForm] = useState(initial)
   const [busy, setBusy] = useState(false)
@@ -108,8 +177,9 @@ export default function ProfileForm({ initial, existing, boardOpen }: { initial:
         </label>
         <label className="flex items-center gap-2 text-sm text-ink">
           <input type="checkbox" checked={form.notifyEmail} onChange={(e) => setForm({ ...form, notifyEmail: e.target.checked })} className="h-5 w-5" />
-          לשלוח לי במייל עבודות שמתאימות לי (כשההתראות ייפתחו)
+          לשלוח לי במייל עבודות שמתאימות לי, פניות לעבודות שלי והודעות חדשות
         </label>
+        {form.notifyEmail && <EmailStatus email={email} verified={emailVerified} />}
       </section>
 
       <section className="rounded-xl border border-[#8CC9C2] bg-[#E2F0EF] p-4 text-sm text-[#0B5A5A]">

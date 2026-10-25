@@ -2068,6 +2068,58 @@ export type Database = {
           },
         ]
       }
+      work_notifications: {
+        Row: {
+          carpenter_id: string
+          conversation_id: string | null
+          created_at: string
+          id: string
+          job_id: string | null
+          kind: string
+          status: string
+        }
+        Insert: {
+          carpenter_id: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          job_id?: string | null
+          kind: string
+          status: string
+        }
+        Update: {
+          carpenter_id?: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          job_id?: string | null
+          kind?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_notifications_carpenter_id_fkey"
+            columns: ["carpenter_id"]
+            isOneToOne: false
+            referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_notifications_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "work_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_notifications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "work_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_profiles: {
         Row: {
           carpenter_id: string

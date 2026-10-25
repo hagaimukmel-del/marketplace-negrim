@@ -145,8 +145,8 @@ Last verified 2026-10-03 by running the checks, not from memory. Re-verify befor
 - **המציאון** (`/app/metzion`, `lib/metzion.ts`): carpenter-to-carpenter listings; the deal
   happens directly between carpenters, the platform only connects them (spec in `TODO.md`).
 - **נגרים עובדים ביחד** (`/app/work`, `lib/work.ts`, `/admin/work`): a job board between
-  carpentries, phase 1. Hidden from carpenters until `WORK_BOARD_OPEN=true`. Migration
-  `20261015130000_work_network` is on staging and production (T-030). Product map 11.
+  carpentries: board, conversations with files, email notifications (phases 1-3). Open to
+  carpenters since 2026-10-25 (`WORK_BOARD_OPEN=true` on production). Product map 11.
 - **Agent chat** (`components/chat`, `lib/procurement-agent.ts`, `/api/carpenter/search`): a
   Hebrew search assistant. **No LLM.** Intent parsing is keyword matching (see its `TODO`).
   "פנה לספק" writes `supplier_contact_requests` (migration not applied yet, see `HANDOFF.md`)
