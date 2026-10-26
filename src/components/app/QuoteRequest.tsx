@@ -122,7 +122,7 @@ export default function QuoteRequest({
                       קיבלתם הצעה: <span className="tnum">{money(quoted.unitPrice)}</span> ל{product.unit}
                     </b>
                     <p className="m-0 max-w-[36ch] text-sm text-muted">
-                      זה המחיר המיוחד ש{offer.supplierName} קבע לכמות הזו, בתוקף עד {validLabel(quoted.validUntil)}. מוסיפים אותה להזמנה מהצעות המחיר.
+                      זה המחיר המיוחד ש{offer.supplierName} קבע לכמות הזו, בתוקף עד <bdi className="tnum">{validLabel(quoted.validUntil)}</bdi>. מוסיפים אותה להזמנה מהצעות המחיר.
                     </p>
                   </>
                 ) : (

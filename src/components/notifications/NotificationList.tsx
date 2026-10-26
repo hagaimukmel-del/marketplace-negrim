@@ -53,9 +53,9 @@ export default function NotificationList({ items, openBase }: { items: Notificat
               <Icon size={18} className="shrink-0 text-stone-500" aria-hidden />
               <span className="min-w-0 flex-1">
                 <span className={`block truncate ${item.read ? 'font-semibold text-stone-700' : 'font-bold text-stone-900'}`}>{item.title}</span>
-                {item.body && <span className="block truncate text-sm text-stone-500">{item.body}</span>}
+                {item.body && <span className="block truncate text-base text-stone-500">{item.body}</span>}
               </span>
-              <span className="tnum shrink-0 text-xs text-stone-500">{when(item.createdAt)}</span>
+              <span className="tnum shrink-0 text-sm text-stone-500">{when(item.createdAt)}</span>
             </a>
           </li>
         )

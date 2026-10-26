@@ -127,7 +127,7 @@ export default function QuotesView({ ready, quotes, unconfirmedEmail }: { ready:
                 </div>
                 <div className="text-sm text-muted">
                   {quantityText(quote.quantity, quote.unit, quote.packLabel, quote.packQty)}
-                  {quote.validUntil && <> · בתוקף עד <span className="tnum">{validLabel(quote.validUntil)}</span></>}
+                  {quote.validUntil && <> · בתוקף עד <bdi className="tnum">{validLabel(quote.validUntil)}</bdi></>}
                 </div>
                 {quote.supplierNote && <p className="m-0 whitespace-pre-line rounded-xl bg-[#FBF9F6] p-2.5 text-sm">{quote.supplierNote}</p>}
                 <div className="flex flex-wrap items-center gap-2">

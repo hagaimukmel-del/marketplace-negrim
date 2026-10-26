@@ -49,23 +49,23 @@ export default function SyncButton() {
         type="button"
         onClick={sync}
         disabled={busy}
-        className="flex h-10 items-center gap-2 rounded-lg border border-stone-300 bg-white px-4 text-sm font-semibold text-stone-800 hover:bg-stone-50 disabled:opacity-50"
+        className="flex h-10 items-center gap-2 rounded-lg border border-stone-300 bg-white px-4 text-base font-semibold text-stone-800 hover:bg-stone-50 disabled:opacity-50"
       >
         <RefreshCw size={15} className={busy ? 'animate-spin' : undefined} />
         {busy ? 'מסנכרן…' : 'סנכרן מהגיליון'}
       </button>
-        {result && <span className="text-sm text-stone-600">{result}</span>}
+        {result && <span className="text-base text-stone-600">{result}</span>}
       </div>
 
       {overwritten.length > 0 && (
         <div className="w-full rounded-lg border border-amber-300 bg-amber-50 p-3">
-          <p className="text-sm font-semibold text-amber-900">
+          <p className="text-base font-semibold text-amber-900">
             {overwritten.length} מוצרים נדרסו לפי מק״ט
           </p>
           <ul className="mt-1 space-y-0.5">
             {overwritten.map((row) => (
-              <li key={row.sku} className="text-sm text-amber-900">
-                <span className="font-mono text-xs">{row.sku}</span> — {row.name_he}
+              <li key={row.sku} className="text-base text-amber-900">
+                <span className="font-mono text-sm">{row.sku}</span> — {row.name_he}
               </li>
             ))}
           </ul>

@@ -141,7 +141,7 @@ export default function ThreadView({
       <header className="flex flex-wrap items-center gap-2">
         <div className="min-w-0 flex-1">
           <h1 className="m-0 truncate text-lg font-bold text-stone-900">{thread.counterpart}</h1>
-          <p className="m-0 truncate text-sm text-stone-500">
+          <p className="m-0 truncate text-base text-stone-500">
             {thread.subject}
             {thread.status === 'handled' && ' · טופל'}
           </p>
@@ -151,7 +151,7 @@ export default function ThreadView({
             type="button"
             onClick={toggleHandled}
             disabled={busy}
-            className="flex h-10 shrink-0 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-stone-700 disabled:opacity-50"
+            className="flex h-10 shrink-0 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-base font-semibold text-stone-700 disabled:opacity-50"
           >
             {thread.status === 'handled' ? <RotateCcw size={15} /> : <Check size={15} />}
             {thread.status === 'handled' ? 'פתח מחדש' : 'סמן כטופל'}
@@ -162,20 +162,22 @@ export default function ThreadView({
       <div className="space-y-2 rounded-2xl border border-stone-200 bg-stone-50 p-3">
         {thread.messages.map((message) =>
           message.system ? (
-            <p key={message.id} className="mx-auto my-1 max-w-[90%] rounded-full bg-stone-200/70 px-3 py-1 text-center text-[13px] text-stone-700">
-              {message.body}
-              <span className="tnum ms-2 text-[11px] text-stone-500">{when(message.createdAt)}</span>
-            </p>
+            // The time sits on its own line, isolated: inline after a body that
+            // ends in a date ("בתוקף עד 9.11") the two read as one number.
+            <div key={message.id} className="mx-auto my-1 max-w-[90%] rounded-2xl bg-stone-200/70 px-4 py-2 text-center text-stone-800">
+              <p className="m-0 whitespace-pre-line break-words">{message.body}</p>
+              <bdi dir="ltr" className="tnum mt-0.5 block text-sm text-stone-500">{when(message.createdAt)}</bdi>
+            </div>
           ) : (
             <div key={message.id} className={`flex ${message.mine ? 'justify-start' : 'justify-end'}`}>
               <div
-                className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-[15px] leading-relaxed sm:max-w-[70%] ${
+                className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-base leading-relaxed sm:max-w-[70%] ${
                   message.mine ? 'bg-emerald-700 text-white' : 'border border-stone-200 bg-white text-stone-900'
                 }`}
               >
                 <p className="m-0 whitespace-pre-wrap break-words">{message.body}</p>
-                <span className={`tnum mt-0.5 flex items-center gap-1 text-[11px] ${message.mine ? 'text-emerald-100' : 'text-stone-400'}`}>
-                  {when(message.createdAt)}
+                <span className={`tnum mt-0.5 flex items-center gap-1 text-xs ${message.mine ? 'text-emerald-100' : 'text-stone-400'}`}>
+                  <bdi dir="ltr">{when(message.createdAt)}</bdi>
                   {message.mine &&
                     (thread.otherReadAt && new Date(thread.otherReadAt) >= new Date(message.createdAt) ? (
                       <>
@@ -195,7 +197,7 @@ export default function ThreadView({
       </div>
 
       {readOnly ? (
-        <p className="rounded-lg bg-stone-100 p-3 text-sm text-stone-600">צפייה בלבד.</p>
+        <p className="rounded-lg bg-stone-100 p-3 text-base text-stone-600">צפייה בלבד.</p>
       ) : (
         <form onSubmit={send} className={`sticky ${composerClass} flex items-end gap-2 rounded-2xl border border-stone-200 bg-white p-2`}>
           <textarea
@@ -217,7 +219,7 @@ export default function ThreadView({
           </button>
         </form>
       )}
-      {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {error && <p className="rounded-lg bg-red-50 p-3 text-base text-red-700">{error}</p>}
     </div>
   )
 }

@@ -39,7 +39,7 @@ export default function AdminLoginPage() {
       >
         <Logo size="md" tagline="always" />
         <h1 className="mt-5 text-lg font-bold text-stone-900">כניסת מנהל</h1>
-        <p className="mt-1 text-sm text-stone-600">הזן סיסמת מפעיל</p>
+        <p className="mt-1 text-base text-stone-600">הזן סיסמת מפעיל</p>
 
         <input
           type="password"
@@ -50,7 +50,7 @@ export default function AdminLoginPage() {
           className="mt-4 h-12 w-full rounded-lg border border-stone-300 px-3"
         />
 
-        {error && <p className="mt-3 rounded-lg bg-red-50 p-2 text-sm text-red-700">{error}</p>}
+        {error && <p className="mt-3 rounded-lg bg-red-50 p-2 text-base text-red-700">{error}</p>}
 
         <button
           type="submit"

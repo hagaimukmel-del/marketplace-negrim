@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             error: duplicate
-              ? 'המוצר הזה כבר נמצא ברשימה שלך, או שהמק״ט כבר קיים אצלך'
+              ? 'המוצר הזה כבר נמצא ברשימה שלך (אם מחקת אותו, הוא ברשימת "נמחקו" ואפשר להחזיר אותו משם), או שהמק״ט כבר קיים אצלך'
               : error.message,
           },
           { status: duplicate ? 409 : 500 }
@@ -359,6 +359,30 @@ export async function PATCH(request: NextRequest) {
     const owned = await loadOwned(body.offer_id)
     if (!owned) return NextResponse.json({ error: 'המוצר לא נמצא' }, { status: 404 })
 
+    // ---- restore from "נמחקו": back as it was, listed or hidden -------------
+    if (body.restore === true) {
+      const { data: marked, error: readError } = await supabase
+        .from('supplier_offers')
+        .select('deleted_at, active_before_delete')
+        .eq('id', body.offer_id)
+        .eq('supplier_id', supplier.id)
+        .maybeSingle()
+      if (readError) return NextResponse.json({ error: readError.message }, { status: 500 })
+      if (!marked?.deleted_at) return NextResponse.json({ ok: true, restored: false })
+      const { error } = await supabase
+        .from('supplier_offers')
+        .update({
+          deleted_at: null,
+          active_before_delete: null,
+          is_active: marked.active_before_delete ?? true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', body.offer_id)
+        .eq('supplier_id', supplier.id)
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ ok: true, restored: true, is_active: marked.active_before_delete ?? true })
+    }
+
     const offerFields = readOfferFields(body, false)
     if (typeof offerFields === 'string') {
       return NextResponse.json({ error: offerFields }, { status: 400 })
@@ -440,12 +464,20 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
+/** The column is missing on a database without migration 20261026190000. */
+function missingColumn(error: { code?: string; message?: string } | null): boolean {
+  return Boolean(error && (error.code === '42703' || error.code === 'PGRST204' || /deleted_at|active_before_delete/.test(error.message ?? '')))
+}
+
 /**
  * Stop selling a product.
  *
- * The offer goes. The product goes with it only if this supplier created it and
- * nobody else sells it — and if an old order still points at it, it is switched
- * off instead, so that order keeps resolving.
+ * The first delete only moves it to the supplier's "נמחקו" list: the offer is
+ * marked and switched off, so nobody can see or order it, and one click brings
+ * it back (PATCH with `restore`). `permanent=1` on an offer already in that
+ * list removes it for good: the offer goes, and the product goes with it only
+ * if this supplier created it and nobody else sells it — and if an old order
+ * still points at it, it is switched off instead, so that order keeps resolving.
  */
 export async function DELETE(request: NextRequest) {
   const supplier = await getSessionSupplier()
@@ -457,16 +489,50 @@ export async function DELETE(request: NextRequest) {
   try {
     const offerId = request.nextUrl.searchParams.get('offer_id')
     if (!offerId) return NextResponse.json({ error: 'חסר מוצר' }, { status: 400 })
+    const permanent = request.nextUrl.searchParams.get('permanent') === '1'
 
     const supabase = getSupabaseAdmin()
     const { data: offer } = await supabase
       .from('supplier_offers')
-      .select('id, product_id, products(created_by_supplier_id)')
+      .select('id, product_id, is_active, products(created_by_supplier_id)')
       .eq('id', offerId)
       .eq('supplier_id', supplier.id)
       .maybeSingle()
 
     if (!offer) return NextResponse.json({ error: 'המוצר לא נמצא' }, { status: 404 })
+
+    if (!permanent) {
+      const { error } = await supabase
+        .from('supplier_offers')
+        .update({
+          deleted_at: new Date().toISOString(),
+          active_before_delete: offer.is_active,
+          is_active: false,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', offerId)
+        .eq('supplier_id', supplier.id)
+      if (!error) return NextResponse.json({ ok: true, deleted: true })
+      if (!missingColumn(error)) return NextResponse.json({ error: error.message }, { status: 500 })
+      // Before the migration there is no "נמחקו" list: hide it, which is undoable too.
+      const { error: hideError } = await supabase
+        .from('supplier_offers')
+        .update({ is_active: false, updated_at: new Date().toISOString() })
+        .eq('id', offerId)
+        .eq('supplier_id', supplier.id)
+      if (hideError) return NextResponse.json({ error: hideError.message }, { status: 500 })
+      return NextResponse.json({ ok: true, hidden: true })
+    }
+
+    const { data: marked } = await supabase
+      .from('supplier_offers')
+      .select('deleted_at')
+      .eq('id', offerId)
+      .eq('supplier_id', supplier.id)
+      .maybeSingle()
+    if (!marked?.deleted_at) {
+      return NextResponse.json({ error: 'אפשר למחוק לצמיתות רק מוצר שנמצא ברשימת "נמחקו"' }, { status: 409 })
+    }
 
     const { error } = await supabase
       .from('supplier_offers')

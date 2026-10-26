@@ -51,8 +51,8 @@ function Answer({ quote, notify }: { quote: SupplierQuoteRequest; notify: Notify
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-stone-900">{quote.productName}</p>
-          {quote.kind && <p className="text-xs font-semibold text-emerald-700">{QUOTE_KIND_LABEL[quote.kind]}</p>}
-          <p className="text-sm text-stone-600">
+          {quote.kind && <p className="text-sm font-semibold text-emerald-700">{QUOTE_KIND_LABEL[quote.kind]}</p>}
+          <p className="text-base text-stone-600">
             {quantityText(quote.quantity, quote.unit, quote.packLabel, quote.packQty)} · {quote.carpenter}
             {quote.city ? `, ${quote.city}` : ''} · {when(quote.createdAt)}
           </p>
@@ -77,11 +77,11 @@ function Answer({ quote, notify }: { quote: SupplierQuoteRequest; notify: Notify
           </a>
         )}
       </div>
-      {quote.note && <p className="mt-1.5 whitespace-pre-line rounded-lg bg-stone-50 p-2.5 text-sm text-stone-800">{quote.note}</p>}
+      {quote.note && <p className="mt-1.5 whitespace-pre-line rounded-lg bg-stone-50 p-2.5 text-base text-stone-800">{quote.note}</p>}
 
       <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr]">
         <label className="block">
-          <span className="text-sm font-medium text-stone-700">מחיר ל{quote.unit}, ללא מע״מ (₪)</span>
+          <span className="text-base font-medium text-stone-700">מחיר ל{quote.unit}, ללא מע״מ (₪)</span>
           <input
             value={price}
             onChange={(e) => setPrice(e.target.value)}
@@ -92,7 +92,7 @@ function Answer({ quote, notify }: { quote: SupplierQuoteRequest; notify: Notify
           />
         </label>
         <label className="block">
-          <span className="text-sm font-medium text-stone-700">בתוקף עד</span>
+          <span className="text-base font-medium text-stone-700">בתוקף עד</span>
           <input
             type="date"
             value={validUntil}
@@ -103,7 +103,7 @@ function Answer({ quote, notify }: { quote: SupplierQuoteRequest; notify: Notify
           />
         </label>
         <label className="block sm:col-span-2">
-          <span className="text-sm font-medium text-stone-700">הערה לנגרייה (לא חובה)</span>
+          <span className="text-base font-medium text-stone-700">הערה לנגרייה (לא חובה)</span>
           <input
             value={note}
             onChange={(e) => setNote(e.target.value)}
@@ -114,7 +114,7 @@ function Answer({ quote, notify }: { quote: SupplierQuoteRequest; notify: Notify
         </label>
       </div>
       {priced && (
-        <p className="mt-2 text-sm text-stone-700">
+        <p className="mt-2 text-base text-stone-700">
           סה״כ לכמות: <b className="tnum">{formatIls(value * quote.quantity)}</b> ללא מע״מ
         </p>
       )}
@@ -131,7 +131,7 @@ function Answer({ quote, notify }: { quote: SupplierQuoteRequest; notify: Notify
           type="button"
           onClick={() => send('decline')}
           disabled={busy}
-          className="h-12 rounded-lg px-4 text-sm font-semibold text-stone-600 hover:bg-stone-100"
+          className="h-12 rounded-lg px-4 text-base font-semibold text-stone-600 hover:bg-stone-100"
         >
           לא יכול להציע
         </button>
@@ -159,7 +159,7 @@ export default function QuoteRequests({ quotes, notify }: { quotes: SupplierQuot
         <FileText size={18} className="text-amber-800" />
         <h2 className="font-bold text-stone-900">בקשות הצעת מחיר</h2>
         {open.length > 0 && (
-          <span className="tnum rounded-full bg-amber-600 px-2 text-xs font-bold text-white">{open.length}</span>
+          <span className="tnum rounded-full bg-amber-600 px-2 text-sm font-bold text-white">{open.length}</span>
         )}
       </div>
       {open.length > 0 ? (
@@ -169,24 +169,29 @@ export default function QuoteRequests({ quotes, notify }: { quotes: SupplierQuot
           ))}
         </ul>
       ) : (
-        <p className="px-4 py-3 text-sm text-stone-600">אין בקשות שמחכות לתשובה.</p>
+        <p className="px-4 py-3 text-base text-stone-600">אין בקשות שמחכות לתשובה.</p>
       )}
       {past.length > 0 && (
         <div className="border-t border-stone-100">
-          <button type="button" onClick={() => setShowPast((v) => !v)} className="w-full px-4 py-2.5 text-start text-sm font-semibold text-stone-600 hover:bg-stone-50">
+          <button type="button" onClick={() => setShowPast((v) => !v)} className="w-full px-4 py-2.5 text-start text-base font-semibold text-stone-600 hover:bg-stone-50">
             {showPast ? 'הסתר הצעות קודמות' : `הצעות קודמות (${past.length})`}
           </button>
           {showPast && (
             <ul>
               {past.map((quote) => (
-                <li key={quote.id} className="flex items-center gap-2 border-t border-stone-100 px-4 py-2.5 text-sm">
+                <li key={quote.id} className="flex items-center gap-2 border-t border-stone-100 px-4 py-2.5 text-base">
                   <span className="min-w-0 flex-1 truncate">
                     {quote.productName} · {quote.carpenter}
                   </span>
                   {quote.unitPrice != null && (
-                    <span className="tnum shrink-0 text-stone-600">
-                      {formatIls(quote.unitPrice)}
-                      {quote.validUntil ? ` · עד ${validLabel(quote.validUntil)}` : ''}
+                    <span className="shrink-0 text-stone-600">
+                      <bdi className="tnum">{formatIls(quote.unitPrice)}</bdi>
+                      {quote.validUntil && (
+                        <>
+                          {' · בתוקף עד '}
+                          <bdi className="tnum">{validLabel(quote.validUntil)}</bdi>
+                        </>
+                      )}
                     </span>
                   )}
                   <span className="shrink-0 font-semibold text-stone-700">{QUOTE_STATE_LABEL[quote.state]}</span>

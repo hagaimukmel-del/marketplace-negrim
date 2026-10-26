@@ -87,6 +87,11 @@ export interface ProductItem {
   hasSheet: boolean
 }
 
+/** A product the supplier deleted: off the catalogue, one click from coming back. */
+export interface DeletedProduct extends ProductItem {
+  deletedAt: string
+}
+
 /**
  * A product already in the catalogue that this supplier does not sell yet.
  * Never carries another supplier's price — only what the product is.

@@ -60,12 +60,12 @@ export default function LoginLinkBox() {
       </h2>
 
       {invalidLink && (
-        <p className="mt-2 rounded-lg bg-amber-100 p-2.5 text-sm text-amber-900">
+        <p className="mt-2 rounded-lg bg-amber-100 p-2.5 text-base text-amber-900">
           הקישור שפתחתם אינו תקף. בקשו קישור חדש למייל.
         </p>
       )}
 
-      <p className="mt-1 text-sm text-emerald-900">
+      <p className="mt-1 text-base text-emerald-900">
         אין סיסמה — נשלח קישור כניסה למייל שרשום אצלנו.
       </p>
 
@@ -89,8 +89,8 @@ export default function LoginLinkBox() {
         </button>
       </form>
 
-      {message && <p className="mt-3 text-sm font-semibold text-emerald-900">{message}</p>}
-      {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
+      {message && <p className="mt-3 text-base font-semibold text-emerald-900">{message}</p>}
+      {error && <p className="mt-3 text-base text-red-700">{error}</p>}
     </section>
   )
 }

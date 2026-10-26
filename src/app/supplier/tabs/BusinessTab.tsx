@@ -45,7 +45,7 @@ function OrderCopies({ profile, notify }: { profile: SupplierProfile; notify: No
   return (
     <form onSubmit={save} className="rounded-xl border border-stone-200 bg-white p-4">
       <h2 className="font-bold text-stone-900">עוד מי שמקבל את ההזמנות</h2>
-      <p className="mt-0.5 text-sm text-stone-600">
+      <p className="mt-0.5 text-base text-stone-600">
         מחסן או הנהלת חשבונות יקבלו העתק של כל הזמנה חדשה במייל, בלי כפתור אישור ובלי גישה לחשבון.
         {profile.email ? ` האישור נשאר אצל ${profile.email}.` : ''}
       </p>
@@ -77,13 +77,13 @@ function OrderCopies({ profile, notify }: { profile: SupplierProfile; notify: No
         <button
           type="button"
           onClick={() => setEmails((prev) => [...prev, ''])}
-          className="mt-2 flex h-10 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-50"
+          className="mt-2 flex h-10 items-center gap-1 rounded-lg px-2 text-base font-semibold text-emerald-800 hover:bg-emerald-50"
         >
           <Plus size={16} />
           עוד נמען
         </button>
       )}
-      {error && <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {error && <p className="mt-3 rounded-lg bg-red-50 p-3 text-base text-red-700">{error}</p>}
       <button
         type="submit"
         disabled={busy || !dirty}
@@ -192,13 +192,13 @@ export default function BusinessTab({ profile, notify }: { profile: SupplierProf
         </button>
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-stone-900">לוגו</p>
-          <p className="text-sm text-stone-600">מופיע לנגרים ליד המוצרים שלך.</p>
+          <p className="text-base text-stone-600">מופיע לנגרים ליד המוצרים שלך.</p>
           <div className="mt-2 flex gap-2">
             <button
               type="button"
               onClick={() => fileInput.current?.click()}
               disabled={logoBusy}
-              className="h-9 rounded-lg border border-stone-300 px-3 text-sm font-semibold text-stone-700 disabled:opacity-50"
+              className="h-9 rounded-lg border border-stone-300 px-3 text-base font-semibold text-stone-700 disabled:opacity-50"
             >
               {logoBusy ? 'מעלה…' : profile.logo_url ? 'החלף' : 'העלה לוגו'}
             </button>
@@ -207,7 +207,7 @@ export default function BusinessTab({ profile, notify }: { profile: SupplierProf
                 type="button"
                 onClick={removeLogo}
                 disabled={logoBusy}
-                className="flex h-9 items-center gap-1 rounded-lg px-2 text-sm text-stone-500 hover:bg-stone-100"
+                className="flex h-9 items-center gap-1 rounded-lg px-2 text-base text-stone-500 hover:bg-stone-100"
               >
                 <Trash2 size={14} />
                 הסר
@@ -230,7 +230,7 @@ export default function BusinessTab({ profile, notify }: { profile: SupplierProf
       <form onSubmit={save} className="rounded-xl border border-stone-200 bg-white p-4">
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block sm:col-span-2">
-            <span className="text-sm font-medium text-stone-700">
+            <span className="text-base font-medium text-stone-700">
               שם החברה <span className="text-red-600">*</span>
             </span>
             <input
@@ -242,17 +242,17 @@ export default function BusinessTab({ profile, notify }: { profile: SupplierProf
           </label>
 
           <div className="sm:col-span-2">
-            <span className="text-sm font-medium text-stone-700">ח.פ / ע.מ</span>
+            <span className="text-base font-medium text-stone-700">ח.פ / ע.מ</span>
             <p className="tnum mt-1 flex h-12 items-center rounded-lg bg-stone-100 px-3 text-stone-600">
               {profile.business_id}
             </p>
-            <span className="mt-1 block text-xs text-stone-500">
+            <span className="mt-1 block text-sm text-stone-500">
               לשינוי מספר עוסק צריך לפנות אלינו.
             </span>
           </div>
 
           <label className="block">
-            <span className="text-sm font-medium text-stone-700">
+            <span className="text-base font-medium text-stone-700">
               טלפון <span className="text-red-600">*</span>
             </span>
             <input
@@ -266,7 +266,7 @@ export default function BusinessTab({ profile, notify }: { profile: SupplierProf
           </label>
 
           <label className="block">
-            <span className="text-sm font-medium text-stone-700">מייל לקבלת הזמנות</span>
+            <span className="text-base font-medium text-stone-700">מייל לקבלת הזמנות</span>
             <input
               value={form.email}
               onChange={(e) => set('email', e.target.value)}
@@ -277,7 +277,7 @@ export default function BusinessTab({ profile, notify }: { profile: SupplierProf
           </label>
 
           <label className="block">
-            <span className="text-sm font-medium text-stone-700">איש קשר</span>
+            <span className="text-base font-medium text-stone-700">איש קשר</span>
             <input
               value={form.contact_name}
               onChange={(e) => set('contact_name', e.target.value)}
@@ -286,12 +286,12 @@ export default function BusinessTab({ profile, notify }: { profile: SupplierProf
           </label>
 
           <label className="block">
-            <span className="text-sm font-medium text-stone-700">עיר</span>
+            <span className="text-base font-medium text-stone-700">עיר</span>
             <input value={form.city} onChange={(e) => set('city', e.target.value)} className={INPUT} />
           </label>
 
           <label className="block sm:col-span-2">
-            <span className="text-sm font-medium text-stone-700">כתובת העסק</span>
+            <span className="text-base font-medium text-stone-700">כתובת העסק</span>
             <input
               value={form.address}
               onChange={(e) => set('address', e.target.value)}
@@ -300,7 +300,7 @@ export default function BusinessTab({ profile, notify }: { profile: SupplierProf
           </label>
 
           <label className="block sm:col-span-2">
-            <span className="text-sm font-medium text-stone-700">מה אתם מוכרים</span>
+            <span className="text-base font-medium text-stone-700">מה אתם מוכרים</span>
             <textarea
               value={form.sells_note}
               onChange={(e) => set('sells_note', e.target.value)}
@@ -310,7 +310,7 @@ export default function BusinessTab({ profile, notify }: { profile: SupplierProf
           </label>
         </div>
 
-        {error && <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+        {error && <p className="mt-3 rounded-lg bg-red-50 p-3 text-base text-red-700">{error}</p>}
 
         <button
           type="submit"

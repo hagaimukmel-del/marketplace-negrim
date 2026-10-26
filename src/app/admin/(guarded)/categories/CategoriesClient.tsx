@@ -103,7 +103,7 @@ function EditableName({
         }}
         autoFocus
         aria-label="שם הקטגוריה"
-        className="h-9 min-w-0 flex-1 rounded-lg border border-stone-300 bg-white px-2 text-sm"
+        className="h-9 min-w-0 flex-1 rounded-lg border border-stone-300 bg-white px-2 text-base"
       />
       <IconButton label="שמור" onClick={save} disabled={busy}>
         <Check size={16} />
@@ -136,13 +136,13 @@ function AddRow({
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && void submit()}
         placeholder={placeholder}
-        className="h-10 min-w-0 flex-1 rounded-lg border border-stone-300 bg-white px-3 text-sm"
+        className="h-10 min-w-0 flex-1 rounded-lg border border-stone-300 bg-white px-3 text-base"
       />
       <button
         type="button"
         onClick={submit}
         disabled={busy || !name.trim()}
-        className="flex h-10 shrink-0 items-center gap-1.5 rounded-lg bg-stone-900 px-3 text-sm font-semibold text-white disabled:opacity-40"
+        className="flex h-10 shrink-0 items-center gap-1.5 rounded-lg bg-stone-900 px-3 text-base font-semibold text-white disabled:opacity-40"
       >
         <Plus size={15} />
         הוסף
@@ -198,14 +198,14 @@ export default function CategoriesClient({ rows }: { rows: AdminCategory[] }) {
     <div className="space-y-4">
       <div>
         <h1 className="text-xl font-bold text-stone-900">קטגוריות</h1>
-        <p className="mt-1 text-sm text-stone-600">
+        <p className="mt-1 text-base text-stone-600">
           {tops.length} ראשיות · {rows.length - tops.length} תתי־קטגוריות. זה העץ שנגרים רואים בקטלוג
           ושספקים בוחרים ממנו. לחיצה על שם — שינוי שם. קטגוריה מוסתרת לא מופיעה בקטלוג.
         </p>
       </div>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+        <p role="alert" className="rounded-lg bg-red-50 p-3 text-base text-red-700">
           {error}
         </p>
       )}
@@ -239,7 +239,7 @@ export default function CategoriesClient({ rows }: { rows: AdminCategory[] }) {
                     onSave={(name) => patch(top.id, { name_he: name })}
                     className="font-bold text-stone-900"
                   />
-                  <span className="tnum block text-xs text-stone-500">
+                  <span className="tnum block text-sm text-stone-500">
                     {children.length} תתי־קטגוריות · {totalOf(top)} מוצרים
                     {!top.is_active && ' · מוסתרת'}
                   </span>
@@ -259,7 +259,7 @@ export default function CategoriesClient({ rows }: { rows: AdminCategory[] }) {
               {expanded && (
                 <div className="space-y-3 border-t border-stone-100 bg-stone-50 p-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-medium text-stone-600">אייקון:</span>
+                    <span className="text-sm font-medium text-stone-600">אייקון:</span>
                     {CATEGORY_ICONS.map(({ key, label, Icon }) => (
                       <button
                         key={key}
@@ -282,7 +282,7 @@ export default function CategoriesClient({ rows }: { rows: AdminCategory[] }) {
 
                   <ul className="divide-y divide-stone-100 overflow-hidden rounded-lg border border-stone-200 bg-white">
                     {children.length === 0 && (
-                      <li className="p-3 text-sm text-stone-500">אין תתי־קטגוריות עדיין.</li>
+                      <li className="p-3 text-base text-stone-500">אין תתי־קטגוריות עדיין.</li>
                     )}
                     {children.map((child, childIndex) => (
                       <li
@@ -294,16 +294,16 @@ export default function CategoriesClient({ rows }: { rows: AdminCategory[] }) {
                             value={child.name_he}
                             busy={busy}
                             onSave={(name) => patch(child.id, { name_he: name })}
-                            className="text-sm font-medium text-stone-800"
+                            className="text-base font-medium text-stone-800"
                           />
                         </span>
-                        <span className="tnum px-1 text-xs text-stone-500">{child.products} מוצרים</span>
+                        <span className="tnum px-1 text-sm text-stone-500">{child.products} מוצרים</span>
                         <select
                           value={top.id}
                           onChange={(e) => patch(child.id, { parent_category_id: e.target.value })}
                           disabled={busy}
                           aria-label={`העבר את ${child.name_he} לקטגוריה אחרת`}
-                          className="h-9 max-w-32 rounded-lg border border-stone-200 bg-white px-1 text-xs text-stone-600"
+                          className="h-9 max-w-32 rounded-lg border border-stone-200 bg-white px-1 text-sm text-stone-600"
                         >
                           {tops.map((option) => (
                             <option key={option.id} value={option.id}>
@@ -350,7 +350,7 @@ export default function CategoriesClient({ rows }: { rows: AdminCategory[] }) {
                       type="button"
                       onClick={() => patch(top.id, { is_active: !top.is_active })}
                       disabled={busy}
-                      className="flex h-9 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-stone-700 disabled:opacity-50"
+                      className="flex h-9 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-base font-semibold text-stone-700 disabled:opacity-50"
                     >
                       {top.is_active ? <EyeOff size={15} /> : <Eye size={15} />}
                       {top.is_active ? 'הסתר מהקטלוג' : 'הצג בקטלוג'}
@@ -359,7 +359,7 @@ export default function CategoriesClient({ rows }: { rows: AdminCategory[] }) {
                       type="button"
                       onClick={() => remove(top)}
                       disabled={busy}
-                      className="ms-auto flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                      className="ms-auto flex h-9 items-center gap-1.5 rounded-lg px-3 text-base font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
                     >
                       <Trash2 size={15} />
                       מחק קטגוריה ראשית
@@ -373,8 +373,8 @@ export default function CategoriesClient({ rows }: { rows: AdminCategory[] }) {
       </div>
 
       <section className="rounded-xl border border-stone-300 bg-white p-4">
-        <h2 className="text-sm font-bold text-stone-900">קטגוריה ראשית חדשה</h2>
-        <p className="mt-0.5 text-xs text-stone-500">תופיע בסוף הרכזת בקטלוג. אפשר להזיז ולבחור לה אייקון אחרי ההוספה.</p>
+        <h2 className="text-base font-bold text-stone-900">קטגוריה ראשית חדשה</h2>
+        <p className="mt-0.5 text-sm text-stone-500">תופיע בסוף הרכזת בקטלוג. אפשר להזיז ולבחור לה אייקון אחרי ההוספה.</p>
         <div className="mt-2">
           <AddRow
             placeholder="למשל: זכוכית ומראות"

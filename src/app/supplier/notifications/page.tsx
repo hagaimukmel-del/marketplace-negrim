@@ -21,7 +21,7 @@ export default async function SupplierNotifications() {
 
   return (
     <div className="space-y-3">
-      <Link href="/supplier" className="inline-flex items-center gap-1 text-sm font-semibold text-stone-600">
+      <Link href="/supplier" className="inline-flex items-center gap-1 text-base font-semibold text-stone-600">
         <ChevronRight size={16} /> לממשק
       </Link>
       <header className="flex items-center gap-2">

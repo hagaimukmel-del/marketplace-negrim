@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
     }
     await postSystemMessage(
       { quoteRequestId: saved.id },
-      `נענתה אוטומטית במחיר המיוחד של הספק: ${answer.unitPriceText}, בתוקף עד ${answer.validUntilText}`
+      `נענתה אוטומטית במחיר המיוחד של הספק: ${answer.unitPriceText}\nבתוקף עד: ${answer.validUntilText}`
     )
     await notify({
       to: { side: 'carpenter', id: carpenter.id },

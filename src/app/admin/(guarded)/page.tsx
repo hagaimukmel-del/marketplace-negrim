@@ -6,9 +6,9 @@ export const dynamic = 'force-dynamic'
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div className="rounded-xl border border-stone-300 bg-white p-4">
-      <p className="text-xs uppercase tracking-wide text-stone-500">{label}</p>
+      <p className="text-sm uppercase tracking-wide text-stone-500">{label}</p>
       <p className="mt-1 text-2xl font-bold tabular-nums text-stone-900">{value}</p>
-      {hint && <p className="mt-0.5 text-xs text-stone-500">{hint}</p>}
+      {hint && <p className="mt-0.5 text-sm text-stone-500">{hint}</p>}
     </div>
   )
 }
@@ -105,11 +105,11 @@ export default async function AdminHome() {
       <section className="overflow-hidden rounded-xl border border-stone-300 bg-white">
         <h2 className="border-b border-stone-200 p-4 font-bold text-stone-900">לפי קמפיין</h2>
         {perCampaign.length === 0 ? (
-          <p className="p-6 text-sm text-stone-600">אין עדיין קמפיינים.</p>
+          <p className="p-6 text-base text-stone-600">אין עדיין קמפיינים.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="border-b border-stone-200 bg-stone-50 text-xs uppercase tracking-wide text-stone-500">
+            <table className="w-full text-base">
+              <thead className="border-b border-stone-200 bg-stone-50 text-sm uppercase tracking-wide text-stone-500">
                 <tr>
                   <th className="p-3 text-start font-medium">מוצר</th>
                   <th className="p-3 text-start font-medium">סוג</th>
@@ -127,7 +127,7 @@ export default async function AdminHome() {
                     <td className="p-3 font-medium text-stone-900">
                       {row.product}
                       {row.isActive && (
-                        <span className="ms-2 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                        <span className="ms-2 rounded-full bg-emerald-100 px-2 py-0.5 text-sm font-semibold text-emerald-800">
                           פעיל
                         </span>
                       )}
@@ -145,7 +145,7 @@ export default async function AdminHome() {
                 ))}
               </tbody>
             </table>
-            <p className="border-t border-stone-200 p-3 text-xs text-stone-500">
+            <p className="border-t border-stone-200 p-3 text-sm text-stone-500">
               המדד שפתוח לשיפור הוא ₪ להזמנה ומספר השורות — ההמרה כבר קרובה לתקרה שלה.
             </p>
           </div>
@@ -157,11 +157,11 @@ export default async function AdminHome() {
           בקשות למחיר שממתינות
         </h2>
         {(intents ?? []).length === 0 ? (
-          <p className="p-6 text-sm text-stone-600">אין בקשות פתוחות.</p>
+          <p className="p-6 text-base text-stone-600">אין בקשות פתוחות.</p>
         ) : (
           <ul className="divide-y divide-stone-100">
             {(intents ?? []).map((intent, index) => (
-              <li key={index} className="flex flex-wrap items-baseline gap-x-3 p-3 text-sm">
+              <li key={index} className="flex flex-wrap items-baseline gap-x-3 p-3 text-base">
                 <span className="font-semibold text-stone-900">
                   {intent.carpenters?.business_name ?? '—'}
                 </span>

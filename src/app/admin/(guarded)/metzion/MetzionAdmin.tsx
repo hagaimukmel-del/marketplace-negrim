@@ -109,20 +109,20 @@ export default function MetzionAdmin({ listings, reports }: { listings: AdminLis
           <Recycle size={21} className="text-emerald-700" />
           מציאון
         </h1>
-        <p className="tnum mt-1 text-sm text-stone-600">
+        <p className="tnum mt-1 text-base text-stone-600">
           {counts.live} בלוח · {counts.sold} נמכרו · {counts.expired} פג תוקף · {counts.removed} הוסרו
         </p>
       </div>
 
-      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-base text-red-700">{error}</p>}
 
       <section className="space-y-2">
-        <h2 className="flex items-center gap-2 text-sm font-bold text-stone-900">
+        <h2 className="flex items-center gap-2 text-base font-bold text-stone-900">
           <Flag size={15} className="text-red-700" />
           דיווחים פתוחים ({reports.length})
         </h2>
         {reports.length === 0 ? (
-          <p className="rounded-xl border border-stone-200 bg-white p-5 text-sm text-stone-500">אין דיווחים שמחכים לטיפול.</p>
+          <p className="rounded-xl border border-stone-200 bg-white p-5 text-base text-stone-500">אין דיווחים שמחכים לטיפול.</p>
         ) : (
           reports.map((report) => {
             const listing = byId.get(report.listingId)
@@ -135,21 +135,21 @@ export default function MetzionAdmin({ listings, reports }: { listings: AdminLis
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-stone-900">{listing?.title ?? 'מודעה'}</p>
-                    <p className="text-xs text-stone-500">
+                    <p className="text-sm text-stone-500">
                       של {listing?.owner ?? '—'} · דיווח של {report.reporter} · {date(report.createdAt)}
                     </p>
-                    <p className="mt-1 text-sm font-semibold text-red-800">{reportReasonLabel(report.reason)}</p>
-                    {report.note && <p className="mt-0.5 text-sm text-stone-700">{report.note}</p>}
+                    <p className="mt-1 text-base font-semibold text-red-800">{reportReasonLabel(report.reason)}</p>
+                    {report.note && <p className="mt-0.5 text-base text-stone-700">{report.note}</p>}
                   </div>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {listing && listing.status !== 'removed' && (
-                    <button type="button" onClick={() => remove(listing, reportReasonLabel(report.reason))} disabled={busy !== null} className="flex h-10 items-center gap-1.5 rounded-lg bg-red-700 px-3 text-sm font-semibold text-white disabled:opacity-50">
+                    <button type="button" onClick={() => remove(listing, reportReasonLabel(report.reason))} disabled={busy !== null} className="flex h-10 items-center gap-1.5 rounded-lg bg-red-700 px-3 text-base font-semibold text-white disabled:opacity-50">
                       <Trash2 size={15} />
                       הסר את המודעה
                     </button>
                   )}
-                  <button type="button" onClick={() => send(report.id, { action: 'dismiss_report', report_id: report.id })} disabled={busy !== null} className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-stone-700 disabled:opacity-50">
+                  <button type="button" onClick={() => send(report.id, { action: 'dismiss_report', report_id: report.id })} disabled={busy !== null} className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-base font-semibold text-stone-700 disabled:opacity-50">
                     <X size={15} />
                     המודעה תקינה — סגור דיווח
                   </button>
@@ -168,12 +168,12 @@ export default function MetzionAdmin({ listings, reports }: { listings: AdminLis
               type="button"
               onClick={() => setFilter(item.key)}
               aria-pressed={filter === item.key}
-              className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-medium ${
+              className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-base font-medium ${
                 filter === item.key ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-300 bg-white text-stone-700'
               }`}
             >
               {item.label}
-              <span className="tnum text-xs opacity-60">{counts[item.key]}</span>
+              <span className="tnum text-sm opacity-60">{counts[item.key]}</span>
             </button>
           ))}
         </div>
@@ -194,13 +194,13 @@ export default function MetzionAdmin({ listings, reports }: { listings: AdminLis
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-stone-900">{listing.title}</p>
-                    <p className="tnum truncate text-xs text-stone-500">
+                    <p className="tnum truncate text-sm text-stone-500">
                       {listing.owner}
                       {!listing.ownerActive && ' (חסום)'} · {listing.city} ·{' '}
                       {listing.dealType === 'free' ? 'בחינם' : `${formatIls(listing.pricePerUnit!)} ל${listing.unit}`} · פורסם {date(listing.createdAt)}
                     </p>
                   </div>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${state.tone}`}>{state.label}</span>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-sm font-semibold ${state.tone}`}>{state.label}</span>
                   {listing.status === 'removed' ? (
                     <button type="button" onClick={() => send(listing.id, { action: 'restore', listing_id: listing.id })} disabled={busy !== null} aria-label="החזר ללוח" title="החזר ללוח" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 disabled:opacity-40">
                       <RotateCcw size={16} />

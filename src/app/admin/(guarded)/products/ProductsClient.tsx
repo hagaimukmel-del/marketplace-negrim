@@ -50,7 +50,7 @@ function Thumb({ product }: { product: Product }) {
 
   if (!hasUsableImage(product.image_url) || failed) {
     return (
-      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-stone-200 text-xs font-bold text-stone-500">
+      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-stone-200 text-sm font-bold text-stone-500">
         {initials}
       </div>
     )
@@ -84,7 +84,7 @@ function Chip({
       type="button"
       onClick={() => onPick(value)}
       aria-pressed={active}
-      className={`h-9 rounded-lg border px-3 text-sm font-medium ${
+      className={`h-9 rounded-lg border px-3 text-base font-medium ${
         active ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-300 text-stone-700'
       }`}
     >
@@ -148,15 +148,15 @@ function ProductRow({
             >
               {product.name_he}
             </p>
-            <p className="truncate text-sm text-stone-500">
+            <p className="truncate text-base text-stone-500">
               {product.sku ? (
-                <span className="tnum font-mono text-xs">{product.sku}</span>
+                <span className="tnum font-mono text-sm">{product.sku}</span>
               ) : (
-                <span className="rounded bg-amber-100 px-1 text-xs text-amber-900">בלי מק״ט</span>
+                <span className="rounded bg-amber-100 px-1 text-sm text-amber-900">בלי מק״ט</span>
               )}
               {product.supplier_name && ` · ${product.supplier_name}`}
               {siblings.length > 1 && (
-                <span className="ms-1 rounded bg-emerald-50 px-1 text-xs font-semibold text-emerald-800">
+                <span className="ms-1 rounded bg-emerald-50 px-1 text-sm font-semibold text-emerald-800">
                   {siblings.length} ספקים
                 </span>
               )}
@@ -167,7 +167,7 @@ function ProductRow({
           </div>
           <div className="shrink-0 text-end">
             <p className="tnum font-bold text-stone-900">{product.price_hidden ? 'הצעת מחיר' : formatIls(price)}</p>
-            <p className="text-xs text-stone-400">
+            <p className="text-sm text-stone-400">
               ל{unitLabel(product.base_unit)} · {product.stock_qty ?? 0} במלאי
             </p>
           </div>
@@ -268,7 +268,7 @@ function EditPanel({
     <div className="border-t border-stone-200 bg-stone-50 p-4">
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block sm:col-span-2">
-          <span className="text-sm font-medium text-stone-700">שם המוצר</span>
+          <span className="text-base font-medium text-stone-700">שם המוצר</span>
           <input
             value={form.name_he}
             onChange={(e) => set('name_he', e.target.value)}
@@ -277,7 +277,7 @@ function EditPanel({
         </label>
 
         <label className="block">
-          <span className="text-sm font-medium text-stone-700">שם באנגלית</span>
+          <span className="text-base font-medium text-stone-700">שם באנגלית</span>
           <input
             value={form.name_en}
             onChange={(e) => set('name_en', e.target.value)}
@@ -286,7 +286,7 @@ function EditPanel({
         </label>
 
         <label className="block">
-          <span className="text-sm font-medium text-stone-700">מק״ט</span>
+          <span className="text-base font-medium text-stone-700">מק״ט</span>
           <input
             value={form.sku}
             onChange={(e) => set('sku', e.target.value)}
@@ -298,7 +298,7 @@ function EditPanel({
         </label>
 
         <label className="block">
-          <span className="text-sm font-medium text-stone-700">מותג / יצרן</span>
+          <span className="text-base font-medium text-stone-700">מותג / יצרן</span>
           <input
             value={form.brand}
             onChange={(e) => set('brand', e.target.value)}
@@ -308,20 +308,20 @@ function EditPanel({
         </label>
 
         <label className="block">
-          <span className="text-sm font-medium text-stone-700">מק״ט יצרן</span>
+          <span className="text-base font-medium text-stone-700">מק״ט יצרן</span>
           <input
             value={form.mpn}
             onChange={(e) => set('mpn', e.target.value)}
             placeholder="707.9"
             className="tnum mt-1 h-11 w-full rounded-lg border border-stone-300 bg-white px-3"
           />
-          <span className="mt-1 block text-xs text-stone-500">
+          <span className="mt-1 block text-sm text-stone-500">
             זה מה שמחבר את המוצר לאותו מוצר אצל ספק אחר.
           </span>
         </label>
 
         <label className="block">
-          <span className="text-sm font-medium text-stone-700">יחידת מידה</span>
+          <span className="text-base font-medium text-stone-700">יחידת מידה</span>
           <select
             value={form.base_unit}
             onChange={(e) => set('base_unit', e.target.value)}
@@ -336,11 +336,11 @@ function EditPanel({
         </label>
 
         <label className="block">
-          <span className="text-sm font-medium text-stone-700">
+          <span className="text-base font-medium text-stone-700">
             מחיר ל{unitLabel(form.base_unit)} ללא מע״מ
           </span>
           {product.price_hidden ? (
-            <p className="mt-1 flex h-11 items-center rounded-lg bg-stone-100 px-3 text-sm text-stone-600">הספק עובד עם הצעות מחיר, המחיר לא מוצג</p>
+            <p className="mt-1 flex h-11 items-center rounded-lg bg-stone-100 px-3 text-base text-stone-600">הספק עובד עם הצעות מחיר, המחיר לא מוצג</p>
           ) : (
             <input
               inputMode="decimal"
@@ -352,7 +352,7 @@ function EditPanel({
         </label>
 
         <label className="block">
-          <span className="text-sm font-medium text-stone-700">שם האריזה</span>
+          <span className="text-base font-medium text-stone-700">שם האריזה</span>
           <input
             value={form.pack_label}
             onChange={(e) => set('pack_label', e.target.value)}
@@ -362,7 +362,7 @@ function EditPanel({
         </label>
 
         <label className="block">
-          <span className="text-sm font-medium text-stone-700">
+          <span className="text-base font-medium text-stone-700">
             כמה {unitLabel(form.base_unit)} באריזה
           </span>
           <input
@@ -375,7 +375,7 @@ function EditPanel({
         </label>
 
         <label className="block">
-          <span className="text-sm font-medium text-stone-700">מלאי</span>
+          <span className="text-base font-medium text-stone-700">מלאי</span>
           <input
             inputMode="numeric"
             value={form.stock}
@@ -385,7 +385,7 @@ function EditPanel({
         </label>
 
         <label className="block sm:col-span-2">
-          <span className="text-sm font-medium text-stone-700">קטגוריה</span>
+          <span className="text-base font-medium text-stone-700">קטגוריה</span>
           <select
             value={form.category_id}
             onChange={(e) => set('category_id', e.target.value)}
@@ -396,7 +396,7 @@ function EditPanel({
         </label>
 
         <label className="block sm:col-span-2">
-          <span className="text-sm font-medium text-stone-700">תיאור</span>
+          <span className="text-base font-medium text-stone-700">תיאור</span>
           <textarea
             value={form.description_he}
             onChange={(e) => set('description_he', e.target.value)}
@@ -432,7 +432,7 @@ function EditPanel({
           type="button"
           onClick={() => fileInput.current?.click()}
           disabled={busy}
-          className={`flex h-11 items-center gap-2 rounded-lg border px-4 text-sm font-semibold disabled:opacity-40 ${
+          className={`flex h-11 items-center gap-2 rounded-lg border px-4 text-base font-semibold disabled:opacity-40 ${
             hasUsableImage(product.image_url)
               ? 'border-stone-300 bg-white text-stone-700'
               : 'border-amber-400 bg-amber-50 text-amber-900'
@@ -446,7 +446,7 @@ function EditPanel({
           type="button"
           onClick={() => onSave(product.id, { is_active: !product.is_active })}
           disabled={busy}
-          className="flex h-11 items-center gap-2 rounded-lg border border-stone-300 bg-white px-4 text-sm font-semibold text-stone-700 disabled:opacity-40"
+          className="flex h-11 items-center gap-2 rounded-lg border border-stone-300 bg-white px-4 text-base font-semibold text-stone-700 disabled:opacity-40"
         >
           {product.is_active ? <EyeOff size={16} /> : <Eye size={16} />}
           {product.is_active ? 'הסתר מהקטלוג' : 'הצג בקטלוג'}
@@ -457,7 +457,7 @@ function EditPanel({
             type="button"
             onClick={() => onDelete(product.id, product.offer_id)}
             disabled={busy}
-            className="ms-auto flex h-11 items-center gap-2 rounded-lg px-3 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-40"
+            className="ms-auto flex h-11 items-center gap-2 rounded-lg px-3 text-base font-medium text-red-700 hover:bg-red-50 disabled:opacity-40"
           >
             <Trash2 size={16} />
             מחק
@@ -466,7 +466,7 @@ function EditPanel({
       </div>
 
       {product.source === 'sheet' && (
-        <p className="mt-3 text-xs text-stone-500">
+        <p className="mt-3 text-sm text-stone-500">
           המוצר הזה מגיע מהגיליון. שינוי שם, מחיר או תיאור כאן יידרס בסנכרון הבא — לשינוי קבוע
           ערוך בגיליון. מק״ט ותמונה שתעלה כאן נשמרים.
         </p>
@@ -622,13 +622,13 @@ function SupplierLinks({
   return (
     <div className="mt-4 rounded-lg border border-stone-200 bg-white p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-bold text-stone-900">ספקים שמוכרים את המוצר ({offers.length})</p>
+        <p className="text-base font-bold text-stone-900">ספקים שמוכרים את המוצר ({offers.length})</p>
         <div className="flex flex-wrap gap-2">
           {available.length > 0 && (
             <button
               type="button"
               onClick={() => setMode(mode === 'link' ? 'idle' : 'link')}
-              className="flex h-9 items-center gap-1.5 rounded-lg border border-emerald-700 px-3 text-xs font-semibold text-emerald-800"
+              className="flex h-9 items-center gap-1.5 rounded-lg border border-emerald-700 px-3 text-sm font-semibold text-emerald-800"
             >
               <Plus size={14} />
               קשר ספק נוסף
@@ -638,7 +638,7 @@ function SupplierLinks({
             <button
               type="button"
               onClick={() => setMode(mode === 'move' ? 'idle' : 'move')}
-              className="h-9 rounded-lg border border-stone-300 px-3 text-xs font-semibold text-stone-700"
+              className="h-9 rounded-lg border border-stone-300 px-3 text-sm font-semibold text-stone-700"
             >
               מזג למוצר קיים
             </button>
@@ -647,13 +647,13 @@ function SupplierLinks({
       </div>
 
       {offers.length > 0 && (
-        <ul className="mt-2 divide-y divide-stone-100 text-sm">
+        <ul className="mt-2 divide-y divide-stone-100 text-base">
           {offers.map((row) => (
             <li key={row.offer_id} className="flex flex-wrap items-center gap-x-3 py-1.5">
               <span className="font-medium text-stone-900">{row.supplier_name ?? 'ספק'}</span>
               <span className="tnum text-stone-700">{row.price_hidden ? 'הצעת מחיר' : formatIls(Number(row.base_price_excl_vat))}</span>
-              <span className="tnum text-xs text-stone-500">מלאי {row.stock_qty ?? 0}</span>
-              {!row.is_active && <span className="text-xs text-stone-400">מוסתר</span>}
+              <span className="tnum text-sm text-stone-500">מלאי {row.stock_qty ?? 0}</span>
+              {!row.is_active && <span className="text-sm text-stone-400">מוסתר</span>}
             </li>
           ))}
         </ul>
@@ -665,7 +665,7 @@ function SupplierLinks({
             value={supplierId}
             onChange={(e) => setSupplierId(e.target.value)}
             aria-label="ספק"
-            className="h-10 rounded-lg border border-stone-300 bg-white px-2 text-sm sm:col-span-4"
+            className="h-10 rounded-lg border border-stone-300 bg-white px-2 text-base sm:col-span-4"
           >
             <option value="">בחר ספק…</option>
             {available.map((supplier) => (
@@ -680,7 +680,7 @@ function SupplierLinks({
             onChange={(e) => setPrice(e.target.value)}
             placeholder={`מחיר ל${unitLabel(product.base_unit)} ללא מע״מ`}
             aria-label="מחיר"
-            className="tnum h-10 rounded-lg border border-stone-300 bg-white px-3 text-sm sm:col-span-2"
+            className="tnum h-10 rounded-lg border border-stone-300 bg-white px-3 text-base sm:col-span-2"
           />
           <input
             inputMode="numeric"
@@ -688,14 +688,14 @@ function SupplierLinks({
             onChange={(e) => setStock(e.target.value)}
             placeholder="מלאי"
             aria-label="מלאי"
-            className="tnum h-10 rounded-lg border border-stone-300 bg-white px-3 text-sm"
+            className="tnum h-10 rounded-lg border border-stone-300 bg-white px-3 text-base"
           />
           <input
             value={sku}
             onChange={(e) => setSku(e.target.value)}
             placeholder="מק״ט הספק"
             aria-label="מק״ט הספק"
-            className="tnum h-10 rounded-lg border border-stone-300 bg-white px-3 text-sm"
+            className="tnum h-10 rounded-lg border border-stone-300 bg-white px-3 text-base"
           />
           <div className="flex gap-2 sm:col-span-4">
             <button
@@ -710,14 +710,14 @@ function SupplierLinks({
                 })
               }
               disabled={busy || !supplierId || !price}
-              className="h-10 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white disabled:opacity-50"
+              className="h-10 rounded-lg bg-emerald-700 px-4 text-base font-semibold text-white disabled:opacity-50"
             >
               {busy ? 'מקשר…' : 'קשר'}
             </button>
             <button
               type="button"
               onClick={() => setMode('idle')}
-              className="h-10 rounded-lg px-3 text-sm text-stone-600 hover:bg-stone-100"
+              className="h-10 rounded-lg px-3 text-base text-stone-600 hover:bg-stone-100"
             >
               ביטול
             </button>
@@ -727,7 +727,7 @@ function SupplierLinks({
 
       {mode === 'move' && (
         <div className="mt-3 space-y-2 rounded-lg bg-stone-50 p-3">
-          <p className="text-xs text-stone-600">
+          <p className="text-sm text-stone-600">
             המחיר של <strong>{product.supplier_name ?? 'הספק'}</strong> יעבור למוצר שתבחר. שימושי כשספק יצר
             עותק של מוצר שכבר קיים.
           </p>
@@ -736,14 +736,14 @@ function SupplierLinks({
             onChange={(e) => setSearch(e.target.value)}
             placeholder="חפש את המוצר הנכון"
             aria-label="חיפוש מוצר יעד"
-            className="h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm"
+            className="h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-base"
           />
           <select
             value={targetId}
             onChange={(e) => setTargetId(e.target.value)}
             size={Math.min(6, Math.max(2, matches.length))}
             aria-label="מוצר יעד"
-            className="w-full rounded-lg border border-stone-300 bg-white p-1 text-sm"
+            className="w-full rounded-lg border border-stone-300 bg-white p-1 text-base"
           >
             {matches.map((option) => (
               <option key={option.id} value={option.id}>
@@ -756,14 +756,14 @@ function SupplierLinks({
               type="button"
               onClick={move}
               disabled={busy || !targetId}
-              className="h-10 rounded-lg bg-stone-900 px-4 text-sm font-semibold text-white disabled:opacity-50"
+              className="h-10 rounded-lg bg-stone-900 px-4 text-base font-semibold text-white disabled:opacity-50"
             >
               {busy ? 'ממזג…' : 'מזג'}
             </button>
             <button
               type="button"
               onClick={() => setMode('idle')}
-              className="h-10 rounded-lg px-3 text-sm text-stone-600 hover:bg-stone-100"
+              className="h-10 rounded-lg px-3 text-base text-stone-600 hover:bg-stone-100"
             >
               ביטול
             </button>
@@ -771,7 +771,7 @@ function SupplierLinks({
         </div>
       )}
 
-      {error && <p className="mt-2 rounded-lg bg-red-50 p-2 text-sm text-red-700">{error}</p>}
+      {error && <p className="mt-2 rounded-lg bg-red-50 p-2 text-base text-red-700">{error}</p>}
     </div>
   )
 }
@@ -850,7 +850,7 @@ function NewProduct({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex h-10 items-center gap-2 rounded-lg bg-stone-900 px-4 text-sm font-semibold text-white"
+        className="flex h-10 items-center gap-2 rounded-lg bg-stone-900 px-4 text-base font-semibold text-white"
       >
         <Plus size={16} />
         מוצר חדש
@@ -878,7 +878,7 @@ function NewProduct({
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         {/* First, because it decides whose product this is. */}
         <label className="block sm:col-span-2">
-          <span className="text-sm font-medium text-stone-700">
+          <span className="text-base font-medium text-stone-700">
             ספק <span className="text-red-600">*</span>
           </span>
           <select
@@ -897,7 +897,7 @@ function NewProduct({
         </label>
 
         <label className="block sm:col-span-2">
-          <span className="text-sm font-medium text-stone-700">
+          <span className="text-base font-medium text-stone-700">
             שם המוצר <span className="text-red-600">*</span>
           </span>
           <input
@@ -911,7 +911,7 @@ function NewProduct({
         </label>
 
         <label className="block">
-          <span className="text-sm font-medium text-stone-700">שם באנגלית</span>
+          <span className="text-base font-medium text-stone-700">שם באנגלית</span>
           <input
             value={form.name_en}
             onChange={(e) => set('name_en', e.target.value)}
@@ -921,7 +921,7 @@ function NewProduct({
         </label>
 
         <label className="block">
-          <span className="text-sm font-medium text-stone-700">מק״ט</span>
+          <span className="text-base font-medium text-stone-700">מק״ט</span>
           <input
             value={form.sku}
             onChange={(e) => set('sku', e.target.value)}
@@ -931,7 +931,7 @@ function NewProduct({
         </label>
 
         <label className="block">
-          <span className="text-sm font-medium text-stone-700">
+          <span className="text-base font-medium text-stone-700">
             מחיר ליחידה ללא מע״מ <span className="text-red-600">*</span>
           </span>
           <input
@@ -945,7 +945,7 @@ function NewProduct({
         </label>
 
         <label className="block">
-          <span className="text-sm font-medium text-stone-700">מלאי</span>
+          <span className="text-base font-medium text-stone-700">מלאי</span>
           <input
             inputMode="numeric"
             value={form.stock}
@@ -955,7 +955,7 @@ function NewProduct({
         </label>
 
         <label className="block sm:col-span-2">
-          <span className="text-sm font-medium text-stone-700">קטגוריה</span>
+          <span className="text-base font-medium text-stone-700">קטגוריה</span>
           <select
             value={form.category_id}
             onChange={(e) => set('category_id', e.target.value)}
@@ -966,7 +966,7 @@ function NewProduct({
         </label>
 
         <label className="block sm:col-span-2">
-          <span className="text-sm font-medium text-stone-700">תיאור</span>
+          <span className="text-base font-medium text-stone-700">תיאור</span>
           <textarea
             value={form.description_he}
             onChange={(e) => set('description_he', e.target.value)}
@@ -976,7 +976,7 @@ function NewProduct({
         </label>
       </div>
 
-      {error && <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {error && <p className="mt-3 rounded-lg bg-red-50 p-3 text-base text-red-700">{error}</p>}
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <button
@@ -986,7 +986,7 @@ function NewProduct({
         >
           {busy ? 'מוסיף…' : 'הוסף מוצר'}
         </button>
-        <span className="text-xs text-stone-500">
+        <span className="text-sm text-stone-500">
           אחרי ההוספה המוצר ייפתח כאן להעלאת תמונה.
         </span>
       </div>
@@ -1122,7 +1122,7 @@ export default function ProductsClient({
           <button
             type="button"
             onClick={() => setImportOpen(!importOpen)}
-            className="flex h-10 items-center gap-2 rounded-lg border border-stone-300 bg-white px-4 text-sm font-semibold text-stone-800"
+            className="flex h-10 items-center gap-2 rounded-lg border border-stone-300 bg-white px-4 text-base font-semibold text-stone-800"
           >
             <FileSpreadsheet size={16} />
             ייבוא מחירון
@@ -1156,7 +1156,7 @@ export default function ProductsClient({
         />
       </div>
 
-      {message && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{message}</p>}
+      {message && <p className="rounded-lg bg-red-50 p-3 text-base text-red-700">{message}</p>}
 
       {shown.length === 0 ? (
         <p className="rounded-xl border border-stone-200 bg-white p-8 text-center text-stone-600">
@@ -1189,7 +1189,7 @@ export default function ProductsClient({
         </div>
       )}
 
-      <p className="text-xs text-stone-500">
+      <p className="text-sm text-stone-500">
         לחיצה על מוצר פותחת את כל השדות לעריכה.
       </p>
     </div>

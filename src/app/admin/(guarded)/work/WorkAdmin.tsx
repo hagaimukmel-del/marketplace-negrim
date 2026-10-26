@@ -134,30 +134,30 @@ export default function WorkAdmin({
         <h1 className="flex items-center gap-2 text-xl font-bold text-stone-900">
           <Handshake size={21} className="text-teal-700" />
           נגרים עובדים ביחד
-          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${boardOpen ? 'bg-emerald-100 text-emerald-900' : 'bg-amber-100 text-amber-900'}`}>
+          <span className={`rounded-full px-2 py-0.5 text-sm font-semibold ${boardOpen ? 'bg-emerald-100 text-emerald-900' : 'bg-amber-100 text-amber-900'}`}>
             {boardOpen ? 'הלוח פתוח' : 'הלוח סגור לנגריות'}
           </span>
         </h1>
-        <p className="tnum mt-1 text-sm text-stone-600">
+        <p className="tnum mt-1 text-base text-stone-600">
           {profiles}/30 פרופילים · {counts.live}/10 עבודות בלוח · {members} נגריות עם מנוי (מייסדות כרגע)
         </p>
-        <p className="tnum mt-0.5 text-xs text-stone-500">
+        <p className="tnum mt-0.5 text-sm text-stone-500">
           סגירות: {outcomes.map((item) => `${item.name} ${item.count}`).join(' · ')}
         </p>
-        <Link href="/app/work" className="mt-1 inline-block text-sm font-semibold text-teal-800 underline">
+        <Link href="/app/work" className="mt-1 inline-block text-base font-semibold text-teal-800 underline">
           ללוח כפי שנגרייה רואה
         </Link>
       </div>
 
-      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-base text-red-700">{error}</p>}
 
       <section className="space-y-2">
-        <h2 className="flex items-center gap-2 text-sm font-bold text-stone-900">
+        <h2 className="flex items-center gap-2 text-base font-bold text-stone-900">
           <Flag size={15} className="text-red-700" />
           דיווחים פתוחים ({reports.length})
         </h2>
         {reports.length === 0 ? (
-          <p className="rounded-xl border border-stone-200 bg-white p-5 text-sm text-stone-500">אין דיווחים שמחכים לטיפול.</p>
+          <p className="rounded-xl border border-stone-200 bg-white p-5 text-base text-stone-500">אין דיווחים שמחכים לטיפול.</p>
         ) : (
           reports.map((report) => {
             const job = byId.get(report.jobId)
@@ -166,34 +166,34 @@ export default function WorkAdmin({
                 <p className="font-bold text-stone-900">
                   {job ? (
                     <>
-                      <span className="me-2 rounded bg-teal-50 px-1.5 text-xs text-teal-800">{jobTypeName(job.jobType)}</span>
+                      <span className="me-2 rounded bg-teal-50 px-1.5 text-sm text-teal-800">{jobTypeName(job.jobType)}</span>
                       {headline(job)}
                     </>
                   ) : (
                     'עבודה'
                   )}
                 </p>
-                <p className="text-xs text-stone-500">
+                <p className="text-sm text-stone-500">
                   של {job?.owner ?? '—'} · דיווח של {report.reporter} · {date(report.createdAt)}
                   {job?.status === 'paused' && ' · הושהתה אוטומטית'}
                 </p>
-                {job && <p className="mt-1 line-clamp-3 text-sm text-stone-700">{job.description}</p>}
-                <p className="mt-1 text-sm font-semibold text-red-800">{reasonLabel(report.reason)}</p>
-                {report.note && <p className="mt-0.5 text-sm text-stone-700">{report.note}</p>}
+                {job && <p className="mt-1 line-clamp-3 text-base text-stone-700">{job.description}</p>}
+                <p className="mt-1 text-base font-semibold text-red-800">{reasonLabel(report.reason)}</p>
+                {report.note && <p className="mt-0.5 text-base text-stone-700">{report.note}</p>}
                 <div className="mt-3 flex flex-wrap gap-2">
                   {job && (job.status === 'open' || job.status === 'paused') && (
-                    <button type="button" onClick={() => remove(job, reasonLabel(report.reason))} disabled={busy !== null} className="flex h-10 items-center gap-1.5 rounded-lg bg-red-700 px-3 text-sm font-semibold text-white disabled:opacity-50">
+                    <button type="button" onClick={() => remove(job, reasonLabel(report.reason))} disabled={busy !== null} className="flex h-10 items-center gap-1.5 rounded-lg bg-red-700 px-3 text-base font-semibold text-white disabled:opacity-50">
                       <Trash2 size={15} />
                       הסר את העבודה
                     </button>
                   )}
                   {job?.status === 'paused' ? (
-                    <button type="button" onClick={() => send(job.id, { action: 'restore', job_id: job.id })} disabled={busy !== null} className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-stone-700 disabled:opacity-50">
+                    <button type="button" onClick={() => send(job.id, { action: 'restore', job_id: job.id })} disabled={busy !== null} className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-base font-semibold text-stone-700 disabled:opacity-50">
                       <RotateCcw size={15} />
                       העבודה תקינה, החזר ללוח
                     </button>
                   ) : (
-                    <button type="button" onClick={() => send(report.id, { action: 'dismiss_report', report_id: report.id })} disabled={busy !== null} className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-stone-700 disabled:opacity-50">
+                    <button type="button" onClick={() => send(report.id, { action: 'dismiss_report', report_id: report.id })} disabled={busy !== null} className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-base font-semibold text-stone-700 disabled:opacity-50">
                       <X size={15} />
                       העבודה תקינה, סגור דיווח
                     </button>
@@ -213,12 +213,12 @@ export default function WorkAdmin({
               type="button"
               onClick={() => setFilter(item.key)}
               aria-pressed={filter === item.key}
-              className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-medium ${
+              className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-base font-medium ${
                 filter === item.key ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-300 bg-white text-stone-700'
               }`}
             >
               {item.label}
-              <span className="tnum text-xs opacity-60">{counts[item.key]}</span>
+              <span className="tnum text-sm opacity-60">{counts[item.key]}</span>
             </button>
           ))}
         </div>
@@ -233,15 +233,15 @@ export default function WorkAdmin({
                 <div key={job.id} className="flex items-center gap-3 border-b border-stone-100 p-3 last:border-b-0">
                   <div className="min-w-0 flex-1">
                     <Link href={`/app/work/${job.id}`} className="block truncate font-semibold text-stone-900 hover:underline">
-                      <span className="me-2 rounded bg-teal-50 px-1.5 text-xs text-teal-800">{jobTypeName(job.jobType)}</span>
+                      <span className="me-2 rounded bg-teal-50 px-1.5 text-sm text-teal-800">{jobTypeName(job.jobType)}</span>
                       {headline(job)}
                     </Link>
-                    <p className="tnum truncate text-xs text-stone-500">
+                    <p className="tnum truncate text-sm text-stone-500">
                       {job.owner}
                       {!job.ownerActive && ' (חסום)'} · {regionName(job.region)} · ביצוע עד {shortDate(job.dueDate)} · פורסם {date(job.createdAt)}
                     </p>
                   </div>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${state.tone}`}>{state.label}</span>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-sm font-semibold ${state.tone}`}>{state.label}</span>
                   {job.status === 'removed' || job.status === 'paused' ? (
                     <button type="button" onClick={() => send(job.id, { action: 'restore', job_id: job.id })} disabled={busy !== null} aria-label="החזר ללוח" title="החזר ללוח" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 disabled:opacity-40">
                       <RotateCcw size={16} />

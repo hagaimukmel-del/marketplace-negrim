@@ -39,12 +39,12 @@ export default function ThreadList({ threads, hrefBase, empty }: { threads: Thre
               <span className={`block truncate ${thread.unread ? 'font-bold text-stone-900' : 'font-semibold text-stone-800'}`}>
                 {thread.counterpart}
               </span>
-              <span className="block truncate text-sm text-stone-500">
+              <span className="block truncate text-base text-stone-500">
                 {thread.subject}
                 {thread.status === 'handled' && ' · טופל'}
               </span>
             </span>
-            <span className="tnum shrink-0 text-xs text-stone-500">{when(thread.lastMessageAt)}</span>
+            <span className="tnum shrink-0 text-sm text-stone-500">{when(thread.lastMessageAt)}</span>
           </Link>
         </li>
       ))}

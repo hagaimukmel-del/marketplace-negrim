@@ -85,13 +85,13 @@ export default function CampaignsClient({
 
       <section className="rounded-xl border border-stone-300 bg-white p-5">
         <h2 className="font-bold text-stone-900">קמפיין חדש</h2>
-        <p className="mt-1 text-sm text-stone-600">
+        <p className="mt-1 text-base text-stone-600">
           קמפיין אחד פעיל בכל רגע. יצירת חדש מכבה את הקודם.
         </p>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <label className="block">
-            <span className="text-sm font-medium text-stone-700">מוצר</span>
+            <span className="text-base font-medium text-stone-700">מוצר</span>
             <select
               value={productId}
               onChange={(e) => setProductId(e.target.value)}
@@ -107,7 +107,7 @@ export default function CampaignsClient({
           </label>
 
           <label className="block">
-            <span className="text-sm font-medium text-stone-700">סוג</span>
+            <span className="text-base font-medium text-stone-700">סוג</span>
             <select
               value={kind}
               onChange={(e) => setKind(e.target.value)}
@@ -121,14 +121,14 @@ export default function CampaignsClient({
         </div>
 
         {kind === 'introduction' && (
-          <p className="mt-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900">
+          <p className="mt-3 rounded-lg bg-emerald-50 p-3 text-base text-emerald-900">
             הודעת היכרות הכניסה עד היום פי 5.4 מהודעת מבצע — ובמחיר מלא.
           </p>
         )}
 
         {kind === 'discount' && (
           <label className="mt-4 block">
-            <span className="text-sm font-medium text-stone-700">
+            <span className="text-base font-medium text-stone-700">
               מחיר מבצע ליחידה, ללא מע״מ
             </span>
             <input
@@ -139,7 +139,7 @@ export default function CampaignsClient({
               className="mt-1 h-11 w-40 rounded-lg border border-stone-300 px-3 tabular-nums"
             />
             {selected && (
-              <span className="ms-3 text-sm text-stone-500">
+              <span className="ms-3 text-base text-stone-500">
                 מחירון: {formatIls(Number(selected.base_price_excl_vat))}
               </span>
             )}
@@ -147,7 +147,7 @@ export default function CampaignsClient({
         )}
 
         <label className="mt-4 block">
-          <span className="text-sm font-medium text-stone-700">כותרת</span>
+          <span className="text-base font-medium text-stone-700">כותרת</span>
           <input
             value={headline}
             onChange={(e) => setHeadline(e.target.value)}
@@ -156,7 +156,7 @@ export default function CampaignsClient({
         </label>
 
         <label className="mt-4 block">
-          <span className="text-sm font-medium text-stone-700">טקסט</span>
+          <span className="text-base font-medium text-stone-700">טקסט</span>
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
@@ -174,18 +174,18 @@ export default function CampaignsClient({
           >
             {busy ? 'יוצר…' : 'צור והפעל'}
           </button>
-          {error && <span className="text-sm text-red-700">{error}</span>}
+          {error && <span className="text-base text-red-700">{error}</span>}
         </div>
       </section>
 
       <section className="overflow-hidden rounded-xl border border-stone-300 bg-white">
         <h2 className="border-b border-stone-200 p-4 font-bold text-stone-900">היסטוריה</h2>
         {campaigns.length === 0 ? (
-          <p className="p-6 text-sm text-stone-600">עוד לא נוצרו קמפיינים.</p>
+          <p className="p-6 text-base text-stone-600">עוד לא נוצרו קמפיינים.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="border-b border-stone-200 bg-stone-50 text-xs uppercase tracking-wide text-stone-500">
+            <table className="w-full text-base">
+              <thead className="border-b border-stone-200 bg-stone-50 text-sm uppercase tracking-wide text-stone-500">
                 <tr>
                   <th className="p-3 text-start font-medium">מוצר</th>
                   <th className="p-3 text-start font-medium">סוג</th>
@@ -205,11 +205,11 @@ export default function CampaignsClient({
                     <td className="p-3 text-stone-600">{campaign.headline_he ?? '—'}</td>
                     <td className="p-3">
                       {campaign.is_active ? (
-                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-sm font-semibold text-emerald-800">
                           פעיל
                         </span>
                       ) : (
-                        <span className="text-xs text-stone-400">הסתיים</span>
+                        <span className="text-sm text-stone-400">הסתיים</span>
                       )}
                     </td>
                   </tr>

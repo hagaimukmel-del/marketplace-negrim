@@ -20,7 +20,7 @@ export default async function SupplierMessages() {
 
   return (
     <div className="space-y-3">
-      <Link href="/supplier" className="inline-flex items-center gap-1 text-sm font-semibold text-stone-600">
+      <Link href="/supplier" className="inline-flex items-center gap-1 text-base font-semibold text-stone-600">
         <ChevronRight size={16} /> לממשק
       </Link>
       <h1 className="m-0 text-xl font-bold text-stone-900">הודעות מנגריות</h1>

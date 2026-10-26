@@ -88,8 +88,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const answered = update.status === 'quoted'
     await postSystemMessage(
       { quoteRequestId: id },
-      (answered ? `הספק נתן הצעה: ${details.unitPriceText}, בתוקף עד ${details.validUntilText}` : 'הספק לא נתן הצעה לבקשה הזו') +
-        (note ? `. הערת הספק: ${note}` : '')
+      // One fact per line: a date at the end of a Hebrew sentence, followed by
+      // the message's own time, read as one run of numbers.
+      (answered ? `הספק נתן הצעה: ${details.unitPriceText}\nבתוקף עד: ${details.validUntilText}` : 'הספק לא נתן הצעה לבקשה הזו') +
+        (note ? `\nהערת הספק: ${note}` : '')
     )
     await notify({
       to: { side: 'carpenter', id: row.carpenter_id },

@@ -76,10 +76,14 @@ export function stateOf(status: string, validUntil: string | null, today: string
   return (Object.keys(QUOTE_STATE_LABEL) as QuoteState[]).includes(status as QuoteState) ? (status as QuoteState) : 'requested'
 }
 
-/** "עד 14.11" for a validity date. */
+/**
+ * "14.11.2026" for a validity date. The year is always there: "עד 9.11" next
+ * to a message's own "26.10" read as one run of numbers. In a page, wrap it in
+ * <bdi> so the Hebrew around it cannot reorder it.
+ */
 export function validLabel(date: string): string {
-  const [, month, day] = date.split('-')
-  return `${Number(day)}.${Number(month)}`
+  const [year, month, day] = date.split('-')
+  return `${Number(day)}.${Number(month)}.${year}`
 }
 
 /** "4 × דלי (100 ק״ג)", or "35 ק״ג" when it is not whole packs. */

@@ -78,7 +78,7 @@ export default function ProductPicker({
               <X size={20} />
             </button>
           </div>
-          <p className="text-sm text-stone-600">
+          <p className="text-base text-stone-600">
             המוצר כבר קיים באתר? בחרו אותו והוסיפו רק את המחיר שלכם.
           </p>
           <div className="relative mt-3">
@@ -100,11 +100,11 @@ export default function ProductPicker({
 
         <div className="flex-1 overflow-y-auto">
           {catalog.length === 0 ? (
-            <p className="p-8 text-center text-sm text-stone-600">
+            <p className="p-8 text-center text-base text-stone-600">
               כל המוצרים שבאתר כבר נמצאים ברשימה שלכם.
             </p>
           ) : matches.length === 0 ? (
-            <p className="p-8 text-center text-sm text-stone-600">
+            <p className="p-8 text-center text-base text-stone-600">
               לא מצאנו מוצר כזה באתר — אפשר ליצור אותו כמוצר חדש.
             </p>
           ) : (
@@ -119,11 +119,11 @@ export default function ProductPicker({
                     <Thumb item={item} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-semibold text-stone-900">{item.name}</span>
-                      <span className="block truncate text-xs text-stone-500">
+                      <span className="block truncate text-sm text-stone-500">
                         {[item.brand, item.categoryName].filter(Boolean).join(' · ') || 'ללא קטגוריה'}
                       </span>
                     </span>
-                    <span className="shrink-0 rounded-lg border border-emerald-700 px-2.5 py-1.5 text-xs font-semibold text-emerald-800">
+                    <span className="shrink-0 rounded-lg border border-emerald-700 px-2.5 py-1.5 text-sm font-semibold text-emerald-800">
                       גם אני מוכר
                     </span>
                   </button>

@@ -1809,7 +1809,9 @@ export type Database = {
       }
       supplier_offers: {
         Row: {
+          active_before_delete: boolean | null
           created_at: string
+          deleted_at: string | null
           id: string
           is_active: boolean
           lead_time_days: number | null
@@ -1828,7 +1830,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          active_before_delete?: boolean | null
           created_at?: string
+          deleted_at?: string | null
           id?: string
           is_active?: boolean
           lead_time_days?: number | null
@@ -1847,7 +1851,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          active_before_delete?: boolean | null
           created_at?: string
+          deleted_at?: string | null
           id?: string
           is_active?: boolean
           lead_time_days?: number | null

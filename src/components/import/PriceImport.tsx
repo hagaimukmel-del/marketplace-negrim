@@ -214,14 +214,14 @@ export default function PriceImport({ supplierId, onClose }: { supplierId?: stri
 
   return (
     <div className="space-y-4">
-      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-base text-red-700">{error}</p>}
 
       {step === 'pick' && (
         <>
           <label className="flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-stone-300 bg-white p-8 text-center hover:border-emerald-600">
             <FileSpreadsheet size={40} className="text-emerald-700" />
             <span className="text-lg font-bold text-stone-900">{busy ? 'קורא את הקובץ…' : 'בחרו קובץ מחירון'}</span>
-            <span className="text-sm text-stone-600">Excel ‏(xlsx) או CSV · עד {MAX_IMPORT_ROWS.toLocaleString('he-IL')} שורות</span>
+            <span className="text-base text-stone-600">Excel ‏(xlsx) או CSV · עד {MAX_IMPORT_ROWS.toLocaleString('he-IL')} שורות</span>
             <span className="mt-2 inline-flex h-11 items-center gap-2 rounded-lg bg-emerald-700 px-5 font-semibold text-white">
               <Upload size={17} />
               העלאת קובץ
@@ -238,7 +238,7 @@ export default function PriceImport({ supplierId, onClose }: { supplierId?: stri
               }}
             />
           </label>
-          <div className="rounded-xl bg-stone-50 p-3 text-sm text-stone-600">
+          <div className="rounded-xl bg-stone-50 p-3 text-base text-stone-600">
             <p>
               צריך לפחות עמודת <strong>שם מוצר</strong> ועמודת <strong>מחיר ללא מע״מ</strong>. מק״ט, מלאי, אריזה, מותג וקטגוריה —
               אם יש, נשתמש בהם. לפני שמירה תראו בדיוק מה ישתנה.
@@ -254,20 +254,20 @@ export default function PriceImport({ supplierId, onClose }: { supplierId?: stri
       {step === 'map' && mapping && (
         <>
           <div className="flex items-center justify-between gap-2">
-            <p className="text-sm text-stone-600">
+            <p className="text-base text-stone-600">
               <strong className="text-stone-900">{fileName}</strong> · {rows.length} שורות מוצרים
             </p>
-            <button type="button" onClick={() => setStep('pick')} className="text-sm font-semibold text-stone-600 underline">
+            <button type="button" onClick={() => setStep('pick')} className="text-base font-semibold text-stone-600 underline">
               קובץ אחר
             </button>
           </div>
           <div className="rounded-xl border border-stone-200 bg-white p-3">
             <p className="font-semibold text-stone-900">איזו עמודה היא מה?</p>
-            <p className="text-xs text-stone-500">זיהינו לבד את מה שיכולנו. תקנו אם משהו לא נכון.</p>
+            <p className="text-sm text-stone-500">זיהינו לבד את מה שיכולנו. תקנו אם משהו לא נכון.</p>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               {IMPORT_FIELDS.map((field) => (
                 <label key={field.key} className="flex items-center gap-2">
-                  <span className="w-32 shrink-0 text-sm text-stone-700">
+                  <span className="w-32 shrink-0 text-base text-stone-700">
                     {field.label}
                     {field.required && <span className="text-red-600"> *</span>}
                   </span>
@@ -275,7 +275,7 @@ export default function PriceImport({ supplierId, onClose }: { supplierId?: stri
                     id={`import-map-${field.key}`}
                     value={mapping[field.key]}
                     onChange={(e) => setMapping({ ...mapping, [field.key as ImportFieldKey]: Number(e.target.value) })}
-                    className={`h-10 min-w-0 flex-1 rounded-lg border bg-white px-2 text-sm ${
+                    className={`h-10 min-w-0 flex-1 rounded-lg border bg-white px-2 text-base ${
                       field.required && mapping[field.key] < 0 ? 'border-red-400' : 'border-stone-300'
                     }`}
                   >
@@ -293,8 +293,8 @@ export default function PriceImport({ supplierId, onClose }: { supplierId?: stri
 
           {rows.length > 0 && (
             <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white">
-              <table className="w-full text-sm">
-                <thead className="bg-stone-50 text-xs text-stone-500">
+              <table className="w-full text-base">
+                <thead className="bg-stone-50 text-sm text-stone-500">
                   <tr>
                     <th className="p-2 text-start font-medium">שורה</th>
                     <th className="p-2 text-start font-medium">שם</th>
@@ -315,7 +315,7 @@ export default function PriceImport({ supplierId, onClose }: { supplierId?: stri
                   ))}
                 </tbody>
               </table>
-              <p className="border-t border-stone-100 p-2 text-xs text-stone-500">שלוש השורות הראשונות, כפי שהבנו אותן.</p>
+              <p className="border-t border-stone-100 p-2 text-sm text-stone-500">שלוש השורות הראשונות, כפי שהבנו אותן.</p>
             </div>
           )}
 
@@ -342,18 +342,18 @@ export default function PriceImport({ supplierId, onClose }: { supplierId?: stri
                   type="button"
                   onClick={() => setFilter(key)}
                   aria-pressed={filter === key}
-                  className={`flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold ${
+                  className={`flex h-9 items-center gap-1.5 rounded-full border px-3 text-base font-semibold ${
                     filter === key ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-300 bg-white text-stone-700'
                   }`}
                 >
                   {key === 'all' ? 'הכל' : ACTION_LABEL[key]}
-                  <span className="tnum text-xs opacity-60">{count}</span>
+                  <span className="tnum text-sm opacity-60">{count}</span>
                 </button>
               )
             })}
           </div>
 
-          <p className="text-sm text-stone-600">
+          <p className="text-base text-stone-600">
             <strong className="text-stone-900">{counts.update}</strong> מחירים יתעדכנו ·{' '}
             <strong className="text-stone-900">{counts.attach}</strong> יתווספו למוצרים שכבר באתר ·{' '}
             <strong className="text-stone-900">{counts.create}</strong> מוצרים חדשים
@@ -382,14 +382,14 @@ export default function PriceImport({ supplierId, onClose }: { supplierId?: stri
                     className="h-4 w-4 shrink-0 accent-emerald-700"
                     aria-label={`לכלול את שורה ${line.row}`}
                   />
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${TONE[line.action]}`}>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${TONE[line.action]}`}>
                     {ACTION_LABEL[line.action]}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium text-stone-900">{line.name || `שורה ${line.row}`}</span>
-                    {line.message && <span className="block text-xs text-red-700">שורה {line.row}: {line.message}</span>}
+                    <span className="block truncate text-base font-medium text-stone-900">{line.name || `שורה ${line.row}`}</span>
+                    {line.message && <span className="block text-sm text-red-700">שורה {line.row}: {line.message}</span>}
                   </span>
-                  <span className="tnum shrink-0 text-end text-sm">
+                  <span className="tnum shrink-0 text-end text-base">
                     {line.before && line.action === 'update' && line.before.price !== line.price ? (
                       <>
                         <span className="text-stone-400 line-through">{formatIls(line.before.price)}</span>{' '}
@@ -403,7 +403,7 @@ export default function PriceImport({ supplierId, onClose }: { supplierId?: stri
               )
             })}
             {shownLines.length > 400 && (
-              <p className="p-3 text-center text-xs text-stone-500">ועוד {shownLines.length - 400} שורות</p>
+              <p className="p-3 text-center text-sm text-stone-500">ועוד {shownLines.length - 400} שורות</p>
             )}
           </div>
 
@@ -428,11 +428,11 @@ export default function PriceImport({ supplierId, onClose }: { supplierId?: stri
         <div className="rounded-2xl border border-emerald-200 bg-white p-5 text-center">
           <CheckCircle2 size={40} className="mx-auto text-emerald-700" />
           <p className="mt-2 text-lg font-bold text-stone-900">המחירון נשמר</p>
-          <p className="tnum mt-1 text-sm text-stone-600">
+          <p className="tnum mt-1 text-base text-stone-600">
             {result.summary.updated ?? 0} עודכנו · {result.summary.attached ?? 0} נוספו למוצרים קיימים · {result.summary.created ?? 0} מוצרים חדשים
           </p>
           {result.failed.length > 0 && (
-            <div className="mt-3 rounded-lg bg-red-50 p-3 text-start text-sm text-red-800">
+            <div className="mt-3 rounded-lg bg-red-50 p-3 text-start text-base text-red-800">
               {result.failed.length} שורות לא נשמרו:
               <ul className="mt-1 list-disc ps-5">
                 {result.failed.slice(0, 10).map((item) => (
@@ -457,21 +457,21 @@ export default function PriceImport({ supplierId, onClose }: { supplierId?: stri
 
       {batches.length > 0 && step !== 'map' && step !== 'preview' && (
         <div className="rounded-xl border border-stone-200 bg-white p-3">
-          <p className="text-sm font-bold text-stone-900">ייבואים אחרונים</p>
+          <p className="text-base font-bold text-stone-900">ייבואים אחרונים</p>
           <ul className="mt-2 divide-y divide-stone-100">
             {batches.map((batch) => {
               const recent = undoable(batch.created_at)
               return (
-                <li key={batch.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 text-sm">
-                  <span className="tnum text-xs text-stone-500">{when(batch.created_at)}</span>
+                <li key={batch.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 text-base">
+                  <span className="tnum text-sm text-stone-500">{when(batch.created_at)}</span>
                   <span className="min-w-0 flex-1 truncate text-stone-800">{batch.file_name ?? 'קובץ'}</span>
-                  <span className="tnum text-xs text-stone-500">
+                  <span className="tnum text-sm text-stone-500">
                     {batch.summary.updated ?? 0} עודכנו · {(batch.summary.attached ?? 0) + (batch.summary.created ?? 0)} נוספו
                   </span>
                   {batch.undone_at ? (
-                    <span className="text-xs font-semibold text-stone-400">בוטל</span>
+                    <span className="text-sm font-semibold text-stone-400">בוטל</span>
                   ) : recent ? (
-                    <button type="button" onClick={() => undo(batch.id)} disabled={busy} className="text-xs font-semibold text-red-700 underline disabled:opacity-50">
+                    <button type="button" onClick={() => undo(batch.id)} disabled={busy} className="text-sm font-semibold text-red-700 underline disabled:opacity-50">
                       בטל
                     </button>
                   ) : null}

@@ -18,7 +18,7 @@ export default async function SupplierThread({ params }: { params: Promise<{ id:
   if (!thread) notFound()
   return (
     <div className="space-y-2">
-      <Link href="/supplier/messages" className="inline-flex items-center gap-1 text-sm font-semibold text-stone-600">
+      <Link href="/supplier/messages" className="inline-flex items-center gap-1 text-base font-semibold text-stone-600">
         <ChevronRight size={16} /> כל ההודעות
       </Link>
       <ThreadView thread={thread} apiBase="/api/supplier/messages" composerClass="bottom-3" />

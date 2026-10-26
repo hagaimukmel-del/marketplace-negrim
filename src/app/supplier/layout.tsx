@@ -44,7 +44,7 @@ export default async function SupplierLayout({ children }: { children: React.Rea
   return (
     <>
       {supplier && admin && (
-        <div className="bg-amber-100 px-4 py-1.5 text-center text-xs font-semibold text-amber-900">
+        <div className="bg-amber-100 px-4 py-1.5 text-center text-sm font-semibold text-amber-900">
           {supplier.source === 'self'
             ? `מצב אדמין — צפייה בלבד בממשק של ${supplier.company_name}. הספק מנהל את החשבון בעצמו, ושינויים לא יישמרו.`
             : `מצב אדמין — אתה מנהל את הממשק של ${supplier.company_name}. שינויים כאן נשמרים אצלו.`}
