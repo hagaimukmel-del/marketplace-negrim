@@ -1,5 +1,5 @@
 # 7 · Admin console (`/admin`)
-Verified: 2026-10-11
+Verified: 2026-10-26
 
 ## Purpose
 The operator's (owner's) back office: approve suppliers, manage the catalogue, watch orders and
@@ -12,6 +12,7 @@ carpenters, run campaigns and raffles, moderate the Metzion, read reports.
 | `/admin` | Dashboard |
 | `/admin/promotions` | "מוצר השבוע" bookings: approve, reject with a note shown to the supplier, withdraw a coming week, results per week (T-024). Logged in `admin_actions` |
 | `/admin/orders`, `/suppliers`, `/carpenters`, `/products`, `/categories` | Core management |
+| `/admin/carpenters` → filter "נמחקו" | Deleted carpentries, kept 3 months: restore in one click, or "מחק סופית" now. `lib/carpenter-deletion.ts` (rules), `lib/carpenter-deletion-server.ts` |
 | `/admin/campaigns`, `/api/admin/raffle` | Campaigns and raffle draws (area 9) |
 | `/admin/metzion` | Listing moderation and reports |
 | `/admin/communication` → `/api/admin/communication` | "בריאות תקשורת" (T-036 step 6): mail sent/arrived/failed this week, failed mail with resend, blocked addresses with unblock, orders and quotes waiting on a supplier with their reminder rung, unanswered carpenter messages, suppliers and carpentries that cannot be reached (no email, bouncing, no mobile). `lib/communication-health.ts` |
@@ -45,6 +46,19 @@ operator did inside a self-run supplier's account.
 - A self-run supplier's order lines are not sent to `/admin/orders` until the operator clicks
   "הצג שורות לתמיכה", and his entry token is never sent to the admin pages; the operator can
   mail it to the address on file instead.
+
+- **Deleting a carpentry is recoverable** (owner, 2026-10-26; migration `20261026100000_carpenter_soft_delete`).
+  "מחק" sets `deleted_at`, `deleted_by`, keeps the old `is_active` in `active_before_delete`
+  and sets `is_active = false` (a DB check refuses a deleted row that is active), so every
+  existing gate already keeps them out: link, login code, Google, `/join`, prices, orders,
+  Metzion, work board. Nothing else is touched. Suppliers stop seeing them: pending orders
+  (also refused on the email confirm link), quote requests, agent questions, message threads,
+  reminders and the morning summary. Orders the supplier already handled stay in its console
+  as its own record. A deleted carpentry cannot be unblocked, only restored, and restoring
+  brings back the old blocked/active state. The daily cron (`/api/cron/outbox`) removes rows
+  deleted more than 3 calendar months ago; that cascades like the old hard delete, past
+  orders keep their snapshot with `carpenter_id` cleared. Delete, restore and purge are
+  logged in `admin_actions`. Storage files (Metzion images, work files) are not swept by the purge.
 
 ## Status
 Live.

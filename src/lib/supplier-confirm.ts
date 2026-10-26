@@ -2,6 +2,7 @@ import 'server-only'
 
 import { getSupabaseAdmin } from './supabase-admin'
 import { readConfirmToken } from './supplier-link'
+import { deletedCarpenterIds } from './carpenter-deletion-server'
 
 export interface ConfirmLine {
   id: string
@@ -56,7 +57,7 @@ export async function loadConfirmable(token: string): Promise<ConfirmResult> {
     supabase
       .from('orders')
       .select(
-        'id, order_number, short_number, created_at, status, business_name, customer_name, customer_phone, city, address, payment_method, notes, subtotal_excl_vat, confirmed_subtotal_excl_vat, confirmed_at, supplier_note'
+        'id, carpenter_id, order_number, short_number, created_at, status, business_name, customer_name, customer_phone, city, address, payment_method, notes, subtotal_excl_vat, confirmed_subtotal_excl_vat, confirmed_at, supplier_note'
       )
       .eq('id', claim.orderId)
       .maybeSingle(),
@@ -68,6 +69,10 @@ export async function loadConfirmable(token: string): Promise<ConfirmResult> {
   ])
 
   if (!order || !supplier) return { ok: false, reason: 'missing' }
+  // A waiting order from a deleted carpentry is on hold until it is restored.
+  if ((order.status ?? 'pending') === 'pending' && order.carpenter_id && (await deletedCarpenterIds()).has(order.carpenter_id)) {
+    return { ok: false, reason: 'missing' }
+  }
 
   const lines = allLines ?? []
   const suppliersOnOrder = new Set(lines.map((line) => line.supplier_id))

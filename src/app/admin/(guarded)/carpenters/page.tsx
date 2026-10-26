@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { listDeletedCarpenters } from '@/lib/carpenter-deletion-server'
 import CarpentersClient, { type CarpenterRow, type DrawRow } from './CarpentersClient'
 
 export const dynamic = 'force-dynamic'
@@ -6,7 +7,7 @@ export const dynamic = 'force-dynamic'
 export default async function CarpentersPage() {
   const supabase = getSupabaseAdmin()
 
-  const [{ data: carpenters }, { data: orders }, { data: draws }] = await Promise.all([
+  const [{ data: carpenters }, { data: orders }, { data: draws }, deleted] = await Promise.all([
     supabase
       .from('carpenters')
       .select(
@@ -20,6 +21,7 @@ export default async function CarpentersPage() {
       .select('id, carpenter_id, winner_name, winner_email, prize, pool_size, included_test, drawn_at, notified_at')
       .order('drawn_at', { ascending: false })
       .limit(20),
+    listDeletedCarpenters(),
   ])
 
   const ordersBy = new Map<string, number>()
@@ -29,10 +31,15 @@ export default async function CarpentersPage() {
     }
   }
 
-  const rows: CarpenterRow[] = (carpenters ?? []).map((row) => ({
-    ...row,
-    orders: ordersBy.get(row.id) ?? 0,
-  }))
+  // Deleted carpentries live in their own list until they are restored or purged.
+  const deletedIds = new Set(deleted.rows.map((row) => row.id))
+  const rows: CarpenterRow[] = (carpenters ?? [])
+    .filter((row) => !deletedIds.has(row.id))
+    .map((row) => ({
+      ...row,
+      orders: ordersBy.get(row.id) ?? 0,
+    }))
+  const deletedRows = deleted.rows.map((row) => ({ ...row, orders: ordersBy.get(row.id) ?? 0 }))
 
-  return <CarpentersClient rows={rows} draws={(draws ?? []) as DrawRow[]} />
+  return <CarpentersClient rows={rows} deleted={deletedRows} draws={(draws ?? []) as DrawRow[]} />
 }

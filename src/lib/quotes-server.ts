@@ -5,6 +5,7 @@ import { unitLabel } from '@/lib/catalog'
 import { israelDate, stateOf, type QuoteRequest, type SupplierQuoteRequest } from '@/lib/quotes'
 import type { QuoteKind } from '@/lib/quote-rules'
 import { quoteThreadIds } from './messages'
+import { deletedCarpenterIds } from './carpenter-deletion-server'
 
 /**
  * Quote requests on the server (T-023). Every read tolerates the table being
@@ -40,9 +41,10 @@ async function load(filter: { carpenterId?: string; supplierId?: string }): Prom
   let query = supabase.from('quote_requests').select(COLUMNS).order('created_at', { ascending: false }).limit(200)
   if (filter.carpenterId) query = query.eq('carpenter_id', filter.carpenterId)
   if (filter.supplierId) query = query.eq('supplier_id', filter.supplierId)
-  const { data, error } = await query
+  const [{ data, error }, deleted] = await Promise.all([query, filter.supplierId ? deletedCarpenterIds() : Promise.resolve(new Set<string>())])
   if (error) return { ready: false, rows: [], packs: new Map(), kinds: new Map(), threads: new Map() }
-  const rows = (data ?? []) as unknown as Row[]
+  // A supplier does not see requests from a deleted carpentry while it waits to be restored or purged.
+  const rows = ((data ?? []) as unknown as Row[]).filter((row) => !deleted.has(row.carpenter_id))
 
   // The pack each supplier sells it in, so a quantity reads as "4 × דלי 25 ק״ג".
   const packs = new Map<string, { label: string | null; qty: number | null }>()

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { timingSafeEqual } from 'node:crypto'
 import { processOutbox } from '@/lib/outbox'
 import { runReminders, sendDailySummaries } from '@/lib/reminders'
+import { purgeExpiredCarpenters } from '@/lib/carpenter-deletion-server'
 
 /**
  * GET /api/cron/outbox — the scheduled run of the email outbox (vercel.json).
@@ -13,6 +14,9 @@ import { runReminders, sendDailySummaries } from '@/lib/reminders'
  *
  * The same run climbs the reminder ladder and queues the suppliers' morning
  * summary (step 5) before draining the outbox, so they go out in this call.
+ *
+ * It also removes for good the carpentries the operator deleted more than
+ * three months ago (lib/carpenter-deletion.ts).
  */
 export async function GET(request: NextRequest) {
   const secret = process.env.CRON_SECRET
@@ -22,6 +26,7 @@ export async function GET(request: NextRequest) {
     Boolean(secret) && given.length === expected.length && timingSafeEqual(Buffer.from(given), Buffer.from(expected))
   if (!ok) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
+  const purgedCarpenters = await purgeExpiredCarpenters()
   const reminders = await runReminders()
   const summaries = await sendDailySummaries()
 
@@ -34,5 +39,5 @@ export async function GET(request: NextRequest) {
     totals.failed += result.failed
     if (result.claimed === 0) break
   }
-  return NextResponse.json({ ok: true, ...totals, reminders, summaries })
+  return NextResponse.json({ ok: true, ...totals, reminders, summaries, purgedCarpenters })
 }

@@ -7,6 +7,7 @@ import { notify } from './notifications'
 import { queueEmail } from './outbox'
 import { postSystemMessage } from './messages'
 import { confirmUrl } from './supplier-link'
+import { deletedCarpenterIds } from './carpenter-deletion-server'
 import { isWorkingTime, israelWorkday, workingMinutesBetween } from './working-hours'
 import { LADDER_MAX_AGE_DAYS, nextRung, rungKey, type Rung } from './reminder-rules'
 import { dailySummaryHtml, dailySummarySubject, reminderHtml } from './emails/reminder'
@@ -64,7 +65,7 @@ async function claim(keys: string[]): Promise<Set<string> | null> {
 async function loadWaiting(): Promise<Waiting[]> {
   const supabase = getSupabaseAdmin()
   const since = new Date(Date.now() - LADDER_MAX_AGE_DAYS * 24 * 60 * 60 * 1000).toISOString()
-  const [{ data: orders }, { data: quotes }] = await Promise.all([
+  const [{ data: allOrders }, { data: allQuotes }, deleted] = await Promise.all([
     supabase
       .from('orders')
       .select('id, supplier_id, carpenter_id, created_at, short_number, order_number, business_name, customer_name')
@@ -78,7 +79,11 @@ async function loadWaiting(): Promise<Waiting[]> {
       .eq('status', 'requested')
       .gte('created_at', since)
       .limit(500),
+    deletedCarpenterIds(),
   ])
+  // Nobody is chased about a deleted carpentry's order or request.
+  const orders = (allOrders ?? []).filter((o) => !o.carpenter_id || !deleted.has(o.carpenter_id))
+  const quotes = (allQuotes ?? []).filter((q) => !deleted.has(q.carpenter_id))
   const supplierIds = [...new Set([...(orders ?? []).map((o) => o.supplier_id), ...(quotes ?? []).map((q) => q.supplier_id)].filter(Boolean))] as string[]
   const { data: suppliers } = supplierIds.length
     ? await supabase.from('suppliers').select('id, company_name, email').in('id', supplierIds)
@@ -225,11 +230,15 @@ export async function sendDailySummaries(now: Date = new Date()): Promise<number
   const { date, working } = israelWorkday(now)
   if (!working) return 0
   const supabase = getSupabaseAdmin()
-  const [{ data: orders }, { data: quotes }, { data: threads }] = await Promise.all([
-    supabase.from('orders').select('supplier_id').eq('status', 'pending').not('supplier_id', 'is', null).limit(2000),
-    supabase.from('quote_requests').select('supplier_id').eq('status', 'requested').limit(2000),
-    supabase.from('message_threads').select('supplier_id').eq('last_sender', 'carpenter').eq('status', 'open').limit(2000),
+  const [{ data: allOrders }, { data: allQuotes }, { data: allThreads }, deleted] = await Promise.all([
+    supabase.from('orders').select('supplier_id, carpenter_id').eq('status', 'pending').not('supplier_id', 'is', null).limit(2000),
+    supabase.from('quote_requests').select('supplier_id, carpenter_id').eq('status', 'requested').limit(2000),
+    supabase.from('message_threads').select('supplier_id, carpenter_id').eq('last_sender', 'carpenter').eq('status', 'open').limit(2000),
+    deletedCarpenterIds(),
   ])
+  const visible = <T extends { carpenter_id: string | null }>(rows: T[] | null) =>
+    (rows ?? []).filter((row) => !row.carpenter_id || !deleted.has(row.carpenter_id))
+  const [orders, quotes, threads] = [visible(allOrders), visible(allQuotes), visible(allThreads)]
   const counts = new Map<string, { orders: number; quotes: number; messages: number }>()
   const bump = (id: string | null, field: 'orders' | 'quotes' | 'messages') => {
     if (!id) return
