@@ -2,10 +2,10 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { LayoutGrid, Search } from 'lucide-react'
+import { ClipboardList, LayoutGrid, Search } from 'lucide-react'
 import { money, when } from '@/lib/app/format'
 import { attentionOf, totalOf, STATUS_LABEL, type AppOrder } from '@/lib/app/orders'
-import { StatusDot } from '@/components/app/ui'
+import { PageHeader, StatusDot } from '@/components/app/ui'
 import { useReorder } from '@/components/app/useReorder'
 
 /**
@@ -21,7 +21,7 @@ export default function OrdersView({ orders, now }: { orders: AppOrder[]; now: n
   if (orders.length === 0) {
     return (
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 pt-1">
-        <h1 className="m-0 text-2xl font-extrabold">הזמנות</h1>
+        <PageHeader icon={ClipboardList} title="הזמנות" />
         <div className="rounded-xl border-[1.5px] border-dashed border-[#D9CFC1] p-3.5 text-sm text-muted">
           <b className="block text-ink">עוד אין הזמנות</b>
           ההזמנה הראשונה שתשלח תופיע כאן, עם הסטטוס שלה מול הספק.
@@ -44,12 +44,15 @@ export default function OrdersView({ orders, now }: { orders: AppOrder[]; now: n
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5 pt-1">
-      <section>
-        <h1 className="m-0 text-2xl font-extrabold md:text-[28px]">הזמנות</h1>
-        <div className="text-[14.5px] text-muted">
-          <span className="tnum">{orders.length}</span> הזמנות · {attention.length + open.length ? <><span className="tnum">{attention.length + open.length}</span> פתוחות</> : 'אין הזמנות פתוחות'}
-        </div>
-      </section>
+      <PageHeader
+        icon={ClipboardList}
+        title="הזמנות"
+        subtitle={
+          <>
+            <span className="tnum">{orders.length}</span> הזמנות · {attention.length + open.length ? <><span className="tnum">{attention.length + open.length}</span> פתוחות</> : 'אין הזמנות פתוחות'}
+          </>
+        }
+      />
 
       <div className="relative">
         <Search size={20} className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 text-muted" />

@@ -1,10 +1,10 @@
 import Link from 'next/link'
-import { Recycle, Search } from 'lucide-react'
+import { LayoutGrid, Recycle, Search } from 'lucide-react'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { isAdmin } from '@/lib/admin-auth'
 import { loadCategoryTree, loadProducts } from '@/lib/app/catalog-server'
 import ProductList from '@/components/app/ProductList'
-import { SectionTitle } from '@/components/app/ui'
+import { PageHeader, SectionTitle } from '@/components/app/ui'
 import { CategoryList } from '../HomeView'
 import { searchProducts } from '@/lib/catalog-search'
 import AskAgentButton from '@/components/chat/AskAgentButton'
@@ -41,15 +41,18 @@ export default async function AppCatalog({ searchParams }: { searchParams: Promi
     const { products: hits, partial } = searchProducts(products, query)
     return (
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
+        <PageHeader
+          icon={Search}
+          title={<>תוצאות עבור ״{query}״</>}
+          subtitle={
+            <>
+              <span className="tnum">{hits.length}</span> מוצרים{partial ? ' שמתאימים לחלק מהמילים' : ''} ·{' '}
+              <Link href="/app/catalog" className="font-semibold text-brand-ink">לכל הקטגוריות</Link>
+            </>
+          }
+        />
         {search}
-        <div>
-          <h1 className="m-0 text-2xl font-extrabold md:text-[28px]">תוצאות עבור ״{query}״</h1>
-          <div className="text-[14.5px] text-muted">
-            <span className="tnum">{hits.length}</span> מוצרים{partial ? ' שמתאימים לחלק מהמילים' : ''} ·{' '}
-            <Link href="/app/catalog" className="font-semibold text-brand-ink">לכל הקטגוריות</Link>
-          </div>
-          {carpenter && <AskAgentButton query={query} />}
-        </div>
+        {carpenter && <AskAgentButton query={query} />}
         {hits.length ? (
           <ProductList products={hits} showPrices={showPrices} />
         ) : (
@@ -65,10 +68,7 @@ export default async function AppCatalog({ searchParams }: { searchParams: Promi
   const categories = await loadCategoryTree(products)
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
-      <div>
-        <h1 className="m-0 text-2xl font-extrabold md:text-[28px]">קטלוג</h1>
-        <div className="text-[14.5px] text-muted">מחירים לפני מע״מ, ישירות מהספקים</div>
-      </div>
+      <PageHeader icon={LayoutGrid} title="קטלוג" subtitle="מחירים לפני מע״מ, ישירות מהספקים" />
       {search}
       <CategoryList categories={categories} />
       <section>

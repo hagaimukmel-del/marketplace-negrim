@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Check, FileText, MessageSquare, ShoppingBag } from 'lucide-react'
+import { PageHeader } from '@/components/app/ui'
 import { useCart } from '@/lib/cart-context'
 import { money } from '@/lib/app/format'
 import ConfirmEmailNotice from '@/components/app/ConfirmEmailNotice'
@@ -69,19 +70,20 @@ export default function QuotesView({ ready, quotes, unconfirmedEmail }: { ready:
 
   if (!ready) {
     return (
-      <div className="grid gap-3 pt-3">
-        <h1 className="m-0 text-2xl font-extrabold">הצעות מחיר</h1>
+      <div className="grid gap-4">
+        <PageHeader icon={FileText} title="הצעות מחיר" />
         <p className="rounded-2xl border border-hair bg-white p-6 text-center text-muted">הצעות מחיר יהיו זמינות בקרוב.</p>
       </div>
     )
   }
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-5 pt-3">
-      <div>
-        <h1 className="m-0 text-2xl font-extrabold md:text-[28px]">הצעות מחיר</h1>
-        <p className="m-0 mt-1 text-sm text-muted">מבקשים הצעה מדף המוצר. כשהספק עונה, מוסיפים את ההצעה להזמנה ושולחים כרגיל.</p>
-      </div>
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
+      <PageHeader
+        icon={FileText}
+        title="הצעות מחיר"
+        subtitle="מבקשים הצעה מדף המוצר. כשהספק עונה, מוסיפים את ההצעה להזמנה ושולחים כרגיל."
+      />
       {unconfirmedEmail !== undefined && quotes.length > 0 && (
         <ConfirmEmailNotice
           email={unconfirmedEmail}

@@ -1,6 +1,8 @@
+import { MessageSquare } from 'lucide-react'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { listThreads } from '@/lib/messages'
 import SignedOutNotice from '@/components/app/SignedOutNotice'
+import { PageHeader } from '@/components/app/ui'
 import ThreadList from '@/components/messages/ThreadList'
 
 export const dynamic = 'force-dynamic'
@@ -8,11 +10,18 @@ export const dynamic = 'force-dynamic'
 /** The carpentry's messages with suppliers (T-025). */
 export default async function AppMessages() {
   const carpenter = await getSessionCarpenter()
-  if (!carpenter) return <SignedOutNotice what="ההודעות" next="/app/messages" />
+  const header = <PageHeader icon={MessageSquare} title="הודעות" subtitle="שיחות עם הספקים" />
+  if (!carpenter)
+    return (
+      <>
+        {header}
+        <SignedOutNotice what="ההודעות" next="/app/messages" />
+      </>
+    )
   const { ready, threads } = await listThreads({ side: 'carpenter', id: carpenter.id })
   return (
-    <div className="space-y-3 pt-3">
-      <h1 className="m-0 text-xl font-bold">הודעות</h1>
+    <div className="space-y-4">
+      {header}
       {ready ? (
         <ThreadList
           threads={threads}

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Handshake, Lock, MessageSquare, Plus, UserRound } from 'lucide-react'
+import { PageHeader } from '@/components/app/ui'
 import { REGIONS, regionName } from '@/lib/regions'
 import { JOB_TYPES, ago, daysLeft, jobTypeName, shortDate, type BoardJob } from '@/lib/work'
 
@@ -82,13 +83,14 @@ export default function Board({
         </p>
       )}
 
-      <header className="flex flex-wrap items-center gap-2">
-        <span className="grid h-10 w-10 place-items-center rounded-[10px] bg-[#0E5E5E] text-white">
-          <Handshake size={21} />
-        </span>
-        <h1 className="text-xl font-extrabold text-ink">נגרים עובדים ביחד</h1>
-        {signedIn && (
-          <div className="ms-auto flex gap-2">
+      <PageHeader
+        icon={Handshake}
+        tone="teal"
+        title="נגרים עובדים ביחד"
+        subtitle="לוח עבודות בין נגריות"
+        actions={
+          signedIn && (
+          <>
             <Link
               href="/app/work/messages"
               aria-label={unread ? `שיחות, ${unread} לא נקראו` : 'שיחות'}
@@ -110,9 +112,10 @@ export default function Board({
               <Plus size={16} />
               פרסום
             </Link>
-          </div>
-        )}
-      </header>
+          </>
+          )
+        }
+      />
 
       {signedIn && !member && (
         <div className="rounded-xl border border-[#8CC9C2] bg-[#E2F0EF] p-3 text-sm text-[#0B5A5A]">

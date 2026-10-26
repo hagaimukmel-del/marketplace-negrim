@@ -1,6 +1,8 @@
+import { Bell } from 'lucide-react'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { listNotifications } from '@/lib/notifications'
 import SignedOutNotice from '@/components/app/SignedOutNotice'
+import { PageHeader } from '@/components/app/ui'
 import NotificationList from '@/components/notifications/NotificationList'
 import MarkAllRead from '@/components/notifications/MarkAllRead'
 
@@ -9,14 +11,22 @@ export const dynamic = 'force-dynamic'
 /** The carpentry's bell: quotes answered, orders confirmed, messages from suppliers. */
 export default async function AppNotifications() {
   const carpenter = await getSessionCarpenter()
-  if (!carpenter) return <SignedOutNotice what="ההתראות" next="/app/notifications" />
+  if (!carpenter)
+    return (
+      <>
+        <PageHeader icon={Bell} title="התראות" />
+        <SignedOutNotice what="ההתראות" next="/app/notifications" />
+      </>
+    )
   const { ready, items } = await listNotifications({ side: 'carpenter', id: carpenter.id })
   return (
-    <div className="space-y-3 pt-3">
-      <header className="flex items-center gap-2">
-        <h1 className="m-0 flex-1 text-xl font-bold">התראות</h1>
-        {items.some((item) => !item.read) && <MarkAllRead apiPath="/api/app/notifications" />}
-      </header>
+    <div className="space-y-4">
+      <PageHeader
+        icon={Bell}
+        title="התראות"
+        subtitle="הצעות מחיר, אישורי הזמנות והודעות מהספקים"
+        actions={items.some((item) => !item.read) ? <MarkAllRead apiPath="/api/app/notifications" /> : undefined}
+      />
       {ready ? (
         <NotificationList items={items} openBase="/app/notifications" />
       ) : (
