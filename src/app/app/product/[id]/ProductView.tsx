@@ -299,13 +299,14 @@ export default function ProductView({
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4 pb-24 md:pb-0">
       <BackLink href={crumbs.topId ? `/app/catalog/${crumbs.topId}` : '/app/catalog'} label={crumbs.sub ? `${crumbs.top} › ${crumbs.sub}` : crumbs.top} />
-      <div className="flex items-center gap-3.5 md:gap-5">
+      <div className="grid gap-3 md:flex md:items-center md:gap-5">
         <ProductImage
           src={product.imageUrl}
           icon={product.icon}
-          size="h-[120px] w-[120px] rounded-2xl md:h-[180px] md:w-[180px]"
-          glyph={40}
+          size="h-[240px] w-full rounded-2xl p-2 md:h-[220px] md:w-[220px]"
+          glyph={56}
           zoom={product.name}
+          wrap="block w-full md:w-auto"
         />
         <div className="min-w-0">
           <h1 className="m-0 text-2xl font-extrabold leading-tight md:text-[28px]">{product.name}</h1>

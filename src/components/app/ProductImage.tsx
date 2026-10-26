@@ -23,6 +23,7 @@ export default function ProductImage({
   className = '',
   zoom,
   href,
+  wrap = '',
 }: {
   src: string | null
   icon: string | null
@@ -34,6 +35,8 @@ export default function ProductImage({
   zoom?: string
   /** Where the tile leads when there is no photo to enlarge. */
   href?: string
+  /** Classes for the link or button around the tile, e.g. `block w-full` for a card photo. */
+  wrap?: string
 }) {
   const [failed, setFailed] = useState(false)
   const [open, setOpen] = useState(false)
@@ -46,7 +49,7 @@ export default function ProductImage({
       </span>
     )
     return href ? (
-      <Link href={href} tabIndex={-1} aria-hidden className="shrink-0">
+      <Link href={href} tabIndex={-1} aria-hidden className={`shrink-0 ${wrap}`}>
         {tile}
       </Link>
     ) : (
@@ -72,11 +75,11 @@ export default function ProductImage({
         type="button"
         onClick={() => setOpen(true)}
         aria-label={`הגדלת התמונה של ${zoom}`}
-        className="group relative shrink-0 cursor-zoom-in"
+        className={`group relative shrink-0 cursor-zoom-in ${wrap}`}
       >
         {img}
-        <span aria-hidden className="absolute bottom-1 end-1 grid h-6 w-6 place-items-center rounded-full bg-white/90 text-navy shadow-sm group-hover:bg-white">
-          <ZoomIn size={14} strokeWidth={2.4} />
+        <span aria-hidden className="absolute bottom-1.5 end-1.5 grid h-8 w-8 place-items-center rounded-full bg-white/90 text-navy shadow-sm group-hover:bg-white">
+          <ZoomIn size={17} strokeWidth={2.4} />
         </span>
       </button>
       {open && <Lightbox src={src!} name={zoom} onClose={() => setOpen(false)} />}

@@ -41,8 +41,10 @@ Reads `products`, `supplier_offers`, `suppliers` (server-side), `categories`; wr
 - `bestOffer()` / `suggestedOffer()` decide the default supplier: in stock first, then cheapest. Don't re-implement them.
 
 ## Status
-Live since 18.09. Catalogue rows and the product page show the product photo where one is
-uploaded (Supabase Storage; Drive links fall back to the category glyph) and the product page shows
+Live since 18.09. Product lists are photo-led cards (2 columns on phone, up to 4 on desktop; the
+desktop table was dropped on 26.10 at the owner's request). A real photo opens full size on tap
+(`ProductImage` with `zoom`); without one the category glyph links to the product page. Photos come
+from Supabase Storage; Drive links fall back to the glyph. The product page shows
 `description_he`. Signed-out visitors see a registration line above every product list.
 `stock_qty` is not read as stock (`STOCK_IS_TRACKED = false` in `catalog-server.ts`): nothing shows
 "אזל" or is blocked from ordering until a supplier keeps stock current. Supplier comparison and switching are built but **dormant**: with one live
