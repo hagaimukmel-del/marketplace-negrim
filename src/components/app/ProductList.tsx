@@ -131,10 +131,15 @@ function Row({ product, showPrices }: { product: AppProduct; showPrices: boolean
   const offer = suggestedOffer(product)
   const { line, packs, add, setPacks } = useLine(product, offer)
   return (
-    <div className="grid grid-cols-[48px_minmax(0,1fr)_auto] items-center gap-3 border-t border-hair px-3.5 py-3 first:border-t-0">
-      <Link href={`/app/product/${product.id}`} tabIndex={-1} aria-hidden>
-        <ProductImage src={product.imageUrl} icon={product.icon} size="h-12 w-12 rounded-[10px]" glyph={22} />
-      </Link>
+    <div className="grid grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-3 border-t border-hair px-3.5 py-3 first:border-t-0">
+      <ProductImage
+        src={product.imageUrl}
+        icon={product.icon}
+        size="h-[72px] w-[72px] rounded-xl"
+        glyph={28}
+        zoom={product.name}
+        href={`/app/product/${product.id}`}
+      />
       <Link href={`/app/product/${product.id}`} className="grid min-w-0 gap-px">
         <b className="text-[15px] leading-snug">{product.name}</b>
         <span className="truncate text-[13px] text-muted">
@@ -200,10 +205,19 @@ function TableRow({ product, showPrices }: { product: AppProduct; showPrices: bo
   return (
     <tr className="border-t border-hair hover:bg-[#FDFBF8]">
       <td className="px-3 py-2.5">
-        <Link href={`/app/product/${product.id}`} className="flex items-center gap-2.5">
-          <ProductImage src={product.imageUrl} icon={product.icon} size="h-9 w-9 rounded-[9px]" glyph={18} />
-          <b>{product.name}</b>
-        </Link>
+        <div className="flex items-center gap-3">
+          <ProductImage
+            src={product.imageUrl}
+            icon={product.icon}
+            size="h-16 w-16 rounded-[11px]"
+            glyph={24}
+            zoom={product.name}
+            href={`/app/product/${product.id}`}
+          />
+          <Link href={`/app/product/${product.id}`} className="font-bold hover:underline">
+            {product.name}
+          </Link>
+        </div>
       </td>
       <td className="px-3 py-2.5">
         {offer?.supplierName}
