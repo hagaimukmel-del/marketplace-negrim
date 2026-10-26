@@ -32,8 +32,12 @@ terms and documents. No password needed.
 
 ## Rules & invariants
 - Only an **approved** supplier can mint a session. Rejecting a supplier cuts access immediately.
-- When the operator opens a self-run supplier's console (admin cookie + supplier cookie), the
-  banner says view-only and every write route answers 403. See area 7.
+- When the operator opens a self-run supplier's console from `/admin/view/supplier`, the
+  banner says view-only and every write route answers 403. See area 7. What decides it is the
+  door the supplier session came through, signed into the cookie (`via`: `own` from
+  `/supplier/enter`, `admin` from the admin view), not whether the admin cookie is also present:
+  the operator signed in through his own supplier's link edits it in full (2026-10-26).
+  `isAdminLookingAtSupplier()` in `lib/admin-scope.ts` is the one check.
 - A supplier's link edits what the whole marketplace pays, so treat it as a strong credential.
 - Delivery regions are required at `/supplier/join` and in the Terms tab (T-026). The join page
   and the application/approval emails state the subscription tiers (`lib/supplier-plans.ts`).

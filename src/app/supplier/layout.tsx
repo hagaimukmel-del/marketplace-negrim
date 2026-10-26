@@ -1,5 +1,5 @@
 import { getSessionSupplier } from '@/lib/supplier-auth'
-import { isAdmin } from '@/lib/admin-auth'
+import { isAdminLookingAtSupplier } from '@/lib/admin-scope'
 import { acceptedCurrentTerms } from '@/lib/terms'
 import { unreadCount } from '@/lib/messages'
 import { unreadNotificationCount } from '@/lib/notifications'
@@ -23,10 +23,12 @@ export const dynamic = 'force-dynamic'
  * operator opening a supplier's console to look is not asked, and a banner says
  * whose console it is, so it is never mistaken for his own. For a supplier who
  * runs his own account the banner says view-only: every write route refuses
- * the operator there (see lib/admin-scope.ts).
+ * the operator there (see lib/admin-scope.ts). The operator signed in through
+ * his own supplier's link is that supplier, not the operator looking, so he
+ * gets no banner and full edit.
  */
 export default async function SupplierLayout({ children }: { children: React.ReactNode }) {
-  const [supplier, admin] = await Promise.all([getSessionSupplier(), isAdmin()])
+  const [supplier, admin] = await Promise.all([getSessionSupplier(), isAdminLookingAtSupplier()])
   const needsTerms = supplier && !admin && !acceptedCurrentTerms(supplier.terms_version)
   const [unread, notifications, emailProblem] = supplier
     ? await Promise.all([

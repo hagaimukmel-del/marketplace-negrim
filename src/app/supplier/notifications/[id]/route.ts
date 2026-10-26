@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSessionSupplier } from '@/lib/supplier-auth'
-import { isAdmin } from '@/lib/admin-auth'
-import { isOperatorManaged } from '@/lib/admin-scope'
+import { isAdminLookingAtSupplier, isOperatorManaged } from '@/lib/admin-scope'
 import { openNotification } from '@/lib/notifications'
 import { safeSitePath } from '@/lib/notification-links'
 
@@ -14,7 +13,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const supplier = await getSessionSupplier()
   const { id } = await params
   if (!supplier) return NextResponse.redirect(new URL(`/supplier/join?next=${encodeURIComponent(`/supplier/notifications/${id}`)}`, request.url))
-  const markRead = isOperatorManaged(supplier.source) || !(await isAdmin())
+  const markRead = isOperatorManaged(supplier.source) || !(await isAdminLookingAtSupplier())
   const link = await openNotification({ side: 'supplier', id: supplier.id }, id, markRead)
   return NextResponse.redirect(new URL(safeSitePath(link, '/supplier/notifications'), request.url))
 }

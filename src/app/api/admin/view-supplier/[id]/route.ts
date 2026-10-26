@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/admin-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
-import { buildSupplierCookie } from '@/lib/supplier-auth'
+import { buildSupplierCookie, getSupplierId, getSupplierSessionVia } from '@/lib/supplier-auth'
 import { isOperatorManaged, logAdminAction } from '@/lib/admin-scope'
 
 /**
@@ -13,6 +13,11 @@ import { isOperatorManaged, logAdminAction } from '@/lib/admin-scope'
  * token never leaves the server. No new-device email goes out — it is the
  * operator, not a stranger — but opening a self-run supplier's console is
  * written to admin_actions so the supplier can be told who looked.
+ *
+ * The session is marked as the operator's look ('admin'), which is what makes
+ * a self-run supplier's console read-only. A browser already signed in as this
+ * supplier through its own link keeps that session: the operator runs a
+ * supplier of his own, and opening it from here must not lock him out of it.
  */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!(await isAdmin())) {
@@ -35,6 +40,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 
   const response = NextResponse.redirect(new URL('/supplier', request.url))
-  response.cookies.set(buildSupplierCookie(supplier.id))
+  const ownSession = (await getSupplierId()) === supplier.id && (await getSupplierSessionVia()) === 'own'
+  if (!ownSession) response.cookies.set(buildSupplierCookie(supplier.id, 'admin'))
   return response
 }

@@ -2,8 +2,7 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { ChevronRight } from 'lucide-react'
 import { getSessionSupplier } from '@/lib/supplier-auth'
-import { isAdmin } from '@/lib/admin-auth'
-import { isOperatorManaged } from '@/lib/admin-scope'
+import { isAdminLookingAtSupplier, isOperatorManaged } from '@/lib/admin-scope'
 import { loadThread } from '@/lib/messages'
 import ThreadView from '@/components/messages/ThreadView'
 
@@ -14,7 +13,7 @@ export default async function SupplierThread({ params }: { params: Promise<{ id:
   const { id } = await params
   if (!supplier) redirect(`/supplier/join?next=${encodeURIComponent(`/supplier/messages/${id}`)}`)
   // Opening a thread marks it read, so the operator must not open a self-run supplier's.
-  if (!isOperatorManaged(supplier.source) && (await isAdmin())) redirect('/supplier/messages')
+  if (!isOperatorManaged(supplier.source) && (await isAdminLookingAtSupplier())) redirect('/supplier/messages')
   const thread = await loadThread({ side: 'supplier', id: supplier.id }, id)
   if (!thread) notFound()
   return (

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSessionSupplier } from '@/lib/supplier-auth'
-import { isAdmin } from '@/lib/admin-auth'
-import { isOperatorManaged, refuseAdminWriteFor, refusedForSelfRun } from '@/lib/admin-scope'
+import { isAdminLookingAtSupplier, isOperatorManaged, refuseAdminWriteFor, refusedForSelfRun } from '@/lib/admin-scope'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { loadThread, reply, setHandled } from '@/lib/messages'
 import { sharedLimitReached } from '@/lib/rate-limit-shared'
@@ -12,7 +11,7 @@ type Params = { params: Promise<{ id: string }> }
 export async function GET(_request: NextRequest, { params }: Params) {
   const supplier = await getSessionSupplier()
   if (!supplier) return NextResponse.json({ error: 'צריך להיות מחובר' }, { status: 401 })
-  if (!isOperatorManaged(supplier.source) && (await isAdmin())) return refusedForSelfRun()
+  if (!isOperatorManaged(supplier.source) && (await isAdminLookingAtSupplier())) return refusedForSelfRun()
   const thread = await loadThread({ side: 'supplier', id: supplier.id }, (await params).id)
   return thread ? NextResponse.json({ thread }) : NextResponse.json({ error: 'השיחה לא נמצאה' }, { status: 404 })
 }

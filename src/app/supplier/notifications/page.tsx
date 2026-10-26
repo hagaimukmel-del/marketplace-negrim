@@ -2,8 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { ChevronRight } from 'lucide-react'
 import { getSessionSupplier } from '@/lib/supplier-auth'
-import { isAdmin } from '@/lib/admin-auth'
-import { isOperatorManaged } from '@/lib/admin-scope'
+import { isAdminLookingAtSupplier, isOperatorManaged } from '@/lib/admin-scope'
 import { listNotifications } from '@/lib/notifications'
 import NotificationList from '@/components/notifications/NotificationList'
 import MarkAllRead from '@/components/notifications/MarkAllRead'
@@ -17,7 +16,7 @@ export const dynamic = 'force-dynamic'
 export default async function SupplierNotifications() {
   const supplier = await getSessionSupplier()
   if (!supplier) redirect(`/supplier/join?next=${encodeURIComponent('/supplier/notifications')}`)
-  const privateToAdmin = !isOperatorManaged(supplier.source) && (await isAdmin())
+  const privateToAdmin = !isOperatorManaged(supplier.source) && (await isAdminLookingAtSupplier())
   const { ready, items } = await listNotifications({ side: 'supplier', id: supplier.id })
 
   return (

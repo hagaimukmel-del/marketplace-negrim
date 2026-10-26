@@ -5,7 +5,7 @@ import { getSessionSupplier } from './supplier-auth'
 import { isAdmin } from './admin-auth'
 import { BASE_UNITS, type BaseUnit } from './catalog'
 import { MAX_IMPORT_ROWS, type ImportRow, type PlanLine } from './price-import'
-import { isOperatorManaged } from './admin-scope'
+import { isAdminLookingAtSupplier, isOperatorManaged } from './admin-scope'
 
 interface OfferRow {
   id: string
@@ -61,7 +61,7 @@ export async function resolveImportSupplier(
   const supplier = await getSessionSupplier()
   if (supplier) {
     // The operator looking at a self-run supplier's console reads, never writes.
-    const adminOnSelfRun = !isOperatorManaged(supplier.source) && (await isAdmin())
+    const adminOnSelfRun = !isOperatorManaged(supplier.source) && (await isAdminLookingAtSupplier())
     return { supplierId: supplier.id, createdBy: 'supplier', adminOnSelfRun }
   }
 
