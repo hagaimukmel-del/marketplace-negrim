@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, Copy, Link2, LogOut, Mail } from 'lucide-react'
+import { Check, Copy, Link2, LogOut, Mail, UserRound } from 'lucide-react'
+import { PageHeader } from '@/components/app/ui'
 import { forgetCarpenter } from '@/lib/carpenter-session'
 import { useCart } from '@/lib/cart-context'
 
@@ -109,10 +110,7 @@ export default function AccountView({ carpenter, origin }: { carpenter: AccountC
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5 pt-1">
-      <section>
-        <h1 className="m-0 text-2xl font-extrabold text-navy md:text-[28px]">הנגרייה שלי</h1>
-        <div className="text-[14.5px] text-muted">{carpenter.business_name}</div>
-      </section>
+      <PageHeader icon={UserRound} title="הנגרייה שלי" subtitle={carpenter.business_name} />
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-5 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] md:items-start md:gap-6">
         <form onSubmit={save} className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 rounded-2xl border border-hair bg-white p-4">

@@ -2,14 +2,14 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { Check, FileText, Info, LayoutGrid, Plus, Trash2, Truck, X } from 'lucide-react'
+import { Check, FileText, Info, LayoutGrid, Plus, ShoppingBag, Trash2, Truck, X } from 'lucide-react'
 import { useCart, type CartItem } from '@/lib/cart-context'
 import { money, packText, termsText } from '@/lib/app/format'
 import { sortedOffers, stepOf, suggestedOffer, type AppOffer, type AppProduct } from '@/lib/app/products'
 import { VAT_RATE } from '@/lib/vat'
 import CategoryGlyph from '@/components/app/CategoryGlyph'
 import Stepper from '@/components/app/Stepper'
-import { AttentionLine } from '@/components/app/ui'
+import { AttentionLine, PageHeader } from '@/components/app/ui'
 import SupplierLogo from '@/components/app/SupplierLogo'
 import ConfirmEmailNotice from '@/components/app/ConfirmEmailNotice'
 
@@ -90,15 +90,18 @@ export default function OrderView({ profile }: { profile: { address: string; cit
 
   if (!profile) {
     return (
-      <div className="mt-6 rounded-2xl border-[1.5px] border-dashed border-[#D9CFC1] p-5 text-[15px] text-muted">
-        <b className="mb-1 block text-ink">ההזמנה שייכת לנגרייה מחוברת</b>
-        כדי לשלוח הזמנה, נכנסים מקישור הכניסה של הנגרייה.
-        <div className="mt-3">
-          <Link href="/join" className="inline-flex h-11 items-center rounded-[11px] bg-brand px-4 font-bold text-navy">
-            כניסה / הרשמה
-          </Link>
+      <>
+        <PageHeader icon={ShoppingBag} title="העגלה" />
+        <div className="mt-6 rounded-2xl border-[1.5px] border-dashed border-[#D9CFC1] p-5 text-[15px] text-muted">
+          <b className="mb-1 block text-ink">ההזמנה שייכת לנגרייה מחוברת</b>
+          כדי לשלוח הזמנה, נכנסים מקישור הכניסה של הנגרייה.
+          <div className="mt-3">
+            <Link href="/join" className="inline-flex h-11 items-center rounded-[11px] bg-brand px-4 font-bold text-navy">
+              כניסה / הרשמה
+            </Link>
+          </div>
         </div>
-      </div>
+      </>
     )
   }
 
@@ -107,7 +110,7 @@ export default function OrderView({ profile }: { profile: { address: string; cit
   if (cart.items.length === 0) {
     return (
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 pt-1">
-        <h1 className="m-0 text-2xl font-extrabold">העגלה</h1>
+        <PageHeader icon={ShoppingBag} title="העגלה" />
         <div className="rounded-xl border-[1.5px] border-dashed border-[#D9CFC1] p-3.5 text-sm text-muted">
           <b className="block text-ink">העגלה ריקה</b>
           מוסיפים מוצרים מהקטלוג, והם מחכים כאן עד שליחת ההזמנה לספק.
@@ -206,9 +209,9 @@ export default function OrderView({ profile }: { profile: { address: string; cit
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4 pb-28 pt-1 md:pb-0">
+      <PageHeader icon={ShoppingBag} title="העגלה שלך" />
       <section>
-        <h1 className="m-0 text-2xl font-extrabold md:text-[28px]">העגלה שלך</h1>
-        <div className="mt-1 flex flex-wrap items-baseline gap-2">
+        <div className="flex flex-wrap items-baseline gap-2">
           <b className="tnum text-[28px] font-extrabold leading-tight">{money(total)}</b>
           <span className="text-sm text-muted">
             לפני מע״מ · <span className="tnum">{cart.items.length}</span> פריטים · {groups.length === 1 ? 'ספק אחד' : `${groups.length} ספקים`}

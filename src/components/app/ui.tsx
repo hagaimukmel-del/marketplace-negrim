@@ -4,8 +4,47 @@
  */
 
 import Link from 'next/link'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, type LucideIcon } from 'lucide-react'
 import type { OrderStatus, Step } from '@/lib/app/orders'
+
+const TILE = {
+  navy: 'bg-navy text-brand',
+  wood: 'bg-wood-soft text-[#6B4E2E] ring-1 ring-inset ring-[#E6D6C2]',
+  teal: 'bg-[#0E5E5E] text-white',
+}
+
+/**
+ * The head of every screen in the menu: the same icon the sidebar and the
+ * bottom bar show, and the screen's name, so the page itself says where you
+ * are. `actions` sit at the far end (under the title on a narrow phone).
+ */
+export function PageHeader({
+  icon: Icon,
+  title,
+  subtitle,
+  tone = 'navy',
+  actions,
+}: {
+  icon: LucideIcon
+  title: React.ReactNode
+  subtitle?: React.ReactNode
+  /** navy for the purchasing screens; המציאון and the work network keep their own colour. */
+  tone?: keyof typeof TILE
+  actions?: React.ReactNode
+}) {
+  return (
+    <header className="flex flex-wrap items-center gap-x-3.5 gap-y-3 border-b border-hair pb-4 pt-2 md:pt-0">
+      <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-[14px] shadow-[0_6px_16px_rgba(30,42,59,.12)] md:h-[54px] md:w-[54px] ${TILE[tone]}`} aria-hidden>
+        <Icon size={26} strokeWidth={2.1} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <h1 className="m-0 text-[24px] font-extrabold leading-tight tracking-tight text-navy text-balance md:text-[30px]">{title}</h1>
+        {subtitle && <div className="mt-0.5 text-[14.5px] text-muted">{subtitle}</div>}
+      </div>
+      {actions && <div className="flex flex-wrap gap-2 max-sm:w-full">{actions}</div>}
+    </header>
+  )
+}
 
 export function SectionTitle({ title, href, action, children }: { title: React.ReactNode; href?: string; action?: string; children?: React.ReactNode }) {
   return (

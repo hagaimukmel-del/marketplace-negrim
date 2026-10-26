@@ -1,9 +1,10 @@
 import Link from 'next/link'
-import { FileText } from 'lucide-react'
+import { ClipboardList, FileText } from 'lucide-react'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { loadCarpenterOrders } from '@/lib/app/orders-server'
 import { loadCarpenterQuotes } from '@/lib/quotes-server'
 import SignedOutNotice from '@/components/app/SignedOutNotice'
+import { PageHeader } from '@/components/app/ui'
 import OrdersView from './OrdersView'
 
 export const dynamic = 'force-dynamic'
@@ -15,7 +16,13 @@ function nowMs(): number {
 /** The orders center: sections, not filters. Quote requests sit one tap away. */
 export default async function AppOrders() {
   const carpenter = await getSessionCarpenter()
-  if (!carpenter) return <SignedOutNotice what="מרכז ההזמנות" />
+  if (!carpenter)
+    return (
+      <>
+        <PageHeader icon={ClipboardList} title="הזמנות" />
+        <SignedOutNotice what="מרכז ההזמנות" />
+      </>
+    )
   const [orders, { quotes }] = await Promise.all([loadCarpenterOrders(carpenter.id), loadCarpenterQuotes(carpenter.id)])
   const answered = quotes.filter((quote) => quote.state === 'quoted').length
   const waiting = quotes.filter((quote) => quote.state === 'requested').length

@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Gift, ListChecks, Plus, Recycle, Search, SlidersHorizontal, X } from 'lucide-react'
+import { PageHeader } from '@/components/app/ui'
 import { formatIls } from '@/lib/vat'
 import { REGIONS, regionName } from '@/lib/regions'
 import {
@@ -128,33 +129,32 @@ export default function MetzionBoard({ cards, canPost }: { cards: MetzionCard[];
 
   return (
     <div className="space-y-4 pb-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-extrabold text-ink md:text-[28px]">
-            <Recycle size={22} className="text-brand-ink" />
-            מציאון
-          </h1>
-          <p className="mt-0.5 text-sm text-muted">אל תזרוק — אולי נגר אחר צריך בדיוק את זה.</p>
-        </div>
-        {canPost && (
-          <div className="flex gap-2">
-            <Link
-              href="/app/metzion/mine"
-              className="flex h-11 items-center gap-1.5 rounded-[11px] border border-hair bg-white px-3 text-sm font-semibold text-ink"
-            >
-              <ListChecks size={16} />
-              המודעות שלי
-            </Link>
-            <Link
-              href="/app/metzion/new"
-              className="flex h-11 items-center gap-1.5 rounded-[11px] bg-brand px-4 text-sm font-bold text-navy"
-            >
-              <Plus size={17} />
-              פרסם
-            </Link>
-          </div>
-        )}
-      </div>
+      <PageHeader
+        icon={Recycle}
+        tone="wood"
+        title="מציאון"
+        subtitle="אל תזרוק — אולי נגר אחר צריך בדיוק את זה."
+        actions={
+          canPost && (
+            <>
+              <Link
+                href="/app/metzion/mine"
+                className="flex h-11 items-center gap-1.5 rounded-[11px] border border-hair bg-white px-3 text-sm font-semibold text-ink"
+              >
+                <ListChecks size={16} />
+                המודעות שלי
+              </Link>
+              <Link
+                href="/app/metzion/new"
+                className="flex h-11 items-center gap-1.5 rounded-[11px] bg-brand px-4 text-sm font-bold text-navy"
+              >
+                <Plus size={17} />
+                פרסם
+              </Link>
+            </>
+          )
+        }
+      />
 
       <div className="flex gap-2">
         <div className="relative flex-1">
