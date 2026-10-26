@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { isTestName, sendEmail } from '@/lib/email'
 import { supplierLoginLinkHtml, supplierLoginLinkSubject } from '@/lib/emails/supplier-login-link'
 import { safeNext } from '@/lib/notification-links'
+import { checkRateLimit, getClientIP, getRateLimitHeaders, hashIdentifier } from '@/lib/rate-limit'
 
 /**
  * A registered supplier asks for their way in again.
@@ -20,6 +21,13 @@ const NEUTRAL = {
 }
 
 export async function POST(request: NextRequest) {
+  // Every call can send a mail, so an open loop could flood a supplier's inbox
+  // and spend the domain's sending reputation.
+  const limit = checkRateLimit(`supplier-link-ip:${hashIdentifier(getClientIP(request))}`, 'supplierLink')
+  if (!limit.allowed) {
+    return NextResponse.json({ error: 'יותר מדי בקשות. נסו שוב בעוד 15 דקות' }, { status: 429, headers: getRateLimitHeaders(limit) })
+  }
+
   try {
     const body = await request.json().catch(() => ({}))
     const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''

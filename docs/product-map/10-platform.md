@@ -17,7 +17,7 @@ The plumbing every area relies on.
 | Environments | prod `ihburmhtcfhwlairyfyf`, staging `dyueyfmuhwvpgocbypqz` | Yellow strip on staging (`NEXT_PUBLIC_ENV_LABEL`); env files only on the work PC |
 | Deploy | Vercel, every push to `main` | Run `npm run type-check` first; deploys from 28.09 to 03.10 failed on tsc |
 | CI | `.github/workflows/security-audit.yml` | Audits production dependencies |
-| Dev-only routes | `/api/demo/seed-agent`, `/api/debug/check-data` | Refuse when `NODE_ENV=production` |
+| Dev-only routes | `/api/demo/seed-agent` | Refuses when `NODE_ENV=production` (`/api/debug/check-data` removed 2026-10-26) |
 | Verification | No test suite (`npm test` is a stub) | type-check + build + skill `nagarim-smoke-test` |
 
 ## Rules & invariants

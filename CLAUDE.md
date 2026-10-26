@@ -154,8 +154,9 @@ Last verified 2026-10-03 by running the checks, not from memory. Re-verify befor
 - Product knowledge and documents (`product_specifications`, supplier/product documents in
   Supabase Storage), a 10-category tree (`category_groups`), regions (`lib/regions.ts`), terms
   acceptance (`/terms`, `TermsGate`).
-- Dev-only routes `/api/demo/seed-agent` and `/api/debug/check-data` refuse to run when
-  `NODE_ENV=production`. Keep it that way.
+- The dev-only route `/api/demo/seed-agent` refuses to run when `NODE_ENV=production`. Keep it
+  that way. `/api/debug/check-data` was removed on 2026-10-26: it had no such guard and served
+  supplier prices to anyone.
 
 **The catalogue's shape (migration 0011/0012, 2026-09-10) — read this before touching prices:**
 - `products` is the **canonical product**: what the item is. Name, brand, `mpn` (manufacturer
