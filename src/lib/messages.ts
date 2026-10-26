@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { isTestName } from '@/lib/email'
 import { markNotificationsReadFor, notify } from '@/lib/notifications'
 import { newMessageHtml, newMessageSubject } from '@/lib/emails/new-message'
+import { deletedCarpenterIds } from '@/lib/carpenter-deletion-server'
 
 /**
  * Threads and messages between a carpentry and a supplier (T-025).
@@ -76,6 +77,14 @@ const THREAD_COLUMNS =
 
 const ownColumn = (side: Side) => (side === 'carpenter' ? 'carpenter_id' : 'supplier_id')
 
+/**
+ * Carpentries a supplier must not see: deleted ones, until restored. A
+ * carpentry's own side needs no check — a deleted one cannot sign in.
+ */
+async function hiddenFor(side: Side): Promise<Set<string>> {
+  return side === 'supplier' ? deletedCarpenterIds() : new Set()
+}
+
 function isUnread(row: Pick<ThreadRow, 'last_sender' | 'last_message_at' | 'carpenter_last_read_at' | 'supplier_last_read_at'>, side: Side): boolean {
   if (row.last_sender === side) return false
   const readAt = side === 'carpenter' ? row.carpenter_last_read_at : row.supplier_last_read_at
@@ -96,25 +105,32 @@ function summary(row: ThreadRow, side: Side): ThreadSummary {
 
 /** Threads waiting for this party. Zero on a database without the tables. */
 export async function unreadCount(party: Party): Promise<number> {
-  const { data, error } = await getSupabaseAdmin()
-    .from('message_threads')
-    .select('last_sender, last_message_at, carpenter_last_read_at, supplier_last_read_at')
-    .eq(ownColumn(party.side), party.id)
-    .neq('last_sender', party.side)
-    .limit(500)
+  const [{ data, error }, hidden] = await Promise.all([
+    getSupabaseAdmin()
+      .from('message_threads')
+      .select('carpenter_id, last_sender, last_message_at, carpenter_last_read_at, supplier_last_read_at')
+      .eq(ownColumn(party.side), party.id)
+      .neq('last_sender', party.side)
+      .limit(500),
+    hiddenFor(party.side),
+  ])
   if (error) return 0
-  return (data ?? []).filter((row) => isUnread(row, party.side)).length
+  return (data ?? []).filter((row) => !hidden.has(row.carpenter_id) && isUnread(row, party.side)).length
 }
 
 export async function listThreads(party: Party): Promise<{ ready: boolean; threads: ThreadSummary[] }> {
-  const { data, error } = await getSupabaseAdmin()
-    .from('message_threads')
-    .select(THREAD_COLUMNS)
-    .eq(ownColumn(party.side), party.id)
-    .order('last_message_at', { ascending: false })
-    .limit(200)
+  const [{ data, error }, hidden] = await Promise.all([
+    getSupabaseAdmin()
+      .from('message_threads')
+      .select(THREAD_COLUMNS)
+      .eq(ownColumn(party.side), party.id)
+      .order('last_message_at', { ascending: false })
+      .limit(200),
+    hiddenFor(party.side),
+  ])
   if (error) return { ready: false, threads: [] }
-  return { ready: true, threads: ((data ?? []) as unknown as ThreadRow[]).map((row) => summary(row, party.side)) }
+  const rows = ((data ?? []) as unknown as ThreadRow[]).filter((row) => !hidden.has(row.carpenter_id))
+  return { ready: true, threads: rows.map((row) => summary(row, party.side)) }
 }
 
 async function ownThread(party: Party, threadId: string): Promise<ThreadRow | null> {
@@ -124,7 +140,9 @@ async function ownThread(party: Party, threadId: string): Promise<ThreadRow | nu
     .eq('id', threadId)
     .eq(ownColumn(party.side), party.id)
     .maybeSingle()
-  return (data as unknown as ThreadRow | null) ?? null
+  const row = (data as unknown as ThreadRow | null) ?? null
+  if (row && (await hiddenFor(party.side)).has(row.carpenter_id)) return null
+  return row
 }
 
 /** One thread with its messages; opening it marks it read for this party. */

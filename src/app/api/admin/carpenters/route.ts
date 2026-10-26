@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { parse } from 'csv-parse/sync'
 import { isAdmin } from '@/lib/admin-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { logAdminAction } from '@/lib/admin-scope'
+import { deletedCarpenterIds, restoreCarpenter, softDeleteCarpenter } from '@/lib/carpenter-deletion-server'
 
 /**
  * Bulk import of the WhatsApp list.
@@ -143,11 +145,15 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Block or unblock a carpenter.
+ * Block or unblock a carpenter, or bring back a deleted one.
  *
  * A blocked carpenter keeps their row, their orders and their link — they just
  * stop being let in: no prices, no orders, and /join refuses to hand the link
  * back. Unblocking restores all of it exactly as it was.
+ *
+ * `{ id, restore: true }` undoes a delete within its three months. A deleted
+ * carpenter cannot be unblocked: that would let them in while still listed as
+ * deleted, so restoring is the only way back.
  */
 export async function PATCH(request: NextRequest) {
   if (!(await isAdmin())) {
@@ -156,8 +162,18 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const body = await request.json()
+    if (typeof body.id === 'string' && body.restore === true) {
+      const result = await restoreCarpenter(body.id)
+      return result.ok
+        ? NextResponse.json({ ok: true })
+        : NextResponse.json({ error: result.error }, { status: result.status })
+    }
     if (typeof body.id !== 'string' || typeof body.is_active !== 'boolean') {
       return NextResponse.json({ error: 'בקשה לא תקינה' }, { status: 400 })
+    }
+
+    if ((await deletedCarpenterIds()).has(body.id)) {
+      return NextResponse.json({ error: 'הנגרייה נמחקה. אפשר לשחזר אותה מרשימת הנמחקות.' }, { status: 409 })
     }
 
     const { data, error } = await getSupabaseAdmin()
@@ -180,12 +196,17 @@ export async function PATCH(request: NextRequest) {
 }
 
 /**
- * Remove a carpenter for good.
+ * Delete a carpenter, recoverably.
  *
- * Their past orders stay — each one already holds the business name, phone and
- * prices as they were — and only lose the link back to this row. Blocking is
- * the reversible option; this is for someone who asked to be removed, or a row
- * that should never have existed.
+ * The row is marked deleted and switched off: the link, login and prices stop
+ * working and the carpenter disappears from the lists and from suppliers, but
+ * nothing is removed. The daily cron removes it for good three months later
+ * (lib/carpenter-deletion-server.ts); until then the operator can restore it.
+ *
+ * `permanent=1` removes an already-deleted carpenter now instead of waiting,
+ * for someone who asked to have their details erased. Past orders stay — each
+ * one holds the business name, phone and prices as they were — and only lose
+ * the link back to this row.
  */
 export async function DELETE(request: NextRequest) {
   if (!(await isAdmin())) {
@@ -196,16 +217,25 @@ export async function DELETE(request: NextRequest) {
     const id = request.nextUrl.searchParams.get('id')
     if (!id) return NextResponse.json({ error: 'חסר מזהה' }, { status: 400 })
 
+    if (request.nextUrl.searchParams.get('permanent') !== '1') {
+      const result = await softDeleteCarpenter(id)
+      return result.ok
+        ? NextResponse.json({ ok: true })
+        : NextResponse.json({ error: result.error }, { status: result.status })
+    }
+
     const { data, error } = await getSupabaseAdmin()
       .from('carpenters')
       .delete()
       .eq('id', id)
-      .select('id')
+      .not('deleted_at', 'is', null)
+      .select('id, business_name')
       .maybeSingle()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    if (!data) return NextResponse.json({ error: 'הנגרייה לא נמצאה' }, { status: 404 })
+    if (!data) return NextResponse.json({ error: 'אפשר למחוק סופית רק נגרייה שכבר נמחקה' }, { status: 404 })
 
+    await logAdminAction({ action: 'purge_carpenter', targetId: id, details: { business_name: data.business_name, manual: true } })
     return NextResponse.json({ ok: true })
   } catch (err) {
     return NextResponse.json(

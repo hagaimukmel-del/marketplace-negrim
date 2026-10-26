@@ -122,11 +122,14 @@ export type Database = {
       }
       carpenters: {
         Row: {
+          active_before_delete: boolean | null
           address: string | null
           business_name: string
           city: string | null
           contact_name: string | null
           created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
           email: string | null
           email_verified_at: string | null
           first_seen_at: string | null
@@ -143,11 +146,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          active_before_delete?: boolean | null
           address?: string | null
           business_name: string
           city?: string | null
           contact_name?: string | null
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           email?: string | null
           email_verified_at?: string | null
           first_seen_at?: string | null
@@ -164,11 +170,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          active_before_delete?: boolean | null
           address?: string | null
           business_name?: string
           city?: string | null
           contact_name?: string | null
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           email?: string | null
           email_verified_at?: string | null
           first_seen_at?: string | null

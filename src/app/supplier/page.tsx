@@ -7,6 +7,7 @@ import { loadSupplierDocs } from '@/lib/supplier-documents'
 import { computeSales } from './sales'
 import { loadPromoWeeks } from '@/lib/promo'
 import { loadSupplierQuotes } from '@/lib/quotes-server'
+import { deletedCarpenterIds } from '@/lib/carpenter-deletion-server'
 import { priceModeOf } from '@/lib/price-mode'
 import { loadThresholds } from '@/lib/special-price'
 import { addDays, bookableWeeks, currentWeek } from '@/lib/promo-weeks'
@@ -96,7 +97,7 @@ export default async function SupplierHome({
   const { tab } = await searchParams
   const supabase = getSupabaseAdmin()
 
-  const [{ data: offers }, { data: lines }, { data: categories }, { data: catalogRows }, { data: questionRows }, delivery, orderCc, documents, myWeeks, liveWeeks] = await Promise.all([
+  const [{ data: offers }, { data: lines }, { data: categories }, { data: catalogRows }, { data: questionRows }, delivery, orderCc, documents, myWeeks, liveWeeks, deletedCarpenters] = await Promise.all([
     supabase
       .from('supplier_offers')
       .select(
@@ -130,7 +131,7 @@ export default async function SupplierHome({
     // Questions carpenters sent from the agent chat, newest first
     supabase
       .from('supplier_contact_requests')
-      .select('id, created_at, message, carpenters(business_name, contact_name, phone), products(name_he)')
+      .select('id, created_at, carpenter_id, message, carpenters(business_name, contact_name, phone), products(name_he)')
       .eq('supplier_id', supplier.id)
       .order('created_at', { ascending: false })
       .limit(20),
@@ -141,6 +142,7 @@ export default async function SupplierHome({
     // and the coming weeks, and which coming weeks anyone has taken.
     loadPromoWeeks({ from: addDays(currentWeek(), -26 * 7), to: bookableWeeks().at(-1)!, supplierId: supplier.id }),
     loadPromoWeeks({ from: bookableWeeks()[0], to: bookableWeeks().at(-1)!, statuses: ['requested', 'approved'] }),
+    deletedCarpenterIds(),
   ])
 
   // Quote requests and the price mode (T-023, migration 20261011140000).
@@ -212,6 +214,10 @@ export default async function SupplierHome({
   for (const line of myLines) {
     if (!line.orders) continue
     const order = line.orders
+    // A deleted carpentry's order still waiting for the supplier is on hold
+    // until it is restored. Orders the supplier already handled stay: they are
+    // the supplier's own record of a sale it made.
+    if ((order.status ?? 'pending') === 'pending' && order.carpenter_id && deletedCarpenters.has(order.carpenter_id)) continue
     const entry = {
       id: line.id,
       name: line.product_name_he,
@@ -281,7 +287,7 @@ export default async function SupplierHome({
       imageUrl: row.image_url,
     }))
 
-  const questions: SupplierQuestion[] = (questionRows ?? []).map((row) => ({
+  const questions: SupplierQuestion[] = (questionRows ?? []).filter((row) => !deletedCarpenters.has(row.carpenter_id)).map((row) => ({
     id: row.id,
     createdAt: row.created_at,
     carpenter: row.carpenters?.business_name ?? 'נגרייה',

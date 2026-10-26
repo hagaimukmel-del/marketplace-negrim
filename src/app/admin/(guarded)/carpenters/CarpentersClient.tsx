@@ -21,6 +21,7 @@ import {
   X,
 } from 'lucide-react'
 import { telUrl } from '@/lib/phone'
+import { daysLeft, purgeDate, RETENTION_MONTHS } from '@/lib/carpenter-deletion'
 
 export interface CarpenterRow {
   id: string
@@ -42,6 +43,18 @@ export interface CarpenterRow {
   orders: number
 }
 
+export interface DeletedRow {
+  id: string
+  business_name: string
+  contact_name: string | null
+  phone: string | null
+  email: string | null
+  city: string | null
+  deleted_at: string
+  active_before_delete: boolean | null
+  orders: number
+}
+
 export interface DrawRow {
   id: string
   carpenter_id: string | null
@@ -57,7 +70,7 @@ export interface DrawRow {
 const SAMPLE = 'נגריית אבו חצירא, יוסי, 0501234567, אשדוד\nרהיטי כהן, , 052-9876543, חיפה'
 const PAGE = 100
 
-type Filter = 'all' | 'active' | 'blocked' | 'marketing' | 'ordered'
+type Filter = 'all' | 'active' | 'blocked' | 'marketing' | 'ordered' | 'deleted'
 
 function isTest(name: string): boolean {
   return name.includes('ניסיון')
@@ -66,6 +79,17 @@ function isTest(name: string): boolean {
 function formatDate(value: string | null): string {
   if (!value) return '—'
   return new Date(value).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: '2-digit' })
+}
+
+/** Search by name, contact, city or email, or by three or more phone digits. */
+function matches(
+  q: string,
+  row: { phone: string | null; business_name: string; contact_name: string | null; city: string | null; email: string | null }
+): boolean {
+  if (!q) return true
+  const digits = q.replace(/\D/g, '')
+  if (digits.length >= 3 && row.phone?.replace(/\D/g, '').includes(digits)) return true
+  return [row.business_name, row.contact_name, row.city, row.email].some((field) => field?.toLowerCase().includes(q))
 }
 
 async function call(url: string, init: RequestInit) {
@@ -238,11 +262,81 @@ function Row({
               className="ms-auto flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
             >
               <Trash2 size={15} />
-              מחק מהאתר
+              מחק (אפשר לשחזר)
             </button>
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+/**
+ * Carpentries deleted in the last three months. Restoring is one click and
+ * brings the row back as it was; "מחק סופית" is for someone who asked to be
+ * erased and does not want to wait for the daily purge.
+ */
+function DeletedList({
+  rows,
+  busyId,
+  onRestore,
+  onPurge,
+}: {
+  rows: DeletedRow[]
+  busyId: string | null
+  onRestore: (row: DeletedRow) => void
+  onPurge: (row: DeletedRow) => void
+}) {
+  if (rows.length === 0) {
+    return (
+      <p className="rounded-xl border border-stone-200 bg-white p-8 text-center text-stone-600">
+        אין נגריות שנמחקו ב-{RETENTION_MONTHS} החודשים האחרונים.
+      </p>
+    )
+  }
+  return (
+    <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+      <p className="border-b border-stone-100 bg-stone-50 px-4 py-2.5 text-xs text-stone-600">
+        נגרייה שנמחקה לא נכנסת לאתר ולא מופיעה לספקים. כל הנתונים שלה נשמרים {RETENTION_MONTHS} חודשים ואז נמחקים סופית.
+      </p>
+      {rows.map((row) => (
+        <div key={row.id} className="flex flex-wrap items-center gap-3 border-b border-stone-100 px-4 py-3 last:border-b-0">
+          <span className="min-w-0 flex-1">
+            <span className="flex flex-wrap items-center gap-1.5">
+              <span className="truncate font-semibold text-stone-700">{row.business_name}</span>
+              {row.active_before_delete === false && (
+                <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-800">היה חסום</span>
+              )}
+            </span>
+            <span className="tnum mt-0.5 block truncate text-xs text-stone-500">
+              {[row.city, row.contact_name, row.phone].filter(Boolean).join(' · ') || '—'}
+              {row.orders > 0 && ` · ${row.orders} הזמנות`}
+            </span>
+            <span className="tnum mt-0.5 block text-xs text-stone-500">
+              נמחקה {formatDate(row.deleted_at)} · תימחק סופית {formatDate(purgeDate(row.deleted_at).toISOString())} (עוד{' '}
+              {daysLeft(row.deleted_at)} ימים)
+            </span>
+          </span>
+          <button
+            type="button"
+            onClick={() => onRestore(row)}
+            disabled={busyId === row.id}
+            className="flex h-10 items-center gap-1.5 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            <RotateCcw size={15} />
+            שחזר
+          </button>
+          <button
+            type="button"
+            onClick={() => onPurge(row)}
+            disabled={busyId === row.id}
+            className="flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+          >
+            <Trash2 size={15} />
+            מחק סופית
+          </button>
+        </div>
+      ))}
     </div>
   )
 }
@@ -473,7 +567,15 @@ function Raffle({
   )
 }
 
-export default function CarpentersClient({ rows, draws }: { rows: CarpenterRow[]; draws: DrawRow[] }) {
+export default function CarpentersClient({
+  rows,
+  deleted,
+  draws,
+}: {
+  rows: CarpenterRow[]
+  deleted: DeletedRow[]
+  draws: DrawRow[]
+}) {
   const router = useRouter()
   const [panel, setPanel] = useState<'none' | 'import' | 'raffle'>('none')
   const [text, setText] = useState('')
@@ -494,23 +596,24 @@ export default function CarpentersClient({ rows, draws }: { rows: CarpenterRow[]
       blocked: rows.filter((row) => !row.is_active).length,
       marketing: rows.filter((row) => row.marketing_consent).length,
       ordered: rows.filter((row) => row.orders > 0).length,
+      deleted: deleted.length,
     }),
-    [rows]
+    [rows, deleted]
   )
+
+  const shownDeleted = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return deleted.filter((row) => matches(q, row))
+  }, [deleted, query])
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase()
-    const digits = q.replace(/\D/g, '')
     return rows.filter((row) => {
       if (filter === 'active' && !row.is_active) return false
       if (filter === 'blocked' && row.is_active) return false
       if (filter === 'marketing' && !row.marketing_consent) return false
       if (filter === 'ordered' && row.orders === 0) return false
-      if (!q) return true
-      if (digits.length >= 3 && row.phone?.replace(/\D/g, '').includes(digits)) return true
-      return [row.business_name, row.contact_name, row.city, row.email].some((field) =>
-        field?.toLowerCase().includes(q)
-      )
+      return matches(q, row)
     })
   }, [rows, query, filter])
 
@@ -575,24 +678,47 @@ export default function CarpentersClient({ rows, draws }: { rows: CarpenterRow[]
     }
   }
 
-  const remove = async (row: CarpenterRow) => {
-    const ok = confirm(
-      `למחוק לצמיתות את ${row.business_name}?\n` +
-        (row.orders > 0 ? `ההזמנות שלו (${row.orders}) יישארו בהיסטוריה. ` : '') +
-        'הקישור האישי יפסיק לעבוד. אי אפשר לבטל.\n\nאם רק רוצים לעצור אותו — עדיף לחסום.'
-    )
-    if (!ok) return
-    setBusyId(row.id)
+  const act = async (id: string, url: string, init: RequestInit, failure: string) => {
+    setBusyId(id)
     setMessage(null)
     try {
-      await call(`/api/admin/carpenters?id=${row.id}`, { method: 'DELETE' })
+      await call(url, init)
       setOpenId(null)
       router.refresh()
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'המחיקה נכשלה')
+      setMessage(err instanceof Error ? err.message : failure)
     } finally {
       setBusyId(null)
     }
+  }
+
+  const remove = async (row: CarpenterRow) => {
+    const ok = confirm(
+      `למחוק את ${row.business_name}?\n` +
+        'הנגרייה לא תוכל להיכנס ולא תופיע לספקים. ' +
+        `כל הנתונים נשמרים ${RETENTION_MONTHS} חודשים, ועד אז אפשר לשחזר בלחיצה מהרשימה "נמחקו".`
+    )
+    if (!ok) return
+    await act(row.id, `/api/admin/carpenters?id=${row.id}`, { method: 'DELETE' }, 'המחיקה נכשלה')
+  }
+
+  const restore = async (row: DeletedRow) => {
+    await act(
+      row.id,
+      '/api/admin/carpenters',
+      { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: row.id, restore: true }) },
+      'השחזור נכשל'
+    )
+  }
+
+  const purge = async (row: DeletedRow) => {
+    const ok = confirm(
+      `למחוק סופית את ${row.business_name} כבר עכשיו?\n` +
+        (row.orders > 0 ? `ההזמנות שלו (${row.orders}) יישארו בהיסטוריה. ` : '') +
+        'אי אפשר לבטל.'
+    )
+    if (!ok) return
+    await act(row.id, `/api/admin/carpenters?id=${row.id}&permanent=1`, { method: 'DELETE' }, 'המחיקה נכשלה')
   }
 
   const FILTERS: { key: Filter; label: string }[] = [
@@ -601,6 +727,7 @@ export default function CarpentersClient({ rows, draws }: { rows: CarpenterRow[]
     { key: 'ordered', label: 'הזמינו' },
     { key: 'marketing', label: 'מסכימות לדיוור' },
     { key: 'blocked', label: 'חסומות' },
+    { key: 'deleted', label: 'נמחקו' },
   ]
 
   return (
@@ -722,7 +849,9 @@ export default function CarpentersClient({ rows, draws }: { rows: CarpenterRow[]
         </div>
       </div>
 
-      {rows.length === 0 ? (
+      {filter === 'deleted' ? (
+        <DeletedList rows={shownDeleted} busyId={busyId} onRestore={restore} onPurge={purge} />
+      ) : rows.length === 0 ? (
         <p className="rounded-xl border border-stone-200 bg-white p-8 text-center text-stone-600">
           עדיין אין נגריות. אפשר לייבא רשימה או לחכות להרשמות.
         </p>
