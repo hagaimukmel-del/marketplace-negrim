@@ -30,7 +30,7 @@ export default async function SupplierViewPage() {
     <div className="space-y-5">
       <div>
         <h1 className="text-xl font-bold text-stone-900">האתר כפי שספק רואה</h1>
-        <p className="mt-1 text-sm text-stone-600">
+        <p className="mt-1 text-base text-stone-600">
           כל כפתור פותח את הממשק האמיתי של הספק בלשונית חדשה. בספק שמנהל את עצמו אפשר רק לצפות, והכניסה נרשמת ביומן.
           בספק שאתה מנהל, מה שתשנה נשמר אצלו — זה לא הדמיה.
         </p>
@@ -48,12 +48,12 @@ export default async function SupplierViewPage() {
             דף ההרשמה לספקים
             <ExternalLink size={13} className="text-stone-400" />
           </span>
-          <span className="mt-0.5 block text-xs text-stone-500">מה שספק חדש רואה לפני שאישרת אותו</span>
+          <span className="mt-0.5 block text-sm text-stone-500">מה שספק חדש רואה לפני שאישרת אותו</span>
         </span>
       </a>
 
       <section className="space-y-2">
-        <h2 className="text-sm font-bold text-stone-900">הממשק של ספק מאושר</h2>
+        <h2 className="text-base font-bold text-stone-900">הממשק של ספק מאושר</h2>
         {suppliers.length === 0 ? (
           <p className="rounded-xl border border-stone-200 bg-white p-8 text-center text-stone-600">
             אין עדיין ספקים מאושרים.{' '}
@@ -82,7 +82,7 @@ export default async function SupplierViewPage() {
                 )}
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-semibold text-stone-900">{supplier.company_name}</span>
-                  <span className="block text-xs text-stone-500">
+                  <span className="block text-sm text-stone-500">
                     {supplier.city ?? 'ללא עיר'}
                     {supplier.status === 'blocked' && ' · חסום — לא יכול להיכנס'}
                     {supplier.source === 'self' ? ' · מנהל את עצמו (צפייה בלבד)' : ' · בניהול שלך'}
@@ -93,19 +93,19 @@ export default async function SupplierViewPage() {
                     href={`/api/admin/view-supplier/${supplier.id}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex h-10 shrink-0 items-center gap-1.5 rounded-lg bg-emerald-700 px-3 text-sm font-semibold text-white"
+                    className="flex h-10 shrink-0 items-center gap-1.5 rounded-lg bg-emerald-700 px-3 text-base font-semibold text-white"
                   >
                     <ExternalLink size={15} />
                     פתח כספק
                   </a>
                 ) : (
-                  <span className="text-xs text-stone-400">—</span>
+                  <span className="text-sm text-stone-400">—</span>
                 )}
               </div>
             ))}
           </div>
         )}
-        <p className="text-xs text-stone-500">
+        <p className="text-sm text-stone-500">
           הכניסה נשמרת בדפדפן הזה. כדי לחזור להיות ״אף ספק״ — לחץ יציאה בתוך הממשק של הספק.
         </p>
       </section>

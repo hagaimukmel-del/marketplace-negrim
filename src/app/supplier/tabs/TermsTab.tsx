@@ -52,7 +52,7 @@ function PriceMode({ mode, notify }: { mode: 'shown' | 'quote'; notify: Notify }
   return (
     <section className="rounded-xl border border-stone-200 bg-white p-4">
       <h2 className="font-bold text-stone-900">מחירים באתר</h2>
-      <p className="mt-0.5 text-sm text-stone-600">המחירון שלך נשמר בשני המצבים, ואפשר לעבור ביניהם בכל רגע.</p>
+      <p className="mt-0.5 text-base text-stone-600">המחירון שלך נשמר בשני המצבים, ואפשר לעבור ביניהם בכל רגע.</p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="מחירים באתר">
         {options.map(({ key, Icon, title, text }) => {
           const active = current === key
@@ -74,7 +74,7 @@ function PriceMode({ mode, notify }: { mode: 'shown' | 'quote'; notify: Notify }
                   {title}
                   {active && <Check size={15} className="text-emerald-800" />}
                 </span>
-                <span className="mt-0.5 block text-sm text-stone-600">{text}</span>
+                <span className="mt-0.5 block text-base text-stone-600">{text}</span>
               </span>
             </button>
           )
@@ -163,7 +163,7 @@ export default function TermsTab({ profile, notify }: { profile: SupplierProfile
     <form onSubmit={save} className="space-y-4">
       <section className="rounded-xl border border-stone-200 bg-white p-4">
         <h2 className="font-bold text-stone-900">תנאי תשלום</h2>
-        <p className="mt-0.5 text-sm text-stone-600">
+        <p className="mt-0.5 text-base text-stone-600">
           סמנו את כל התנאים שאתם עובדים בהם. החשבונית יוצאת מכם ישירות לנגר.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -175,7 +175,7 @@ export default function TermsTab({ profile, notify }: { profile: SupplierProfile
                 type="button"
                 onClick={() => toggleTerm(term)}
                 aria-pressed={active}
-                className={`flex h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-semibold ${
+                className={`flex h-11 items-center gap-1.5 rounded-full border px-4 text-base font-semibold ${
                   active
                     ? 'border-emerald-700 bg-emerald-700 text-white'
                     : 'border-stone-300 bg-white text-stone-700'
@@ -191,7 +191,7 @@ export default function TermsTab({ profile, notify }: { profile: SupplierProfile
 
       <section className="grid gap-3 rounded-xl border border-stone-200 bg-white p-4 sm:grid-cols-2">
         <label className="block">
-          <span className="text-sm font-medium text-stone-700">מינימום הזמנה (₪ ללא מע״מ)</span>
+          <span className="text-base font-medium text-stone-700">מינימום הזמנה (₪ ללא מע״מ)</span>
           <input
             inputMode="decimal"
             value={form.min_order_value_excl_vat}
@@ -199,11 +199,11 @@ export default function TermsTab({ profile, notify }: { profile: SupplierProfile
             placeholder="לדוגמה 500"
             className={`tnum ${INPUT}`}
           />
-          <span className="mt-1 block text-xs text-stone-500">ריק = אין מינימום.</span>
+          <span className="mt-1 block text-sm text-stone-500">ריק = אין מינימום.</span>
         </label>
 
         <label className="block">
-          <span className="text-sm font-medium text-stone-700">זמן אספקה (ימי עבודה)</span>
+          <span className="text-base font-medium text-stone-700">זמן אספקה (ימי עבודה)</span>
           <input
             inputMode="numeric"
             value={form.default_lead_time_days}
@@ -214,7 +214,7 @@ export default function TermsTab({ profile, notify }: { profile: SupplierProfile
         </label>
 
         <label className="block sm:col-span-2">
-          <span className="text-sm font-medium text-stone-700">כתובת לאיסוף עצמי</span>
+          <span className="text-base font-medium text-stone-700">כתובת לאיסוף עצמי</span>
           <input
             value={form.pickup_address}
             onChange={(e) => setForm((prev) => ({ ...prev, pickup_address: e.target.value }))}
@@ -227,7 +227,7 @@ export default function TermsTab({ profile, notify }: { profile: SupplierProfile
       {form.delivery_regions && (
         <section className="rounded-xl border border-stone-200 bg-white p-4">
           <h2 className="font-bold text-stone-900">לאן אתם מספקים</h2>
-          <p className="mt-0.5 text-sm text-stone-600">
+          <p className="mt-0.5 text-base text-stone-600">
             חובה. נגרייה מחוץ לאזורים שסימנתם תראה שאתם לא מגיעים אליה.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -240,7 +240,7 @@ export default function TermsTab({ profile, notify }: { profile: SupplierProfile
                   onClick={() => toggleRegion(region.key)}
                   aria-pressed={active}
                   title={region.note}
-                  className={`flex h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-semibold ${
+                  className={`flex h-11 items-center gap-1.5 rounded-full border px-4 text-base font-semibold ${
                     active ? 'border-emerald-700 bg-emerald-700 text-white' : 'border-stone-300 bg-white text-stone-700'
                   }`}
                 >
@@ -252,7 +252,7 @@ export default function TermsTab({ profile, notify }: { profile: SupplierProfile
           </div>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <label className="block">
-              <span className="text-sm font-medium text-stone-700">דמי משלוח (₪ ללא מע״מ)</span>
+              <span className="text-base font-medium text-stone-700">דמי משלוח (₪ ללא מע״מ)</span>
               <input
                 inputMode="decimal"
                 value={form.delivery_fee_excl_vat ?? ''}
@@ -262,7 +262,7 @@ export default function TermsTab({ profile, notify }: { profile: SupplierProfile
               />
             </label>
             <label className="block">
-              <span className="text-sm font-medium text-stone-700">משלוח חינם מעל (₪ ללא מע״מ)</span>
+              <span className="text-base font-medium text-stone-700">משלוח חינם מעל (₪ ללא מע״מ)</span>
               <input
                 inputMode="decimal"
                 value={form.free_delivery_from_excl_vat ?? ''}
@@ -275,7 +275,7 @@ export default function TermsTab({ profile, notify }: { profile: SupplierProfile
         </section>
       )}
 
-      {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {error && <p className="rounded-lg bg-red-50 p-3 text-base text-red-700">{error}</p>}
 
       <button
         type="submit"

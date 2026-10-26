@@ -69,7 +69,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-5 gap-y-2 px-5 py-3">
           <Link href="/admin/orders" className="flex items-center gap-2" aria-label="שוק הנגרים · ניהול">
             <Logo size="sm" tagline={false} />
-            <span className="rounded-full bg-stone-900 px-2 py-0.5 text-[11px] font-semibold text-white">
+            <span className="rounded-full bg-stone-900 px-2 py-0.5 text-xs font-semibold text-white">
               ניהול
             </span>
           </Link>
@@ -81,7 +81,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
         <div className="border-t border-stone-200 bg-stone-50">
           <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-3 gap-y-1 px-5 py-1.5">
-            <span className="flex items-center gap-1.5 text-xs font-medium text-stone-500">
+            <span className="flex items-center gap-1.5 text-sm font-medium text-stone-500">
               <Eye size={13} />
               תצוגות
             </span>

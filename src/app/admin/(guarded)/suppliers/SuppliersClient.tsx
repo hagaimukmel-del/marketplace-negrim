@@ -88,7 +88,7 @@ function SupplierLogo({ row }: { row: SupplierRow }) {
     return (
       <div
         aria-hidden
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-sm font-bold text-stone-500"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-base font-bold text-stone-500"
       >
         {initials}
       </div>
@@ -148,7 +148,7 @@ function EntryLink({ id, token }: { id: string; token: string }) {
   return (
     <div className="mt-3 rounded-lg bg-white p-3">
       <div className="flex flex-wrap items-center gap-2">
-        <p className="flex min-w-0 flex-1 items-center gap-2 text-xs text-stone-700">
+        <p className="flex min-w-0 flex-1 items-center gap-2 text-sm text-stone-700">
           <Link2 size={14} className="shrink-0 text-stone-400" />
           <span dir="ltr" className="min-w-0 break-all font-mono">/supplier/enter/{token}</span>
         </p>
@@ -163,7 +163,7 @@ function EntryLink({ id, token }: { id: string; token: string }) {
               // Clipboard blocked; the link is on screen to select by hand.
             }
           }}
-          className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-xs font-semibold text-stone-700"
+          className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-stone-700"
         >
           {copied ? <Check size={13} /> : <Copy size={13} />}
           {copied ? 'הועתק' : 'העתק'}
@@ -172,13 +172,13 @@ function EntryLink({ id, token }: { id: string; token: string }) {
           href={`/api/admin/view-supplier/${id}`}
           target="_blank"
           rel="noreferrer"
-          className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-xs font-semibold text-stone-700"
+          className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-stone-700"
         >
           <ExternalLink size={13} />
           פתח כספק
         </a>
       </div>
-      <p className="mt-1.5 text-xs text-stone-500">
+      <p className="mt-1.5 text-sm text-stone-500">
         זו הכניסה שלהם, ואין סיסמה מאחוריה — מי שמחזיק בקישור יכול לשנות את המחירים שלהם.
       </p>
     </div>
@@ -196,7 +196,7 @@ function SelfRunAccess({ id, email }: { id: string; email: string | null }) {
   return (
     <div className="mt-3 rounded-lg bg-white p-3">
       <div className="flex flex-wrap items-center gap-2">
-        <p className="min-w-0 flex-1 text-xs text-stone-700">
+        <p className="min-w-0 flex-1 text-sm text-stone-700">
           הספק מנהל את החשבון בעצמו. קישור הכניסה שלו לא מוצג כאן.
         </p>
         {email && (
@@ -216,7 +216,7 @@ function SelfRunAccess({ id, email }: { id: string; email: string | null }) {
                 setState('failed')
               }
             }}
-            className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-xs font-semibold text-stone-700 disabled:opacity-50"
+            className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-stone-700 disabled:opacity-50"
           >
             <Mail size={13} />
             {state === 'sent' ? 'נשלח למייל שלו' : state === 'failed' ? 'השליחה נכשלה, נסה שוב' : 'שלח לו קישור כניסה למייל'}
@@ -226,13 +226,13 @@ function SelfRunAccess({ id, email }: { id: string; email: string | null }) {
           href={`/api/admin/view-supplier/${id}`}
           target="_blank"
           rel="noreferrer"
-          className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-xs font-semibold text-stone-700"
+          className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-stone-700"
         >
           <ExternalLink size={13} />
           צפה כספק
         </a>
       </div>
-      <p className="mt-1.5 text-xs text-stone-500">הצפייה נרשמת ביומן הפעולות.</p>
+      <p className="mt-1.5 text-sm text-stone-500">הצפייה נרשמת ביומן הפעולות.</p>
     </div>
   )
 }
@@ -281,7 +281,7 @@ function SupplierCard({
         <SupplierLogo row={row} />
         <span className="min-w-0 flex-1">
           <span className="block truncate font-bold text-stone-900">{row.company_name}</span>
-          <span className="tnum block truncate text-xs text-stone-500">
+          <span className="tnum block truncate text-sm text-stone-500">
             {row.city ?? 'ללא עיר'} · {row.offer_count} מוצרים · {row.order_count} הזמנות
             {row.threads.total > 0 && ` · ${row.threads.total} שיחות`}
             {row.threads.unanswered > 0 && ` (${row.threads.unanswered} בלי מענה)`}
@@ -290,7 +290,7 @@ function SupplierCard({
             {row.quotes.open > 0 && ` (${row.quotes.open} בלי מענה)`}
           </span>
         </span>
-        <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${TONE[row.status] ?? ''}`}>
+        <span className={`shrink-0 rounded-full px-2.5 py-1 text-sm font-semibold ${TONE[row.status] ?? ''}`}>
           {LABEL[row.status] ?? row.status}
         </span>
         <ChevronDown size={17} className={`shrink-0 text-stone-400 transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -298,14 +298,14 @@ function SupplierCard({
 
       {open && (
         <div className="border-t border-stone-100 bg-stone-50 p-4">
-          <p className="tnum text-sm text-stone-600">
+          <p className="tnum text-base text-stone-600">
             ח.פ {row.business_id}
             {SOURCE_LABEL[row.source] && ` · ${SOURCE_LABEL[row.source]}`}
             {' · '}נרשם {formatDate(row.created_at)}
             {row.decided_at && ` · הוחלט ${formatDate(row.decided_at)}`}
           </p>
 
-          <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-stone-700">
+          <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-base text-stone-700">
             {row.contact_name && <span>{row.contact_name}</span>}
             {row.phone && (
               <a href={telUrl(row.phone) ?? undefined} className="flex items-center gap-1.5 hover:underline">
@@ -322,12 +322,12 @@ function SupplierCard({
           </div>
 
           {row.sells_note && (
-            <p className="mt-3 rounded-lg bg-white p-3 text-sm text-stone-700">{row.sells_note}</p>
+            <p className="mt-3 rounded-lg bg-white p-3 text-base text-stone-700">{row.sells_note}</p>
           )}
 
           {/* The terms a carpenter is held to. Blank ones are said out loud rather
               than left off, because an unset minimum is a surprise at checkout. */}
-          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-stone-500">
+          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-stone-500">
             <span className="flex items-center gap-1.5">
               <Truck size={13} />
               מינימום{' '}
@@ -370,7 +370,7 @@ function SupplierCard({
                   type="button"
                   onClick={() => actions.onDecide(row, 'approved')}
                   disabled={busy}
-                  className="flex h-10 items-center gap-2 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white disabled:opacity-50"
+                  className="flex h-10 items-center gap-2 rounded-lg bg-emerald-700 px-4 text-base font-semibold text-white disabled:opacity-50"
                 >
                   <Check size={16} />
                   אשר ספק
@@ -379,7 +379,7 @@ function SupplierCard({
                   type="button"
                   onClick={() => actions.onDecide(row, 'rejected')}
                   disabled={busy}
-                  className="flex h-10 items-center gap-2 rounded-lg border border-stone-300 bg-white px-4 text-sm font-semibold text-stone-700 disabled:opacity-50"
+                  className="flex h-10 items-center gap-2 rounded-lg border border-stone-300 bg-white px-4 text-base font-semibold text-stone-700 disabled:opacity-50"
                 >
                   <X size={16} />
                   דחה
@@ -391,7 +391,7 @@ function SupplierCard({
               type="button"
               onClick={() => actions.onEdit(row.id)}
               disabled={busy}
-              className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-stone-700 disabled:opacity-50"
+              className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-base font-semibold text-stone-700 disabled:opacity-50"
             >
               <Pencil size={15} />
               ערוך
@@ -412,7 +412,7 @@ function SupplierCard({
               type="button"
               onClick={() => fileInput.current?.click()}
               disabled={busy}
-              className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-stone-700 disabled:opacity-50"
+              className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-base font-semibold text-stone-700 disabled:opacity-50"
             >
               <ImagePlus size={15} />
               {row.logo_url ? 'החלף לוגו' : 'לוגו'}
@@ -422,7 +422,7 @@ function SupplierCard({
                 type="button"
                 onClick={() => actions.onRemoveLogo(row.id)}
                 disabled={busy}
-                className="flex h-10 items-center gap-1.5 rounded-lg px-2 text-sm text-stone-500 hover:bg-stone-100 disabled:opacity-50"
+                className="flex h-10 items-center gap-1.5 rounded-lg px-2 text-base text-stone-500 hover:bg-stone-100 disabled:opacity-50"
               >
                 <Trash2 size={14} />
                 הסר לוגו
@@ -434,7 +434,7 @@ function SupplierCard({
                 type="button"
                 onClick={() => actions.onDecide(row, 'blocked')}
                 disabled={busy}
-                className="flex h-10 items-center gap-1.5 rounded-lg border border-red-300 bg-white px-3 text-sm font-semibold text-red-800 disabled:opacity-50"
+                className="flex h-10 items-center gap-1.5 rounded-lg border border-red-300 bg-white px-3 text-base font-semibold text-red-800 disabled:opacity-50"
               >
                 <Ban size={15} />
                 חסום
@@ -445,7 +445,7 @@ function SupplierCard({
                 type="button"
                 onClick={() => actions.onDecide(row, 'approved')}
                 disabled={busy}
-                className="flex h-10 items-center gap-1.5 rounded-lg bg-emerald-700 px-3 text-sm font-semibold text-white disabled:opacity-50"
+                className="flex h-10 items-center gap-1.5 rounded-lg bg-emerald-700 px-3 text-base font-semibold text-white disabled:opacity-50"
               >
                 <RotateCcw size={15} />
                 בטל חסימה
@@ -456,7 +456,7 @@ function SupplierCard({
                 type="button"
                 onClick={() => actions.onDecide(row, 'pending')}
                 disabled={busy}
-                className="flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm text-stone-600 hover:bg-stone-100 disabled:opacity-50"
+                className="flex h-10 items-center gap-1.5 rounded-lg px-3 text-base text-stone-600 hover:bg-stone-100 disabled:opacity-50"
               >
                 <RotateCcw size={14} />
                 החזר לבדיקה
@@ -467,7 +467,7 @@ function SupplierCard({
               type="button"
               onClick={() => actions.onDelete(row)}
               disabled={busy}
-              className="ms-auto flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+              className="ms-auto flex h-10 items-center gap-1.5 rounded-lg px-3 text-base font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
             >
               <Trash2 size={15} />
               מחק מהאתר
@@ -537,18 +537,18 @@ function DeleteDialog({
           מחיקת {row.company_name}
         </h2>
 
-        {!impact && !error && <p className="mt-4 text-sm text-stone-600">בודק מה יימחק…</p>}
-        {error && <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+        {!impact && !error && <p className="mt-4 text-base text-stone-600">בודק מה יימחק…</p>}
+        {error && <p className="mt-4 rounded-lg bg-red-50 p-3 text-base text-red-700">{error}</p>}
 
         {impact && blocked && (
-          <p className="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+          <p className="mt-4 rounded-lg bg-amber-50 p-3 text-base text-amber-900">
             לספק הזה יש הזמנות, ולכן אי אפשר למחוק אותו — ההזמנות הן הרישום של מי מכר מה. אפשר לחסום
             אותו: הוא לא ייכנס והמוצרים שלו ייעלמו מהקטלוג, ושום דבר לא יימחק.
           </p>
         )}
 
         {impact && !blocked && (
-          <div className="mt-4 space-y-3 text-sm">
+          <div className="mt-4 space-y-3 text-base">
             <div className="rounded-lg bg-red-50 p-3 text-red-900">
               <p className="font-bold">יימחק לצמיתות:</p>
               <ul className="mt-1 list-disc space-y-0.5 ps-5">
@@ -559,7 +559,7 @@ function DeleteDialog({
                 </li>
               </ul>
               {impact.soleProducts.length > 0 && (
-                <p className="mt-2 max-h-28 overflow-y-auto rounded bg-white/60 p-2 text-xs leading-relaxed text-red-800">
+                <p className="mt-2 max-h-28 overflow-y-auto rounded bg-white/60 p-2 text-sm leading-relaxed text-red-800">
                   {impact.soleProducts.join(' · ')}
                 </p>
               )}
@@ -722,8 +722,8 @@ export default function SuppliersClient({ rows }: { rows: SupplierRow[] }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-stone-900">ספקים</h1>
-          <p className="mt-1 text-sm text-stone-600">
-            ספק נרשם דרך <span className="font-mono text-xs">/supplier/join</span> ומחכה לאישור שלך — או
+          <p className="mt-1 text-base text-stone-600">
+            ספק נרשם דרך <span className="font-mono text-sm">/supplier/join</span> ומחכה לאישור שלך — או
             שאתה פותח אותו בעצמך, וזה כבר מאושר. לחיצה על ספק פותחת את כל הפרטים.
           </p>
         </div>
@@ -734,7 +734,7 @@ export default function SuppliersClient({ rows }: { rows: SupplierRow[] }) {
               setEditing('new')
               setFormError(null)
             }}
-            className="flex h-10 shrink-0 items-center gap-2 rounded-lg bg-stone-900 px-4 text-sm font-semibold text-white"
+            className="flex h-10 shrink-0 items-center gap-2 rounded-lg bg-stone-900 px-4 text-base font-semibold text-white"
           >
             <Plus size={16} />
             ספק חדש
@@ -761,7 +761,7 @@ export default function SuppliersClient({ rows }: { rows: SupplierRow[] }) {
         />
       )}
 
-      {message && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{message}</p>}
+      {message && <p className="rounded-lg bg-red-50 p-3 text-base text-red-700">{message}</p>}
 
       {deleting && (
         <DeleteDialog
@@ -781,7 +781,7 @@ export default function SuppliersClient({ rows }: { rows: SupplierRow[] }) {
 
       {pending.length > 0 && (
         <section className="space-y-2">
-          <h2 className="text-sm font-bold text-stone-900">ממתינים לאישור ({pending.length})</h2>
+          <h2 className="text-base font-bold text-stone-900">ממתינים לאישור ({pending.length})</h2>
           {pending.map((row) => (
             <SupplierCard key={row.id} row={row} busy={busy === row.id} actions={actions} />
           ))}
@@ -789,7 +789,7 @@ export default function SuppliersClient({ rows }: { rows: SupplierRow[] }) {
       )}
 
       <section className="space-y-2">
-        <h2 className="text-sm font-bold text-stone-900">
+        <h2 className="text-base font-bold text-stone-900">
           {pending.length > 0 ? `כל השאר (${decided.length})` : `ספקים (${decided.length})`}
         </h2>
         {decided.length === 0 ? (

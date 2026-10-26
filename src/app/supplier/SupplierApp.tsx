@@ -10,7 +10,7 @@ import SalesTab from './tabs/SalesTab'
 import PromoTab from './tabs/PromoTab'
 import UploadDocuments from './UploadDocuments'
 import type { Sales } from './sales'
-import type { CatalogPick, CategoryOption, ProductItem, SupplierDocs, SupplierOrder, SupplierProfile, SupplierPromo, SupplierQuestion, SupplierQuotes, Tab } from './types'
+import type { CatalogPick, CategoryOption, DeletedProduct, ProductItem, SupplierDocs, SupplierOrder, SupplierProfile, SupplierPromo, SupplierQuestion, SupplierQuotes, Tab } from './types'
 
 export type Notify = (text: string, kind?: 'ok' | 'error') => void
 
@@ -48,7 +48,7 @@ function Checklist({ items, onGo }: { items: ChecklistItem[]; onGo: (tab: Tab) =
     <section className="rounded-xl border border-emerald-200 bg-white p-4">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="font-bold text-stone-900">השלמת הפרופיל</h2>
-        <span className="tnum text-sm font-semibold text-emerald-800">
+        <span className="tnum text-base font-semibold text-emerald-800">
           {done} מתוך {items.length}
         </span>
       </div>
@@ -70,7 +70,7 @@ function Checklist({ items, onGo }: { items: ChecklistItem[]; onGo: (tab: Tab) =
                 <Circle size={19} className="shrink-0 text-stone-300" />
               )}
               <span
-                className={`flex-1 text-sm ${
+                className={`flex-1 text-base ${
                   item.done ? 'text-stone-400 line-through' : 'font-medium text-stone-800'
                 }`}
               >
@@ -97,6 +97,7 @@ export default function SupplierApp({
   initialTab,
   profile,
   products,
+  deletedProducts,
   orders,
   questions,
   categories,
@@ -109,6 +110,7 @@ export default function SupplierApp({
   initialTab: Tab
   profile: SupplierProfile
   products: ProductItem[]
+  deletedProducts: DeletedProduct[]
   orders: SupplierOrder[]
   questions: SupplierQuestion[]
   categories: CategoryOption[]
@@ -168,7 +170,7 @@ export default function SupplierApp({
     <div className="space-y-4 pb-28 sm:pb-6">
       <div>
         <h1 className="text-xl font-bold text-stone-900">שלום, {profile.company_name}</h1>
-        <p className="mt-0.5 text-sm text-stone-600">
+        <p className="mt-0.5 text-base text-stone-600">
           {waiting > 0
             ? `${waiting === 1 ? 'הזמנה אחת מחכה' : `${waiting} הזמנות מחכות`} לאישור שלך.`
             : 'אין הזמנות שמחכות לאישור.'}
@@ -189,7 +191,7 @@ export default function SupplierApp({
               type="button"
               onClick={() => go(key)}
               aria-current={active ? 'page' : undefined}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors ${
+              className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-base font-semibold transition-colors ${
                 active ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-100'
               }`}
             >
@@ -197,7 +199,7 @@ export default function SupplierApp({
               <span title={label}>{short}</span>
               {key === 'orders' && badge > 0 && (
                 <span
-                  className={`tnum rounded-full px-1.5 text-xs font-bold ${
+                  className={`tnum rounded-full px-1.5 text-sm font-bold ${
                     active ? 'bg-white text-stone-900' : 'bg-emerald-700 text-white'
                   }`}
                 >
@@ -212,7 +214,7 @@ export default function SupplierApp({
       <div>
         {tab === 'orders' && <OrdersTab orders={orders} questions={questions} quotes={quotes} notify={notify} />}
         {tab === 'products' && (
-          <ProductsTab products={products} categories={categories} catalog={catalog} notify={notify} />
+          <ProductsTab products={products} deletedProducts={deletedProducts} categories={categories} catalog={catalog} notify={notify} />
         )}
         {tab === 'sales' && <SalesTab sales={sales} />}
         {tab === 'promo' && <PromoTab promo={promo} products={products} notify={notify} />}
@@ -233,14 +235,14 @@ export default function SupplierApp({
                 type="button"
                 onClick={() => go(key)}
                 aria-current={active ? 'page' : undefined}
-                className={`relative flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-semibold ${
+                className={`relative flex flex-col items-center gap-0.5 py-2.5 text-xs font-semibold ${
                   active ? 'text-emerald-800' : 'text-stone-500'
                 }`}
               >
                 <Icon size={21} strokeWidth={active ? 2.4 : 1.8} />
                 {short}
                 {key === 'orders' && badge > 0 && (
-                  <span className="tnum absolute top-1 end-[12%] flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-700 px-1 text-[10px] font-bold text-white">
+                  <span className="tnum absolute top-1 end-[12%] flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-700 px-1 text-xs font-bold text-white">
                     {badge}
                   </span>
                 )}
@@ -253,7 +255,7 @@ export default function SupplierApp({
       {toast && (
         <div
           role="status"
-          className={`fixed inset-x-4 bottom-24 z-50 mx-auto max-w-sm rounded-xl px-4 py-3 text-center text-sm font-semibold shadow-lg sm:bottom-6 ${
+          className={`fixed inset-x-4 bottom-24 z-50 mx-auto max-w-sm rounded-xl px-4 py-3 text-center text-base font-semibold shadow-lg sm:bottom-6 ${
             toast.kind === 'ok' ? 'bg-stone-900 text-white' : 'bg-red-700 text-white'
           }`}
         >

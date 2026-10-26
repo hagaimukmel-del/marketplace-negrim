@@ -151,7 +151,7 @@ describe('status questions', () => {
   it('lists quote requests with the quoted price', async () => {
     const answer = await ask('מה מצב ההצעות שלי')
     expect(answer.message).toContain('יש לך הצעה אחת שנענתה')
-    expect(answer.message).toContain('₪21.50 לק״ג לפני מע״מ · בתוקף עד 14.11')
+    expect(answer.message).toContain('₪21.50 לק״ג לפני מע״מ · בתוקף עד 14.11.2026')
     expect(answer.message).toContain('מחכה לתשובת הספק')
   })
 })

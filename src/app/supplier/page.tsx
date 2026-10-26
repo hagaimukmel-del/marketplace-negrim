@@ -20,6 +20,7 @@ import {
   type SupplierOrder,
   type Tab,
   type SupplierQuestion,
+  type DeletedProduct,
 } from './types'
 
 export const dynamic = 'force-dynamic'
@@ -158,6 +159,17 @@ export default async function SupplierHome({
     .limit(5000)
   const unavailable = new Set((unavailableRows ?? []).map((row) => row.id))
 
+  // Products the supplier deleted (migration 20261026190000), listed apart
+  // under "נמחקו" with a restore button. Read on their own so a database
+  // without the column just has none.
+  const { data: deletedRows } = await supabase
+    .from('supplier_offers')
+    .select('id, deleted_at')
+    .eq('supplier_id', supplier.id)
+    .not('deleted_at', 'is', null)
+    .limit(1000)
+  const deletedAt = new Map((deletedRows ?? []).map((row) => [row.id, row.deleted_at as string]))
+
   const myLines = (lines ?? []) as unknown as RawLine[]
 
   // An order that also holds another supplier's lines is confirmed centrally.
@@ -175,7 +187,7 @@ export default async function SupplierHome({
   }
 
   const withSheet = new Set(documents.sheets.map((doc) => doc.productId))
-  const products: ProductItem[] = ((offers ?? []) as unknown as RawOffer[])
+  const allProducts: ProductItem[] = ((offers ?? []) as unknown as RawOffer[])
     .filter((offer) => offer.products)
     .map((offer) => {
       const product = offer.products!
@@ -209,6 +221,12 @@ export default async function SupplierHome({
       if (a.isActive !== b.isActive) return a.isActive ? -1 : 1
       return a.name.localeCompare(b.name, 'he')
     })
+
+  const products = allProducts.filter((product) => !deletedAt.has(product.offerId))
+  const deletedProducts: DeletedProduct[] = allProducts
+    .filter((product) => deletedAt.has(product.offerId))
+    .map((product) => ({ ...product, deletedAt: deletedAt.get(product.offerId)! }))
+    .sort((a, b) => b.deletedAt.localeCompare(a.deletedAt))
 
   const byOrder = new Map<string, SupplierOrder>()
   for (const line of myLines) {
@@ -258,7 +276,7 @@ export default async function SupplierHome({
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   )
 
-  const alreadySold = new Set(products.map((product) => product.productId))
+  const alreadySold = new Set(allProducts.map((product) => product.productId))
   const catalog: CatalogPick[] = (
     (catalogRows ?? []) as unknown as {
       id: string
@@ -329,6 +347,7 @@ export default async function SupplierHome({
         price_mode: priceMode,
       }}
       products={products}
+      deletedProducts={deletedProducts}
       orders={orders}
       questions={questions}
       categories={(categories ?? []) as CategoryOption[]}

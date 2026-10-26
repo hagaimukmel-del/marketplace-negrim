@@ -63,7 +63,7 @@ export default function SupplierNav({
           )}
           <span className="truncate font-bold text-stone-900">{company}</span>
         </Link>
-        <span className="hidden shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800 sm:inline">
+        <span className="hidden shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-sm font-semibold text-emerald-800 sm:inline">
           ספק
         </span>
 
@@ -74,7 +74,7 @@ export default function SupplierNav({
         >
           <MessageSquare size={19} />
           {unread > 0 && (
-            <span className="tnum absolute -end-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-amber-500 px-1 text-[11px] font-bold text-white">
+            <span className="tnum absolute -end-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-amber-500 px-1 text-xs font-bold text-white">
               {unread > 9 ? '9+' : unread}
             </span>
           )}
@@ -86,7 +86,7 @@ export default function SupplierNav({
         >
           <Bell size={19} />
           {notifications > 0 && (
-            <span className="tnum absolute -end-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-amber-500 px-1 text-[11px] font-bold text-white">
+            <span className="tnum absolute -end-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-amber-500 px-1 text-xs font-bold text-white">
               {notifications > 9 ? '9+' : notifications}
             </span>
           )}
@@ -95,7 +95,7 @@ export default function SupplierNav({
           type="button"
           onClick={signOut}
           disabled={leaving}
-          className="flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-2 text-sm text-stone-500 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50"
+          className="flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-2 text-base text-stone-500 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50"
         >
           <LogOut size={16} />
           <span className="hidden sm:inline">{leaving ? 'יוצא…' : 'יציאה'}</span>

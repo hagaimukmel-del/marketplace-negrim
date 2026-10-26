@@ -46,11 +46,11 @@ function Field({
 }) {
   return (
     <label className={`block ${wide ? 'sm:col-span-2' : ''}`}>
-      <span className="text-sm font-medium text-stone-700">
+      <span className="text-base font-medium text-stone-700">
         {label} {required && <span className="text-red-600">*</span>}
       </span>
       {children}
-      {hint && <span className="mt-1 block text-xs text-stone-500">{hint}</span>}
+      {hint && <span className="mt-1 block text-sm text-stone-500">{hint}</span>}
     </label>
   )
 }
@@ -259,11 +259,11 @@ export default function ProductForm({
   }
 
   const remove = async () => {
-    if (!product || !confirm('להסיר את המוצר מהקטלוג שלך? הפעולה אינה הפיכה.')) return
+    if (!product || !confirm('למחוק את המוצר? הוא יעבור לרשימת "נמחקו" בתחתית המוצרים, ומשם אפשר להחזיר אותו בלחיצה.')) return
     setBusy(true)
     try {
-      await callApi(`/api/supplier/products?offer_id=${product.offerId}`, { method: 'DELETE' })
-      notify('המוצר הוסר')
+      const result = await callApi<{ hidden?: boolean }>(`/api/supplier/products?offer_id=${product.offerId}`, { method: 'DELETE' })
+      notify(result.hidden ? 'המוצר הוסתר מהקטלוג' : 'המוצר נמחק. אפשר להחזיר אותו מרשימת "נמחקו"')
       router.refresh()
       onClose()
     } catch (err) {
@@ -297,7 +297,7 @@ export default function ProductForm({
 
         <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
           {!canEditProduct && (
-            <p className="flex gap-2 rounded-lg bg-sky-50 p-3 text-sm text-sky-900">
+            <p className="flex gap-2 rounded-lg bg-sky-50 p-3 text-base text-sky-900">
               <Info size={17} className="mt-0.5 shrink-0" />
               {attachTo
                 ? 'המוצר כבר קיים באתר. מוסיפים אליו רק את המחיר, המלאי והאריזה שלך — השם, התמונה והקטגוריה משותפים לכל הספקים שמוכרים אותו.'
@@ -319,7 +319,7 @@ export default function ProductForm({
                 <Camera size={30} />
               )}
             </button>
-            <div className="min-w-0 text-sm text-stone-600">
+            <div className="min-w-0 text-base text-stone-600">
               <p className="font-semibold text-stone-900">תמונת מוצר</p>
               <p className="mt-0.5">
                 {canEditProduct
@@ -330,7 +330,7 @@ export default function ProductForm({
                 <button
                   type="button"
                   onClick={() => fileInput.current?.click()}
-                  className="mt-2 h-9 rounded-lg border border-stone-300 px-3 text-sm font-semibold text-stone-700"
+                  className="mt-2 h-9 rounded-lg border border-stone-300 px-3 text-base font-semibold text-stone-700"
                 >
                   {imageShown ? 'החלף תמונה' : 'בחר תמונה'}
                 </button>
@@ -460,7 +460,7 @@ export default function ProductForm({
                 className={`tnum ${INPUT}`}
               />
               {specialQty != null && Number.isFinite(specialQty) && specialQty > 0 && (
-                <span className="mt-1 block text-xs text-stone-700">
+                <span className="mt-1 block text-sm text-stone-700">
                   = {specialPacks} × {form.pack_label.trim() || 'אריזה'}
                   {formPack && formPack > 1 ? ` (${specialQty} ${unitLabel(form.base_unit)})` : ` ${unitLabel(form.base_unit)}`}
                 </span>
@@ -489,7 +489,7 @@ export default function ProductForm({
             )}
 
             {product && product.specialMinQty != null && !samePack(product.specialPackQty, formPack) && (
-              <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 sm:col-span-2">
+              <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-base text-amber-900 sm:col-span-2">
                 <p className="m-0">
                   גודל האריזה השתנה מאז שקבעתם את הסף ({product.specialMinQty} {unitLabel(form.base_unit)}). עד שתאשרו, נגריות לא יכולות לבקש מחיר מיוחד על המוצר הזה.
                 </p>
@@ -544,7 +544,7 @@ export default function ProductForm({
                 type="button"
                 onClick={toggleActive}
                 disabled={busy}
-                className="flex h-11 items-center gap-2 rounded-lg border border-stone-300 px-4 text-sm font-semibold text-stone-700 disabled:opacity-50"
+                className="flex h-11 items-center gap-2 rounded-lg border border-stone-300 px-4 text-base font-semibold text-stone-700 disabled:opacity-50"
               >
                 {product.isActive ? <EyeOff size={16} /> : <Eye size={16} />}
                 {product.isActive ? 'הסתר מהקטלוג' : 'החזר לקטלוג'}
@@ -553,15 +553,15 @@ export default function ProductForm({
                 type="button"
                 onClick={remove}
                 disabled={busy}
-                className="flex h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+                className="flex h-11 items-center gap-2 rounded-lg px-3 text-base font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
               >
                 <Trash2 size={16} />
-                הסר
+                מחק
               </button>
             </div>
           )}
 
-          {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+          {error && <p className="rounded-lg bg-red-50 p-3 text-base text-red-700">{error}</p>}
         </div>
 
         <footer className="flex gap-2 border-t border-stone-200 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">

@@ -50,7 +50,7 @@ export default function NewMessage({
     <form onSubmit={send} className="space-y-3">
       <div>
         <h1 className="m-0 text-lg font-bold text-stone-900">הודעה ל{to}</h1>
-        <p className="m-0 text-sm text-stone-500">{about}</p>
+        <p className="m-0 text-base text-stone-500">{about}</p>
       </div>
       <textarea
         value={text}
@@ -62,7 +62,7 @@ export default function NewMessage({
         aria-label="הודעה"
         className="w-full rounded-xl border border-stone-300 bg-white p-3 text-[16px]"
       />
-      {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {error && <p className="rounded-lg bg-red-50 p-3 text-base text-red-700">{error}</p>}
       <button
         type="submit"
         disabled={busy || !text.trim()}

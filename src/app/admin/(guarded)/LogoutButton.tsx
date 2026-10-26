@@ -22,7 +22,7 @@ export default function LogoutButton() {
       type="button"
       onClick={signOut}
       disabled={busy}
-      className="ms-auto flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-stone-500 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50"
+      className="ms-auto flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-base font-medium text-stone-500 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50"
     >
       <LogOut size={16} />
       <span className="hidden sm:inline">{busy ? 'יוצא…' : 'יציאה'}</span>

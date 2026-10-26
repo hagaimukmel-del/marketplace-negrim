@@ -49,7 +49,7 @@ function Field({
 } & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'>) {
   return (
     <label className={`block ${wide ? 'sm:col-span-2' : ''}`}>
-      <span className="text-sm font-medium text-stone-700">
+      <span className="text-base font-medium text-stone-700">
         {label} {required && <span className="text-red-600">*</span>}
       </span>
       <input
@@ -59,7 +59,7 @@ function Field({
         required={required}
         className="mt-1 h-11 w-full rounded-lg border border-stone-300 bg-white px-3"
       />
-      {hint && <span className="mt-1 block text-xs text-stone-500">{hint}</span>}
+      {hint && <span className="mt-1 block text-sm text-stone-500">{hint}</span>}
     </label>
   )
 }
@@ -115,7 +115,7 @@ export default function SupplierForm({
       </div>
 
       <fieldset className="mt-4" disabled={busy}>
-        <legend className="text-xs font-bold text-stone-500">החברה</legend>
+        <legend className="text-sm font-bold text-stone-500">החברה</legend>
         <div className="mt-2 grid gap-3 sm:grid-cols-2">
           <Field
             label="שם החברה"
@@ -147,7 +147,7 @@ export default function SupplierForm({
       </fieldset>
 
       <fieldset className="mt-5" disabled={busy}>
-        <legend className="text-xs font-bold text-stone-500">איש קשר</legend>
+        <legend className="text-sm font-bold text-stone-500">איש קשר</legend>
         <div className="mt-2 grid gap-3 sm:grid-cols-2">
           <Field
             label="שם"
@@ -176,7 +176,7 @@ export default function SupplierForm({
       </fieldset>
 
       <fieldset className="mt-5" disabled={busy}>
-        <legend className="text-xs font-bold text-stone-500">תנאי מסחר</legend>
+        <legend className="text-sm font-bold text-stone-500">תנאי מסחר</legend>
         <div className="mt-2 grid gap-3 sm:grid-cols-2">
           <Field
             label="מינימום הזמנה (₪, ללא מע״מ)"
@@ -201,7 +201,7 @@ export default function SupplierForm({
             wide
           />
           <label className="block sm:col-span-2">
-            <span className="text-sm font-medium text-stone-700">מה הוא מוכר</span>
+            <span className="text-base font-medium text-stone-700">מה הוא מוכר</span>
             <textarea
               value={form.sells_note}
               onChange={(event) => set('sells_note')(event.target.value)}
@@ -213,7 +213,7 @@ export default function SupplierForm({
         </div>
       </fieldset>
 
-      {error && <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {error && <p className="mt-4 rounded-lg bg-red-50 p-3 text-base text-red-700">{error}</p>}
 
       <div className="mt-5 flex flex-wrap items-center gap-2">
         <button
@@ -233,7 +233,7 @@ export default function SupplierForm({
           ביטול
         </button>
         {mode === 'create' && (
-          <span className="text-xs text-stone-500">
+          <span className="text-sm text-stone-500">
             ספק שנפתח כאן מאושר מיד. עדיין צריך לטעון לו מוצרים כדי שיופיע בקטלוג.
           </span>
         )}

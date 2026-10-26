@@ -98,7 +98,7 @@ export default function SupplierJoinPage() {
           className="mt-6 space-y-4 rounded-xl border border-stone-200 bg-white p-5"
         >
           <label className="block">
-            <span className="text-sm font-medium text-stone-700">
+            <span className="text-base font-medium text-stone-700">
               שם החברה <span className="text-red-600">*</span>
             </span>
             <input
@@ -112,7 +112,7 @@ export default function SupplierJoinPage() {
           </label>
 
           <label className="block">
-            <span className="text-sm font-medium text-stone-700">
+            <span className="text-base font-medium text-stone-700">
               ח.פ / ע.מ <span className="text-red-600">*</span>
             </span>
             <input
@@ -123,13 +123,13 @@ export default function SupplierJoinPage() {
               placeholder="512345678"
               className="tnum mt-1 h-12 w-full rounded-lg border border-stone-300 px-3"
             />
-            <span className="mt-1 block text-xs text-stone-500">
+            <span className="mt-1 block text-sm text-stone-500">
               זו החברה שתוציא את החשבונית לנגר.
             </span>
           </label>
 
           <label className="block">
-            <span className="text-sm font-medium text-stone-700">
+            <span className="text-base font-medium text-stone-700">
               טלפון <span className="text-red-600">*</span>
             </span>
             <input
@@ -144,7 +144,7 @@ export default function SupplierJoinPage() {
           </label>
 
           <label className="block">
-            <span className="text-sm font-medium text-stone-700">איש קשר</span>
+            <span className="text-base font-medium text-stone-700">איש קשר</span>
             <input
               value={form.contact_name}
               onChange={(e) => set('contact_name', e.target.value)}
@@ -154,7 +154,7 @@ export default function SupplierJoinPage() {
           </label>
 
           <label className="block">
-            <span className="text-sm font-medium text-stone-700">מייל (אליו מגיעות ההזמנות)</span>
+            <span className="text-base font-medium text-stone-700">מייל (אליו מגיעות ההזמנות)</span>
             <input
               value={form.email}
               onChange={(e) => set('email', e.target.value)}
@@ -166,7 +166,7 @@ export default function SupplierJoinPage() {
           </label>
 
           <label className="block">
-            <span className="text-sm font-medium text-stone-700">עיר</span>
+            <span className="text-base font-medium text-stone-700">עיר</span>
             <input
               value={form.city}
               onChange={(e) => set('city', e.target.value)}
@@ -176,7 +176,7 @@ export default function SupplierJoinPage() {
           </label>
 
           <label className="block">
-            <span className="text-sm font-medium text-stone-700">מה אתם מוכרים?</span>
+            <span className="text-base font-medium text-stone-700">מה אתם מוכרים?</span>
             <textarea
               value={form.sells_note}
               onChange={(e) => set('sells_note', e.target.value)}
@@ -187,7 +187,7 @@ export default function SupplierJoinPage() {
           </label>
 
           <fieldset>
-            <legend className="text-sm font-medium text-stone-700">
+            <legend className="text-base font-medium text-stone-700">
               לאן אתם מספקים? <span className="text-red-600">*</span>
             </legend>
             <div className="mt-1.5 flex flex-wrap gap-2">
@@ -202,7 +202,7 @@ export default function SupplierJoinPage() {
                     onClick={() =>
                       setRegions((prev) => (active ? prev.filter((key) => key !== region.key) : [...prev, region.key]))
                     }
-                    className={`flex h-10 items-center gap-1 rounded-full border px-3 text-sm font-semibold ${
+                    className={`flex h-10 items-center gap-1 rounded-full border px-3 text-base font-semibold ${
                       active ? 'border-emerald-700 bg-emerald-700 text-white' : 'border-stone-300 bg-white text-stone-700'
                     }`}
                   >
@@ -214,7 +214,7 @@ export default function SupplierJoinPage() {
             </div>
           </fieldset>
 
-          <div className="rounded-lg bg-stone-100 p-3 text-sm text-stone-700">
+          <div className="rounded-lg bg-stone-100 p-3 text-base text-stone-700">
             <b className="block text-stone-900">מנוי חודשי לפי מספר המוצרים, לפני מע״מ</b>
             {SUPPLIER_PLANS.map((plan, i) => (
               <span key={i} className="flex justify-between">
@@ -222,7 +222,7 @@ export default function SupplierJoinPage() {
                 <span className="tnum font-semibold">{plan.monthlyExclVat.toLocaleString('he-IL')} ₪</span>
               </span>
             ))}
-            <span className="mt-1 block text-xs text-stone-500">
+            <span className="mt-1 block text-sm text-stone-500">
               החיוב מתחיל ב{BILLING_STARTS_LABEL} ונעשה מחוץ לאתר. אין עמלה על הזמנות. הפרטים יישלחו גם למייל.
             </span>
           </div>
@@ -235,7 +235,7 @@ export default function SupplierJoinPage() {
               required
               className="mt-0.5 h-5 w-5 shrink-0 accent-emerald-700"
             />
-            <span className="text-sm text-stone-800">
+            <span className="text-base text-stone-800">
               קראתי ואני מסכים/ה ל
               <a href="/terms" target="_blank" rel="noreferrer" className="font-semibold text-emerald-800 underline">
                 תקנון ולתנאי השימוש לספקים
@@ -244,7 +244,7 @@ export default function SupplierJoinPage() {
             </span>
           </label>
 
-          {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+          {error && <p className="rounded-lg bg-red-50 p-3 text-base text-red-700">{error}</p>}
 
           <button
             type="submit"
@@ -254,12 +254,12 @@ export default function SupplierJoinPage() {
             {busy ? 'שולח…' : 'שלח בקשה'}
           </button>
 
-          <p className="text-center text-xs text-stone-500">
+          <p className="text-center text-sm text-stone-500">
             כל ספק מאושר ידנית לפני שהמוצרים שלו עולים לקטלוג.
           </p>
         </form>
 
-        <p className="mt-4 text-center text-sm text-stone-600">
+        <p className="mt-4 text-center text-base text-stone-600">
           נגרייה ולא ספק?{' '}
           <Link href="/join" className="font-semibold text-emerald-700 underline">
             להרשמה כנגרייה

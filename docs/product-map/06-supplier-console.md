@@ -1,5 +1,5 @@
 # 6 · Supplier console (`/supplier`)
-Verified: 2026-10-12
+Verified: 2026-10-26
 
 ## Purpose
 Self-service for an approved supplier: their orders, price list, products, business details,
@@ -67,6 +67,17 @@ terms and documents. No password needed.
   that confirmation. A pack changed by an import leaves the threshold out of use until confirmed.
   Under the threshold, "מחיר מיוחד ל… ללא מע״מ" (optional): with it, requests from the threshold up
   are answered at once at that price; clearing the threshold clears the price.
+- Deleting a product is recoverable (2026-10-26, migration 20261026190000): "מחק" in the product
+  form marks the offer (`supplier_offers.deleted_at`, `active_before_delete`) and switches it off,
+  so it drops out of the catalogue like a hidden one. The Products tab lists it under "נמחקו" with
+  "החזר" (`PATCH /api/supplier/products` `{offer_id, restore: true}`, back listed or hidden as it
+  was) and "מחק לצמיתות" (`DELETE ?offer_id=…&permanent=1`, only from that list; removes the
+  offer, and the product when this supplier created it and nobody else sells it). An import that
+  lists the product again takes it off the list. On a database without the migration the delete
+  hides the product instead.
+- Text is one size up from the rest of the site (2026-10-26, owner: suppliers should not strain
+  to read). Dates in messages are full (`9.11.2026`, `validLabel` in `lib/quotes.ts`) and
+  isolated with `<bdi>`, so a date next to a message's own time cannot read as one number.
 - Business catalogues are told apart from the operator's knowledge-base files by the
   `catalogs/` path prefix (`lib/supplier-documents.ts`); the console never lists or deletes the
   operator's `supplier-documents` bucket files.

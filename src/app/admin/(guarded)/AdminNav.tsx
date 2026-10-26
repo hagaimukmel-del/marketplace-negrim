@@ -19,7 +19,7 @@ export default function AdminNav({ items }: { items: NavItem[] }) {
   const pathname = usePathname()
 
   return (
-    <nav className="flex flex-wrap gap-1 text-sm">
+    <nav className="flex flex-wrap gap-1 text-base">
       {items.map((item) => {
         // '/admin' is a prefix of every other route, so it only matches exactly.
         const active =
@@ -39,7 +39,7 @@ export default function AdminNav({ items }: { items: NavItem[] }) {
             {item.label}
             {item.count ? (
               <span
-                className={`tnum rounded-full px-1.5 text-xs font-bold ${
+                className={`tnum rounded-full px-1.5 text-sm font-bold ${
                   active ? 'bg-white text-stone-900' : 'bg-emerald-700 text-white'
                 }`}
               >

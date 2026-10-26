@@ -27,7 +27,7 @@ export default function ImportPanel({
         </button>
       </div>
       <label className="mt-3 block">
-        <span className="text-sm font-medium text-stone-700">לאיזה ספק?</span>
+        <span className="text-base font-medium text-stone-700">לאיזה ספק?</span>
         <select
           id="admin-import-supplier"
           value={supplierId}

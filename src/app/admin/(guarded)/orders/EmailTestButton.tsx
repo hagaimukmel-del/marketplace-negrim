@@ -48,7 +48,7 @@ export default function EmailTestButton() {
         type="button"
         onClick={send}
         disabled={busy}
-        className="flex h-10 items-center gap-2 rounded-lg border border-stone-300 bg-white px-4 text-sm font-semibold text-stone-700 disabled:opacity-50"
+        className="flex h-10 items-center gap-2 rounded-lg border border-stone-300 bg-white px-4 text-base font-semibold text-stone-700 disabled:opacity-50"
       >
         <Mail size={16} />
         {busy ? 'שולח…' : 'שלח מייל בדיקה'}
@@ -56,7 +56,7 @@ export default function EmailTestButton() {
 
       {result && (
         <div
-          className={`rounded-lg p-3 text-sm ${
+          className={`rounded-lg p-3 text-base ${
             result.error
               ? 'bg-red-50 text-red-700'
               : result.provider
@@ -66,7 +66,7 @@ export default function EmailTestButton() {
         >
           <p className="font-semibold">{result.error ?? result.message}</p>
           {!result.error && (
-            <ul className="mt-1.5 space-y-0.5 text-xs">
+            <ul className="mt-1.5 space-y-0.5 text-sm">
               <li>ספק שליחה: {result.provider ? 'מחובר' : 'לא מחובר'}</li>
               <li>יעד בדיקות: {result.testRecipient ?? 'לא הוגדר'}</li>
               <li>נשלח מ: {result.from}</li>

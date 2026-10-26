@@ -29,7 +29,7 @@ export default function MarkAllRead({ apiPath }: { apiPath: string }) {
       type="button"
       onClick={run}
       disabled={busy}
-      className="flex h-10 shrink-0 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-stone-700 disabled:opacity-50"
+      className="flex h-10 shrink-0 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-base font-semibold text-stone-700 disabled:opacity-50"
     >
       <CheckCheck size={16} />
       {error ? 'לא הצליח, נסו שוב' : 'סמן הכל כנקרא'}

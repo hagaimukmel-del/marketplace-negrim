@@ -110,17 +110,17 @@ function Table<T extends { id: string }>({
             onChange={(e) => setQuery(e.target.value)}
             placeholder="חיפוש"
             aria-label="חיפוש בדוח"
-            className="h-10 w-full rounded-lg border border-stone-300 bg-white ps-9 pe-3 text-sm"
+            className="h-10 w-full rounded-lg border border-stone-300 bg-white ps-9 pe-3 text-base"
           />
         </div>
-        <a href={csvHref} download={`${fileName}.csv`} className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-stone-700">
+        <a href={csvHref} download={`${fileName}.csv`} className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-base font-semibold text-stone-700">
           <Download size={15} />
           ייצוא לאקסל
         </a>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white">
-        <table className="w-full min-w-[640px] text-sm">
+        <table className="w-full min-w-[640px] text-base">
           <thead className="border-b border-stone-200 bg-stone-50">
             <tr>
               {columns.map((column) => (
@@ -134,7 +134,7 @@ function Table<T extends { id: string }>({
                         setDescending(Boolean(column.numeric))
                       }
                     }}
-                    className={`flex w-full items-center gap-1 px-3 py-2.5 text-xs ${column.numeric ? 'justify-end' : ''} ${sortKey === column.key ? 'text-stone-900' : ''}`}
+                    className={`flex w-full items-center gap-1 px-3 py-2.5 text-sm ${column.numeric ? 'justify-end' : ''} ${sortKey === column.key ? 'text-stone-900' : ''}`}
                   >
                     {column.label}
                     {sortKey === column.key && (descending ? <ArrowDown size={12} /> : <ArrowUp size={12} />)}
@@ -191,7 +191,7 @@ export default function ReportsClient({
 
   const productColumns: Column<ProductReport>[] = [
     { key: 'name', label: 'מוצר', value: (row) => row.name, render: (row) => <span className="font-medium text-stone-900">{row.name}</span> },
-    { key: 'category', label: 'קטגוריה', value: (row) => row.category, render: (row) => <span className="text-xs text-stone-500">{row.category}</span> },
+    { key: 'category', label: 'קטגוריה', value: (row) => row.category, render: (row) => <span className="text-sm text-stone-500">{row.category}</span> },
     { key: 'suppliers', label: 'ספקים', value: (row) => row.suppliers, numeric: true },
     { key: 'min', label: 'מחיר מינימום', value: (row) => row.minPrice, render: (row) => money(row.minPrice), numeric: true },
     { key: 'avg', label: 'מחיר ממוצע', value: (row) => row.avgPrice, render: (row) => <strong>{money(row.avgPrice)}</strong>, numeric: true },
@@ -211,11 +211,11 @@ export default function ReportsClient({
       numeric: true,
       render: (row) =>
         row.priceIndex == null ? (
-          <span className="text-xs text-stone-400" title="אין מוצרים שגם ספק אחר מוכר">אין השוואה</span>
+          <span className="text-sm text-stone-400" title="אין מוצרים שגם ספק אחר מוכר">אין השוואה</span>
         ) : (
           <span className={`font-semibold ${row.priceIndex < 98 ? 'text-emerald-700' : row.priceIndex > 102 ? 'text-red-700' : 'text-stone-700'}`}>
             {Math.round(row.priceIndex)}
-            <span className="text-xs font-normal text-stone-400"> ({row.comparable})</span>
+            <span className="text-sm font-normal text-stone-400"> ({row.comparable})</span>
           </span>
         ),
     },
@@ -244,15 +244,15 @@ export default function ReportsClient({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-stone-900">דוחות</h1>
-          <p className="mt-1 text-sm text-stone-600">מחירים — מהקטלוג היום. הזמנות ומחזור — מהתקופה שנבחרה, בלי הזמנות שבוטלו. סכומים ללא מע״מ.</p>
+          <p className="mt-1 text-base text-stone-600">מחירים — מהקטלוג היום. הזמנות ומחזור — מהתקופה שנבחרה, בלי הזמנות שבוטלו. סכומים ללא מע״מ.</p>
         </div>
-        <label className="flex items-center gap-2 text-sm text-stone-600">
+        <label className="flex items-center gap-2 text-base text-stone-600">
           תקופה
           <select
             id="report-period"
             value={period}
             onChange={(e) => router.push(`/admin/reports?period=${e.target.value}`)}
-            className="h-10 rounded-lg border border-stone-300 bg-white px-2 text-sm"
+            className="h-10 rounded-lg border border-stone-300 bg-white px-2 text-base"
           >
             {(Object.keys(PERIOD_LABEL) as Period[]).map((key) => (
               <option key={key} value={key}>
@@ -273,7 +273,7 @@ export default function ReportsClient({
         ].map((item) => (
           <div key={item.label} className="bg-white p-3">
             <p className="tnum text-xl font-bold text-stone-900">{item.value}</p>
-            <p className="text-xs text-stone-500">{item.label}</p>
+            <p className="text-sm text-stone-500">{item.label}</p>
           </div>
         ))}
       </div>
@@ -285,7 +285,7 @@ export default function ReportsClient({
             type="button"
             onClick={() => setTab(item.key)}
             aria-pressed={tab === item.key}
-            className={`h-10 rounded-full border px-4 text-sm font-semibold ${
+            className={`h-10 rounded-full border px-4 text-base font-semibold ${
               tab === item.key ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-300 bg-white text-stone-700'
             }`}
           >
@@ -298,7 +298,7 @@ export default function ReportsClient({
       {tab === 'suppliers' && (
         <>
           <Table rows={suppliers} columns={supplierColumns} defaultSort="revenue" fileName="report-suppliers" />
-          <p className="text-xs text-stone-500">
+          <p className="text-sm text-stone-500">
             מדד מחיר: 100 = ממוצע השוק למוצרים שגם ספקים אחרים מוכרים. מתחת ל-100 — זול מהממוצע. בסוגריים — על כמה מוצרים זה מחושב.
           </p>
         </>

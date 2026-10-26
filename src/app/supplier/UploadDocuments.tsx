@@ -40,7 +40,7 @@ function DocRow({
       <FileText size={20} className="shrink-0 text-stone-400" />
       <div className="min-w-0 flex-1">
         <p className="truncate font-semibold text-stone-900">{doc.productName ?? doc.title}</p>
-        <p className="truncate text-xs text-stone-500">
+        <p className="truncate text-sm text-stone-500">
           {doc.productName ? `${doc.title} · ` : ''}
           {formatDate(doc.uploadedAt)}
         </p>
@@ -51,7 +51,7 @@ function DocRow({
             type="button"
             onClick={onDelete}
             disabled={busy}
-            className="h-9 rounded-lg bg-red-700 px-3 text-sm font-semibold text-white disabled:opacity-50"
+            className="h-9 rounded-lg bg-red-700 px-3 text-base font-semibold text-white disabled:opacity-50"
           >
             למחוק
           </button>
@@ -205,7 +205,7 @@ export default function UploadDocuments({
             <BookOpen size={18} className="text-emerald-700" />
             קטלוג כללי לעסק
           </h2>
-          <p className="mt-0.5 text-sm text-stone-600">PDF אחד או כמה. נגרים רואים אותו בדף של כל מוצר שאתם מוכרים.</p>
+          <p className="mt-0.5 text-base text-stone-600">PDF אחד או כמה. נגרים רואים אותו בדף של כל מוצר שאתם מוכרים.</p>
         </div>
         {documents.catalogs.length > 0 && (
           <ul className="border-t border-stone-100">
@@ -216,7 +216,7 @@ export default function UploadDocuments({
         )}
         <form onSubmit={uploadCatalog} className="grid gap-3 border-t border-stone-100 bg-stone-50 p-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
           <label className="block">
-            <span className="text-sm font-medium text-stone-700">שם (לא חובה)</span>
+            <span className="text-base font-medium text-stone-700">שם (לא חובה)</span>
             <input
               value={catalogTitle}
               onChange={(e) => setCatalogTitle(e.target.value)}
@@ -225,12 +225,12 @@ export default function UploadDocuments({
             />
           </label>
           <label className="block">
-            <span className="text-sm font-medium text-stone-700">קובץ PDF, עד 20MB</span>
+            <span className="text-base font-medium text-stone-700">קובץ PDF, עד 20MB</span>
             <input
               type="file"
               accept="application/pdf"
               onChange={(e) => setCatalogFile(e.target.files?.[0] ?? null)}
-              className="mt-1 block w-full text-sm file:me-3 file:h-12 file:rounded-lg file:border-0 file:bg-white file:px-4 file:font-semibold file:text-stone-700"
+              className="mt-1 block w-full text-base file:me-3 file:h-12 file:rounded-lg file:border-0 file:bg-white file:px-4 file:font-semibold file:text-stone-700"
             />
           </label>
           <button
@@ -251,7 +251,7 @@ export default function UploadDocuments({
             דפים טכניים למוצרים
           </h2>
           {products.length > 0 && (
-            <p className="mt-0.5 text-sm text-stone-600">
+            <p className="mt-0.5 text-base text-stone-600">
               {missing.length === 0
                 ? 'לכל המוצרים שלך יש דף.'
                 : `חסר דף ב־${missing.length} מתוך ${products.length} מוצרים.`}
@@ -272,11 +272,11 @@ export default function UploadDocuments({
           <ul className="max-h-72 overflow-y-auto border-t border-stone-100">
             {missing.map((product) => (
               <li key={product.offerId} className="flex items-center gap-3 border-b border-stone-100 px-4 py-2 last:border-b-0">
-                <span className="min-w-0 flex-1 truncate text-sm text-stone-800">{product.name}</span>
+                <span className="min-w-0 flex-1 truncate text-base text-stone-800">{product.name}</span>
                 <button
                   type="button"
                   onClick={() => pick(product.productId)}
-                  className="h-9 shrink-0 rounded-lg border border-stone-300 px-3 text-sm font-semibold text-stone-700"
+                  className="h-9 shrink-0 rounded-lg border border-stone-300 px-3 text-base font-semibold text-stone-700"
                 >
                   העלה דף
                 </button>
@@ -287,7 +287,7 @@ export default function UploadDocuments({
 
         <form ref={form} onSubmit={uploadSheet} className="grid gap-3 border-t border-stone-100 bg-stone-50 p-4 sm:grid-cols-2">
           {replacing && (
-            <div className="flex items-center gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-900 sm:col-span-2">
+            <div className="flex items-center gap-2 rounded-lg bg-amber-50 p-3 text-base text-amber-900 sm:col-span-2">
               <RefreshCw size={16} className="shrink-0" />
               <span className="min-w-0 flex-1">מחליף את: {replacing.title}</span>
               <button
@@ -304,7 +304,7 @@ export default function UploadDocuments({
             </div>
           )}
           <label className="block sm:col-span-2">
-            <span className="text-sm font-medium text-stone-700">מוצר</span>
+            <span className="text-base font-medium text-stone-700">מוצר</span>
             <select
               value={productId}
               onChange={(e) => {
@@ -324,7 +324,7 @@ export default function UploadDocuments({
             </select>
           </label>
           <label className="block">
-            <span className="text-sm font-medium text-stone-700">סוג</span>
+            <span className="text-base font-medium text-stone-700">סוג</span>
             <select
               value={docType}
               onChange={(e) => setDocType(e.target.value as DocType)}
@@ -339,13 +339,13 @@ export default function UploadDocuments({
             </select>
           </label>
           <label className="block">
-            <span className="text-sm font-medium text-stone-700">קובץ: PDF, JPG או PNG עד 10MB</span>
+            <span className="text-base font-medium text-stone-700">קובץ: PDF, JPG או PNG עד 10MB</span>
             <input
               type="file"
               accept=".pdf,.jpg,.jpeg,.png"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               disabled={busy}
-              className="mt-1 block w-full text-sm file:me-3 file:h-12 file:rounded-lg file:border-0 file:bg-white file:px-4 file:font-semibold file:text-stone-700"
+              className="mt-1 block w-full text-base file:me-3 file:h-12 file:rounded-lg file:border-0 file:bg-white file:px-4 file:font-semibold file:text-stone-700"
             />
           </label>
           <button
@@ -360,7 +360,7 @@ export default function UploadDocuments({
 
         {documents.sheets.length > 0 && (
           <>
-            <h3 className="border-t border-stone-100 px-4 pt-4 text-sm font-bold text-stone-700">
+            <h3 className="border-t border-stone-100 px-4 pt-4 text-base font-bold text-stone-700">
               מה הועלה ({documents.sheets.length})
             </h3>
             <ul className="mt-1">

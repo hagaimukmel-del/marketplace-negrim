@@ -102,8 +102,8 @@ async function call(url: string, init: RequestInit) {
 function Detail({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="min-w-0">
-      <dt className="text-xs text-stone-500">{label}</dt>
-      <dd className="mt-0.5 text-sm text-stone-800">{children}</dd>
+      <dt className="text-sm text-stone-500">{label}</dt>
+      <dd className="mt-0.5 text-base text-stone-800">{children}</dd>
     </div>
   )
 }
@@ -147,21 +147,21 @@ function Row({
               {row.business_name}
             </span>
             {!row.is_active && (
-              <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-800">חסום</span>
+              <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800">חסום</span>
             )}
             {isTest(row.business_name) && (
-              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-900">ניסיון</span>
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">ניסיון</span>
             )}
             {row.source === 'self' && (
-              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">נרשם לבד</span>
+              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800">נרשם לבד</span>
             )}
           </span>
-          <span className="mt-0.5 block truncate text-xs text-stone-500">
+          <span className="mt-0.5 block truncate text-sm text-stone-500">
             {row.city ?? 'ללא עיר'}
             {row.contact_name && ` · ${row.contact_name}`}
           </span>
         </span>
-        <span className="tnum shrink-0 text-end text-xs text-stone-500">
+        <span className="tnum shrink-0 text-end text-sm text-stone-500">
           {row.orders > 0 ? `${row.orders} הזמנות` : 'לא הזמין'}
         </span>
         <ChevronDown size={17} className={`shrink-0 text-stone-400 transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -211,7 +211,7 @@ function Row({
           </dl>
 
           <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-white p-2.5">
-            <span dir="ltr" className="min-w-0 flex-1 truncate font-mono text-xs text-stone-500">
+            <span dir="ltr" className="min-w-0 flex-1 truncate font-mono text-sm text-stone-500">
               /o/{row.token}
             </span>
             <button
@@ -225,7 +225,7 @@ function Row({
                   // Clipboard blocked; the link is on screen.
                 }
               }}
-              className="flex h-9 items-center gap-1.5 rounded-lg border border-stone-300 px-3 text-xs font-semibold text-stone-700"
+              className="flex h-9 items-center gap-1.5 rounded-lg border border-stone-300 px-3 text-sm font-semibold text-stone-700"
             >
               {copied ? <Check size={13} /> : <Copy size={13} />}
               {copied ? 'הועתק' : 'העתק קישור'}
@@ -234,7 +234,7 @@ function Row({
               href={`/o/${row.token}`}
               target="_blank"
               rel="noreferrer"
-              className="flex h-9 items-center gap-1.5 rounded-lg border border-stone-300 px-3 text-xs font-semibold text-stone-700"
+              className="flex h-9 items-center gap-1.5 rounded-lg border border-stone-300 px-3 text-sm font-semibold text-stone-700"
             >
               <ExternalLink size={13} />
               פתח כנגר
@@ -246,7 +246,7 @@ function Row({
               type="button"
               onClick={() => onBlock(row)}
               disabled={busy}
-              className={`flex h-10 items-center gap-1.5 rounded-lg px-4 text-sm font-semibold disabled:opacity-50 ${
+              className={`flex h-10 items-center gap-1.5 rounded-lg px-4 text-base font-semibold disabled:opacity-50 ${
                 row.is_active
                   ? 'border border-red-300 bg-white text-red-800'
                   : 'bg-emerald-700 text-white'
@@ -259,7 +259,7 @@ function Row({
               type="button"
               onClick={() => onDelete(row)}
               disabled={busy}
-              className="ms-auto flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+              className="ms-auto flex h-10 items-center gap-1.5 rounded-lg px-3 text-base font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
             >
               <Trash2 size={15} />
               מחק (אפשר לשחזר)
@@ -296,7 +296,7 @@ function DeletedList({
   }
   return (
     <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
-      <p className="border-b border-stone-100 bg-stone-50 px-4 py-2.5 text-xs text-stone-600">
+      <p className="border-b border-stone-100 bg-stone-50 px-4 py-2.5 text-sm text-stone-600">
         נגרייה שנמחקה לא נכנסת לאתר ולא מופיעה לספקים. כל הנתונים שלה נשמרים {RETENTION_MONTHS} חודשים ואז נמחקים סופית.
       </p>
       {rows.map((row) => (
@@ -305,14 +305,14 @@ function DeletedList({
             <span className="flex flex-wrap items-center gap-1.5">
               <span className="truncate font-semibold text-stone-700">{row.business_name}</span>
               {row.active_before_delete === false && (
-                <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-800">היה חסום</span>
+                <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800">היה חסום</span>
               )}
             </span>
-            <span className="tnum mt-0.5 block truncate text-xs text-stone-500">
+            <span className="tnum mt-0.5 block truncate text-sm text-stone-500">
               {[row.city, row.contact_name, row.phone].filter(Boolean).join(' · ') || '—'}
               {row.orders > 0 && ` · ${row.orders} הזמנות`}
             </span>
-            <span className="tnum mt-0.5 block text-xs text-stone-500">
+            <span className="tnum mt-0.5 block text-sm text-stone-500">
               נמחקה {formatDate(row.deleted_at)} · תימחק סופית {formatDate(purgeDate(row.deleted_at).toISOString())} (עוד{' '}
               {daysLeft(row.deleted_at)} ימים)
             </span>
@@ -321,7 +321,7 @@ function DeletedList({
             type="button"
             onClick={() => onRestore(row)}
             disabled={busyId === row.id}
-            className="flex h-10 items-center gap-1.5 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white disabled:opacity-50"
+            className="flex h-10 items-center gap-1.5 rounded-lg bg-emerald-700 px-4 text-base font-semibold text-white disabled:opacity-50"
           >
             <RotateCcw size={15} />
             שחזר
@@ -330,7 +330,7 @@ function DeletedList({
             type="button"
             onClick={() => onPurge(row)}
             disabled={busyId === row.id}
-            className="flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+            className="flex h-10 items-center gap-1.5 rounded-lg px-3 text-base font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
           >
             <Trash2 size={15} />
             מחק סופית
@@ -457,7 +457,7 @@ function Raffle({
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className="block sm:col-span-2">
-          <span className="text-sm font-medium text-stone-700">הפרס (לא חובה)</span>
+          <span className="text-base font-medium text-stone-700">הפרס (לא חובה)</span>
           <input
             value={prize}
             onChange={(e) => setPrize(e.target.value)}
@@ -465,7 +465,7 @@ function Raffle({
             className="mt-1 h-11 w-full rounded-lg border border-stone-300 px-3"
           />
         </label>
-        <label className="flex items-center gap-2 text-sm text-stone-700">
+        <label className="flex items-center gap-2 text-base text-stone-700">
           <input
             type="checkbox"
             checked={onlyMarketing}
@@ -474,7 +474,7 @@ function Raffle({
           />
           רק מי שהסכים לקבל דיוור
         </label>
-        <label className="flex items-center gap-2 text-sm text-stone-700">
+        <label className="flex items-center gap-2 text-base text-stone-700">
           <input
             type="checkbox"
             checked={includeTest}
@@ -495,7 +495,7 @@ function Raffle({
           <Dices size={18} />
           {busy && rolling !== null ? 'מגריל…' : 'הגרל עכשיו'}
         </button>
-        <span className="tnum text-sm text-stone-600">{pool.length} נגריות בהגרלה</span>
+        <span className="tnum text-base text-stone-600">{pool.length} נגריות בהגרלה</span>
       </div>
 
       {(rolling || winner) && (
@@ -506,9 +506,9 @@ function Raffle({
           {winner ? (
             <>
               <Trophy size={30} className="mx-auto text-emerald-700" />
-              <p className="mt-2 text-xs font-semibold text-emerald-800">הזוכה</p>
+              <p className="mt-2 text-sm font-semibold text-emerald-800">הזוכה</p>
               <p className="text-2xl font-bold text-balance text-stone-900">{winner.winner_name}</p>
-              <p className="tnum mt-1 text-xs text-stone-500">
+              <p className="tnum mt-1 text-sm text-stone-500">
                 נבחר מתוך {winner.pool_size} · {winner.winner_email ?? 'אין מייל — צריך להתקשר'}
               </p>
               {winner.prize && <p className="mt-2 font-semibold text-emerald-900">{winner.prize}</p>}
@@ -517,7 +517,7 @@ function Raffle({
                   type="button"
                   onClick={() => notify(winner)}
                   disabled={busy || wasNotified(winner)}
-                  className="mt-3 inline-flex h-11 items-center gap-2 rounded-lg bg-stone-900 px-5 text-sm font-semibold text-white disabled:opacity-50"
+                  className="mt-3 inline-flex h-11 items-center gap-2 rounded-lg bg-stone-900 px-5 text-base font-semibold text-white disabled:opacity-50"
                 >
                   {wasNotified(winner) ? <Check size={16} /> : <Send size={16} />}
                   {wasNotified(winner) ? 'ההודעה נשלחה' : 'שלח הודעת זכייה במייל'}
@@ -530,32 +530,32 @@ function Raffle({
         </div>
       )}
 
-      {error && <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {error && <p className="mt-3 rounded-lg bg-red-50 p-3 text-base text-red-700">{error}</p>}
 
       {draws.length > 0 && (
         <div className="mt-5 border-t border-stone-200 pt-4">
-          <p className="text-sm font-bold text-stone-900">הגרלות קודמות</p>
+          <p className="text-base font-bold text-stone-900">הגרלות קודמות</p>
           <ul className="mt-2 divide-y divide-stone-100">
             {draws.map((item) => (
-              <li key={item.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 text-sm">
-                <span className="tnum text-xs text-stone-500">{formatDate(item.drawn_at)}</span>
+              <li key={item.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 text-base">
+                <span className="tnum text-sm text-stone-500">{formatDate(item.drawn_at)}</span>
                 <span className="font-semibold text-stone-900">{item.winner_name}</span>
                 {item.prize && <span className="text-stone-600">{item.prize}</span>}
-                <span className="tnum text-xs text-stone-400">מתוך {item.pool_size}</span>
+                <span className="tnum text-sm text-stone-400">מתוך {item.pool_size}</span>
                 <span className="ms-auto">
                   {wasNotified(item) ? (
-                    <span className="text-xs font-semibold text-emerald-700">נשלחה הודעה</span>
+                    <span className="text-sm font-semibold text-emerald-700">נשלחה הודעה</span>
                   ) : item.winner_email ? (
                     <button
                       type="button"
                       onClick={() => notify(item)}
                       disabled={busy}
-                      className="text-xs font-semibold text-stone-700 underline disabled:opacity-50"
+                      className="text-sm font-semibold text-stone-700 underline disabled:opacity-50"
                     >
                       שלח הודעה
                     </button>
                   ) : (
-                    <span className="text-xs text-stone-400">אין מייל</span>
+                    <span className="text-sm text-stone-400">אין מייל</span>
                   )}
                 </span>
               </li>
@@ -735,7 +735,7 @@ export default function CarpentersClient({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-stone-900">נגריות</h1>
-          <p className="tnum text-sm text-stone-600">
+          <p className="tnum text-base text-stone-600">
             {counts.active} פעילות · {counts.ordered} הזמינו · {rows.filter((row) => row.first_seen_at).length} פתחו קישור
           </p>
         </div>
@@ -743,7 +743,7 @@ export default function CarpentersClient({
           <button
             type="button"
             onClick={() => setPanel(panel === 'raffle' ? 'none' : 'raffle')}
-            className="flex h-10 items-center gap-2 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white"
+            className="flex h-10 items-center gap-2 rounded-lg bg-emerald-700 px-4 text-base font-semibold text-white"
           >
             <Dices size={16} />
             הגרלה
@@ -751,7 +751,7 @@ export default function CarpentersClient({
           <button
             type="button"
             onClick={() => setPanel(panel === 'import' ? 'none' : 'import')}
-            className="flex h-10 items-center gap-2 rounded-lg border border-stone-300 bg-white px-4 text-sm font-semibold text-stone-800"
+            className="flex h-10 items-center gap-2 rounded-lg border border-stone-300 bg-white px-4 text-base font-semibold text-stone-800"
           >
             <Upload size={16} />
             ייבוא
@@ -760,7 +760,7 @@ export default function CarpentersClient({
             type="button"
             onClick={copyLinks}
             disabled={rows.length === 0}
-            className="flex h-10 items-center gap-2 rounded-lg border border-stone-300 bg-white px-4 text-sm font-semibold text-stone-800 disabled:opacity-40"
+            className="flex h-10 items-center gap-2 rounded-lg border border-stone-300 bg-white px-4 text-base font-semibold text-stone-800 disabled:opacity-40"
           >
             {copied ? <Check size={16} /> : <Copy size={16} />}
             {copied ? 'הועתק' : 'CSV לשליחה'}
@@ -773,8 +773,8 @@ export default function CarpentersClient({
       {panel === 'import' && (
         <section className="rounded-xl border border-stone-300 bg-white p-5">
           <h2 className="font-bold text-stone-900">ייבוא רשימה</h2>
-          <p className="mt-1 text-sm text-stone-600">
-            שורה לכל נגרייה: <span className="font-mono text-xs">שם, איש קשר, טלפון, עיר</span>. רק השם
+          <p className="mt-1 text-base text-stone-600">
+            שורה לכל נגרייה: <span className="font-mono text-sm">שם, איש קשר, טלפון, עיר</span>. רק השם
             חובה. ייבוא חוזר מעדכן לפי טלפון ולא מכפיל.
           </p>
           <textarea
@@ -783,7 +783,7 @@ export default function CarpentersClient({
             rows={6}
             dir="rtl"
             placeholder={SAMPLE}
-            className="mt-3 w-full rounded-lg border border-stone-300 p-3 font-mono text-sm"
+            className="mt-3 w-full rounded-lg border border-stone-300 p-3 font-mono text-base"
           />
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <button
@@ -797,16 +797,16 @@ export default function CarpentersClient({
             <button
               type="button"
               onClick={() => setPanel('none')}
-              className="h-11 rounded-lg px-4 text-sm text-stone-600 hover:bg-stone-100"
+              className="h-11 rounded-lg px-4 text-base text-stone-600 hover:bg-stone-100"
             >
               ביטול
             </button>
-            {result && <span className="text-sm font-medium text-emerald-700">{result}</span>}
+            {result && <span className="text-base font-medium text-emerald-700">{result}</span>}
           </div>
         </section>
       )}
 
-      {message && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{message}</p>}
+      {message && <p className="rounded-lg bg-red-50 p-3 text-base text-red-700">{message}</p>}
 
       <div className="space-y-2">
         <div className="relative">
@@ -836,14 +836,14 @@ export default function CarpentersClient({
                 setLimit(PAGE)
               }}
               aria-pressed={filter === item.key}
-              className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-medium ${
+              className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-base font-medium ${
                 filter === item.key
                   ? 'border-stone-900 bg-stone-900 text-white'
                   : 'border-stone-300 bg-white text-stone-700'
               }`}
             >
               {item.label}
-              <span className="tnum text-xs opacity-60">{counts[item.key]}</span>
+              <span className="tnum text-sm opacity-60">{counts[item.key]}</span>
             </button>
           ))}
         </div>
@@ -876,7 +876,7 @@ export default function CarpentersClient({
             <button
               type="button"
               onClick={() => setLimit(limit + PAGE)}
-              className="tnum w-full border-t border-stone-200 py-3 text-sm font-semibold text-stone-700 hover:bg-stone-50"
+              className="tnum w-full border-t border-stone-200 py-3 text-base font-semibold text-stone-700 hover:bg-stone-50"
             >
               הצג עוד ({shown.length - limit} נוספות)
             </button>

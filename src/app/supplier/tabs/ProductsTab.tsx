@@ -1,14 +1,15 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Download, FileSpreadsheet, List, Pencil, Plus, Search, ImageOff, PackageOpen, X } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { ChevronDown, Download, FileSpreadsheet, List, Pencil, Plus, RotateCcw, Search, ImageOff, PackageOpen, Trash2, X } from 'lucide-react'
 import { formatIls } from '@/lib/vat'
 import { unitLabel } from '@/lib/catalog'
 import PriceImport from '@/components/import/PriceImport'
 import ProductForm from './ProductForm'
 import ProductPicker from './ProductPicker'
 import QuickEdit from './QuickEdit'
-import type { CatalogPick, CategoryOption, ProductItem } from '../types'
+import { callApi, jsonInit, type CatalogPick, type CategoryOption, type DeletedProduct, type ProductItem } from '../types'
 import type { Notify } from '../SupplierApp'
 
 function Thumb({ product }: { product: ProductItem }) {
@@ -45,7 +46,7 @@ function ProductRow({ product, onOpen }: { product: ProductItem; onOpen: () => v
       <Thumb product={product} />
       <span className="min-w-0 flex-1">
         <span className="block truncate font-bold text-stone-900">{product.name}</span>
-        <span className="block truncate text-xs text-stone-500">
+        <span className="block truncate text-sm text-stone-500">
           {product.categoryName ?? 'ללא קטגוריה'}
           {product.packLabel && ` · ${product.packLabel}${product.packQty ? ` ${product.packQty}` : ''}`}
           {!product.isActive && ' · מוסתר'}
@@ -54,12 +55,105 @@ function ProductRow({ product, onOpen }: { product: ProductItem; onOpen: () => v
       <span className="shrink-0 text-end">
         <span className="tnum block font-bold text-stone-900">{formatIls(product.price)}</span>
         <span
-          className={`block text-xs ${product.stock > 0 ? 'text-stone-500' : 'font-semibold text-red-700'}`}
+          className={`block text-sm ${product.stock > 0 ? 'text-stone-500' : 'font-semibold text-red-700'}`}
         >
           {product.stock > 0 ? `ל${unitLabel(product.baseUnit)} · מלאי ${product.stock}` : 'אזל'}
         </span>
       </span>
     </button>
+  )
+}
+
+function deletedOn(value: string): string {
+  return new Date(value).toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem', day: 'numeric', month: 'numeric', year: 'numeric' })
+}
+
+/**
+ * Products the supplier deleted. Nothing is gone until "מחק לצמיתות": one
+ * click on "החזר" puts a product back as it was, listed or hidden.
+ */
+function DeletedList({ products, notify }: { products: DeletedProduct[]; notify: Notify }) {
+  const router = useRouter()
+  const [open, setOpen] = useState(false)
+  const [busy, setBusy] = useState<string | null>(null)
+
+  const restore = async (product: DeletedProduct) => {
+    setBusy(product.offerId)
+    try {
+      const result = await callApi<{ is_active?: boolean }>('/api/supplier/products', jsonInit('PATCH', { offer_id: product.offerId, restore: true }))
+      notify(result.is_active === false ? `${product.name} הוחזר לרשימה (מוסתר, כמו שהיה)` : `${product.name} חזר לקטלוג`)
+      router.refresh()
+    } catch (err) {
+      notify(err instanceof Error ? err.message : 'ההחזרה נכשלה', 'error')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const purge = async (product: DeletedProduct) => {
+    if (!confirm(`למחוק את "${product.name}" לצמיתות? את זה כבר אי אפשר להחזיר.`)) return
+    setBusy(product.offerId)
+    try {
+      await callApi(`/api/supplier/products?offer_id=${product.offerId}&permanent=1`, { method: 'DELETE' })
+      notify('המוצר נמחק לצמיתות')
+      router.refresh()
+    } catch (err) {
+      notify(err instanceof Error ? err.message : 'המחיקה נכשלה', 'error')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  return (
+    <section className="rounded-xl border border-stone-200 bg-white">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-2 p-3 text-start text-base font-bold text-stone-800"
+      >
+        <Trash2 size={18} className="text-stone-500" />
+        <span className="flex-1">נמחקו ({products.length})</span>
+        <ChevronDown size={18} className={`text-stone-500 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="border-t border-stone-100">
+          <p className="m-0 px-3 pt-3 text-base text-stone-600">
+            מוצרים שמחקת. נגריות לא רואות אותם. &quot;החזר&quot; מחזיר מוצר בדיוק כמו שהיה, עם המחיר והאריזה.
+          </p>
+          {products.map((product) => (
+            <div key={product.offerId} className="flex flex-wrap items-center gap-3 border-b border-stone-100 p-3 last:border-b-0">
+              <Thumb product={product} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-bold text-stone-900">{product.name}</span>
+                <span className="block text-base text-stone-500">
+                  נמחק ב-<bdi className="tnum">{deletedOn(product.deletedAt)}</bdi> · <bdi className="tnum">{formatIls(product.price)}</bdi> ל{unitLabel(product.baseUnit)}
+                </span>
+              </span>
+              <span className="flex shrink-0 gap-2">
+                <button
+                  type="button"
+                  onClick={() => restore(product)}
+                  disabled={busy !== null}
+                  className="flex h-11 items-center gap-1.5 rounded-lg bg-emerald-700 px-4 text-base font-semibold text-white disabled:opacity-50"
+                >
+                  <RotateCcw size={16} />
+                  החזר
+                </button>
+                <button
+                  type="button"
+                  onClick={() => purge(product)}
+                  disabled={busy !== null}
+                  className="flex h-11 items-center rounded-lg px-3 text-base font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+                >
+                  מחק לצמיתות
+                </button>
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   )
 }
 
@@ -72,11 +166,13 @@ function ProductRow({ product, onOpen }: { product: ProductItem; onOpen: () => v
  */
 export default function ProductsTab({
   products,
+  deletedProducts,
   categories,
   catalog,
   notify,
 }: {
   products: ProductItem[]
+  deletedProducts: DeletedProduct[]
   categories: CategoryOption[]
   catalog: CatalogPick[]
   notify: Notify
@@ -107,7 +203,7 @@ export default function ProductsTab({
         <div className="rounded-xl border-2 border-dashed border-stone-300 bg-white p-8 text-center">
           <PackageOpen size={40} className="mx-auto text-stone-300" />
           <h2 className="mt-3 text-lg font-bold text-stone-900">הקטלוג שלך ריק</h2>
-          <p className="mt-1 text-sm text-stone-600">
+          <p className="mt-1 text-base text-stone-600">
             הוסף את המוצר הראשון — שם, מחיר ותמונה. נגרים יראו אותו מיד.
           </p>
           <button
@@ -121,7 +217,7 @@ export default function ProductsTab({
           <button
             type="button"
             onClick={() => setImporting(true)}
-            className="mt-2 flex h-11 w-full items-center justify-center gap-2 text-sm font-semibold text-emerald-800 underline sm:inline-flex sm:w-auto sm:px-4"
+            className="mt-2 flex h-11 w-full items-center justify-center gap-2 text-base font-semibold text-emerald-800 underline sm:inline-flex sm:w-auto sm:px-4"
           >
             <FileSpreadsheet size={16} />
             יש לכם מחירון באקסל? ייבוא בבת אחת
@@ -135,7 +231,7 @@ export default function ProductsTab({
                 type="button"
                 onClick={() => setQuick(false)}
                 aria-pressed={!quick}
-                className={`flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold ${!quick ? 'bg-stone-900 text-white' : 'text-stone-600'}`}
+                className={`flex h-9 items-center gap-1.5 rounded-lg px-3 text-base font-semibold ${!quick ? 'bg-stone-900 text-white' : 'text-stone-600'}`}
               >
                 <List size={16} />
                 רשימה
@@ -144,7 +240,7 @@ export default function ProductsTab({
                 type="button"
                 onClick={() => setQuick(true)}
                 aria-pressed={quick}
-                className={`flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold ${quick ? 'bg-stone-900 text-white' : 'text-stone-600'}`}
+                className={`flex h-9 items-center gap-1.5 rounded-lg px-3 text-base font-semibold ${quick ? 'bg-stone-900 text-white' : 'text-stone-600'}`}
               >
                 <Pencil size={15} />
                 עריכה מהירה
@@ -154,7 +250,7 @@ export default function ProductsTab({
               href="/api/supplier/pricelist"
               download
               title="הורד את המחירון שלי לאקסל, תקן והעלה בחזרה"
-              className="flex h-10 items-center gap-1.5 rounded-xl px-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-50"
+              className="flex h-10 items-center gap-1.5 rounded-xl px-2 text-base font-semibold text-emerald-800 hover:bg-emerald-50"
             >
               <Download size={16} />
               הורד מחירון
@@ -201,7 +297,7 @@ export default function ProductsTab({
             </div>
 
             {(missingImages > 0 || outOfStock > 0) && (
-              <p className="text-xs text-stone-500">
+              <p className="text-sm text-stone-500">
                 {products.length} מוצרים
                 {missingImages > 0 && ` · ${missingImages} בלי תמונה`}
                 {outOfStock > 0 && ` · ${outOfStock} אזלו`}
@@ -209,7 +305,7 @@ export default function ProductsTab({
             )}
 
             {shown.length === 0 ? (
-              <p className="rounded-xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-600">
+              <p className="rounded-xl border border-stone-200 bg-white p-8 text-center text-base text-stone-600">
                 לא נמצא מוצר שמתאים לחיפוש.
               </p>
             ) : (
@@ -235,6 +331,8 @@ export default function ProductsTab({
           )}
         </>
       )}
+
+      {deletedProducts.length > 0 && <DeletedList products={deletedProducts} notify={notify} />}
 
       {importing && (
         <div role="dialog" aria-modal="true" aria-label="ייבוא מחירון" className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-4">

@@ -104,24 +104,24 @@ function Row({
       >
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="font-mono text-sm font-semibold text-stone-900">
-              #{order.short_number} <span className="text-xs font-normal text-stone-400">{order.order_number}</span>
+            <span className="font-mono text-base font-semibold text-stone-900">
+              #{order.short_number} <span className="text-sm font-normal text-stone-400">{order.order_number}</span>
             </span>
-            <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${status.className}`}>
+            <span className={`rounded-full px-2 py-0.5 text-sm font-semibold ${status.className}`}>
               {status.label}
             </span>
             {order.carpenter_id && (
-              <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-600">
+              <span className="rounded-full bg-stone-100 px-2 py-0.5 text-sm text-stone-600">
                 מלינק
               </span>
             )}
             {order.suppliers && (
-              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-900">
+              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-sm font-semibold text-amber-900">
                 {order.suppliers.company_name}
               </span>
             )}
           </div>
-          <p className="mt-0.5 truncate text-sm text-stone-600">
+          <p className="mt-0.5 truncate text-base text-stone-600">
             {order.business_name || order.customer_name} · {order.customer_phone}
             {order.created_at &&
               ` · ${new Date(order.created_at).toLocaleDateString('he-IL')}`}
@@ -132,7 +132,7 @@ function Row({
           <p className="tnum font-bold text-stone-900">
             {formatIls(confirmed ?? submitted)}
           </p>
-          <p className="text-xs text-stone-400">
+          <p className="text-sm text-stone-400">
             {confirmed != null ? 'מאושר' : 'הוזמן'} · {order.line_count} שורות
           </p>
         </div>
@@ -146,7 +146,7 @@ function Row({
       {expanded && (
         <div className="border-t border-stone-200 bg-stone-50 p-4">
           {lines ? (
-          <table className="w-full text-sm">
+          <table className="w-full text-base">
             <tbody>
               {lines.map((line) => (
                 <tr key={line.id} className="border-b border-stone-200 last:border-b-0">
@@ -163,13 +163,13 @@ function Row({
             </tbody>
           </table>
           ) : (
-            <div className="rounded-lg border border-stone-200 bg-white p-3 text-sm text-stone-600">
+            <div className="rounded-lg border border-stone-200 bg-white p-3 text-base text-stone-600">
               <p>השורות של ספק שמנהל את החשבון בעצמו מוסתרות.</p>
               <button
                 type="button"
                 disabled={revealing}
                 onClick={reveal}
-                className="mt-2 h-10 rounded-lg border border-stone-300 px-3 text-sm font-medium text-stone-700 disabled:opacity-50"
+                className="mt-2 h-10 rounded-lg border border-stone-300 px-3 text-base font-medium text-stone-700 disabled:opacity-50"
               >
                 {revealing ? 'טוען…' : 'הצג שורות לתמיכה (נרשם ביומן)'}
               </button>
@@ -177,7 +177,7 @@ function Row({
             </div>
           )}
 
-          <div className="mt-3 flex flex-wrap items-baseline gap-x-4 text-sm">
+          <div className="mt-3 flex flex-wrap items-baseline gap-x-4 text-base">
             <span className="text-stone-600">
               הוזמן: <span className="tnum font-semibold">{formatIls(submitted)}</span>
             </span>
@@ -193,7 +193,7 @@ function Row({
           </div>
 
           {order.supplier_note && (
-            <p className="mt-2 rounded-lg bg-white p-2 text-sm text-stone-700">
+            <p className="mt-2 rounded-lg bg-white p-2 text-base text-stone-700">
               {order.supplier_note}
             </p>
           )}
@@ -205,10 +205,10 @@ function Row({
               counts and it often differs — a line out of stock, an adjusted
               quantity, a negotiated price. */}
           <div className="mt-4 rounded-lg border border-stone-300 bg-white p-3">
-            <p className="text-sm font-semibold text-stone-900">
+            <p className="text-base font-semibold text-stone-900">
               {confirmed != null ? 'עדכן את הסכום המאושר' : 'אשר את ההזמנה'}
             </p>
-            <p className="mt-0.5 text-xs text-stone-500">
+            <p className="mt-0.5 text-sm text-stone-500">
               הסכום שתאשר הוא מה שהספק יספק ויחייב — לא בהכרח מה שהוזמן.
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -219,13 +219,13 @@ function Row({
                 aria-label="סכום מאושר ללא מע״מ"
                 className="tnum h-11 w-32 rounded-lg border border-stone-300 px-3 text-center"
               />
-              <span className="text-xs text-stone-500">₪ ללא מע״מ</span>
+              <span className="text-sm text-stone-500">₪ ללא מע״מ</span>
               <input
                 value={note ?? order.supplier_note ?? ''}
                 onChange={(e) => onNote(order.id, e.target.value)}
                 placeholder="הערה (אם הסכום שונה)"
                 aria-label="הערת ספק"
-                className="h-11 min-w-0 flex-1 rounded-lg border border-stone-300 px-3 text-sm"
+                className="h-11 min-w-0 flex-1 rounded-lg border border-stone-300 px-3 text-base"
               />
               <button
                 type="button"
@@ -238,7 +238,7 @@ function Row({
                     supplier_note: note ?? order.supplier_note ?? '',
                   })
                 }
-                className="flex h-11 items-center gap-1.5 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white disabled:opacity-50"
+                className="flex h-11 items-center gap-1.5 rounded-lg bg-emerald-700 px-4 text-base font-semibold text-white disabled:opacity-50"
               >
                 <Check size={16} />
                 {busy ? 'שומר…' : 'אשר'}
@@ -253,7 +253,7 @@ function Row({
                 type="button"
                 disabled={busy || order.status === next}
                 onClick={() => onPatch(order.id, { status: next })}
-                className={`flex h-10 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium disabled:opacity-40 ${
+                className={`flex h-10 items-center gap-1.5 rounded-lg border px-3 text-base font-medium disabled:opacity-40 ${
                   next === 'cancelled'
                     ? 'border-red-200 text-red-700'
                     : 'border-stone-300 text-stone-700'
@@ -266,7 +266,7 @@ function Row({
           </div>
             </>
           ) : (
-            <p className="mt-4 rounded-lg border border-stone-200 bg-white p-3 text-sm text-stone-600">
+            <p className="mt-4 rounded-lg border border-stone-200 bg-white p-3 text-base text-stone-600">
               רק הספק מאשר ומעדכן את ההזמנה הזאת.
             </p>
           )}
@@ -311,7 +311,7 @@ export default function OrdersClient({ orders }: { orders: Order[] }) {
     <div className="space-y-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-xl font-bold text-stone-900">הזמנות</h1>
-        <p className="text-sm text-stone-600">
+        <p className="text-base text-stone-600">
           {open.length + waitingSupplier.length} ממתינות לאישור · {orders.length} בסך הכול
         </p>
         <div className="mt-3">
@@ -319,12 +319,12 @@ export default function OrdersClient({ orders }: { orders: Order[] }) {
         </div>
       </div>
 
-      {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {error && <p className="rounded-lg bg-red-50 p-3 text-base text-red-700">{error}</p>}
 
       {orders.length === 0 ? (
         <div className="rounded-xl border border-stone-200 bg-white p-10 text-center">
           <p className="font-semibold text-stone-900">אין הזמנות עדיין</p>
-          <p className="mt-1 text-sm text-stone-600">
+          <p className="mt-1 text-base text-stone-600">
             הזמנה שתישלח מדף הצעה או מהקטלוג תופיע כאן.
           </p>
         </div>
@@ -332,7 +332,7 @@ export default function OrdersClient({ orders }: { orders: Order[] }) {
         <>
           {open.length > 0 && (
             <section className="overflow-hidden rounded-xl border border-amber-300 bg-white">
-              <h2 className="border-b border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-bold text-amber-900">
+              <h2 className="border-b border-amber-200 bg-amber-50 px-4 py-2.5 text-base font-bold text-amber-900">
                 ממתינות לאישור שלך
               </h2>
               {open.map((order) => (
@@ -354,7 +354,7 @@ export default function OrdersClient({ orders }: { orders: Order[] }) {
 
           {waitingSupplier.length > 0 && (
             <section className="overflow-hidden rounded-xl border border-stone-200 bg-white">
-              <h2 className="border-b border-stone-200 px-4 py-2.5 text-sm font-bold text-stone-700">
+              <h2 className="border-b border-stone-200 px-4 py-2.5 text-base font-bold text-stone-700">
                 ממתינות לאישור הספק
               </h2>
               {waitingSupplier.map((order) => (
@@ -376,7 +376,7 @@ export default function OrdersClient({ orders }: { orders: Order[] }) {
 
           {rest.length > 0 && (
             <section className="overflow-hidden rounded-xl border border-stone-200 bg-white">
-              <h2 className="border-b border-stone-200 px-4 py-2.5 text-sm font-bold text-stone-700">
+              <h2 className="border-b border-stone-200 px-4 py-2.5 text-base font-bold text-stone-700">
                 בטיפול והושלמו
               </h2>
               {rest.map((order) => (

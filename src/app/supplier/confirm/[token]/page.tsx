@@ -95,7 +95,7 @@ export default async function SupplierConfirmPage({
           <CheckCircle2 size={40} className="mx-auto text-emerald-700" />
           <h1 className="mt-3 text-xl font-bold text-stone-900">ההזמנה כבר אושרה</h1>
           <p className="mt-2 text-stone-600">
-            הזמנה <span className="tnum font-mono text-sm">{view.orderNumber}</span> טופלה
+            הזמנה <span className="tnum font-mono text-base">{view.orderNumber}</span> טופלה
             {view.confirmedTotal != null && (
               <>
                 {' '}ואושרה על סך{' '}
@@ -105,7 +105,7 @@ export default async function SupplierConfirmPage({
             .
           </p>
           {view.supplierNote && (
-            <p className="mt-3 rounded-lg bg-stone-50 p-3 text-sm text-stone-700">
+            <p className="mt-3 rounded-lg bg-stone-50 p-3 text-base text-stone-700">
               {view.supplierNote}
             </p>
           )}

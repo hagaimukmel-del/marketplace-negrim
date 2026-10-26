@@ -22,7 +22,7 @@ function Plan({ products }: { products: ProductItem[] }) {
   return (
     <section className="rounded-xl border border-stone-200 bg-white p-4">
       <h2 className="font-bold text-stone-900">המנוי שלך</h2>
-      <p className="mt-0.5 text-sm text-stone-600">
+      <p className="mt-0.5 text-base text-stone-600">
         יש לך <span className="tnum font-semibold">{listed}</span> מוצרים מוצגים לנגרים. המנוי נקבע לפי מספר המוצרים,
         בלי עמלה על הזמנות.
       </p>
@@ -34,13 +34,13 @@ function Plan({ products }: { products: ProductItem[] }) {
               key={index}
               className={`rounded-xl border p-3 ${mine ? 'border-emerald-600 bg-emerald-50 ring-1 ring-emerald-600' : 'border-stone-200'}`}
             >
-              <p className="text-sm text-stone-600">{planLabel(index)}</p>
+              <p className="text-base text-stone-600">{planLabel(index)}</p>
               <p className="tnum mt-0.5 text-lg font-bold text-stone-900">
                 {formatIls(plan.monthlyExclVat)}
-                <span className="text-xs font-normal text-stone-500"> לחודש, לפני מע״מ</span>
+                <span className="text-sm font-normal text-stone-500"> לחודש, לפני מע״מ</span>
               </p>
               {mine && (
-                <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-emerald-800">
+                <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-emerald-800">
                   <Check size={14} />
                   המדרגה שלך
                 </p>
@@ -49,7 +49,7 @@ function Plan({ products }: { products: ProductItem[] }) {
           )
         })}
       </ul>
-      <p className="mt-3 text-xs text-stone-500">
+      <p className="mt-3 text-sm text-stone-500">
         החיוב מתחיל ב{BILLING_STARTS_LABEL} ונעשה מחוץ לאתר, בחשבונית ישירה. האתר לא גובה תשלום.
       </p>
     </section>
@@ -68,8 +68,8 @@ function Results({ week }: { week: PromoWeek }) {
         ['סכום', amount > 0 ? formatIls(amount) : '—'],
       ].map(([label, value]) => (
         <div key={label as string} className="rounded-lg bg-stone-50 px-1 py-2">
-          <dt className="text-[11px] text-stone-500">{label}</dt>
-          <dd className="tnum text-sm font-bold text-stone-900">{value}</dd>
+          <dt className="text-xs text-stone-500">{label}</dt>
+          <dd className="tnum text-base font-bold text-stone-900">{value}</dd>
         </div>
       ))}
     </dl>
@@ -163,7 +163,7 @@ export default function PromoTab({
             <Megaphone size={18} className="text-emerald-700" />
             מוצר השבוע
           </h2>
-          <p className="mt-0.5 text-sm text-stone-600">
+          <p className="mt-0.5 text-base text-stone-600">
             מוצר אחד שלך מוצג שבוע שלם בראש דף הבית של כל הנגרים, בראש הקטגוריה שלו, וראשון אצל הסוכן כשמחפשים בתחום.
             הוא מסומן &quot;פרסומת&quot;, ומוצג בלי מחיר אלא אם תבחר להציג אותו.{' '}
             <b className="tnum">{formatIls(PROMO_WEEK_EXCL_VAT)}</b> לשבוע, לפני מע״מ, בחיוב מחוץ לאתר.
@@ -171,9 +171,9 @@ export default function PromoTab({
         </div>
 
         {!promo.ready ? (
-          <p className="border-t border-stone-100 bg-stone-50 p-4 text-sm text-stone-600">ההזמנה של שבועות תיפתח בקרוב.</p>
+          <p className="border-t border-stone-100 bg-stone-50 p-4 text-base text-stone-600">ההזמנה של שבועות תיפתח בקרוב.</p>
         ) : live.length === 0 ? (
-          <p className="border-t border-stone-100 bg-stone-50 p-4 text-sm text-stone-600">
+          <p className="border-t border-stone-100 bg-stone-50 p-4 text-base text-stone-600">
             אפשר לקדם רק מוצר שמוצג לנגרים. הוסף מוצר קודם.
           </p>
         ) : (
@@ -187,13 +187,13 @@ export default function PromoTab({
                     <CalendarDays size={18} className="shrink-0 text-stone-400" />
                     <div className="min-w-0 flex-1">
                       <p className="tnum font-semibold text-stone-900">{weekLabel(week)}</p>
-                      {booking && <p className="truncate text-xs text-stone-500">{booking.productName}</p>}
+                      {booking && <p className="truncate text-sm text-stone-500">{booking.productName}</p>}
                       {booking && (
                         <button
                           type="button"
                           onClick={() => togglePrice(booking)}
                           disabled={busy}
-                          className="mt-0.5 text-xs font-semibold text-emerald-800 underline underline-offset-2"
+                          className="mt-0.5 text-sm font-semibold text-emerald-800 underline underline-offset-2"
                         >
                           {booking.showPrice ? 'מחיר מוצג בפרסומת · להסתיר' : 'בלי מחיר בפרסומת · להציג מחיר'}
                         </button>
@@ -201,7 +201,7 @@ export default function PromoTab({
                     </div>
                     {booking ? (
                       <div className="flex shrink-0 items-center gap-1">
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_TONE[booking.status]}`}>
+                        <span className={`rounded-full px-2 py-0.5 text-sm font-semibold ${STATUS_TONE[booking.status]}`}>
                           {PROMO_STATUS_LABEL[booking.status]}
                         </span>
                         {booking.status === 'requested' && (
@@ -217,7 +217,7 @@ export default function PromoTab({
                         )}
                       </div>
                     ) : isTaken ? (
-                      <span className="shrink-0 text-sm text-stone-400">תפוס</span>
+                      <span className="shrink-0 text-base text-stone-400">תפוס</span>
                     ) : picking === week ? null : (
                       <button
                         type="button"
@@ -226,7 +226,7 @@ export default function PromoTab({
                           setProductId('')
                           setShowPrice(false)
                         }}
-                        className="h-9 shrink-0 rounded-lg border border-emerald-700 px-3 text-sm font-semibold text-emerald-800 hover:bg-emerald-50"
+                        className="h-9 shrink-0 rounded-lg border border-emerald-700 px-3 text-base font-semibold text-emerald-800 hover:bg-emerald-50"
                       >
                         לבחור שבוע
                       </button>
@@ -234,7 +234,7 @@ export default function PromoTab({
                   </div>
                   {picking === week && (
                     <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
-                      <label className="flex items-center gap-2 text-sm text-stone-700 sm:col-span-3">
+                      <label className="flex items-center gap-2 text-base text-stone-700 sm:col-span-3">
                         <input
                           type="checkbox"
                           checked={showPrice}
@@ -267,7 +267,7 @@ export default function PromoTab({
                       <button
                         type="button"
                         onClick={() => setPicking(null)}
-                        className="h-12 rounded-lg px-4 text-sm font-semibold text-stone-600 hover:bg-stone-100"
+                        className="h-12 rounded-lg px-4 text-base font-semibold text-stone-600 hover:bg-stone-100"
                       >
                         ביטול
                       </button>
@@ -288,12 +288,12 @@ export default function PromoTab({
               <li key={week.id} className="border-t border-stone-100 px-4 py-3">
                 <div className="flex items-center gap-2">
                   <p className="tnum font-semibold text-stone-900">{weekLabel(week.weekStart)}</p>
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_TONE[week.status]}`}>
+                  <span className={`rounded-full px-2 py-0.5 text-sm font-semibold ${STATUS_TONE[week.status]}`}>
                     {week.weekStart === now && week.status === 'approved' ? 'רץ עכשיו' : PROMO_STATUS_LABEL[week.status]}
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-end text-sm text-stone-600">{week.productName}</span>
+                  <span className="min-w-0 flex-1 truncate text-end text-base text-stone-600">{week.productName}</span>
                 </div>
-                {week.status === 'rejected' && week.note && <p className="mt-1 text-sm text-red-700">{week.note}</p>}
+                {week.status === 'rejected' && week.note && <p className="mt-1 text-base text-red-700">{week.note}</p>}
                 <Results week={week} />
               </li>
             ))}

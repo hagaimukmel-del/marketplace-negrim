@@ -95,12 +95,12 @@ function OrderCard({
       <header className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="font-bold text-stone-900">{order.buyer}</h3>
-          <p className="tnum text-xs text-stone-500">
+          <p className="tnum text-sm text-stone-500">
             {order.orderNumber} · {formatDate(order.createdAt)}
             {order.contactName && ` · ${order.contactName}`}
           </p>
         </div>
-        <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${info.className}`}>
+        <span className={`shrink-0 rounded-full px-2.5 py-1 text-sm font-semibold ${info.className}`}>
           {info.label}
         </span>
       </header>
@@ -110,7 +110,7 @@ function OrderCard({
         {order.phone && (
           <a
             href={telUrl(order.phone) ?? undefined}
-            className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 px-3 text-sm font-semibold text-stone-700"
+            className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 px-3 text-base font-semibold text-stone-700"
           >
             <Phone size={15} />
             חיוג
@@ -121,7 +121,7 @@ function OrderCard({
             href={whatsapp}
             target="_blank"
             rel="noreferrer"
-            className="flex h-10 items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 text-sm font-semibold text-emerald-800"
+            className="flex h-10 items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 text-base font-semibold text-emerald-800"
           >
             <MessageCircle size={15} />
             וואטסאפ
@@ -130,7 +130,7 @@ function OrderCard({
         {!order.split && (
           <Link
             href={`/supplier/messages/new?order=${order.id}`}
-            className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 px-3 text-sm font-semibold text-stone-700"
+            className="flex h-10 items-center gap-1.5 rounded-lg border border-stone-300 px-3 text-base font-semibold text-stone-700"
           >
             <MessageSquare size={15} />
             הודעה
@@ -141,7 +141,7 @@ function OrderCard({
             href={mapsLink}
             target="_blank"
             rel="noreferrer"
-            className="flex h-10 min-w-0 items-center gap-1.5 rounded-lg border border-stone-300 px-3 text-sm text-stone-700"
+            className="flex h-10 min-w-0 items-center gap-1.5 rounded-lg border border-stone-300 px-3 text-base text-stone-700"
           >
             <MapPin size={15} className="shrink-0" />
             <span className="truncate">{order.address}</span>
@@ -150,19 +150,19 @@ function OrderCard({
       </div>
 
       {order.paymentTerms && (
-        <p className="mt-2 text-sm text-stone-600">
+        <p className="mt-2 text-base text-stone-600">
           תנאי תשלום מבוקשים: <strong className="text-stone-900">{order.paymentTerms}</strong>
         </p>
       )}
       {order.notes && (
-        <p className="mt-2 rounded-lg bg-stone-50 p-2.5 text-sm text-stone-700">{order.notes}</p>
+        <p className="mt-2 rounded-lg bg-stone-50 p-2.5 text-base text-stone-700">{order.notes}</p>
       )}
 
       <ul className="mt-3 divide-y divide-stone-100 border-y border-stone-100">
         {order.lines.map((line) => (
-          <li key={line.id} className={`flex justify-between gap-3 py-2 text-sm ${missing.includes(line.id) || line.unavailable ? 'opacity-50' : ''}`}>
+          <li key={line.id} className={`flex justify-between gap-3 py-2 text-base ${missing.includes(line.id) || line.unavailable ? 'opacity-50' : ''}`}>
             {changing && order.status === 'pending' && (
-              <label className="flex shrink-0 items-center gap-1 text-xs font-semibold text-stone-600">
+              <label className="flex shrink-0 items-center gap-1 text-sm font-semibold text-stone-600">
                 <input
                   type="checkbox"
                   checked={missing.includes(line.id)}
@@ -175,9 +175,9 @@ function OrderCard({
             <span className="min-w-0 flex-1">
               <span className={`block font-medium text-stone-900 ${missing.includes(line.id) || line.unavailable ? 'line-through' : ''}`}>
                 {line.name}
-                {line.unavailable && <span className="ms-1 text-xs font-semibold text-amber-700 no-underline">(חסר)</span>}
+                {line.unavailable && <span className="ms-1 text-sm font-semibold text-amber-700 no-underline">(חסר)</span>}
               </span>
-              <span className="tnum text-xs text-stone-500">
+              <span className="tnum text-sm text-stone-500">
                 {line.quantity} × {formatIls(line.unitPrice)}
               </span>
             </span>
@@ -189,24 +189,24 @@ function OrderCard({
       </ul>
 
       <div className="mt-2 flex items-baseline justify-between">
-        <span className="text-sm font-bold text-stone-900">סה״כ ללא מע״מ</span>
+        <span className="text-base font-bold text-stone-900">סה״כ ללא מע״מ</span>
         <span className="tnum text-lg font-bold text-stone-900">{formatIls(order.total)}</span>
       </div>
-      <p className="tnum text-end text-xs text-stone-400">{formatIls(withVat(order.total))} כולל מע״מ</p>
+      <p className="tnum text-end text-sm text-stone-400">{formatIls(withVat(order.total))} כולל מע״מ</p>
 
       {order.confirmedTotal != null && order.confirmedTotal !== order.total && (
-        <p className="mt-1 text-end text-sm text-stone-600">
+        <p className="mt-1 text-end text-base text-stone-600">
           אושר: <span className="tnum font-bold">{formatIls(order.confirmedTotal)}</span>
         </p>
       )}
       {order.supplierNote && (
-        <p className="mt-2 rounded-lg bg-amber-50 p-2.5 text-sm text-amber-900">
+        <p className="mt-2 rounded-lg bg-amber-50 p-2.5 text-base text-amber-900">
           הערה שלך: {order.supplierNote}
         </p>
       )}
 
       {order.split ? (
-        <p className="mt-3 rounded-lg bg-stone-100 p-3 text-sm text-stone-600">
+        <p className="mt-3 rounded-lg bg-stone-100 p-3 text-base text-stone-600">
           {/* Only orders from before checkouts were split per supplier (2026-09-17) can mix suppliers. */}
           הזמנה ישנה, מלפני שכל הזמנה נשלחה לספק אחד. היא כוללת גם ספקים אחרים ולכן לא מאשרים אותה מכאן.
         </p>
@@ -217,7 +217,7 @@ function OrderCard({
               {changing && (
                 <div className="space-y-2 rounded-lg bg-stone-50 p-3">
                   <label className="block">
-                    <span className="text-xs font-medium text-stone-600">סכום שתספק (ללא מע״מ)</span>
+                    <span className="text-sm font-medium text-stone-600">סכום שתספק (ללא מע״מ)</span>
                     <input
                       inputMode="decimal"
                       value={amount}
@@ -225,9 +225,9 @@ function OrderCard({
                       className="tnum mt-1 h-11 w-full rounded-lg border border-stone-300 bg-white px-3"
                     />
                   </label>
-                  <p className="text-xs text-stone-500">סמנו ״חסר״ ליד שורה שלא תסופק, והסכום יתעדכן.</p>
+                  <p className="text-sm text-stone-500">סמנו ״חסר״ ליד שורה שלא תסופק, והסכום יתעדכן.</p>
                   <label className="block">
-                    <span className="text-xs font-medium text-stone-600">תאריך אספקה (לא חובה)</span>
+                    <span className="text-sm font-medium text-stone-600">תאריך אספקה (לא חובה)</span>
                     <input
                       type="date"
                       value={deliveryOn}
@@ -236,7 +236,7 @@ function OrderCard({
                     />
                   </label>
                   <label className="block">
-                    <span className="text-xs font-medium text-stone-600">הערה לנגר (לא חובה)</span>
+                    <span className="text-sm font-medium text-stone-600">הערה לנגר (לא חובה)</span>
                     <textarea
                       value={note}
                       onChange={(e) => setNote(e.target.value)}
@@ -261,7 +261,7 @@ function OrderCard({
                   type="button"
                   onClick={() => setChanging(!changing)}
                   disabled={busy}
-                  className="h-12 shrink-0 rounded-lg border border-stone-300 px-4 text-sm font-semibold text-stone-700"
+                  className="h-12 shrink-0 rounded-lg border border-stone-300 px-4 text-base font-semibold text-stone-700"
                 >
                   {changing ? 'ביטול' : 'יש שינוי'}
                 </button>
@@ -269,7 +269,7 @@ function OrderCard({
               {rejecting ? (
                 <div className="space-y-2 rounded-lg bg-red-50 p-3">
                   <label className="block">
-                    <span className="text-xs font-medium text-red-800">למה אי אפשר לספק? הנגר יקבל את זה במייל</span>
+                    <span className="text-sm font-medium text-red-800">למה אי אפשר לספק? הנגר יקבל את זה במייל</span>
                     <textarea
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
@@ -283,14 +283,14 @@ function OrderCard({
                       type="button"
                       onClick={reject}
                       disabled={busy || reason.trim().length < 2}
-                      className="h-11 flex-1 rounded-lg bg-red-700 text-sm font-bold text-white disabled:opacity-50"
+                      className="h-11 flex-1 rounded-lg bg-red-700 text-base font-bold text-white disabled:opacity-50"
                     >
                       דחה את ההזמנה
                     </button>
                     <button
                       type="button"
                       onClick={() => setRejecting(false)}
-                      className="h-11 shrink-0 rounded-lg border border-stone-300 bg-white px-4 text-sm font-semibold text-stone-700"
+                      className="h-11 shrink-0 rounded-lg border border-stone-300 bg-white px-4 text-base font-semibold text-stone-700"
                     >
                       חזרה
                     </button>
@@ -301,7 +301,7 @@ function OrderCard({
                   type="button"
                   onClick={() => setRejecting(true)}
                   disabled={busy}
-                  className="w-full text-center text-sm font-semibold text-red-700"
+                  className="w-full text-center text-base font-semibold text-red-700"
                 >
                   לא יכול לספק את ההזמנה
                 </button>
@@ -316,7 +316,7 @@ function OrderCard({
               type="button"
               onClick={() => onAction(order, 'prepare')}
               disabled={busy}
-              className="h-10 w-full rounded-lg border border-dashed border-stone-300 text-sm font-semibold text-stone-600 disabled:opacity-60"
+              className="h-10 w-full rounded-lg border border-dashed border-stone-300 text-base font-semibold text-stone-600 disabled:opacity-60"
             >
               סמן שההזמנה בהכנה (לא חובה)
             </button>
@@ -337,7 +337,7 @@ function OrderCard({
                 type="button"
                 onClick={() => onAction(order, 'deliver')}
                 disabled={busy}
-                className="h-12 shrink-0 rounded-lg border border-stone-300 px-4 text-sm font-semibold text-stone-700"
+                className="h-12 shrink-0 rounded-lg border border-stone-300 px-4 text-base font-semibold text-stone-700"
               >
                 נאסף / סופק
               </button>
@@ -383,7 +383,7 @@ function Questions({ questions }: { questions: SupplierQuestion[] }) {
     <section className="rounded-xl border border-stone-200 bg-white p-4">
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="font-bold text-stone-900">שאלות מנגריות</h2>
-        <Link href="/supplier/messages" className="text-sm font-semibold text-emerald-800">
+        <Link href="/supplier/messages" className="text-base font-semibold text-emerald-800">
           לענות באתר
         </Link>
       </div>
@@ -394,17 +394,17 @@ function Questions({ questions }: { questions: SupplierQuestion[] }) {
             <li key={q.id} className="py-3">
               <div className="flex items-baseline justify-between gap-3">
                 <span className="font-semibold text-stone-900">{q.carpenter}</span>
-                <span className="tnum shrink-0 text-xs text-stone-500">{formatDate(q.createdAt)}</span>
+                <span className="tnum shrink-0 text-sm text-stone-500">{formatDate(q.createdAt)}</span>
               </div>
-              {q.productName && <p className="text-sm text-stone-600">על {q.productName}</p>}
-              <p className="mt-1 whitespace-pre-wrap text-sm text-stone-800">{q.message}</p>
+              {q.productName && <p className="text-base text-stone-600">על {q.productName}</p>}
+              <p className="mt-1 whitespace-pre-wrap text-base text-stone-800">{q.message}</p>
               {q.phone && (
                 <div className="mt-2 flex gap-2">
-                  <a href={telUrl(q.phone) ?? undefined} className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 px-3 py-1.5 text-sm font-semibold text-stone-800">
+                  <a href={telUrl(q.phone) ?? undefined} className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 px-3 py-1.5 text-base font-semibold text-stone-800">
                     <Phone size={15} /> {q.contactName ?? q.phone}
                   </a>
                   {whatsapp && (
-                    <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 px-3 py-1.5 text-sm font-semibold text-emerald-800">
+                    <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 px-3 py-1.5 text-base font-semibold text-emerald-800">
                       <MessageCircle size={15} /> וואטסאפ
                     </a>
                   )}
@@ -474,14 +474,14 @@ export default function OrdersTab({
                 key={item.key}
                 type="button"
                 onClick={() => setFilter(item.key)}
-                className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-semibold ${
+                className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-base font-semibold ${
                   active
                     ? 'border-stone-900 bg-stone-900 text-white'
                     : 'border-stone-300 bg-white text-stone-700'
                 }`}
               >
                 {item.label}
-                <span className={`tnum text-xs ${active ? 'text-stone-300' : 'text-stone-400'}`}>
+                <span className={`tnum text-sm ${active ? 'text-stone-300' : 'text-stone-400'}`}>
                   {count}
                 </span>
               </button>
@@ -496,7 +496,7 @@ export default function OrdersTab({
           <p className="mt-3 font-semibold text-stone-900">
             {orders.length === 0 ? 'עוד לא הגיעו הזמנות' : 'אין הזמנות כאן'}
           </p>
-          <p className="mt-1 text-sm text-stone-600">
+          <p className="mt-1 text-base text-stone-600">
             {orders.length === 0
               ? 'כשנגרייה תזמין ממך, ההזמנה תופיע כאן ותקבל עליה מייל.'
               : 'נסה סינון אחר.'}

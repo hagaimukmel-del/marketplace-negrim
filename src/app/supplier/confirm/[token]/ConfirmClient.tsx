@@ -60,9 +60,9 @@ export default function ConfirmClient({ token, view }: { token: string; view: Co
         <h1 className="mt-3 text-xl font-bold text-stone-900">ההזמנה אושרה</h1>
         <p className="mt-2 text-stone-600">
           אישרת <span className="tnum font-bold">{formatIls(done)}</span> ללא מע״מ עבור הזמנה{' '}
-          <span className="tnum font-mono text-sm">{view.orderNumber}</span>.
+          <span className="tnum font-mono text-base">{view.orderNumber}</span>.
         </p>
-        <p className="mt-4 rounded-lg bg-stone-50 p-3 text-sm text-stone-600">
+        <p className="mt-4 rounded-lg bg-stone-50 p-3 text-base text-stone-600">
           מכאן זה אצלכם: אספקה וחשבונית ישירות לנגר, לפי התנאים שסיכמתם איתו.
         </p>
       </div>
@@ -72,9 +72,9 @@ export default function ConfirmClient({ token, view }: { token: string; view: Co
   return (
     <div className="space-y-4">
       <div className="text-center">
-        <p className="text-sm text-stone-500">{view.supplierName}</p>
+        <p className="text-base text-stone-500">{view.supplierName}</p>
         <h1 className="mt-1 text-2xl font-bold text-stone-900">הזמנה חדשה</h1>
-        <p className="tnum mt-1 text-sm text-stone-500">
+        <p className="tnum mt-1 text-base text-stone-500">
           {view.orderNumber} · {formatDate(view.createdAt)}
         </p>
       </div>
@@ -85,9 +85,9 @@ export default function ConfirmClient({ token, view }: { token: string; view: Co
           {view.businessName || view.contactName || 'נגרייה'}
         </p>
         {view.contactName && view.businessName && (
-          <p className="text-sm text-stone-600">{view.contactName}</p>
+          <p className="text-base text-stone-600">{view.contactName}</p>
         )}
-        <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm">
+        <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-base">
           {view.phone && (
             <a href={telUrl(view.phone) ?? undefined} className="flex items-center gap-1.5 text-stone-700">
               <Phone size={14} className="text-stone-400" />
@@ -102,12 +102,12 @@ export default function ConfirmClient({ token, view }: { token: string; view: Co
           )}
         </div>
         {view.paymentTerms && (
-          <p className="mt-2 text-sm text-stone-600">
+          <p className="mt-2 text-base text-stone-600">
             תנאי תשלום מבוקשים: <span className="font-semibold">{view.paymentTerms}</span>
           </p>
         )}
         {view.notes && (
-          <p className="mt-2 rounded-lg bg-stone-50 p-3 text-sm text-stone-700">{view.notes}</p>
+          <p className="mt-2 rounded-lg bg-stone-50 p-3 text-base text-stone-700">{view.notes}</p>
         )}
       </div>
 
@@ -117,7 +117,7 @@ export default function ConfirmClient({ token, view }: { token: string; view: Co
             <li key={line.id} className="flex justify-between gap-3">
               <span className="min-w-0">
                 <span className="block font-medium text-stone-900">{line.product_name_he}</span>
-                <span className="tnum block text-sm text-stone-500">
+                <span className="tnum block text-base text-stone-500">
                   {line.quantity} × {formatIls(line.unit_price_excl_vat)}
                 </span>
               </span>
@@ -135,7 +135,7 @@ export default function ConfirmClient({ token, view }: { token: string; view: Co
               {formatIls(view.submittedTotal)}
             </span>
           </div>
-          <p className="tnum mt-0.5 text-end text-xs text-stone-400">
+          <p className="tnum mt-0.5 text-end text-sm text-stone-400">
             {formatIls(withVat(view.submittedTotal))} כולל מע״מ
           </p>
         </div>
@@ -144,7 +144,7 @@ export default function ConfirmClient({ token, view }: { token: string; view: Co
       {editing ? (
         <div className="rounded-xl border border-stone-300 bg-white p-4">
           <label className="block">
-            <span className="text-sm font-medium text-stone-700">הסכום שתספקו בפועל, ללא מע״מ</span>
+            <span className="text-base font-medium text-stone-700">הסכום שתספקו בפועל, ללא מע״מ</span>
             <input
               inputMode="decimal"
               value={amount}
@@ -159,7 +159,7 @@ export default function ConfirmClient({ token, view }: { token: string; view: Co
               setEditing(false)
               setAmount(String(view.submittedTotal))
             }}
-            className="mt-2 flex items-center gap-1.5 text-sm text-stone-500"
+            className="mt-2 flex items-center gap-1.5 text-base text-stone-500"
           >
             <ArrowRight size={14} />
             חזרה לסכום המקורי
@@ -169,7 +169,7 @@ export default function ConfirmClient({ token, view }: { token: string; view: Co
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white p-3 text-sm font-medium text-stone-700"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white p-3 text-base font-medium text-stone-700"
         >
           <Pencil size={15} />
           יש שינוי בכמות או במחיר
@@ -177,7 +177,7 @@ export default function ConfirmClient({ token, view }: { token: string; view: Co
       )}
 
       <label className="block">
-        <span className="text-sm font-medium text-stone-700">הערה לנגר (לא חובה)</span>
+        <span className="text-base font-medium text-stone-700">הערה לנגר (לא חובה)</span>
         <textarea
           value={note}
           onChange={(event) => setNote(event.target.value)}
@@ -187,7 +187,7 @@ export default function ConfirmClient({ token, view }: { token: string; view: Co
         />
       </label>
 
-      {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {error && <p className="rounded-lg bg-red-50 p-3 text-base text-red-700">{error}</p>}
 
       <button
         type="button"
@@ -199,7 +199,7 @@ export default function ConfirmClient({ token, view }: { token: string; view: Co
         {busy ? 'שולח…' : 'אשר הזמנה'}
       </button>
 
-      <p className="text-center text-xs text-stone-500">
+      <p className="text-center text-sm text-stone-500">
         אישור מודיע לנגר שההזמנה בטיפול. האספקה והחשבונית ישירות ממכם אליו, כרגיל.
       </p>
     </div>

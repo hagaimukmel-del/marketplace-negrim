@@ -250,6 +250,15 @@ export async function applyImport({
         failed.push({ row: row.row, message: error.message })
         continue
       }
+      // Listed again in a price list: off the supplier's "נמחקו" list too. A
+      // database without migration 20261026190000 has no mark to clear.
+      if (!offer.is_active) {
+        await supabase
+          .from('supplier_offers')
+          .update({ deleted_at: null, active_before_delete: null })
+          .eq('id', offer.id)
+          .eq('supplier_id', supplierId)
+      }
       changes.push({
         type: 'update',
         offer_id: offer.id,

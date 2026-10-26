@@ -26,11 +26,11 @@ export default function ViewPicker({
 
   return (
     <label className="flex flex-wrap items-center gap-2">
-      <span className="text-sm font-medium text-stone-700">{label}</span>
+      <span className="text-base font-medium text-stone-700">{label}</span>
       <select
         value={current}
         onChange={(event) => router.push(`${pathname}?${param}=${event.target.value}`)}
-        className="h-11 min-w-56 rounded-lg border border-stone-300 bg-white px-2 text-sm"
+        className="h-11 min-w-56 rounded-lg border border-stone-300 bg-white px-2 text-base"
       >
         {options.map((option) => (
           <option key={option.id} value={option.id}>
