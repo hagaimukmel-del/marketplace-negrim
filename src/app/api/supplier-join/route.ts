@@ -4,6 +4,7 @@ import { TERMS_VERSION } from '@/lib/terms'
 import { isRegionKey } from '@/lib/regions'
 import { isTestName, sendEmail } from '@/lib/email'
 import { formatPhone, validPhoneKey } from '@/lib/phone'
+import { checkRateLimit, getClientIP, getRateLimitHeaders, hashIdentifier } from '@/lib/rate-limit'
 import {
   applicationReceivedHtml,
   applicationReceivedSubject,
@@ -46,6 +47,13 @@ const ALREADY: Record<string, string> = {
 }
 
 export async function POST(request: NextRequest) {
+  // Each application mails the applicant and the operator, so without a limit
+  // the form could send mail from our domain to any address, as often as asked.
+  const limit = checkRateLimit(`supplier-join-ip:${hashIdentifier(getClientIP(request))}`, 'supplierJoin')
+  if (!limit.allowed) {
+    return NextResponse.json({ error: 'יותר מדי בקשות. נסו שוב בעוד שעה' }, { status: 429, headers: getRateLimitHeaders(limit) })
+  }
+
   try {
     const body = await request.json()
 
