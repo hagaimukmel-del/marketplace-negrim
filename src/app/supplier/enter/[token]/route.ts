@@ -46,6 +46,6 @@ export async function GET(
   // Back to the page an email link pointed at, when the supplier was signed out.
   const next = safeNext(request.nextUrl.searchParams.get('next'), '/supplier')
   const response = NextResponse.redirect(new URL(next ?? '/supplier', request.url))
-  response.cookies.set(buildSupplierCookie(supplier.id))
+  response.cookies.set(buildSupplierCookie(supplier.id, 'own'))
   return response
 }

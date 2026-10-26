@@ -58,9 +58,23 @@ function safeEqual(a: string, b: string): boolean {
   return timingSafeEqual(left, right)
 }
 
-export function buildSupplierCookie(supplierId: string) {
+/**
+ * How this browser came to hold the session.
+ *
+ * 'own'   — the supplier's own entry link (/supplier/enter, also what the
+ *           sign-in email points at).
+ * 'admin' — the operator opened the console from /admin/view/supplier.
+ *
+ * It is inside the signed payload, so a browser cannot promote an operator's
+ * look into an owner's session. The operator also runs a supplier of his own;
+ * signed in through that supplier's link he is its owner and edits it, even
+ * with the admin cookie in the same browser (see lib/admin-scope.ts).
+ */
+export type SupplierSessionVia = 'own' | 'admin'
+
+export function buildSupplierCookie(supplierId: string, via: SupplierSessionVia) {
   const expiresAt = Date.now() + MAX_AGE_SECONDS * 1000
-  const payload = `${supplierId}.${expiresAt}`
+  const payload = `${supplierId}.${expiresAt}.${via}`
   return {
     name: COOKIE,
     value: `${payload}.${sign(payload)}`,
@@ -73,26 +87,47 @@ export function buildSupplierCookie(supplierId: string) {
 }
 
 export function clearSupplierCookie() {
-  return { ...buildSupplierCookie('x'), value: '', maxAge: 0 }
+  return { ...buildSupplierCookie('x', 'own'), value: '', maxAge: 0 }
 }
 
-/** The supplier id this browser has proved. Signature and expiry only. */
-export async function getSupplierId(): Promise<string | null> {
+/**
+ * The verified cookie. Signature and expiry only.
+ *
+ * A cookie from before `via` was added (three parts) still signs in, as
+ * 'unknown': it may have come from either door, so lib/admin-scope.ts treats it
+ * as the operator's look only while the admin cookie is also present.
+ */
+async function readSupplierCookie(): Promise<{ supplierId: string; via: SupplierSessionVia | 'unknown' } | null> {
   const raw = (await cookies()).get(COOKIE)?.value
   if (!raw) return null
 
   const parts = raw.split('.')
-  if (parts.length !== 3) return null
+  if (parts.length !== 3 && parts.length !== 4) return null
 
-  const [supplierId, expiresAt, signature] = parts
+  const [supplierId, expiresAt] = parts
+  const signature = parts[parts.length - 1]
+  const via = parts.length === 4 ? parts[2] : 'unknown'
+  if (via !== 'own' && via !== 'admin' && via !== 'unknown') return null
+
   const expiry = Number(expiresAt)
   if (!supplierId || !Number.isFinite(expiry) || expiry < Date.now()) return null
 
+  const payload = parts.slice(0, -1).join('.')
   try {
-    return safeEqual(signature, sign(`${supplierId}.${expiresAt}`)) ? supplierId : null
+    return safeEqual(signature, sign(payload)) ? { supplierId, via } : null
   } catch {
     return null
   }
+}
+
+/** The supplier id this browser has proved. Signature and expiry only. */
+export async function getSupplierId(): Promise<string | null> {
+  return (await readSupplierCookie())?.supplierId ?? null
+}
+
+/** Which door the session came through; null when there is no session. */
+export async function getSupplierSessionVia(): Promise<SupplierSessionVia | 'unknown' | null> {
+  return (await readSupplierCookie())?.via ?? null
 }
 
 export interface SessionSupplier {

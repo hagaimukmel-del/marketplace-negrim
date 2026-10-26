@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSessionSupplier } from '@/lib/supplier-auth'
-import { isAdmin } from '@/lib/admin-auth'
-import { isOperatorManaged, refuseAdminWriteFor, refusedForSelfRun } from '@/lib/admin-scope'
+import { isAdminLookingAtSupplier, isOperatorManaged, refuseAdminWriteFor, refusedForSelfRun } from '@/lib/admin-scope'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { listThreads, startThread } from '@/lib/messages'
 import { sharedLimitReached } from '@/lib/rate-limit-shared'
@@ -13,7 +12,7 @@ import { sharedLimitReached } from '@/lib/rate-limit-shared'
 export async function GET() {
   const supplier = await getSessionSupplier()
   if (!supplier) return NextResponse.json({ error: 'צריך להיות מחובר' }, { status: 401 })
-  if (!isOperatorManaged(supplier.source) && (await isAdmin())) return refusedForSelfRun()
+  if (!isOperatorManaged(supplier.source) && (await isAdminLookingAtSupplier())) return refusedForSelfRun()
   return NextResponse.json(await listThreads({ side: 'supplier', id: supplier.id }))
 }
 

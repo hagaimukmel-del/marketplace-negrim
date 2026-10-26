@@ -3,6 +3,7 @@ import 'server-only'
 import { NextResponse } from 'next/server'
 import { isAdmin } from './admin-auth'
 import { getSupabaseAdmin } from './supabase-admin'
+import { getSupplierSessionVia } from './supplier-auth'
 import type { Json } from './database.types'
 
 /**
@@ -41,13 +42,30 @@ export function refusedForSelfRun() {
 }
 
 /**
- * The supplier console's write routes call this first. A browser holding the
- * admin cookie is the operator looking at a supplier through "האתר כפי שספק
- * רואה"; for a self-run supplier that look is read-only.
+ * Is the supplier console open as the operator's look, not its owner's session?
+ *
+ * Decided by how the supplier session was minted (signed into the cookie), not
+ * by whether the admin cookie is also in the browser. The operator runs a
+ * supplier of his own too: signed in through that supplier's link or sign-in
+ * email he is its owner and must be able to edit it. Only a session opened from
+ * /admin/view/supplier is the operator looking — and stays so after the admin
+ * cookie lapses. A session from before the door was recorded counts as the
+ * operator's only while the admin cookie is present, as it did before.
+ */
+export async function isAdminLookingAtSupplier(): Promise<boolean> {
+  const via = await getSupplierSessionVia()
+  if (via === 'admin') return true
+  if (via === 'unknown') return isAdmin()
+  return false
+}
+
+/**
+ * The supplier console's write routes call this first. A session the operator
+ * opened through "האתר כפי שספק רואה" is read-only for a self-run supplier.
  */
 export async function refuseAdminWriteFor(supplier: { source: string }) {
   if (isOperatorManaged(supplier.source)) return null
-  return (await isAdmin()) ? refusedForSelfRun() : null
+  return (await isAdminLookingAtSupplier()) ? refusedForSelfRun() : null
 }
 
 /**
