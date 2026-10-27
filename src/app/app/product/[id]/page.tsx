@@ -1,8 +1,10 @@
+import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
+import { after } from 'next/server'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { isAdmin } from '@/lib/admin-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
-import { loadCategoryTree, loadProducts } from '@/lib/app/catalog-server'
+import { loadCategoryTree, loadProducts, recordProductView } from '@/lib/app/catalog-server'
 import { CATALOG_PREFIX, catalogUrl } from '@/lib/supplier-documents'
 import ProductView, { type LastPurchase, type ProductDoc } from './ProductView'
 
@@ -24,6 +26,13 @@ export default async function AppProduct({
   const showPrices = Boolean(carpenter) || admin
   const [product] = await loadProducts({ showPrices, ids: [id], city: carpenter?.city })
   if (!product) notFound()
+
+  // "הכי נצפים" in the catalogue: one count per opening, after the page is
+  // sent. Not the operator's own looks, and not a link prefetch (the app's
+  // loading.tsx keeps those from rendering the page, the header is a backstop).
+  if (!admin && !(await headers()).has('next-router-prefetch')) {
+    after(() => recordProductView(product.id).catch(() => undefined))
+  }
 
   const tree = await loadCategoryTree([product])
   const top = tree.find((node) => node.id === product.topId)

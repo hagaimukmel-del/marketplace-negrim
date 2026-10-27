@@ -4,6 +4,7 @@ import { cache } from 'react'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { bestOffer, unitLabel, type Offer } from '@/lib/catalog'
 import { deliversTo, loadDelivery, regionsForCity } from '@/lib/delivery'
+import type { RegionKey } from '@/lib/regions'
 import { loadPriceModes } from '@/lib/price-mode'
 import { activeThreshold } from '@/lib/quote-rules'
 import { loadThresholds } from '@/lib/special-price'
@@ -28,10 +29,12 @@ interface ProductRow {
   image_url: string | null
   attributes: unknown
   category_id: string | null
+  created_at: string | null
   supplier_offers: (Offer & {
     suppliers: {
       status: string
       company_name: string
+      city: string | null
       logo_url: string | null
       payment_terms: string[] | null
       min_order_value_excl_vat: number | null
@@ -41,9 +44,9 @@ interface ProductRow {
 }
 
 const PRODUCT_COLUMNS =
-  'id, name_he, description_he, brand, mpn, base_unit, image_url, attributes, category_id, ' +
+  'id, name_he, description_he, brand, mpn, base_unit, image_url, attributes, category_id, created_at, ' +
   'supplier_offers!inner(id, supplier_id, supplier_sku, price_excl_vat, stock_qty, pack_label, pack_qty, min_order_qty, lead_time_days, ' +
-  'suppliers!inner(status, company_name, logo_url, payment_terms, min_order_value_excl_vat, default_lead_time_days))'
+  'suppliers!inner(status, company_name, city, logo_url, payment_terms, min_order_value_excl_vat, default_lead_time_days))'
 
 // Cached per request: a page that loads products and then the category tree
 // reads the table once instead of twice, one round trip fewer.
@@ -81,7 +84,12 @@ const STOCK_IS_TRACKED = false
  * suggested offer while another one does (T-026). bestOffer() still decides
  * among the offers that remain.
  */
-export async function loadProducts(opts: { showPrices: boolean; ids?: string[]; city?: string | null }): Promise<AppProduct[]> {
+/**
+ * `popularity` also ranks every product by how often its page is opened, then
+ * by how many purchase orders carried it, for "הכי נצפים" in the catalogue.
+ * Only the rank reaches the browser, never the counts.
+ */
+export async function loadProducts(opts: { showPrices: boolean; ids?: string[]; city?: string | null; popularity?: boolean }): Promise<AppProduct[]> {
   const supabase = getSupabaseAdmin()
   let query = supabase
     .from('products')
@@ -93,11 +101,21 @@ export async function loadProducts(opts: { showPrices: boolean; ids?: string[]; 
   if (opts.ids) query = query.in('id', opts.ids.length ? opts.ids : ['00000000-0000-0000-0000-000000000000'])
 
   // Only offers that have a threshold come back, so this stays small.
-  const [{ data }, cats, delivery, modes, thresholds] = await Promise.all([query, categories(), loadDelivery(), loadPriceModes(), loadThresholds({})])
+  const [{ data }, cats, delivery, modes, thresholds, popular] = await Promise.all([
+    query,
+    categories(),
+    loadDelivery(),
+    loadPriceModes(),
+    loadThresholds({}),
+    opts.popularity ? loadPopularity() : null,
+  ])
   const carpenterRegions = regionsForCity(opts.city)
   const byId = new Map(cats.map((row) => [row.id, row]))
 
-  return ((data ?? []) as unknown as ProductRow[]).map((row) => {
+  const rows = (data ?? []) as unknown as ProductRow[]
+  const rank = popular ? popularityRanks(rows.map((row) => row.id), popular) : null
+
+  return rows.map((row) => {
     const delivers = new Map(row.supplier_offers.map((offer) => [offer.id, deliversTo(delivery.bySupplier.get(offer.supplier_id), carpenterRegions)]))
     const reachable = row.supplier_offers.filter((offer) => delivers.get(offer.id) !== false)
     const pool = reachable.length ? reachable : row.supplier_offers
@@ -121,10 +139,13 @@ export async function loadProducts(opts: { showPrices: boolean; ids?: string[]; 
       topId,
       subId: category && topId !== category.id ? category.id : null,
       description: row.description_he?.trim() || null,
+      createdAt: row.created_at,
+      popularRank: rank?.get(row.id) ?? null,
       offers: row.supplier_offers.map((offer) => ({
         supplierId: offer.supplier_id,
         supplierName: offer.suppliers.company_name,
         supplierLogo: offer.suppliers.logo_url,
+        supplierRegions: supplierRegions(offer.suppliers.city, delivery.bySupplier.get(offer.supplier_id)?.regions ?? []),
         // Left out, not hidden, for a supplier who answers with quotes only (T-023).
         price: opts.showPrices && !modes.quoteOnly.has(offer.supplier_id) ? Number(offer.price_excl_vat) : null,
         quoteOnly: modes.quoteOnly.has(offer.supplier_id),
@@ -144,6 +165,62 @@ export async function loadProducts(opts: { showPrices: boolean; ids?: string[]; 
       })),
     }
   })
+}
+
+/** Where a supplier sits and where it delivers, as one list of regions, for the "אזור הספק" filter. */
+function supplierRegions(city: string | null, delivers: RegionKey[]): RegionKey[] {
+  return [...new Set([...regionsForCity(city), ...delivers])]
+}
+
+interface Popularity {
+  views: Map<string, number>
+  orders: Map<string, number>
+}
+
+/**
+ * Page views (migration 20261027072150) and purchase orders per product. Each
+ * read stands alone: a database without the views table, or a failed read,
+ * counts as zero rather than emptying the catalogue.
+ */
+async function loadPopularity(): Promise<Popularity> {
+  const supabase = getSupabaseAdmin()
+  const [viewRes, orderRes] = await Promise.all([
+    supabase.from('product_view_counts').select('product_id, views').limit(5000),
+    supabase
+      .from('order_items')
+      .select('product_id, order_id, orders!inner(status)')
+      .neq('orders.status', 'cancelled')
+      .limit(10000),
+  ])
+  const views = new Map<string, number>()
+  for (const row of viewRes.error ? [] : viewRes.data ?? []) views.set(row.product_id, row.views)
+  const seen = new Set<string>()
+  const orders = new Map<string, number>()
+  for (const row of orderRes.error ? [] : orderRes.data ?? []) {
+    if (!row.product_id || seen.has(`${row.product_id}:${row.order_id}`)) continue
+    seen.add(`${row.product_id}:${row.order_id}`)
+    orders.set(row.product_id, (orders.get(row.product_id) ?? 0) + 1)
+  }
+  return { views, orders }
+}
+
+/** 0 is the most viewed; ties go to the product ordered more often. */
+function popularityRanks(ids: string[], popular: Popularity): Map<string, number> {
+  const score = (id: string) => [popular.views.get(id) ?? 0, popular.orders.get(id) ?? 0]
+  const sorted = [...ids].sort((a, b) => {
+    const [va, oa] = score(a)
+    const [vb, ob] = score(b)
+    return vb - va || ob - oa
+  })
+  return new Map(sorted.map((id, index) => [id, index]))
+}
+
+/**
+ * Counts one opening of a product page. Never awaited by the page: a lost
+ * count is fine, a slower or failed page is not.
+ */
+export async function recordProductView(productId: string): Promise<void> {
+  await getSupabaseAdmin().rpc('bump_product_view', { p_product_id: productId })
 }
 
 /** The category tree in its own order, with how many live products sit in each. */

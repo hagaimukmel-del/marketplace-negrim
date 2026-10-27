@@ -1,5 +1,5 @@
 # 2 · Carpenter purchasing app (`/app`)
-Verified: 2026-10-11
+Verified: 2026-10-27
 
 ## Purpose
 Where a carpenter buys: browse the catalogue, compare suppliers on a product, build a cart that
@@ -46,6 +46,14 @@ desktop table was dropped on 26.10 at the owner's request). A real photo opens f
 (`ProductImage` with `zoom`); without one the category glyph links to the product page. Photos come
 from Supabase Storage; Drive links fall back to the glyph. The product page shows
 `description_he`. Signed-out visitors see a registration line above every product list.
+Above every category and search list (27.10): a sort (מומלץ = photo first then most viewed, price
+both ways, הכי נצפים, חדשים) and filters (price range with suggested ranges, "עם תמונה", supplier,
+"אזור הספק" = where the supplier sits or delivers, brand), in a bottom sheet on a phone with a
+"באזור שלי" shortcut. Logic in `lib/app/catalog-filters.ts` (tested); state lives in the URL
+(`sort img min max sup reg brand`). A filter is only offered when it would split the list.
+"הכי נצפים" counts product page openings in `product_view_counts` (migration
+`20261027072150_product_views`, `bump_product_view()`, service role only), not the operator's and
+not prefetches; ties go to the product on more purchase orders. Only a rank reaches the browser.
 `stock_qty` is not read as stock (`STOCK_IS_TRACKED = false` in `catalog-server.ts`): nothing shows
 "אזל" or is blocked from ordering until a supplier keeps stock current. Supplier comparison and switching are built but **dormant**: with one live
 supplier, no product shows them.
