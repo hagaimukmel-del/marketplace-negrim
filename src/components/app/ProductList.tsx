@@ -72,7 +72,8 @@ export default function ProductList({
       )}
       {filters && (
         <div className="grid gap-2">
-          <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] md:mx-0 md:px-0">
+          {/* Phone: the filter button and the sort on one line, the quick chips scrolling under them. */}
+          <div className="flex flex-wrap items-center gap-2">
             {canFilter && (
               <button
                 type="button"
@@ -83,20 +84,24 @@ export default function ProductList({
                 {count > 0 && <span className="tnum grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-[12px] text-navy">{count}</span>}
               </button>
             )}
-            {options.imageSplit && (
-              <QuickChip active={current.withImage} onClick={() => set({ ...current, withImage: !current.withImage })}>
-                <ImageIcon size={16} /> עם תמונה
-              </QuickChip>
-            )}
-            {mine.length > 0 && (
-              <QuickChip active={mineOn} onClick={() => set({ ...current, regions: mineOn ? [] : mine })}>
-                <MapPin size={16} /> ספקים באזור שלי
-              </QuickChip>
-            )}
-            {anyOut && (
-              <QuickChip active={inStockOnly} onClick={() => setInStockOnly((v) => !v)}>
-                רק במלאי
-              </QuickChip>
+            {(options.imageSplit || mine.length > 0 || anyOut) && (
+              <div className="-mx-4 order-last flex basis-[calc(100%+2rem)] gap-2 overflow-x-auto px-4 [scrollbar-width:none] md:order-none md:mx-0 md:basis-auto md:px-0">
+                {options.imageSplit && (
+                  <QuickChip active={current.withImage} onClick={() => set({ ...current, withImage: !current.withImage })}>
+                    <ImageIcon size={16} /> עם תמונה
+                  </QuickChip>
+                )}
+                {mine.length > 0 && (
+                  <QuickChip active={mineOn} onClick={() => set({ ...current, regions: mineOn ? [] : mine })}>
+                    <MapPin size={16} /> ספקים באזור שלי
+                  </QuickChip>
+                )}
+                {anyOut && (
+                  <QuickChip active={inStockOnly} onClick={() => setInStockOnly((v) => !v)}>
+                    רק במלאי
+                  </QuickChip>
+                )}
+              </div>
             )}
             <label className="ms-auto inline-flex h-10 shrink-0 items-center gap-1.5 text-[13.5px] text-muted">
               <span className="max-sm:sr-only">מיון</span>
