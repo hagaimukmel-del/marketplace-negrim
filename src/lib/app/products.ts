@@ -6,6 +6,8 @@ export interface AppOffer {
   supplierId: string
   supplierName: string
   supplierLogo: string | null
+  /** Regions the supplier sits in or delivers to (lib/regions keys); empty when unknown. */
+  supplierRegions: string[]
   /** Per base unit, excl VAT. Null when this viewer may not see prices, or the supplier quotes only. */
   price: number | null
   /** The supplier chose "רק הצעת מחיר": the carpenter asks for a quote instead of adding to the cart (T-023). */
@@ -47,6 +49,9 @@ export interface AppProduct {
   subId: string | null
   /** The product's own description, when it has one. */
   description: string | null
+  createdAt: string | null
+  /** 0 is the most viewed product in the catalogue; null when popularity was not loaded. */
+  popularRank: number | null
   offers: AppOffer[]
 }
 

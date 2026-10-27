@@ -1,11 +1,14 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
-import { FileText, Plus } from 'lucide-react'
+import { FileText, ImageIcon, MapPin, Plus, SlidersHorizontal } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { money } from '@/lib/app/format'
 import { stepOf, suggestedOffer, type AppOffer, type AppProduct } from '@/lib/app/products'
+import { NO_FILTERS, SORTS, activeCount, applyFilters, filterOptions, filtersToParams, parseFilters, type CatalogFilters, type SortKey } from '@/lib/app/catalog-filters'
+import FilterSheet from './FilterSheet'
 import ProductImage from './ProductImage'
 import Stepper from './Stepper'
 
@@ -15,17 +18,47 @@ import Stepper from './Stepper'
  * and one big action. Once a product is in the order its button becomes a
  * quantity stepper, so the carpenter never has to leave the list. "במלאי" is
  * not printed on every card — only the exception, "אזל".
+ *
+ * Above the cards: a sort and the filters (lib/app/catalog-filters). They live
+ * in the URL, so the list is the same after opening a product and coming back,
+ * and a filtered list can be sent to someone. `myRegions` is the signed-in
+ * carpentry's region, for the "באזור שלי" shortcut.
  */
-export default function ProductList({ products, showPrices, filters = true }: { products: AppProduct[]; showPrices: boolean; filters?: boolean }) {
+export default function ProductList({
+  products,
+  showPrices,
+  filters = true,
+  myRegions = [],
+}: {
+  products: AppProduct[]
+  showPrices: boolean
+  filters?: boolean
+  myRegions?: string[]
+}) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const params = useSearchParams()
+  const [sheet, setSheet] = useState(false)
   const [inStockOnly, setInStockOnly] = useState(false)
-  const [sort, setSort] = useState<'best' | 'price'>('best')
+
+  const current = filters ? parseFilters(new URLSearchParams(params.toString())) : NO_FILTERS
+  const options = filterOptions(products)
+  const set = (next: CatalogFilters) => {
+    const query = filtersToParams(next, new URLSearchParams(params.toString())).toString()
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+  }
 
   // Only worth offering when some product is actually out of stock
   const anyOut = products.some((p) => !suggestedOffer(p)?.inStock)
-  let items = products
+  let items = applyFilters(products, current)
   if (inStockOnly) items = items.filter((p) => suggestedOffer(p)?.inStock)
-  // A price on request sorts after every priced product.
-  if (sort === 'price') items = [...items].sort((a, b) => (suggestedOffer(a)?.price ?? Infinity) - (suggestedOffer(b)?.price ?? Infinity))
+
+  const sorts = SORTS.filter((sort) => showPrices || !sort.key.startsWith('price'))
+  const regionKeys = new Set(options.regions.map((region) => region.key))
+  const mine = myRegions.filter((region) => regionKeys.has(region))
+  const mineOn = mine.length > 0 && current.regions.length === mine.length && mine.every((region) => current.regions.includes(region))
+  const count = activeCount(current)
+  const canFilter = Boolean(options.suppliers.length || options.regions.length || options.brands.length || options.imageSplit || (showPrices && options.priceRanges.length))
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
@@ -38,26 +71,79 @@ export default function ProductList({ products, showPrices, filters = true }: { 
         </Link>
       )}
       {filters && (
-        <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
-          {anyOut && (
-            <button
-              type="button"
-              aria-pressed={inStockOnly}
-              onClick={() => setInStockOnly((v) => !v)}
-              className={`rounded-full border px-3 py-1 text-[13.5px] font-semibold ${inStockOnly ? 'border-navy bg-navy text-white' : 'border-hair bg-white text-ink'}`}
-            >
-              רק במלאי
-            </button>
-          )}
-          <span className="flex-1" />
-          {showPrices && (
-            <label className="inline-flex items-center gap-1.5 text-[13.5px]">
-              מיון
-              <select value={sort} onChange={(e) => setSort(e.target.value as 'best' | 'price')} className="rounded-lg border border-hair bg-white px-2 py-1 text-[13.5px]">
-                <option value="best">מומלץ</option>
-                <option value="price">מחיר ליחידה</option>
+        <div className="grid gap-2">
+          <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] md:mx-0 md:px-0">
+            {canFilter && (
+              <button
+                type="button"
+                onClick={() => setSheet(true)}
+                className={`inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-[14px] font-bold ${count ? 'border-navy bg-navy text-white' : 'border-hair bg-white text-ink'}`}
+              >
+                <SlidersHorizontal size={17} /> סינון
+                {count > 0 && <span className="tnum grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-[12px] text-navy">{count}</span>}
+              </button>
+            )}
+            {options.imageSplit && (
+              <QuickChip active={current.withImage} onClick={() => set({ ...current, withImage: !current.withImage })}>
+                <ImageIcon size={16} /> עם תמונה
+              </QuickChip>
+            )}
+            {mine.length > 0 && (
+              <QuickChip active={mineOn} onClick={() => set({ ...current, regions: mineOn ? [] : mine })}>
+                <MapPin size={16} /> ספקים באזור שלי
+              </QuickChip>
+            )}
+            {anyOut && (
+              <QuickChip active={inStockOnly} onClick={() => setInStockOnly((v) => !v)}>
+                רק במלאי
+              </QuickChip>
+            )}
+            <label className="ms-auto inline-flex h-10 shrink-0 items-center gap-1.5 text-[13.5px] text-muted">
+              <span className="max-sm:sr-only">מיון</span>
+              <select
+                value={current.sort}
+                onChange={(e) => set({ ...current, sort: e.target.value as SortKey })}
+                aria-label="מיון"
+                className="h-10 rounded-full border border-hair bg-white ps-3 pe-2 text-[14px] font-semibold text-ink"
+              >
+                {sorts.map((sort) => (
+                  <option key={sort.key} value={sort.key}>
+                    {sort.label}
+                  </option>
+                ))}
               </select>
             </label>
+          </div>
+          {(count > 0 || inStockOnly) && (
+            <div className="flex items-center gap-2 text-[13.5px] text-muted">
+              <span>
+                <span className="tnum font-semibold text-ink">{items.length}</span> מתוך <span className="tnum">{products.length}</span> מוצרים
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setInStockOnly(false)
+                  set({ ...NO_FILTERS, sort: current.sort })
+                }}
+                className="font-semibold text-brand-ink"
+              >
+                נקה סינון
+              </button>
+            </div>
+          )}
+          {sheet && (
+            <FilterSheet
+              products={products}
+              options={options}
+              value={current}
+              showPrices={showPrices}
+              myRegions={mine}
+              onApply={(next) => {
+                set(next)
+                setSheet(false)
+              }}
+              onClose={() => setSheet(false)}
+            />
           )}
         </div>
       )}
@@ -65,8 +151,15 @@ export default function ProductList({ products, showPrices, filters = true }: { 
       {items.length === 0 ? (
         <div className="rounded-xl border-[1.5px] border-dashed border-[#D9CFC1] p-3.5 text-sm text-muted">
           <b className="block text-ink">אין מוצרים שמתאימים לסינון</b>
-          <button type="button" className="font-semibold text-brand-ink" onClick={() => setInStockOnly(false)}>
-            הצג גם מוצרים שאזלו
+          <button
+            type="button"
+            className="font-semibold text-brand-ink"
+            onClick={() => {
+              setInStockOnly(false)
+              set({ ...NO_FILTERS, sort: current.sort })
+            }}
+          >
+            הצג את כל המוצרים
           </button>
         </div>
       ) : (
@@ -77,6 +170,19 @@ export default function ProductList({ products, showPrices, filters = true }: { 
         </div>
       )}
     </div>
+  )
+}
+
+function QuickChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={`inline-flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-[14px] font-semibold ${active ? 'border-navy bg-navy text-white' : 'border-hair bg-white text-ink'}`}
+    >
+      {children}
+    </button>
   )
 }
 

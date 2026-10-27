@@ -5,6 +5,7 @@ const offer = (supplierName: string, price: number | null, packQty: number | nul
   supplierId: `id-${supplierName}`,
   supplierName,
   supplierLogo: null,
+  supplierRegions: [],
   price,
   quoteOnly: price == null,
   packLabel: 'דלי',
@@ -34,6 +35,8 @@ const product = (id: string, name: string, baseUnit: string, offers: AppOffer[])
   topId: null,
   subId: null,
   description: null,
+  createdAt: null,
+  popularRank: null,
   offers,
 })
 

@@ -1189,6 +1189,32 @@ export type Database = {
           },
         ]
       }
+      product_view_counts: {
+        Row: {
+          last_viewed_at: string
+          product_id: string
+          views: number
+        }
+        Insert: {
+          last_viewed_at?: string
+          product_id: string
+          views?: number
+        }
+        Update: {
+          last_viewed_at?: string
+          product_id?: string
+          views?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_view_counts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           attributes: Json
@@ -2477,6 +2503,10 @@ export type Database = {
       claim_email_outbox: {
         Args: { p_ids?: string[]; p_limit?: number }
         Returns: Database["public"]["Tables"]["email_outbox"]["Row"][]
+      }
+      bump_product_view: {
+        Args: { p_product_id: string }
+        Returns: undefined
       }
     }
     Enums: {

@@ -98,6 +98,8 @@ describe('search with a quantity', () => {
     topId: null,
     subId: null,
     description: null,
+    createdAt: null,
+    popularRank: null,
     offers: [],
   })
 

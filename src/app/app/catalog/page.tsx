@@ -8,6 +8,7 @@ import { PageHeader, SectionTitle } from '@/components/app/ui'
 import { CategoryList } from '../HomeView'
 import { searchProducts } from '@/lib/catalog-search'
 import AskAgentButton from '@/components/chat/AskAgentButton'
+import { regionsForCity } from '@/lib/regions'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,7 +20,7 @@ export const dynamic = 'force-dynamic'
 export default async function AppCatalog({ searchParams }: { searchParams: Promise<{ q?: string; focus?: string }> }) {
   const [{ q, focus }, carpenter, admin] = await Promise.all([searchParams, getSessionCarpenter(), isAdmin()])
   const showPrices = Boolean(carpenter) || admin
-  const products = await loadProducts({ showPrices, city: carpenter?.city })
+  const products = await loadProducts({ showPrices, city: carpenter?.city, popularity: true })
   const query = (q ?? '').trim()
 
   const search = (
@@ -54,7 +55,7 @@ export default async function AppCatalog({ searchParams }: { searchParams: Promi
         {search}
         {carpenter && <AskAgentButton query={query} />}
         {hits.length ? (
-          <ProductList products={hits} showPrices={showPrices} />
+          <ProductList products={hits} showPrices={showPrices} myRegions={regionsForCity(carpenter?.city)} />
         ) : (
           <div className="rounded-xl border-[1.5px] border-dashed border-[#D9CFC1] p-3.5 text-sm text-muted">
             <b className="block text-ink">לא נמצא</b>
