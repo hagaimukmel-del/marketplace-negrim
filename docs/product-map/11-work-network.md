@@ -1,5 +1,5 @@
 # 11 · נגרים עובדים ביחד — job board between carpentries
-Verified: 2026-10-25
+Verified: 2026-10-29
 
 ## Purpose
 A carpentry with a job it needs help on posts it; a carpentry that fits (type of work, region)
@@ -10,13 +10,13 @@ PDF per message) and phase 3 (email notifications); billing (phase 4) is not.
 ## Entry points
 | Route | What |
 |---|---|
-| `/app/work` | Closed (`WORK_BOARD_OPEN` unset): the "בקרוב" page with a profile CTA. Open, or for the operator: the board, filtered by region and job type through the query string |
+| `/app/work` | Closed (`WORK_BOARD_OPEN` unset): the "בקרוב" page with a profile CTA. Open: a visitor who has not signed up sees the same explainer (no "בקרוב") with a sign-up CTA; a carpentry or the operator sees the board, filtered by region and job type through the query string. No launch area is named: the service is open to every region (owner, 2026-10-29) |
 | `/app/work/[id]` | One job. "אני מעוניין" opens a conversation with a required first message; a carpentry that already answered goes back to it; the poster sees how many answered. Report button |
 | `/app/work/messages` | The carpentry's conversations: jobs it answered and answers to its own jobs, unread first by weight |
 | `/app/work/messages/[id]` | One conversation: messages, one photo or PDF per message, "שיתוף הטלפון שלי", block/unblock |
 | `/app/work/new` | Post a job (members, board open) |
 | `/app/work/mine` | The poster's jobs: close with an outcome, or remove |
-| `/app/work/profile` | Capabilities profile. Open before the board; the first save is joining (founding). Email opt-in, with the address's verified state and a button that mails a verifying link |
+| `/app/work/profile` | Capabilities profile. Open before the board; the first save is joining (founding). Email opt-in, with the address's verified state and a button that mails a verifying link. Members get "יציאה מנגרים עובדים ביחד" behind a confirmation (`DELETE /api/work/profile`) |
 | `/api/work/unsubscribe?c&t` | One-click stop from the foot of every email, signed per carpentry; no sign-in |
 | `/admin/work` | Launch condition (profiles, open jobs), close outcomes, open reports, all jobs. Nav item "עבודות" with the open-report count |
 | `/app` home card, teal sidebar item (second, after בית), teal button in the top bar of every app page, welcome popup | Say "בקרוב" until the board opens |
@@ -47,6 +47,10 @@ and for measuring matches later.
 ## Rules & invariants
 - Membership is one function, `subscriptionGrants`: founding yes, active until `ends_at`, else no.
   Saving the profile inserts a founding row on conflict do nothing.
+- Leaving deletes nothing the carpentry wrote: its open and paused jobs become `removed`
+  (`removed_reason` "owner: left the service"), `notify_email` goes off, and the founding row is
+  deleted, so saving the profile again rejoins. Profile and conversations stay. A paid (`active`)
+  term is refused with a 409 and goes through the operator, since it has a refund to settle.
 - Without membership a carpentry sees jobs but not who posted. `toBoardJob` strips the poster on
   the server; it must never be hidden only in markup.
 - A job leaves the board at the end of its due day, 30 days at most, as a read-time filter.

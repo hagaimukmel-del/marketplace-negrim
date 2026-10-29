@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { FileText, Handshake, Lock, Mail, MapPin, MessageSquare, Send } from 'lucide-react'
+import { FileText, Handshake, Lock, Mail, MessageSquare, Send } from 'lucide-react'
 import { JOB_TYPES as TYPES } from '@/lib/work'
 
 const FEEDBACK_EMAIL = 'nagarim.b2b@gmail.com'
@@ -26,13 +26,13 @@ const STEPS = [
 ]
 
 /**
- * "נגרים עובדים ביחד" before the board opens: what is coming, in the
- * service's own teal, so a carpenter who meets the name in the welcome popup
- * or on the home screen finds out what it is. The one thing to do already is
- * the capabilities profile: it is how a carpentry joins, and the launch waits
- * for 30 of them.
+ * What "נגרים עובדים ביחד" is, in the service's own teal, so a carpenter who
+ * meets the name in the welcome popup or on the home screen finds out. Before
+ * the board opens it says "בקרוב" and asks for the capabilities profile; once
+ * open, it is what a visitor who has not signed up sees instead of the board.
+ * Open to every region: no area is named here.
  */
-export default function ComingSoon({ signedIn, hasProfile }: { signedIn: boolean; hasProfile: boolean }) {
+export default function ComingSoon({ signedIn, hasProfile, open = false }: { signedIn: boolean; hasProfile: boolean; open?: boolean }) {
 
   return (
     <div className="mx-auto grid max-w-3xl grid-cols-[minmax(0,1fr)] gap-5">
@@ -42,7 +42,7 @@ export default function ComingSoon({ signedIn, hasProfile }: { signedIn: boolean
             <Handshake size={20} />
           </span>
           <span className="text-sm font-bold text-[#BFE3DF]">נגרים עובדים ביחד</span>
-          <span className="ms-auto rounded-full bg-brand px-3 py-1 text-sm font-extrabold text-navy">בקרוב</span>
+          {!open && <span className="ms-auto rounded-full bg-brand px-3 py-1 text-sm font-extrabold text-navy">בקרוב</span>}
         </div>
         <h1 className="mt-4 text-[26px] leading-tight font-extrabold md:text-3xl">
           יש לכם עבודה ואין ידיים? יש לכם מכונה פנויה?
@@ -54,7 +54,7 @@ export default function ComingSoon({ signedIn, hasProfile }: { signedIn: boolean
 
       <section aria-labelledby="work-how" className="grid gap-2.5">
         <h2 id="work-how" className="text-lg font-bold text-ink">
-          איך זה יעבוד
+          {open ? 'איך זה עובד' : 'איך זה יעבוד'}
         </h2>
         <ol className="m-0 grid list-none gap-2.5 p-0 md:grid-cols-3">
           {STEPS.map((step, i) => (
@@ -72,7 +72,7 @@ export default function ComingSoon({ signedIn, hasProfile }: { signedIn: boolean
 
       <section aria-labelledby="work-sample" className="grid gap-2.5">
         <h2 id="work-sample" className="text-lg font-bold text-ink">
-          ככה תיראה עבודה בלוח
+          {open ? 'ככה נראית עבודה בלוח' : 'ככה תיראה עבודה בלוח'}
         </h2>
         <article className="relative rounded-2xl border border-hair bg-white p-4" aria-label="דוגמה לעבודה">
           <span className="absolute -top-2.5 end-4 rounded-full bg-stone-200 px-2.5 py-0.5 text-xs font-bold text-stone-600">דוגמה</span>
@@ -96,21 +96,12 @@ export default function ComingSoon({ signedIn, hasProfile }: { signedIn: boolean
         </ul>
       </section>
 
-      <section className="grid gap-2.5 md:grid-cols-2">
-        <div className="flex gap-3 rounded-xl border border-hair bg-white p-4">
-          <MapPin size={20} className="mt-0.5 shrink-0 text-[#0E5E5E]" />
-          <p className="m-0 text-sm text-muted">
-            <b className="block text-[15px] text-ink">מתחילים מאשדוד דרומה</b>
-            אשדוד, אשקלון, קריית מלאכי, קריית גת, שדרות, נתיבות, אופקים, באר שבע ודימונה.
-          </p>
-        </div>
-        <div className="flex gap-3 rounded-xl border border-hair bg-white p-4">
-          <FileText size={20} className="mt-0.5 shrink-0 text-[#0E5E5E]" />
-          <p className="m-0 text-sm text-muted">
-            <b className="block text-[15px] text-ink">רק נגריות רשומות</b>
-            רק עבודות אמיתיות שצריכות עזרה. בלי פרסומות ובלי ספאם.
-          </p>
-        </div>
+      <section className="flex gap-3 rounded-xl border border-hair bg-white p-4">
+        <FileText size={20} className="mt-0.5 shrink-0 text-[#0E5E5E]" />
+        <p className="m-0 text-sm text-muted">
+          <b className="block text-[15px] text-ink">רק נגריות רשומות</b>
+          רק עבודות אמיתיות שצריכות עזרה. בלי פרסומות ובלי ספאם.
+        </p>
       </section>
 
       <section className="rounded-2xl border border-[#8CC9C2] bg-[#E2F0EF] p-5 text-center">
@@ -132,7 +123,9 @@ export default function ComingSoon({ signedIn, hasProfile }: { signedIn: boolean
           </>
         ) : (
           <>
-            <p className="m-0 text-[15.5px] font-bold text-[#0B5A5A]">הלוח ייפתח לנגריות רשומות. ההרשמה לאתר ללא תשלום.</p>
+            <p className="m-0 text-[15.5px] font-bold text-[#0B5A5A]">
+              {open ? 'הלוח פתוח לנגריות רשומות.' : 'הלוח ייפתח לנגריות רשומות.'} ההרשמה לאתר ללא תשלום.
+            </p>
             <Link href="/join" className="mt-3 inline-flex h-12 items-center rounded-[11px] bg-brand px-6 font-bold text-navy hover:bg-brand-hover">
               הרשמה, פחות מדקה
             </Link>

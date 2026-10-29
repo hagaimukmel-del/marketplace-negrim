@@ -92,6 +92,14 @@ export default function Board({
           signedIn && (
           <>
             <Link
+              href="/app/work/profile"
+              aria-label="הפרופיל שלי"
+              className="flex h-10 items-center gap-1 rounded-[11px] border border-hair bg-white px-3 text-sm font-semibold text-ink"
+            >
+              <UserRound size={16} />
+              <span className="hidden sm:inline">פרופיל</span>
+            </Link>
+            <Link
               href="/app/work/messages"
               aria-label={unread ? `שיחות, ${unread} לא נקראו` : 'שיחות'}
               className="relative flex h-10 items-center gap-1 rounded-[11px] border border-hair bg-white px-3 text-sm font-semibold text-ink"

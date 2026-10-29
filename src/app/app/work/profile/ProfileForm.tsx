@@ -99,15 +99,81 @@ function EmailStatus({ email, verified }: { email: string | null; verified: bool
   )
 }
 
+/**
+ * Leaving the service, behind a confirmation. Nothing is deleted: the jobs
+ * come off the board, the emails stop, and saving the profile joins again.
+ */
+function LeaveService() {
+  const router = useRouter()
+  const [asking, setAsking] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const leave = async () => {
+    setBusy(true)
+    setError(null)
+    try {
+      const response = await fetch('/api/work/profile', { method: 'DELETE' })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.error || 'היציאה נכשלה')
+      router.push('/app/work')
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'היציאה נכשלה')
+      setBusy(false)
+    }
+  }
+
+  return (
+    <section id="leave" className="rounded-xl border border-hair bg-white p-4 text-sm">
+      {asking ? (
+        <>
+          <b className="block text-[15px] text-ink">לצאת מנגרים עובדים ביחד?</b>
+          <p className="mt-1 mb-0 text-muted">
+            העבודות הפתוחות שלכם יירדו מהלוח, ולא תקבלו יותר מיילים מהשירות. השיחות והפרופיל נשמרים, ואפשר לחזור בכל רגע בשמירת הפרופיל.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={leave}
+              disabled={busy}
+              className="h-11 rounded-[11px] bg-red-700 px-4 font-bold text-white disabled:opacity-50"
+            >
+              {busy ? 'יוצא…' : 'כן, לצאת'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setAsking(false)}
+              disabled={busy}
+              className="h-11 rounded-[11px] border border-hair bg-white px-4 font-semibold text-ink"
+            >
+              ביטול
+            </button>
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-muted">לא רוצים להמשיך בשירות?</span>
+          <button type="button" onClick={() => setAsking(true)} className="h-10 rounded-[11px] border border-red-200 bg-white px-3 font-semibold text-red-700">
+            יציאה מנגרים עובדים ביחד
+          </button>
+        </div>
+      )}
+      {error && <p role="alert" className="mt-2 mb-0 text-red-700">{error}</p>}
+    </section>
+  )
+}
+
 export default function ProfileForm({
   initial,
-  existing,
+  member,
   boardOpen,
   email,
   emailVerified,
 }: {
   initial: ProfileValues
-  existing: boolean
+  /** Joined the service: saving updates the profile, and leaving is offered. */
+  member: boolean
   boardOpen: boolean
   email: string | null
   emailVerified: boolean
@@ -205,8 +271,10 @@ export default function ProfileForm({
       )}
 
       <button type="submit" disabled={busy} className="h-12 rounded-[11px] bg-[#0E5E5E] text-lg font-bold text-white disabled:opacity-50">
-        {busy ? 'שומר…' : existing ? 'שמירה' : 'שמירה והצטרפות'}
+        {busy ? 'שומר…' : member ? 'שמירה' : 'שמירה והצטרפות'}
       </button>
+
+      {member && <LeaveService />}
     </form>
   )
 }
