@@ -37,6 +37,7 @@ CLAUDE.md §5 is binding. In short:
   (migration `20261008140000`; both read and written apart from the main queries).
 - The purchase order shows the supplier's logo on the right and the Nagarim logo on the left.
 - One checkout becomes one order per supplier, sharing a `checkout_id`.
+- A send happens once. The cart keeps one `checkout_id` (localStorage `order-checkout-id`) across every attempt until a send succeeds; `/api/orders` returns the orders already made for that id (`replayed: true`) instead of writing and emailing again. The unique index `orders_checkout_supplier_key` (migration `20261029100000`) settles two attempts that race. On a phone the send error shows in the bottom bar beside the button.
 - Quote and order files are titled הצעת מחיר / הזמנת רכש and say they are not a חשבונית; VAT on them is indicative.
 - Email safety valves: names containing "ניסיון" and all of staging go to the test inbox.
 
