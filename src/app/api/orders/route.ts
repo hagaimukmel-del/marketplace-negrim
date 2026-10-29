@@ -32,6 +32,7 @@ interface QuoteRow {
   status: string
   quoted_unit_price_excl_vat: number | null
   valid_until: string | null
+  order_id: string | null
 }
 
 const VAT_RATE = 0.18
@@ -64,6 +65,37 @@ function parseItems(raw: unknown): IncomingItem[] | null {
     })
   }
   return items
+}
+
+/** The orders one checkout already became, in the shape a fresh send returns. */
+async function sentCheckout(carpenterId: string, checkoutId: string) {
+  const { data } = await getSupabaseAdmin()
+    .from('orders')
+    .select('id, order_number, short_number, supplier_id, subtotal_excl_vat, suppliers(company_name)')
+    .eq('carpenter_id', carpenterId)
+    .eq('checkout_id', checkoutId)
+    .order('order_number')
+  if (!data?.length) return null
+  const orders = data.map((order) => ({
+    id: order.id,
+    orderNumber: order.order_number,
+    shortNumber: order.short_number,
+    supplierId: order.supplier_id,
+    supplierName: (order.suppliers as { company_name: string } | null)?.company_name ?? null,
+    subtotalExclVat: Number(order.subtotal_excl_vat),
+  }))
+  const subtotalExclVat = Number(orders.reduce((sum, order) => sum + order.subtotalExclVat, 0).toFixed(2))
+  return NextResponse.json({
+    success: true,
+    // This checkout was already sent; nothing new was written or emailed.
+    replayed: true,
+    checkoutId,
+    orders,
+    orderId: orders[0].id,
+    orderNumber: orders.map((order) => order.orderNumber).join(', '),
+    subtotalExclVat,
+    totalInclVat: Number((subtotalExclVat * (1 + VAT_RATE)).toFixed(2)),
+  })
 }
 
 const CATALOG_OFFERS = `supplier_offers!inner(${OFFER_COLUMNS})`
@@ -117,6 +149,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'חסרים פרטי קשר — שם, טלפון ומייל' }, { status: 400 })
     }
 
+    // The cart sends one checkout id with every attempt at the same send. A
+    // second attempt (a double tap, a retry after a lost answer) gets back the
+    // orders the first one made instead of a second set of purchase orders.
+    const clientCheckoutId =
+      typeof body.checkout_id === 'string' && UUID.test(body.checkout_id) ? body.checkout_id : null
+    if (clientCheckoutId) {
+      const replay = await sentCheckout(carpenter.id, clientCheckoutId)
+      if (replay) return replay
+    }
+
     const items = parseItems(body.items)
     if (!items) {
       return NextResponse.json(
@@ -165,7 +207,7 @@ export async function POST(request: NextRequest) {
     if (quoteIds.length) {
       const { data: quoteRows, error: quoteError } = await supabase
         .from('quote_requests')
-        .select('id, carpenter_id, supplier_id, product_id, quantity, status, quoted_unit_price_excl_vat, valid_until')
+        .select('id, carpenter_id, supplier_id, product_id, quantity, status, quoted_unit_price_excl_vat, valid_until, order_id')
         .in('id', quoteIds)
       if (quoteError) {
         return NextResponse.json({ error: 'הצעות מחיר עוד לא זמינות' }, { status: 409 })
@@ -185,6 +227,19 @@ export async function POST(request: NextRequest) {
           quote.valid_until != null &&
           quote.valid_until >= today &&
           Number(quote.quantity) === item.quantity
+        if (quote && quote.carpenter_id === carpenter.id && quote.status === 'accepted' && quote.order_id) {
+          // Already ordered, by an earlier send whose answer never arrived.
+          const { data: earlier } = await supabase.from('orders').select('short_number').eq('id', quote.order_id).maybeSingle()
+          return NextResponse.json(
+            {
+              error: `הצעת המחיר ל${item.name_he} כבר הוזמנה${earlier?.short_number ? ` בהזמנה #${earlier.short_number}` : ''}. אפשר לראות אותה במרכז ההזמנות.`,
+              code: 'quote_ordered',
+              productId: item.id,
+              orderId: quote.order_id,
+            },
+            { status: 409 }
+          )
+        }
         if (!valid) {
           return NextResponse.json(
             { error: `הצעת המחיר ל${item.name_he} כבר לא בתוקף. אפשר לבקש הצעה חדשה מדף המוצר.`, code: 'quote_invalid', productId: item.id },
@@ -293,12 +348,15 @@ export async function POST(request: NextRequest) {
         .select('id')
       if (!claim?.length) {
         await release()
+        // The same send, already made by an attempt that raced this one.
+        const replay = clientCheckoutId ? await sentCheckout(carpenter.id, clientCheckoutId) : null
+        if (replay) return replay
         return NextResponse.json({ error: 'הצעת המחיר כבר הוזמנה או שאינה בתוקף', code: 'quote_invalid' }, { status: 409 })
       }
       claimed.push(id)
     }
 
-    const checkoutId = crypto.randomUUID()
+    const checkoutId = clientCheckoutId ?? crypto.randomUUID()
     const stamp = Date.now()
     const groups = [...bySupplier].map(([supplierId, supplierLines], index) => {
       const subtotal = Number(
@@ -342,8 +400,18 @@ export async function POST(request: NextRequest) {
       )
       .select('id, order_number, short_number, supplier_id')
 
+    if (orderError?.code === '23505' && clientCheckoutId) {
+      // orders_checkout_supplier_key: a racing attempt of this same send got
+      // there first. Its orders stand; this one reads them.
+      await release()
+      const replay = await sentCheckout(carpenter.id, clientCheckoutId)
+      if (replay) return replay
+      // The id is someone else's (another carpentry on this browser): the cart drops it.
+      return NextResponse.json({ error: 'ההזמנה לא נשלחה. אפשר לנסות שוב.', code: 'checkout_conflict' }, { status: 409 })
+    }
     if (orderError || !created || created.length !== groups.length) {
-      await supabase.from('orders').delete().eq('checkout_id', checkoutId)
+      // Only what this attempt wrote: a racing attempt may share the checkout id.
+      if (created?.length) await supabase.from('orders').delete().in('id', created.map((order) => order.id))
       await release()
       return NextResponse.json(
         { error: orderError?.message ?? 'Failed to create order' },
@@ -361,7 +429,7 @@ export async function POST(request: NextRequest) {
     if (itemsError) {
       // Postgres has no transaction across two PostgREST calls, so orders
       // without lines have to be cleaned up by hand rather than left orphaned.
-      await supabase.from('orders').delete().eq('checkout_id', checkoutId)
+      await supabase.from('orders').delete().in('id', created.map((order) => order.id))
       await release()
       return NextResponse.json(
         { error: `Failed to save order lines: ${itemsError.message}` },

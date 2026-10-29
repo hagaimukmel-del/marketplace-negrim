@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Check, FileText, Info, LayoutGrid, Plus, ShoppingBag, Trash2, Truck, X } from 'lucide-react'
 import { useCart, type CartItem } from '@/lib/cart-context'
 import { money, packText, termsText } from '@/lib/app/format'
@@ -72,6 +72,8 @@ export default function OrderView({ profile }: { profile: { address: string; cit
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [sent, setSent] = useState<SentOrder[] | null>(null)
+  // A tap that lands before React re-renders the button as disabled.
+  const inFlight = useRef(false)
 
   const idsKey = cart.items.map((item) => item.id).sort().join(',')
   useEffect(() => {
@@ -158,6 +160,8 @@ export default function OrderView({ profile }: { profile: { address: string; cit
   const firstShort = shortGroups[0]
 
   const send = async () => {
+    if (inFlight.current) return
+    inFlight.current = true
     setSending(true)
     setError(null)
     try {
@@ -165,6 +169,7 @@ export default function OrderView({ profile }: { profile: { address: string; cit
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          checkout_id: checkoutKey(),
           address: address || null,
           city: city || null,
           notes: note || null,
@@ -178,14 +183,20 @@ export default function OrderView({ profile }: { profile: { address: string; cit
           })),
         }),
       })
-      const result = await response.json()
-      if (!response.ok) throw new Error(result.error || 'שליחת ההזמנה נכשלה')
+      // A timeout or a crashed function answers with a page, not JSON.
+      const result = await response.json().catch(() => null)
+      if (result?.code === 'checkout_conflict') forgetCheckoutKey()
+      if (!response.ok || !result?.orders?.length) {
+        throw new Error(result?.error || 'ההזמנה לא נשלחה. אפשר לנסות שוב: הזמנה שכבר יצאה לא תישלח פעמיים.')
+      }
+      forgetCheckoutKey()
       cart.clearCart()
       setSent(result.orders)
       window.scrollTo({ top: 0 })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'שליחת ההזמנה נכשלה')
+      setError(err instanceof TypeError ? 'אין חיבור לאינטרנט. אפשר לנסות שוב: הזמנה שכבר יצאה לא תישלח פעמיים.' : err instanceof Error ? err.message : 'שליחת ההזמנה נכשלה')
     } finally {
+      inFlight.current = false
       setSending(false)
     }
   }
@@ -413,17 +424,21 @@ export default function OrderView({ profile }: { profile: { address: string; cit
             <FileText size={17} /> {groups.length > 1 ? `הצעת מחיר לפי ספק (${groups.length})` : 'הצעת מחיר להדפסה או PDF'}
           </Link>
           {!profile.hasContact && <p className="m-0 text-[13.5px] text-attn">חסרים טלפון או מייל בפרטי הנגרייה — אפשר להשלים באזור האישי.</p>}
-          {error && <p role="alert" className="m-0 rounded-lg bg-red-50 p-2.5 text-sm text-red-800">{error}</p>}
+          {error && <p role="alert" className="m-0 hidden rounded-lg bg-red-50 p-2.5 text-sm text-red-800 md:block">{error}</p>}
           <div className="hidden md:block">{sendButton}</div>
         </aside>
       </div>
 
-      <div className="fixed inset-x-0 bottom-[72px] z-30 flex items-center gap-2.5 border-t border-hair bg-white/[.98] px-4 py-2.5 shadow-[0_-6px_16px_rgba(30,42,59,.06)] md:hidden">
-        <div className="grid leading-tight">
-          <b className="tnum text-[17px]">{money(total)}</b>
-          <small className="text-[12.5px] text-muted">לפני מע״מ</small>
+      <div className="fixed inset-x-0 bottom-[72px] z-30 grid gap-2 border-t border-hair bg-white/[.98] px-4 py-2.5 shadow-[0_-6px_16px_rgba(30,42,59,.06)] md:hidden">
+        {/* On a phone the summary is far up the page: the reason a send failed sits by the button that was tapped. */}
+        {error && <p role="alert" className="m-0 rounded-lg bg-red-50 p-2.5 text-sm text-red-800">{error}</p>}
+        <div className="flex items-center gap-2.5">
+          <div className="grid leading-tight">
+            <b className="tnum text-[17px]">{money(total)}</b>
+            <small className="text-[12.5px] text-muted">לפני מע״מ</small>
+          </div>
+          <div className="min-w-0 flex-1">{sendButton}</div>
         </div>
-        <div className="min-w-0 flex-1">{sendButton}</div>
       </div>
 
       {sheetProduct && sheetLine && (
@@ -480,6 +495,33 @@ export default function OrderView({ profile }: { profile: { address: string; cit
       )}
     </div>
   )
+}
+
+const CHECKOUT_KEY = 'order-checkout-id'
+
+/**
+ * One id per send, kept until the send succeeds. Every attempt carries it, so
+ * a retry after a lost answer, even after a reload, gets back the orders that
+ * already went out instead of sending them again.
+ */
+function checkoutKey(): string {
+  try {
+    const saved = localStorage.getItem(CHECKOUT_KEY)
+    if (saved) return saved
+    const id = crypto.randomUUID()
+    localStorage.setItem(CHECKOUT_KEY, id)
+    return id
+  } catch {
+    return crypto.randomUUID()
+  }
+}
+
+function forgetCheckoutKey() {
+  try {
+    localStorage.removeItem(CHECKOUT_KEY)
+  } catch {
+    // Nothing kept, nothing to forget.
+  }
 }
 
 function Sent({ orders }: { orders: SentOrder[] }) {
