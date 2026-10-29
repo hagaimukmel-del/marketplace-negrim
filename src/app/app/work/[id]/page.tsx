@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { ArrowRight, Lock, MessageSquare } from 'lucide-react'
 import { regionName } from '@/lib/regions'
-import { jobTypeName, shortDate } from '@/lib/work'
+import { WORK_FREE_UNTIL, jobTypeName, shortDate } from '@/lib/work'
 import { getWorkViewer, loadJob } from '@/lib/work-server'
 import { PosterLine, headline } from '../Board'
 import ComingSoon from '../ComingSoon'
@@ -122,7 +122,7 @@ export default async function WorkJobPage({ params }: { params: Promise<{ id: st
             <Lock size={16} />
             כדי לפנות לעבודה ממלאים פרופיל יכולות
           </p>
-          <p className="mt-1 mb-3 text-sm text-[#0B5A5A]">בתקופת ההשקה ללא תשלום.</p>
+          <p className="mt-1 mb-3 text-sm text-[#0B5A5A]">{WORK_FREE_UNTIL}.</p>
           <Link href="/app/work/profile" className="inline-flex h-12 items-center rounded-[11px] bg-[#0E5E5E] px-6 font-bold text-white">
             למילוי פרופיל
           </Link>

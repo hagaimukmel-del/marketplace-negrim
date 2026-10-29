@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { Handshake, Lock, MessageSquare, Plus, UserRound } from 'lucide-react'
 import { PageHeader } from '@/components/app/ui'
 import { REGIONS, regionName } from '@/lib/regions'
-import { JOB_TYPES, ago, daysLeft, jobTypeName, shortDate, type BoardJob } from '@/lib/work'
+import { JOB_TYPES, WORK_FREE_UNTIL, ago, daysLeft, jobTypeName, shortDate, type BoardJob } from '@/lib/work'
 
 function href(region: string, type: string): string {
   const params = new URLSearchParams()
@@ -92,6 +92,14 @@ export default function Board({
           signedIn && (
           <>
             <Link
+              href="/app/work/profile"
+              aria-label="הפרופיל שלי"
+              className="flex h-10 items-center gap-1 rounded-[11px] border border-hair bg-white px-3 text-sm font-semibold text-ink"
+            >
+              <UserRound size={16} />
+              <span className="hidden sm:inline">פרופיל</span>
+            </Link>
+            <Link
               href="/app/work/messages"
               aria-label={unread ? `שיחות, ${unread} לא נקראו` : 'שיחות'}
               className="relative flex h-10 items-center gap-1 rounded-[11px] border border-hair bg-white px-3 text-sm font-semibold text-ink"
@@ -119,7 +127,7 @@ export default function Board({
 
       {signedIn && !member && (
         <div className="rounded-xl border border-[#8CC9C2] bg-[#E2F0EF] p-3 text-sm text-[#0B5A5A]">
-          <b>אתם צופים בלבד.</b> כדי לראות מי מפרסם ולפרסם עבודה, ממלאים פרופיל יכולות. בתקופת ההשקה ללא תשלום.{' '}
+          <b>אתם צופים בלבד.</b> כדי לראות מי מפרסם ולפרסם עבודה, ממלאים פרופיל יכולות. {WORK_FREE_UNTIL}.{' '}
           <Link href="/app/work/profile" className="font-bold underline">
             למילוי פרופיל
           </Link>

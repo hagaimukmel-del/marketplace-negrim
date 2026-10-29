@@ -29,7 +29,7 @@ export default async function WorkProfilePage() {
         machines: viewer.profile?.machines ?? '',
         notifyEmail: viewer.profile?.notify_email ?? true,
       }}
-      existing={Boolean(viewer.profile)}
+      member={viewer.member}
       boardOpen={viewer.open}
       email={contact?.email ?? null}
       emailVerified={Boolean(contact?.email_verified_at)}
