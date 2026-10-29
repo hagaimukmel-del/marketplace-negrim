@@ -57,6 +57,8 @@ and for measuring matches later.
 - Spam limits: 5 posts a day, 20 open jobs. 3 open reports from different carpentries pause a job
   until the operator restores or removes it.
 - No title, price or client details on a job; the closed type list is the title.
+- The launch terms are `WORK_FREE_UNTIL` and `WORK_PRICES` in `lib/work.ts` (free until January
+  2027, then 350 ₪ half a year or 470 ₪ a year excl. VAT, owner 2026-10-29); every screen reads them.
 - The service's colour is dark teal (#0E5E5E).
 - Conversations: only a member answers a live job that is not theirs, 30 new conversations a day.
   A carpentry whose term ended reads but cannot write. Either side may block; the conversation is

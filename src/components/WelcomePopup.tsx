@@ -109,7 +109,7 @@ export default function WelcomePopup({ workOpen = false }: { workOpen?: boolean 
               <Link href="/app/work" onClick={close} className="font-bold underline">
                 נגרים עובדים ביחד
               </Link>
-              , המקום לשיתופי פעולה בין נגריות, פתוח לכולם ללא תשלום
+              , המקום לשיתופי פעולה בין נגריות, פתוח לכולם ללא תשלום עד ינואר 2027
               {workOpen ? '.' : '. הלוח נפתח בקרוב, ואפשר כבר להצטרף.'}
             </p>
           </div>

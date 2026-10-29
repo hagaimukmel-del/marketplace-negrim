@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { REGIONS } from '@/lib/regions'
-import { JOB_TYPES } from '@/lib/work'
+import { JOB_TYPES, WORK_FREE_UNTIL, WORK_PRICES } from '@/lib/work'
 
 export interface ProfileValues {
   jobTypes: string[]
@@ -249,9 +249,8 @@ export default function ProfileForm({
       </section>
 
       <section className="rounded-xl border border-[#8CC9C2] bg-[#E2F0EF] p-4 text-sm text-[#0B5A5A]">
-        <b className="block text-[15px]">בתקופת ההשקה השירות ללא תשלום.</b>
-        אחריה: 470 ₪ לשנה (כ־39.17 ₪ לחודש בממוצע) או 350 ₪ לחצי שנה, לפני מע״מ. תקופה קבועה בלי חידוש אוטומטי. נודיע מראש לפני
-        שהתשלום יתחיל.
+        <b className="block text-[15px]">השירות {WORK_FREE_UNTIL}.</b>
+        {WORK_PRICES} נודיע מראש לפני שהתשלום יתחיל.
       </section>
 
       {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}

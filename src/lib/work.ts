@@ -8,6 +8,13 @@
 
 import { isRegionKey } from '@/lib/regions'
 
+/**
+ * The launch terms, said the same way on every screen (owner, 2026-10-29):
+ * free until January 2027, then a fixed term, prices excl. VAT.
+ */
+export const WORK_FREE_UNTIL = 'ללא תשלום עד ינואר 2027'
+export const WORK_PRICES = 'אחר כך: 350 ₪ לחצי שנה או 470 ₪ לשנה, לפני מע״מ. תקופה קבועה, בלי חידוש אוטומטי.'
+
 export const JOB_TYPES = [
   { key: 'cnc', name: 'חיתוך / CNC' },
   { key: 'edging', name: 'קנטים' },

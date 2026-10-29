@@ -1,6 +1,6 @@
 import Link from 'next/link'
-import { FileText, Handshake, Lock, Mail, MessageSquare, Send } from 'lucide-react'
-import { JOB_TYPES as TYPES } from '@/lib/work'
+import { BadgePercent, FileText, Handshake, Lock, Mail, MessageSquare, Send } from 'lucide-react'
+import { JOB_TYPES as TYPES, WORK_FREE_UNTIL, WORK_PRICES } from '@/lib/work'
 
 const FEEDBACK_EMAIL = 'nagarim.b2b@gmail.com'
 
@@ -96,12 +96,21 @@ export default function ComingSoon({ signedIn, hasProfile, open = false }: { sig
         </ul>
       </section>
 
-      <section className="flex gap-3 rounded-xl border border-hair bg-white p-4">
-        <FileText size={20} className="mt-0.5 shrink-0 text-[#0E5E5E]" />
-        <p className="m-0 text-sm text-muted">
-          <b className="block text-[15px] text-ink">רק נגריות רשומות</b>
-          רק עבודות אמיתיות שצריכות עזרה. בלי פרסומות ובלי ספאם.
-        </p>
+      <section className="grid gap-2.5 md:grid-cols-2">
+        <div className="flex gap-3 rounded-xl border border-hair bg-white p-4">
+          <BadgePercent size={20} className="mt-0.5 shrink-0 text-[#0E5E5E]" />
+          <p className="m-0 text-sm text-muted">
+            <b className="block text-[15px] text-ink">{WORK_FREE_UNTIL}</b>
+            {WORK_PRICES}
+          </p>
+        </div>
+        <div className="flex gap-3 rounded-xl border border-hair bg-white p-4">
+          <FileText size={20} className="mt-0.5 shrink-0 text-[#0E5E5E]" />
+          <p className="m-0 text-sm text-muted">
+            <b className="block text-[15px] text-ink">רק נגריות רשומות</b>
+            רק עבודות אמיתיות שצריכות עזרה. בלי פרסומות ובלי ספאם.
+          </p>
+        </div>
       </section>
 
       <section className="rounded-2xl border border-[#8CC9C2] bg-[#E2F0EF] p-5 text-center">
@@ -115,7 +124,7 @@ export default function ComingSoon({ signedIn, hasProfile, open = false }: { sig
         ) : signedIn ? (
           <>
             <p className="m-0 text-[15.5px] font-bold text-[#0B5A5A]">
-              מלאו עכשיו פרופיל יכולות והצטרפו לנגריות המייסדות. בתקופת ההשקה ללא תשלום.
+              מלאו עכשיו פרופיל יכולות והצטרפו לנגריות המייסדות. {WORK_FREE_UNTIL}.
             </p>
             <Link href="/app/work/profile" className="mt-3 inline-flex h-12 items-center rounded-[11px] bg-[#0E5E5E] px-6 font-bold text-white hover:bg-[#0B4F4F]">
               למילוי פרופיל, שתי דקות
@@ -124,7 +133,7 @@ export default function ComingSoon({ signedIn, hasProfile, open = false }: { sig
         ) : (
           <>
             <p className="m-0 text-[15.5px] font-bold text-[#0B5A5A]">
-              {open ? 'הלוח פתוח לנגריות רשומות.' : 'הלוח ייפתח לנגריות רשומות.'} ההרשמה לאתר ללא תשלום.
+              {open ? 'הלוח פתוח לנגריות רשומות.' : 'הלוח ייפתח לנגריות רשומות.'} ההרשמה ללא תשלום עד ינואר 2027.
             </p>
             <Link href="/join" className="mt-3 inline-flex h-12 items-center rounded-[11px] bg-brand px-6 font-bold text-navy hover:bg-brand-hover">
               הרשמה, פחות מדקה
