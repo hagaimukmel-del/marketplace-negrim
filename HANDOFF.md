@@ -117,5 +117,5 @@ npm run db:push           # צריכה להופיע רק 20261029100000_order_ch
 npm run db:types
 ```
 
-במחשב הבית: ב-29.10 נעשה `git stash` לעריכה מקומית ישנה של `CLAUDE.md`
+במחשב "Main" (תיקיית B2B NAGARIA על שולחן העבודה): ב-29.10 נעשה `git stash` לעריכה מקומית ישנה של `CLAUDE.md`
 ("local CLAUDE.md before pull 2026-10-29"). לבדוק אותה עם `git stash show -p` ולהחליט אם להחזיר.
