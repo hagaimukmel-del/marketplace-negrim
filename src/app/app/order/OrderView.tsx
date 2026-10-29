@@ -16,6 +16,8 @@ import ConfirmEmailNotice from '@/components/app/ConfirmEmailNotice'
 interface Quote {
   products: AppProduct[]
   suggestions: Record<string, AppProduct[]>
+  /** Cart quotes that can no longer be ordered at: already ordered, or expired. */
+  spentQuotes?: { id: string; state: string; orderId: string | null }[]
 }
 
 interface Line {
@@ -72,23 +74,50 @@ export default function OrderView({ profile }: { profile: { address: string; cit
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [sent, setSent] = useState<SentOrder[] | null>(null)
+  const [removed, setRemoved] = useState<string[]>([])
   // A tap that lands before React re-renders the button as disabled.
   const inFlight = useRef(false)
 
   const idsKey = cart.items.map((item) => item.id).sort().join(',')
+  // "product:quote" for each quoted line, so a spent quote can be traced to its line.
+  const quotesKey = cart.items.filter((item) => item.quote_id).map((item) => `${item.id}:${item.quote_id}`).sort().join(',')
+  // The cart's functions are new on every render; the effect below reads the latest without re-running.
+  const removeItem = useRef(cart.removeItem)
+  useEffect(() => {
+    removeItem.current = cart.removeItem
+  })
   useEffect(() => {
     if (!idsKey || !profile) return
     let live = true
-    fetch('/api/app/quote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: idsKey.split(',') }) })
+    const quoted = quotesKey ? quotesKey.split(',').map((pair) => pair.split(':') as [string, string]) : []
+    fetch('/api/app/quote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: idsKey.split(','), quoteIds: quoted.map(([, quoteId]) => quoteId) }),
+    })
       .then((response) => (response.ok ? response.json() : null))
       .then((data: Quote | null) => {
-        if (live && data) setQuote(data)
+        if (!live || !data) return
+        setQuote(data)
+        // A quote already ordered (an earlier send, another device) or expired
+        // would only fail the send: the line leaves the cart, and says why.
+        const spent = data.spentQuotes ?? []
+        if (spent.length === 0) return
+        const notes: string[] = []
+        for (const { id, state } of spent) {
+          const productId = quoted.find(([, quoteId]) => quoteId === id)?.[0]
+          if (!productId) continue
+          const name = data.products.find((p) => p.id === productId)?.name ?? 'מוצר'
+          notes.push(`${name}: ${state === 'accepted' ? 'ההצעה כבר הוזמנה' : state === 'expired' ? 'תוקף ההצעה פג' : 'ההצעה כבר לא פעילה'}`)
+          removeItem.current(productId)
+        }
+        if (notes.length) setRemoved((prev) => [...prev, ...notes])
       })
       .catch(() => undefined)
     return () => {
       live = false
     }
-  }, [idsKey, profile])
+  }, [idsKey, quotesKey, profile])
 
   if (!profile) {
     return (
@@ -113,6 +142,14 @@ export default function OrderView({ profile }: { profile: { address: string; cit
     return (
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 pt-1">
         <PageHeader icon={ShoppingBag} title="העגלה" />
+        {removed.length > 0 && (
+          <div role="status" className="rounded-xl border border-brand-line bg-brand-soft p-3 text-sm text-[#5B3A07]">
+            <b className="block">הוסר מהעגלה</b>
+            {removed.map((line) => (
+              <div key={line}>{line}</div>
+            ))}
+          </div>
+        )}
         <div className="rounded-xl border-[1.5px] border-dashed border-[#D9CFC1] p-3.5 text-sm text-muted">
           <b className="block text-ink">העגלה ריקה</b>
           מוסיפים מוצרים מהקטלוג, והם מחכים כאן עד שליחת ההזמנה לספק.
@@ -186,6 +223,11 @@ export default function OrderView({ profile }: { profile: { address: string; cit
       // A timeout or a crashed function answers with a page, not JSON.
       const result = await response.json().catch(() => null)
       if (result?.code === 'checkout_conflict') forgetCheckoutKey()
+      if ((result?.code === 'quote_ordered' || result?.code === 'quote_invalid') && typeof result.productId === 'string') {
+        // That quote cannot be ordered at; the rest of the cart can.
+        cart.removeItem(result.productId)
+        throw new Error(`${result.error} השורה הוסרה מהעגלה, ואפשר לשלוח את השאר.`)
+      }
       if (!response.ok || !result?.orders?.length) {
         throw new Error(result?.error || 'ההזמנה לא נשלחה. אפשר לנסות שוב: הזמנה שכבר יצאה לא תישלח פעמיים.')
       }
@@ -221,6 +263,14 @@ export default function OrderView({ profile }: { profile: { address: string; cit
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4 pb-28 pt-1 md:pb-0">
       <PageHeader icon={ShoppingBag} title="העגלה שלך" />
+      {removed.length > 0 && (
+        <div role="status" className="rounded-xl border border-brand-line bg-brand-soft p-3 text-sm text-[#5B3A07]">
+          <b className="block">הוסר מהעגלה</b>
+          {removed.map((line) => (
+            <div key={line}>{line}</div>
+          ))}
+        </div>
+      )}
       <section>
         <div className="flex flex-wrap items-baseline gap-2">
           <b className="tnum text-[28px] font-extrabold leading-tight">{money(total)}</b>
