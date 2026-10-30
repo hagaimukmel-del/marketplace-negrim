@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Bell, ClipboardList, FileText, Handshake, Home, LayoutGrid, MessageSquare, Recycle, Search, ShoppingBag, Sparkles, UserRound } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
+import HomeScreenLaunch from './HomeScreenLaunch'
 import { LogoMark } from '@/components/brand/Logo'
 import { ChatContainer } from '@/components/chat/ChatContainer'
 import { OpenAgentContext } from '@/components/chat/agent-context'
@@ -104,6 +105,7 @@ export default function AppShell({
 
   return (
     <OpenAgentContext.Provider value={openAgent}>
+    <HomeScreenLaunch />
     <div className="min-h-dvh bg-warm text-ink md:grid md:grid-cols-[236px_minmax(0,1fr)]">
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-dvh flex-col gap-5 bg-navy px-3.5 py-5 text-slate-200 md:flex">
