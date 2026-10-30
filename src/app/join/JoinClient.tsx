@@ -77,9 +77,10 @@ export default function JoinClient({ googleEnabled = false, contactEmail = null 
         window.scrollTo({ top: 0, behavior: 'smooth' })
         return
       }
-      // Straight to their own page — the link is the account, so there is
-      // nothing to confirm and nothing to log into.
-      router.replace(`/o/${data.token}`)
+      // Straight to their home screen — the link is the account, so there is
+      // nothing to confirm and nothing to log into. Not /o/[token]: that page
+      // shows a running campaign, and a new carpentry starts at home.
+      router.replace(`/carpenter/link/${encodeURIComponent(data.token)}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ההרשמה נכשלה')
       setBusy(false)
