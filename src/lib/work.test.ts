@@ -153,10 +153,11 @@ describe('display', () => {
     expect(ago('2026-10-15T06:59:30Z', NOW)).toBe('עכשיו')
   })
 
-  it('shows only a count of connected carpentries, and nothing for none', () => {
+  it('shows only a count of connected carpentries, from three up', () => {
     expect(connectedLabel(null)).toBeNull()
     expect(connectedLabel(0)).toBeNull()
-    expect(connectedLabel(1)).toBe('נגרייה אחת מחוברת לשירות')
+    expect(connectedLabel(2)).toBeNull()
+    expect(connectedLabel(3)).toBe('3 נגריות מחוברות לשירות')
     expect(connectedLabel(34)).toBe('34 נגריות מחוברות לשירות')
     expect(connectedLabel(1250)).toBe('1,250 נגריות מחוברות לשירות')
   })

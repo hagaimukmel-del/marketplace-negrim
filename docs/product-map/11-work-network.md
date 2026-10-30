@@ -55,7 +55,8 @@ and for measuring matches later.
   the server; it must never be hidden only in markup.
 - "N נגריות מחוברות לשירות" shows under the board's subtitle and in the explainer's hero (board
   open only). It counts work profiles of active, non-test carpentries as a head count, so only the
-  number reaches the page, never who; zero or an error shows nothing (owner, 2026-10-30).
+  number reaches the page, never who; below 3 (`CONNECTED_MIN`) or on an error it shows nothing
+  (owner, 2026-10-30).
 - A job leaves the board at the end of its due day, 30 days at most, as a read-time filter.
 - Spam limits: 5 posts a day, 20 open jobs. 3 open reports from different carpentries pause a job
   until the operator restores or removes it.
