@@ -32,7 +32,8 @@ export function raffleWinHtml({
   winnerName: string
   prize: string | null
 }): string {
-  const catalog = `${siteUrl()}/app/catalog`
+  // Every way into the site starts on the carpentry's home screen
+  const home = `${siteUrl()}/app`
 
   return `
 <div dir="rtl" style="background:#fafaf9;padding:24px 12px;font:14px/1.6 ${FONT};color:#1c1917">
@@ -58,8 +59,8 @@ export function raffleWinHtml({
           </p>
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:18px">
             <tr><td align="center">
-              <a href="${catalog}" style="display:block;background:#047857;color:#ffffff;text-decoration:none;font:bold 16px ${FONT};padding:14px;border-radius:12px;text-align:center">
-                לקטלוג
+              <a href="${home}" style="display:block;background:#047857;color:#ffffff;text-decoration:none;font:bold 16px ${FONT};padding:14px;border-radius:12px;text-align:center">
+                לשוק הנגרים
               </a>
             </td></tr>
           </table>

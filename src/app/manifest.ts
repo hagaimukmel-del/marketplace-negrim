@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next'
 
 /**
  * What a phone uses when a carpenter adds the site to the home screen: the N on
- * navy as the icon, and the catalogue as the page it opens on — an app icon one
- * tap from reordering, which is the whole point of coming back.
+ * navy as the icon, and the carpentry's home screen as the page it opens on —
+ * reorder and the latest orders one tap away, which is the point of coming back.
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
