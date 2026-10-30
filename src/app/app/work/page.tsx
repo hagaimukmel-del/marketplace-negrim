@@ -1,4 +1,4 @@
-import { getWorkViewer, loadBoard } from '@/lib/work-server'
+import { connectedCarpentries, getWorkViewer, loadBoard } from '@/lib/work-server'
 import { unreadConversations } from '@/lib/work-chat-server'
 import ComingSoon from './ComingSoon'
 import Board from './Board'
@@ -32,13 +32,14 @@ export default async function WorkPage({
   }
 
   if (!viewer.carpenter && !viewer.admin) {
-    return <ComingSoon open signedIn={false} hasProfile={false} />
+    return <ComingSoon open signedIn={false} hasProfile={false} connected={await connectedCarpentries()} />
   }
 
   const filters = await searchParams
-  const [jobs, unread] = await Promise.all([
+  const [jobs, unread, connected] = await Promise.all([
     loadBoard(viewer, filters),
     viewer.carpenter ? unreadConversations(viewer.carpenter.id) : Promise.resolve(0),
+    connectedCarpentries(),
   ])
 
   return (
@@ -50,6 +51,7 @@ export default async function WorkPage({
       signedIn={Boolean(viewer.carpenter)}
       preview={!viewer.open}
       unread={unread}
+      connected={connected}
       now={nowMs()}
     />
   )

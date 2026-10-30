@@ -1,8 +1,8 @@
 import Link from 'next/link'
-import { Handshake, Lock, MessageSquare, Plus, UserRound } from 'lucide-react'
+import { Handshake, Lock, MessageSquare, Plus, UserRound, Users } from 'lucide-react'
 import { PageHeader } from '@/components/app/ui'
 import { REGIONS, regionName } from '@/lib/regions'
-import { JOB_TYPES, WORK_FREE_UNTIL, ago, daysLeft, jobTypeName, shortDate, type BoardJob } from '@/lib/work'
+import { JOB_TYPES, WORK_FREE_UNTIL, ago, connectedLabel, daysLeft, jobTypeName, shortDate, type BoardJob } from '@/lib/work'
 
 function href(region: string, type: string): string {
   const params = new URLSearchParams()
@@ -62,6 +62,7 @@ export default function Board({
   signedIn,
   preview,
   unread = 0,
+  connected = null,
   now,
 }: {
   jobs: BoardJob[]
@@ -72,9 +73,12 @@ export default function Board({
   preview: boolean
   /** Work conversations waiting for this carpentry. */
   unread?: number
+  /** How many carpentries are connected: a number only, never who. */
+  connected?: number | null
   now: number
 }) {
   const today = new Date(now)
+  const connectedText = connectedLabel(connected)
   return (
     <div className="mx-auto grid max-w-3xl grid-cols-[minmax(0,1fr)] gap-4">
       {preview && (
@@ -87,7 +91,17 @@ export default function Board({
         icon={Handshake}
         tone="teal"
         title="נגרים עובדים ביחד"
-        subtitle="לוח עבודות בין נגריות"
+        subtitle={
+          <>
+            לוח עבודות בין נגריות
+            {connectedText && (
+              <span className="tnum mt-0.5 flex items-center gap-1 text-[13px] text-[#0B5A5A]">
+                <Users size={14} aria-hidden />
+                {connectedText}
+              </span>
+            )}
+          </>
+        }
         actions={
           signedIn && (
           <>

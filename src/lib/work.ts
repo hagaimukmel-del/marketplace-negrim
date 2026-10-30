@@ -278,3 +278,12 @@ export function shortDate(day: string): string {
   const [, month, date] = day.split('-')
   return `${Number(date)}.${month}`
 }
+
+/** Below this the count says "empty" more than "connected", so it is not shown (owner, 2026-10-30). */
+export const CONNECTED_MIN = 3
+
+/** "34 נגריות מחוברות לשירות", or null below CONNECTED_MIN. */
+export function connectedLabel(count: number | null): string | null {
+  if (count === null || count < CONNECTED_MIN) return null
+  return `${count.toLocaleString('he-IL')} נגריות מחוברות לשירות`
+}

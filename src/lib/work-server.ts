@@ -61,6 +61,22 @@ export async function getWorkViewer(now: Date = new Date()): Promise<WorkViewer>
   }
 }
 
+/**
+ * How many carpentries are connected to the work network: a capabilities
+ * profile, not blocked, and not a test business ("ניסיון", like lib/email).
+ * Only the number leaves the database (a head count), never who they are.
+ * A database without the table yet, or any error, reads as null: show nothing.
+ */
+export async function connectedCarpentries(): Promise<number | null> {
+  const { count, error } = await getSupabaseAdmin()
+    .from('work_profiles')
+    .select('carpenter_id, carpenters!inner(is_active, business_name)', { count: 'exact', head: true })
+    .eq('carpenters.is_active', true)
+    .not('carpenters.business_name', 'like', '%ניסיון%')
+  if (error || count === null) return null
+  return count
+}
+
 const JOB_COLUMNS =
   'id, carpenter_id, job_type, region, quantity, material, due_date, description, image_url, status, expires_at, created_at, carpenters!work_jobs_carpenter_id_fkey!inner(business_name, city, is_active)'
 
