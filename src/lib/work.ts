@@ -278,3 +278,9 @@ export function shortDate(day: string): string {
   const [, month, date] = day.split('-')
   return `${Number(date)}.${month}`
 }
+
+/** "34 נגריות מחוברות לשירות", or null when there is nothing worth showing. */
+export function connectedLabel(count: number | null): string | null {
+  if (!count || count < 1) return null
+  return count === 1 ? 'נגרייה אחת מחוברת לשירות' : `${count.toLocaleString('he-IL')} נגריות מחוברות לשירות`
+}

@@ -1,6 +1,6 @@
 import Link from 'next/link'
-import { BadgePercent, FileText, Handshake, Lock, Mail, MessageSquare, Send } from 'lucide-react'
-import { JOB_TYPES as TYPES, WORK_FREE_UNTIL, WORK_PRICES } from '@/lib/work'
+import { BadgePercent, FileText, Handshake, Lock, Mail, MessageSquare, Send, Users } from 'lucide-react'
+import { JOB_TYPES as TYPES, WORK_FREE_UNTIL, WORK_PRICES, connectedLabel } from '@/lib/work'
 
 const FEEDBACK_EMAIL = 'nagarim.b2b@gmail.com'
 
@@ -32,7 +32,19 @@ const STEPS = [
  * open, it is what a visitor who has not signed up sees instead of the board.
  * Open to every region: no area is named here.
  */
-export default function ComingSoon({ signedIn, hasProfile, open = false }: { signedIn: boolean; hasProfile: boolean; open?: boolean }) {
+export default function ComingSoon({
+  signedIn,
+  hasProfile,
+  open = false,
+  connected = null,
+}: {
+  signedIn: boolean
+  hasProfile: boolean
+  open?: boolean
+  /** How many carpentries are connected: a number only, never who. */
+  connected?: number | null
+}) {
+  const connectedText = open ? connectedLabel(connected) : null
 
   return (
     <div className="mx-auto grid max-w-3xl grid-cols-[minmax(0,1fr)] gap-5">
@@ -50,6 +62,12 @@ export default function ComingSoon({ signedIn, hasProfile, open = false }: { sig
         <p className="mt-2 max-w-xl text-[15.5px] leading-relaxed text-[#D7EEEB]">
           לוח עבודות בין נגריות. נגרייה שצריכה עזרה בעבודה מפרסמת אותה, ונגרייה מתאימה מהאזור פונה ומתאמת איתה ישירות.
         </p>
+        {connectedText && (
+          <p className="tnum mt-3 mb-0 flex items-center gap-1.5 text-sm font-semibold text-[#BFE3DF]">
+            <Users size={15} aria-hidden />
+            {connectedText}
+          </p>
+        )}
       </section>
 
       <section aria-labelledby="work-how" className="grid gap-2.5">

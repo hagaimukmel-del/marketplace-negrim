@@ -23,7 +23,7 @@ PDF per message) and phase 3 (email notifications); billing (phase 4) is not.
 
 ## Code
 `src/lib/work.ts` (closed lists, validation, expiry, `subscriptionGrants`, `toBoardJob`),
-`src/lib/work-server.ts` (`workBoardOpen`, `getWorkViewer`, `loadBoard`, `loadJob`),
+`src/lib/work-server.ts` (`workBoardOpen`, `getWorkViewer`, `loadBoard`, `loadJob`, `connectedCarpentries`),
 `src/lib/work-chat.ts` (conversation rules, file sniffing), `src/lib/work-chat-server.ts` (every
 conversation read and write, scoped to the asking carpentry), `src/lib/work-notify.ts` (who is
 emailed and when), `src/lib/work-notify-server.ts` (sending, from route handlers inside `after()`),
@@ -53,6 +53,9 @@ and for measuring matches later.
   term is refused with a 409 and goes through the operator, since it has a refund to settle.
 - Without membership a carpentry sees jobs but not who posted. `toBoardJob` strips the poster on
   the server; it must never be hidden only in markup.
+- "N נגריות מחוברות לשירות" shows under the board's subtitle and in the explainer's hero (board
+  open only). It counts work profiles of active, non-test carpentries as a head count, so only the
+  number reaches the page, never who; zero or an error shows nothing (owner, 2026-10-30).
 - A job leaves the board at the end of its due day, 30 days at most, as a read-time filter.
 - Spam limits: 5 posts a day, 20 open jobs. 3 open reports from different carpentries pause a job
   until the operator restores or removes it.
