@@ -78,6 +78,13 @@ const PATHS: Record<string, React.ReactNode> = {
       <path d="M19 4h2M19.5 7h1.5" />
     </>
   ),
+  software: (
+    <>
+      <rect x="3" y="4" width="18" height="12" rx="1.5" />
+      <path d="M9 20h6M12 16v4" />
+      <path d="M10 8.5 8 10l2 1.5M14 8.5l2 1.5-2 1.5" />
+    </>
+  ),
   other: (
     <>
       <path d="M3.5 7.5 12 3.5l8.5 4v9L12 20.5l-8.5-4z" />

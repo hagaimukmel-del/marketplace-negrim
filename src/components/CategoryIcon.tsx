@@ -4,6 +4,7 @@ import {
   Factory,
   Hammer,
   Layers,
+  Monitor,
   Package,
   Paintbrush,
   Ruler,
@@ -28,6 +29,7 @@ export const CATEGORY_ICONS: { key: string; label: string; Icon: LucideIcon }[] 
   { key: 'tools', label: 'כלים', Icon: Hammer },
   { key: 'machines', label: 'מכונות', Icon: Factory },
   { key: 'care', label: 'תחזוקה', Icon: SprayCan },
+  { key: 'software', label: 'תוכנה ומחשוב', Icon: Monitor },
   { key: 'other', label: 'אחר', Icon: Package },
 ]
 
