@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowDown, ArrowUp, Download, Search } from 'lucide-react'
 import { formatIls } from '@/lib/vat'
+import WeeklyReportButton from './WeeklyReportButton'
 
 export type Period = '30' | '90' | '365' | 'all'
 
@@ -245,6 +246,9 @@ export default function ReportsClient({
         <div>
           <h1 className="text-xl font-bold text-stone-900">דוחות</h1>
           <p className="mt-1 text-base text-stone-600">מחירים — מהקטלוג היום. הזמנות ומחזור — מהתקופה שנבחרה, בלי הזמנות שבוטלו. סכומים ללא מע״מ.</p>
+          <div className="mt-3">
+            <WeeklyReportButton />
+          </div>
         </div>
         <label className="flex items-center gap-2 text-base text-stone-600">
           תקופה

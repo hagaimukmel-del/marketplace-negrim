@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { TERMS_VERSION } from '@/lib/terms'
 import { isRegionKey } from '@/lib/regions'
-import { isTestName, sendEmail } from '@/lib/email'
+import { isTestName, operatorEmail, sendEmail } from '@/lib/email'
 import { formatPhone, validPhoneKey } from '@/lib/phone'
 import { checkRateLimit, getClientIP, getRateLimitHeaders, hashIdentifier } from '@/lib/rate-limit'
 import {
@@ -179,14 +179,11 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    const operator = process.env.ADMIN_EMAIL || process.env.EMAIL_REPLY_TO
-    if (operator) {
-      await sendEmail({
-        to: operator,
-        subject: newApplicationSubject(application),
-        html: newApplicationHtml(application),
-      })
-    }
+    await sendEmail({
+      to: operatorEmail(),
+      subject: newApplicationSubject(application),
+      html: newApplicationHtml(application),
+    }).catch((err) => console.error('Supplier join: operator alert failed:', err))
 
     return NextResponse.json({ ok: true, existing: false, status: 'pending' }, { status: 201 })
   } catch (err) {

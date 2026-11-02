@@ -2,7 +2,7 @@ import 'server-only'
 
 import { after } from 'next/server'
 import { getSupabaseAdmin } from './supabase-admin'
-import { isTestName, sendEmail, siteUrl } from './email'
+import { isTestName, operatorEmail, sendEmail, siteUrl } from './email'
 import { notify } from './notifications'
 import { queueEmail } from './outbox'
 import { postSystemMessage } from './messages'
@@ -172,8 +172,8 @@ async function tellCarpenter(item: Waiting): Promise<void> {
 }
 
 async function tellOperator(items: Waiting[]): Promise<void> {
-  const operator = process.env.ADMIN_EMAIL || process.env.EMAIL_REPLY_TO
-  if (!operator || items.length === 0) return
+  const operator = operatorEmail()
+  if (items.length === 0) return
   const rows = items
     .map((item) => `<li>${item.label} · ${item.carpenterName} ← ${item.supplierName} · נשלחה ${new Date(item.createdAt).toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })}</li>`)
     .join('')
