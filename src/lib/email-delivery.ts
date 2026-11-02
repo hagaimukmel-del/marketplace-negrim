@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { getSupabaseAdmin } from './supabase-admin'
-import { sendEmail } from './email'
+import { operatorEmail, sendEmail } from './email'
 import type { DeliveryUpdate } from './resend-webhook'
 import type { Database } from './database.types'
 
@@ -29,8 +29,7 @@ function escapeHtml(value: string): string {
 
 /** One email to the operator about a mail that will not arrive. Sent directly, never queued. */
 export async function tellOperator(row: Pick<OutboxRow, 'to_email' | 'subject' | 'kind' | 'attempts'>, error: string): Promise<void> {
-  const operator = process.env.ADMIN_EMAIL || process.env.EMAIL_REPLY_TO
-  if (!operator) return
+  const operator = operatorEmail()
   await sendEmail({
     to: operator,
     subject: `מייל לא הגיע: ${row.subject}`.slice(0, 200),

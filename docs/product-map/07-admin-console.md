@@ -19,6 +19,7 @@ carpenters, run campaigns and raffles, moderate the Metzion, read reports.
 | `/admin/reports` | Reports |
 | `/admin/view/carpenter`, `/admin/view/supplier` → `/api/admin/view-supplier/[id]` | See the real app as a given carpenter or supplier. The supplier entry token is never rendered; the route sets the session on the server |
 | `/api/admin/email-test` | Send a test email |
+| Operator email (`operatorEmail()` in `lib/email.ts`) | A new supplier application mails the operator at once (`/api/supplier-join`). Every Thursday 15:00 Israel time `/api/cron/weekly-report` mails the week's signups: carpentries and suppliers who registered themselves, ones the operator added, suppliers still pending, names. Two Thursday crons (12:00 and 13:00 UTC) cover DST; only the one at 15:00 Israel sends, claimed once in `reminder_log`. `lib/weekly-report*.ts`. Address: `ADMIN_EMAIL`, else `EMAIL_REPLY_TO`, else `nagarim.b2b@gmail.com` |
 
 ## Code
 `src/app/admin/(guarded)/**` (Server Components gate, client islands), `lib/admin-auth.ts`,

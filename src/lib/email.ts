@@ -36,6 +36,19 @@ export interface SendResult {
   providerId?: string
 }
 
+/**
+ * Where notices meant for the operator go: new supplier applications, the
+ * weekly signup report, undelivered mail, suppliers who stopped answering.
+ *
+ * ADMIN_EMAIL when set, then the reply-to address, then the company's main
+ * address (owner, 2026-10-22), so an unset variable never silences them.
+ */
+export const OPERATOR_FALLBACK_EMAIL = 'nagarim.b2b@gmail.com'
+
+export function operatorEmail(): string {
+  return process.env.ADMIN_EMAIL || process.env.EMAIL_REPLY_TO || OPERATOR_FALLBACK_EMAIL
+}
+
 /** A provider call that hangs must not hold a request or a retry run forever. */
 const SEND_TIMEOUT_MS = 10_000
 

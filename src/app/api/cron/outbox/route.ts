@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { timingSafeEqual } from 'node:crypto'
+import { isCronRequest } from '@/lib/cron-auth'
 import { processOutbox } from '@/lib/outbox'
 import { runReminders, sendDailySummaries } from '@/lib/reminders'
 import { purgeExpiredCarpenters } from '@/lib/carpenter-deletion-server'
@@ -19,12 +19,7 @@ import { purgeExpiredCarpenters } from '@/lib/carpenter-deletion-server'
  * three months ago (lib/carpenter-deletion.ts).
  */
 export async function GET(request: NextRequest) {
-  const secret = process.env.CRON_SECRET
-  const given = request.headers.get('authorization') ?? ''
-  const expected = `Bearer ${secret}`
-  const ok =
-    Boolean(secret) && given.length === expected.length && timingSafeEqual(Buffer.from(given), Buffer.from(expected))
-  if (!ok) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  if (!isCronRequest(request)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const purgedCarpenters = await purgeExpiredCarpenters()
   const reminders = await runReminders()
