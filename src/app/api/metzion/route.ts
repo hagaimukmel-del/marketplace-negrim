@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
+import { getSessionSupplier } from '@/lib/supplier-auth'
+import { refuseAdminWriteFor } from '@/lib/admin-scope'
 import { isRegionKey, regionsForCity } from '@/lib/regions'
 import {
   METZION_LIFETIME_DAYS,
@@ -17,6 +19,32 @@ type ListingUpdate = Database['public']['Tables']['metzion_listings']['Update']
 const BUCKET = 'metzion-images'
 const MAX_BYTES = 5 * 1024 * 1024
 const TYPES = ['image/jpeg', 'image/png', 'image/webp']
+
+/**
+ * Who is posting: a carpenter from /app/metzion or a supplier from
+ * /supplier/metzion. The side is named by the page that sends the request,
+ * because the operator can hold both a carpenter and a supplier cookie. The id
+ * always comes from that side's session, never from the request.
+ */
+interface Owner {
+  column: 'carpenter_id' | 'supplier_id'
+  id: string
+  /** First folder of the listing's photos in storage. */
+  folder: string
+}
+
+async function sessionOwner(side: unknown): Promise<Owner | NextResponse> {
+  if (side === 'supplier') {
+    const supplier = await getSessionSupplier()
+    if (!supplier) return NextResponse.json({ error: 'צריך להיות ספק מאושר' }, { status: 401 })
+    const refused = await refuseAdminWriteFor(supplier)
+    if (refused) return refused
+    return { column: 'supplier_id', id: supplier.id, folder: `supplier-${supplier.id}` }
+  }
+  const carpenter = await getSessionCarpenter()
+  if (!carpenter) return NextResponse.json({ error: 'צריך להיות נגרייה רשומה' }, { status: 401 })
+  return { column: 'carpenter_id', id: carpenter.id, folder: carpenter.id }
+}
 
 function text(value: FormDataEntryValue | null, max: number): string | null {
   if (typeof value !== 'string') return null
@@ -36,7 +64,7 @@ function expiry(): string {
 }
 
 /** The listing fields, read and checked. Shared by create and edit. */
-function readFields(form: FormData): Omit<ListingInsert, 'carpenter_id' | 'images'> | string {
+function readFields(form: FormData): Omit<ListingInsert, 'carpenter_id' | 'supplier_id' | 'images'> | string {
   const title = text(form.get('title'), 120)
   if (!title || title.length < 3) return 'צריך תיאור קצר של הפריט'
 
@@ -99,13 +127,13 @@ function readFiles(form: FormData): File[] | string {
   return files
 }
 
-async function upload(carpenterId: string, listingId: string, files: File[]) {
+async function upload(folder: string, listingId: string, files: File[]) {
   const supabase = getSupabaseAdmin()
   const urls: string[] = []
   const paths: string[] = []
   for (const [index, file] of files.entries()) {
     const extension = file.type.split('/')[1].replace('jpeg', 'jpg')
-    const path = `${carpenterId}/${listingId}/${Date.now()}-${index}.${extension}`
+    const path = `${folder}/${listingId}/${Date.now()}-${index}.${extension}`
     const { error } = await supabase.storage.from(BUCKET).upload(path, file, { contentType: file.type })
     if (error) {
       if (paths.length) await supabase.storage.from(BUCKET).remove(paths)
@@ -127,16 +155,16 @@ function pathOf(url: string): string | null {
 /**
  * Post a listing.
  *
- * Only a registered, active carpenter can post, and the listing belongs to the
- * carpenter in the session — never to an id in the request. At least one photo
+ * Only a registered, active carpenter or an approved supplier can post, and the
+ * listing belongs to whoever is in the session — never to an id in the request. At least one photo
  * is required: a board of text-only listings is a board nobody scrolls.
  */
 export async function POST(request: NextRequest) {
-  const carpenter = await getSessionCarpenter()
-  if (!carpenter) return NextResponse.json({ error: 'צריך להיות נגרייה רשומה' }, { status: 401 })
-
   try {
     const form = await request.formData()
+    const owner = await sessionOwner(form.get('side'))
+    if (owner instanceof NextResponse) return owner
+
     const fields = readFields(form)
     if (typeof fields === 'string') return NextResponse.json({ error: fields }, { status: 400 })
 
@@ -148,12 +176,12 @@ export async function POST(request: NextRequest) {
     }
 
     const id = randomUUID()
-    const { urls, paths } = await upload(carpenter.id, id, files)
+    const { urls, paths } = await upload(owner.folder, id, files)
 
     const supabase = getSupabaseAdmin()
     const { error } = await supabase.from('metzion_listings').insert({
       id,
-      carpenter_id: carpenter.id,
+      [owner.column]: owner.id,
       ...fields,
       images: urls,
       expires_at: expiry(),
@@ -180,15 +208,14 @@ export async function POST(request: NextRequest) {
  * belonging to somebody else simply matches nothing.
  */
 export async function PATCH(request: NextRequest) {
-  const carpenter = await getSessionCarpenter()
-  if (!carpenter) return NextResponse.json({ error: 'צריך להיות נגרייה רשומה' }, { status: 401 })
-
   try {
     const supabase = getSupabaseAdmin()
     const contentType = request.headers.get('content-type') ?? ''
 
     if (contentType.includes('multipart/form-data')) {
       const form = await request.formData()
+      const owner = await sessionOwner(form.get('side'))
+      if (owner instanceof NextResponse) return owner
       const id = text(form.get('id'), 64)
       if (!id) return NextResponse.json({ error: 'חסרה מודעה' }, { status: 400 })
 
@@ -196,7 +223,7 @@ export async function PATCH(request: NextRequest) {
         .from('metzion_listings')
         .select('id, images, status')
         .eq('id', id)
-        .eq('carpenter_id', carpenter.id)
+        .eq(owner.column, owner.id)
         .maybeSingle()
       if (!current) return NextResponse.json({ error: 'המודעה לא נמצאה' }, { status: 404 })
       if (current.status === 'sold') {
@@ -219,7 +246,7 @@ export async function PATCH(request: NextRequest) {
         return NextResponse.json({ error: `עד ${METZION_MAX_IMAGES} תמונות` }, { status: 400 })
       }
 
-      const { urls } = await upload(carpenter.id, id, files)
+      const { urls } = await upload(owner.folder, id, files)
       const update: ListingUpdate = {
         ...fields,
         images: [...keep, ...urls],
@@ -230,7 +257,7 @@ export async function PATCH(request: NextRequest) {
         .from('metzion_listings')
         .update(update)
         .eq('id', id)
-        .eq('carpenter_id', carpenter.id)
+        .eq(owner.column, owner.id)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
       const dropped = current.images.filter((url) => !keep.includes(url)).map(pathOf).filter(Boolean) as string[]
@@ -240,6 +267,8 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = (await request.json()) as Record<string, unknown>
+    const owner = await sessionOwner(body.side)
+    if (owner instanceof NextResponse) return owner
     if (typeof body.id !== 'string') return NextResponse.json({ error: 'חסרה מודעה' }, { status: 400 })
 
     const now = new Date().toISOString()
@@ -267,7 +296,7 @@ export async function PATCH(request: NextRequest) {
       .from('metzion_listings')
       .update(update)
       .eq('id', body.id)
-      .eq('carpenter_id', carpenter.id)
+      .eq(owner.column, owner.id)
       .in('status', allowedFrom)
       .select('id, expires_at')
       .maybeSingle()

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Clock, Flag, Gift, MapPin, MessageCircle, Phone, X } from 'lucide-react'
+import { Clock, Flag, Gift, MapPin, MessageCircle, Phone, Store, X } from 'lucide-react'
 import { formatIls } from '@/lib/vat'
 import { regionName } from '@/lib/regions'
 import {
@@ -107,6 +107,12 @@ export default function ListingSheet({ card, onClose }: { card: MetzionCard; onC
               {categoryLabel(card.category)} · {conditionLabel(card.condition)}
             </p>
             <h2 className="mt-1 text-xl font-bold leading-tight text-ink">{card.title}</h2>
+            {card.supplierName && (
+              <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-ink">
+                <Store size={14} className="text-faint" />
+                מודעה של ספק: {card.supplierName}
+              </p>
+            )}
             <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
               {card.dealType === 'free' ? (
                 <span className="flex items-center gap-1.5 text-lg font-bold text-brand-ink">

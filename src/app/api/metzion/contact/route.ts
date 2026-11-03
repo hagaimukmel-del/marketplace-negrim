@@ -2,13 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { isAdmin } from '@/lib/admin-auth'
+import { ownerOf } from '@/lib/metzion'
 
 /**
  * The phone behind a listing, on request.
  *
  * Kept out of the board's payload on purpose: a page full of phone numbers is
  * a harvesting target. Asking for one costs a tap, needs a registered carpenter,
- * and only answers for a listing that is live and whose owner is not blocked.
+ * and only answers for a listing that is live and whose owner (carpenter or
+ * supplier) is not blocked.
  */
 export async function GET(request: NextRequest) {
   const [carpenter, admin] = await Promise.all([getSessionCarpenter(), isAdmin()])
@@ -21,12 +23,11 @@ export async function GET(request: NextRequest) {
 
   const { data } = await getSupabaseAdmin()
     .from('metzion_listings')
-    .select('contact_name, contact_phone, status, expires_at, carpenters!inner(is_active)')
+    .select('contact_name, contact_phone, status, expires_at, carpenters(is_active), suppliers(company_name, status)')
     .eq('id', id)
     .maybeSingle()
 
-  const owner = data?.carpenters as { is_active: boolean } | null | undefined
-  const live = data && data.status === 'active' && new Date(data.expires_at).getTime() > Date.now() && owner?.is_active
+  const live = data && data.status === 'active' && new Date(data.expires_at).getTime() > Date.now() && ownerOf(data).live
 
   if (!live) return NextResponse.json({ error: 'המודעה כבר לא פעילה' }, { status: 404 })
 
