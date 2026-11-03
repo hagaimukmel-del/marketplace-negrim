@@ -1,37 +1,23 @@
 /**
- * The supplier subscription (owner, 2026-10-08, top tier 2,400 on 2026-10-22; CLAUDE.md §5 Revenue model).
+ * The supplier subscription (CLAUDE.md §5 Revenue model).
  *
- * A monthly fee by how many products the supplier lists, excl. VAT. Billing
- * starts January 2027 (may slip) and happens outside the site: nothing here
- * charges anyone. No commission on orders. Change the numbers here only, so
- * the emails and any later subscription screen say the same thing.
+ * Owner, 2026-11-03: one plan for every supplier, 350 ₪ a month excl. VAT on
+ * an annual agreement of 12 months, 4,200 ₪ a year. It replaces the three
+ * tiers by product count (1,300 / 1,900 / 2,400). Billing starts January 2027
+ * (may slip) and happens outside the site: nothing here charges anyone. No
+ * commission on orders. Change the numbers here only, so the join form, the
+ * emails, the console and the terms say the same thing.
  */
-export interface SupplierPlan {
-  /** Inclusive upper bound on listed products; null for the open top tier. */
-  maxProducts: number | null
-  monthlyExclVat: number
-}
+export const SUPPLIER_MONTHLY_EXCL_VAT = 350
+export const SUPPLIER_AGREEMENT_MONTHS = 12
+export const SUPPLIER_ANNUAL_EXCL_VAT = SUPPLIER_MONTHLY_EXCL_VAT * SUPPLIER_AGREEMENT_MONTHS
 
-export const SUPPLIER_PLANS: SupplierPlan[] = [
-  { maxProducts: 50, monthlyExclVat: 1300 },
-  { maxProducts: 150, monthlyExclVat: 1900 },
-  { maxProducts: null, monthlyExclVat: 2400 },
-]
+/** "350 ₪ לחודש, הסכם שנתי ל-12 חודשים (4,200 ₪ לשנה), לפני מע״מ". */
+export const SUPPLIER_PLAN_SUMMARY =
+  `${SUPPLIER_MONTHLY_EXCL_VAT.toLocaleString('he-IL')} ₪ לחודש, הסכם שנתי ל-${SUPPLIER_AGREEMENT_MONTHS} חודשים ` +
+  `(${SUPPLIER_ANNUAL_EXCL_VAT.toLocaleString('he-IL')} ₪ לשנה), לפני מע״מ`
 
 export const BILLING_STARTS_LABEL = 'ינואר 2027'
 
 /** One week of "מוצר השבוע", excl. VAT (T-024). Snapshotted on each booking. */
 export const PROMO_WEEK_EXCL_VAT = 690
-
-/** "עד 50 מוצרים", "51 עד 150 מוצרים", "מעל 150 מוצרים". */
-export function planLabel(index: number): string {
-  const plan = SUPPLIER_PLANS[index]
-  const floor = index === 0 ? 0 : SUPPLIER_PLANS[index - 1].maxProducts ?? 0
-  if (plan.maxProducts == null) return `מעל ${floor} מוצרים`
-  return floor === 0 ? `עד ${plan.maxProducts} מוצרים` : `${floor + 1} עד ${plan.maxProducts} מוצרים`
-}
-
-/** The plan a supplier with this many listed products falls in. */
-export function planFor(productCount: number): SupplierPlan {
-  return SUPPLIER_PLANS.find((plan) => plan.maxProducts == null || productCount <= plan.maxProducts) ?? SUPPLIER_PLANS[SUPPLIER_PLANS.length - 1]
-}

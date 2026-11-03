@@ -6,7 +6,12 @@ import { Check, CheckCircle2 } from 'lucide-react'
 import LoginLinkBox from './LoginLinkBox'
 import Logo from '@/components/brand/Logo'
 import { REGIONS } from '@/lib/regions'
-import { BILLING_STARTS_LABEL, planLabel, SUPPLIER_PLANS } from '@/lib/supplier-plans'
+import {
+  BILLING_STARTS_LABEL,
+  SUPPLIER_AGREEMENT_MONTHS,
+  SUPPLIER_ANNUAL_EXCL_VAT,
+  SUPPLIER_MONTHLY_EXCL_VAT,
+} from '@/lib/supplier-plans'
 
 const EMPTY = {
   company_name: '',
@@ -215,13 +220,15 @@ export default function SupplierJoinPage() {
           </fieldset>
 
           <div className="rounded-lg bg-stone-100 p-3 text-base text-stone-700">
-            <b className="block text-stone-900">מנוי חודשי לפי מספר המוצרים, לפני מע״מ</b>
-            {SUPPLIER_PLANS.map((plan, i) => (
-              <span key={i} className="flex justify-between">
-                <span>{planLabel(i)}</span>
-                <span className="tnum font-semibold">{plan.monthlyExclVat.toLocaleString('he-IL')} ₪</span>
-              </span>
-            ))}
+            <b className="block text-stone-900">מנוי לספק, לפני מע״מ</b>
+            <span className="flex justify-between">
+              <span>לחודש</span>
+              <span className="tnum font-semibold">{SUPPLIER_MONTHLY_EXCL_VAT.toLocaleString('he-IL')} ₪</span>
+            </span>
+            <span className="flex justify-between">
+              <span>הסכם שנתי ({SUPPLIER_AGREEMENT_MONTHS} חודשים)</span>
+              <span className="tnum font-semibold">{SUPPLIER_ANNUAL_EXCL_VAT.toLocaleString('he-IL')} ₪</span>
+            </span>
             <span className="mt-1 block text-sm text-stone-500">
               החיוב מתחיל ב{BILLING_STARTS_LABEL} ונעשה מחוץ לאתר. אין עמלה על הזמנות. הפרטים יישלחו גם למייל.
             </span>

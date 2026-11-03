@@ -97,9 +97,10 @@ working around it. The live site doesn't depend on either PC: **Vercel deploys e
 - **Amounts are snapshots.** Store `unit_price` at time of order and never recompute from the
   current price. The supplier's confirmed amount — not the submitted amount — is the basis for
   any commission calculation.
-- **Revenue model** (owner, 2026-10-08): a monthly **supplier subscription** by number of products,
-  excl. VAT: up to 50 products 1,300 ₪, up to 150 1,900 ₪, above 150 2,400 ₪ (owner, 2026-10-22). Billing starts January
-  2027 (may slip) and happens outside the site. No commission on orders; the `supplier_commission` /
+- **Revenue model** (owner, 2026-10-08; price 2026-11-03): one **supplier subscription** for every
+  supplier, 350 ₪ a month excl. VAT on an annual agreement of 12 months (4,200 ₪ a year), whatever
+  the number of products. It replaced the tiers by product count. Billing starts January
+  2027 (may slip) and happens outside the site. Numbers live only in `lib/supplier-plans.ts`. No commission on orders; the `supplier_commission` /
   `commission_rate` snapshots stay but are not billed. Later: a paid weekly promotion slot, 690 ₪ a week.
 - **Exception, approved by the owner 2026-10-15: the work network charges carpentries.**
   נגרים עובדים ביחד (product map 11) will sell a fixed-term subscription in the site: half a year

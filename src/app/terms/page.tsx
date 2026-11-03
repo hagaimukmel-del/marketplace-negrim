@@ -2,6 +2,13 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { OPERATOR, TERMS_UPDATED_LABEL, TERMS_VERSION } from '@/lib/terms'
+import {
+  BILLING_STARTS_LABEL,
+  PROMO_WEEK_EXCL_VAT,
+  SUPPLIER_AGREEMENT_MONTHS,
+  SUPPLIER_ANNUAL_EXCL_VAT,
+  SUPPLIER_MONTHLY_EXCL_VAT,
+} from '@/lib/supplier-plans'
 import Logo from '@/components/brand/Logo'
 
 export const metadata: Metadata = {
@@ -211,9 +218,12 @@ export default function TermsPage() {
             </li>
           </ul>
           <p>
-            <strong>דמי שימוש.</strong> אין עמלה על הזמנות. דמי מנוי חודשיים לספק, לפי מספר המוצרים
-            שהוא מציע, ומשבצת קידום בתשלום (״מוצר השבוע״), ייקבעו בהסכם נפרד או בהודעה מראש, ולא
-            ייגבו לפני שהספק הסכים להם. החיוב נעשה מחוץ לאתר.
+            <strong>דמי שימוש.</strong> אין עמלה על הזמנות. דמי המנוי לספק הם{' '}
+            {SUPPLIER_MONTHLY_EXCL_VAT.toLocaleString('he-IL')} ₪ לחודש לפני מע״מ, בהסכם שנתי
+            ל-{SUPPLIER_AGREEMENT_MONTHS} חודשים ({SUPPLIER_ANNUAL_EXCL_VAT.toLocaleString('he-IL')} ₪ לשנה
+            לפני מע״מ), בלי תלות במספר המוצרים. משבצת הקידום ״מוצר השבוע״ עולה{' '}
+            {PROMO_WEEK_EXCL_VAT.toLocaleString('he-IL')} ₪ לשבוע לפני מע״מ. החיוב מתחיל ב{BILLING_STARTS_LABEL},
+            נעשה מחוץ לאתר בחשבונית ישירה, ולא ייגבה דבר לפני שהספק הסכים לו.
           </p>
         </>
       ),

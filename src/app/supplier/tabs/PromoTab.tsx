@@ -2,9 +2,15 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { CalendarDays, Check, Megaphone, X } from 'lucide-react'
+import { CalendarDays, Megaphone, X } from 'lucide-react'
 import { formatIls } from '@/lib/vat'
-import { BILLING_STARTS_LABEL, PROMO_WEEK_EXCL_VAT, SUPPLIER_PLANS, planFor, planLabel } from '@/lib/supplier-plans'
+import {
+  BILLING_STARTS_LABEL,
+  PROMO_WEEK_EXCL_VAT,
+  SUPPLIER_AGREEMENT_MONTHS,
+  SUPPLIER_ANNUAL_EXCL_VAT,
+  SUPPLIER_MONTHLY_EXCL_VAT,
+} from '@/lib/supplier-plans'
 import { PROMO_STATUS_LABEL, bookableWeeks, currentWeek, weekLabel, type PromoWeek } from '@/lib/promo-weeks'
 import { callApi, jsonInit, type ProductItem, type SupplierPromo } from '../types'
 import type { Notify } from '../SupplierApp'
@@ -18,37 +24,22 @@ const STATUS_TONE: Record<PromoWeek['status'], string> = {
 
 function Plan({ products }: { products: ProductItem[] }) {
   const listed = products.filter((product) => product.isActive).length
-  const current = planFor(listed)
   return (
     <section className="rounded-xl border border-stone-200 bg-white p-4">
       <h2 className="font-bold text-stone-900">המנוי שלך</h2>
       <p className="mt-0.5 text-base text-stone-600">
-        יש לך <span className="tnum font-semibold">{listed}</span> מוצרים מוצגים לנגרים. המנוי נקבע לפי מספר המוצרים,
-        בלי עמלה על הזמנות.
+        יש לך <span className="tnum font-semibold">{listed}</span> מוצרים מוצגים לנגרים. מחיר אחד לכל ספק, בלי
+        תלות במספר המוצרים ובלי עמלה על הזמנות.
       </p>
-      <ul className="mt-3 grid gap-2 sm:grid-cols-3">
-        {SUPPLIER_PLANS.map((plan, index) => {
-          const mine = plan === current
-          return (
-            <li
-              key={index}
-              className={`rounded-xl border p-3 ${mine ? 'border-emerald-600 bg-emerald-50 ring-1 ring-emerald-600' : 'border-stone-200'}`}
-            >
-              <p className="text-base text-stone-600">{planLabel(index)}</p>
-              <p className="tnum mt-0.5 text-lg font-bold text-stone-900">
-                {formatIls(plan.monthlyExclVat)}
-                <span className="text-sm font-normal text-stone-500"> לחודש, לפני מע״מ</span>
-              </p>
-              {mine && (
-                <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-emerald-800">
-                  <Check size={14} />
-                  המדרגה שלך
-                </p>
-              )}
-            </li>
-          )
-        })}
-      </ul>
+      <div className="mt-3 rounded-xl border border-emerald-600 bg-emerald-50 p-3 ring-1 ring-emerald-600">
+        <p className="tnum text-lg font-bold text-stone-900">
+          {formatIls(SUPPLIER_MONTHLY_EXCL_VAT)}
+          <span className="text-sm font-normal text-stone-500"> לחודש, לפני מע״מ</span>
+        </p>
+        <p className="tnum mt-0.5 text-base text-stone-700">
+          הסכם שנתי ל-{SUPPLIER_AGREEMENT_MONTHS} חודשים: {formatIls(SUPPLIER_ANNUAL_EXCL_VAT)} לשנה, לפני מע״מ
+        </p>
+      </div>
       <p className="mt-3 text-sm text-stone-500">
         החיוב מתחיל ב{BILLING_STARTS_LABEL} ונעשה מחוץ לאתר, בחשבונית ישירה. האתר לא גובה תשלום.
       </p>
@@ -77,7 +68,7 @@ function Results({ week }: { week: PromoWeek }) {
 }
 
 /**
- * "מנוי ופרסום": the subscription tier this supplier is in, and booking a week
+ * "מנוי ופרסום": the supplier subscription, and booking a week
  * of "מוצר השבוע" (T-024).
  *
  * The calendar shows the next weeks as free, taken (by someone, never named)
