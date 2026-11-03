@@ -22,7 +22,7 @@ categories, product knowledge and documents, and the ways prices get in.
 
 ## Data
 `products` (canonical, no price), `supplier_offers` (price excl. VAT per base unit, stock, pack,
-MOQ, lead time), `categories` (12 roots + subcategories: the tree is `20260915121000_category_tree`, plus `cladding_category` and `software_category`, there is no `category_groups` table), `volume_pricing` (kept, no longer read since 2026-10-12),
+MOQ, lead time), `categories` (13 roots + subcategories: the tree is `20260915121000_category_tree`, plus `cladding_category`, `software_category` and `design_category`, there is no `category_groups` table), `volume_pricing` (kept, no longer read since 2026-10-12),
 `import_batches`, `product_specifications`, `product_documents`, `supplier_documents(_products)`,
 `supplier_products` (verify use).
 
