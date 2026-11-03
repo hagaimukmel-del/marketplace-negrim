@@ -19,5 +19,9 @@ export const SUPPLIER_PLAN_SUMMARY =
 
 export const BILLING_STARTS_LABEL = 'ינואר 2027'
 
-/** One week of "מוצר השבוע", excl. VAT (T-024). Snapshotted on each booking. */
-export const PROMO_WEEK_EXCL_VAT = 690
+/**
+ * One week of "מוצר השבוע", excl. VAT (T-024). Snapshotted on each booking, so
+ * weeks booked before a price change keep their price. 690 until 2026-11-03,
+ * then 95 (owner).
+ */
+export const PROMO_WEEK_EXCL_VAT = 95

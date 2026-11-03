@@ -101,7 +101,7 @@ working around it. The live site doesn't depend on either PC: **Vercel deploys e
   supplier, 350 ₪ a month excl. VAT on an annual agreement of 12 months (4,200 ₪ a year), whatever
   the number of products. It replaced the tiers by product count. Billing starts January
   2027 (may slip) and happens outside the site. Numbers live only in `lib/supplier-plans.ts`. No commission on orders; the `supplier_commission` /
-  `commission_rate` snapshots stay but are not billed. Later: a paid weekly promotion slot, 690 ₪ a week.
+  `commission_rate` snapshots stay but are not billed. A paid weekly promotion slot ("מוצר השבוע"), 95 ₪ a week excl. VAT (owner, 2026-11-03; was 690).
 - **Exception, approved by the owner 2026-10-15: the work network charges carpentries.**
   נגרים עובדים ביחד (product map 11) will sell a fixed-term subscription in the site: half a year
   350 ₪ or a year 470 ₪ excl. VAT, paid up front (card installments allowed), no auto-renewal. This
