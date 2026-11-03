@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Bell, LogOut, MessageSquare, Store } from 'lucide-react'
+import { Bell, LogOut, MessageSquare, Recycle, Store } from 'lucide-react'
 import { LogoMark } from '@/components/brand/Logo'
 
 /**
@@ -68,9 +68,17 @@ export default function SupplierNav({
         </span>
 
         <Link
+          href="/supplier/metzion"
+          aria-label="המציאון: המודעות שלי"
+          className="ms-auto flex h-10 shrink-0 items-center gap-1.5 rounded-lg border border-stone-200 px-2.5 text-sm font-semibold text-stone-700 hover:bg-stone-50"
+        >
+          <Recycle size={18} />
+          <span className="hidden sm:inline">מציאון</span>
+        </Link>
+        <Link
           href="/supplier/messages"
           aria-label={unread ? `הודעות, ${unread} מחכות לתשובה` : 'הודעות'}
-          className="relative ms-auto grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-stone-200 text-stone-700 hover:bg-stone-50"
+          className="relative grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-stone-200 text-stone-700 hover:bg-stone-50"
         >
           <MessageSquare size={19} />
           {unread > 0 && (

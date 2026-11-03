@@ -78,7 +78,14 @@ const INPUT = 'mt-1 h-12 w-full rounded-[11px] border border-hair bg-white px-3'
  * phone before they upload, so posting from the workshop does not wait on
  * megabytes.
  */
-export default function ListingForm({ initial }: { initial: ListingFormValues }) {
+export default function ListingForm({
+  initial,
+  side = 'carpenter',
+}: {
+  initial: ListingFormValues
+  /** A supplier posts from /supplier/metzion; the API reads that side's session. */
+  side?: 'carpenter' | 'supplier'
+}) {
   const router = useRouter()
   const editing = Boolean(initial.id)
   const fileInput = useRef<HTMLInputElement>(null)
@@ -140,6 +147,7 @@ export default function ListingForm({ initial }: { initial: ListingFormValues })
     if (form.regions.length === 0) return setError('צריך לבחור אזור')
 
     const data = new FormData()
+    data.append('side', side)
     if (form.id) data.append('id', form.id)
     data.append('title', form.title)
     data.append('description', form.description)
@@ -161,7 +169,7 @@ export default function ListingForm({ initial }: { initial: ListingFormValues })
       const response = await fetch('/api/metzion', { method: editing ? 'PATCH' : 'POST', body: data })
       const result = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(result.error || 'השמירה נכשלה')
-      router.push(`/app/metzion/mine?${editing ? 'saved' : 'created'}=1`)
+      router.push(`${side === 'supplier' ? '/supplier/metzion' : '/app/metzion/mine'}?${editing ? 'saved' : 'created'}=1`)
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'השמירה נכשלה')

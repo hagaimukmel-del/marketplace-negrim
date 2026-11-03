@@ -37,7 +37,17 @@ function groupOf(listing: MyListing): Group | null {
  * No email reminder when a listing nears its end — the carpenter sees it here,
  * with the days left, next time they come in.
  */
-export default function MyListings({ listings, notice }: { listings: MyListing[]; notice: 'created' | 'saved' | null }) {
+export default function MyListings({
+  listings,
+  notice,
+  side = 'carpenter',
+}: {
+  listings: MyListing[]
+  notice: 'created' | 'saved' | null
+  /** The same screen serves a supplier at /supplier/metzion. */
+  side?: 'carpenter' | 'supplier'
+}) {
+  const base = side === 'supplier' ? '/supplier/metzion' : '/app/metzion'
   const router = useRouter()
   const [group, setGroup] = useState<Group>('active')
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -52,7 +62,7 @@ export default function MyListings({ listings, notice }: { listings: MyListing[]
       const response = await fetch('/api/metzion', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: listing.id, action }),
+        body: JSON.stringify({ id: listing.id, action, side }),
       })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data.error || 'הפעולה נכשלה')
@@ -80,14 +90,14 @@ export default function MyListings({ listings, notice }: { listings: MyListing[]
 
   return (
     <div className="space-y-4 pb-6">
-      <Link href="/app/metzion" className="inline-flex h-9 items-center gap-1.5 text-sm font-medium text-muted">
+      <Link href={side === 'supplier' ? '/supplier' : '/app/metzion'} className="inline-flex h-9 items-center gap-1.5 text-sm font-medium text-muted">
         <ArrowRight size={15} />
-        למציאון
+        {side === 'supplier' ? 'לממשק הספק' : 'למציאון'}
       </Link>
 
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-extrabold text-ink md:text-[28px]">המודעות שלי</h1>
-        <Link href="/app/metzion/new" className="flex h-11 items-center gap-1.5 rounded-[11px] bg-brand px-4 text-sm font-bold text-navy">
+        <h1 className="text-2xl font-extrabold text-ink md:text-[28px]">{side === 'supplier' ? 'המודעות שלי במציאון' : 'המודעות שלי'}</h1>
+        <Link href={`${base}/new`} className="flex h-11 items-center gap-1.5 rounded-[11px] bg-brand px-4 text-sm font-bold text-navy">
           <Plus size={17} />
           מודעה חדשה
         </Link>
@@ -181,7 +191,7 @@ export default function MyListings({ listings, notice }: { listings: MyListing[]
                         נמכר / נמסר
                       </button>
                     )}
-                    <Link href={`/app/metzion/${listing.id}/edit`} className="flex h-10 items-center gap-1.5 rounded-[11px] border border-hair bg-white px-3 text-sm font-semibold text-ink">
+                    <Link href={`${base}/${listing.id}/edit`} className="flex h-10 items-center gap-1.5 rounded-[11px] border border-hair bg-white px-3 text-sm font-semibold text-ink">
                       <Pencil size={15} />
                       ערוך
                     </Link>

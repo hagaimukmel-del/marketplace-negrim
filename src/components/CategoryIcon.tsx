@@ -7,6 +7,7 @@ import {
   Monitor,
   Package,
   Paintbrush,
+  PencilRuler,
   Ruler,
   SprayCan,
   TreePine,
@@ -30,6 +31,7 @@ export const CATEGORY_ICONS: { key: string; label: string; Icon: LucideIcon }[] 
   { key: 'machines', label: 'מכונות', Icon: Factory },
   { key: 'care', label: 'תחזוקה', Icon: SprayCan },
   { key: 'software', label: 'תוכנה ומחשוב', Icon: Monitor },
+  { key: 'design', label: 'אדריכלות ועיצוב פנים', Icon: PencilRuler },
   { key: 'other', label: 'אחר', Icon: Package },
 ]
 

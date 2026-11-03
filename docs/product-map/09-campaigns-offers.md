@@ -25,7 +25,7 @@ measured. A raffle among carpenters is the engagement tool.
 ## Rules & invariants
 - Measurement is the point: "who received, who opened, who almost ordered" (workplan "מדידה").
 - "מוצר השבוע" (T-024, `lib/promo.ts`): one approved booking per week (partial unique index),
-  690 ₪ excl. VAT snapshotted, billed outside the site. Always labelled with a small "פרסומת"
+  95 ₪ excl. VAT (690 until 2026-11-03) snapshotted, billed outside the site. Always labelled with a small "פרסומת"
   (owner, 2026-10-11). The card shows no price unless the supplier ticked "להציג את המחיר שלי
   בפרסומת" (`promo_weeks.show_price`, migration 20261011150000, toggled per booking in the
   supplier's promo tab); the agent still lists the price, since there it answers a search. It

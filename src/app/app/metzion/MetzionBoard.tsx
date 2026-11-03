@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Gift, ListChecks, Plus, Recycle, Search, SlidersHorizontal, X } from 'lucide-react'
+import { Gift, ListChecks, Plus, Recycle, Search, SlidersHorizontal, Store, X } from 'lucide-react'
 import { PageHeader } from '@/components/app/ui'
 import { formatIls } from '@/lib/vat'
 import { REGIONS, regionName } from '@/lib/regions'
@@ -47,6 +47,12 @@ function Card({ card, onOpen }: { card: MetzionCard; onOpen: () => void }) {
           <span className="absolute top-2 start-2 flex items-center gap-1 rounded-full bg-ok px-2.5 py-1 text-xs font-bold text-white">
             <Gift size={12} />
             בחינם
+          </span>
+        )}
+        {card.supplierName && (
+          <span className="absolute top-2 end-2 flex items-center gap-1 rounded-full bg-navy/80 px-2 py-0.5 text-[11px] font-semibold text-white">
+            <Store size={11} />
+            ספק
           </span>
         )}
         {card.mine && (

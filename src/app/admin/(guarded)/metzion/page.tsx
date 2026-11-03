@@ -8,7 +8,7 @@ export default async function MetzionAdminPage() {
   const [{ data: listings }, { data: reports }] = await Promise.all([
     supabase
       .from('metzion_listings')
-      .select('id, title, deal_type, price_per_unit, quantity, unit, city, images, status, expires_at, created_at, sold_at, removed_reason, carpenters(business_name, is_active)')
+      .select('id, title, deal_type, price_per_unit, quantity, unit, city, images, status, expires_at, created_at, sold_at, removed_reason, carpenters(business_name, is_active), suppliers(company_name, status)')
       .order('created_at', { ascending: false })
       .limit(1000),
     supabase
@@ -20,7 +20,8 @@ export default async function MetzionAdminPage() {
   ])
 
   const rows: AdminListing[] = (listings ?? []).map((row) => {
-    const owner = row.carpenters as { business_name: string; is_active: boolean } | null
+    const carpenter = row.carpenters as { business_name: string; is_active: boolean } | null
+    const supplier = row.suppliers as { company_name: string; status: string } | null
     return {
       id: row.id,
       title: row.title,
@@ -35,8 +36,8 @@ export default async function MetzionAdminPage() {
       createdAt: row.created_at,
       soldAt: row.sold_at,
       removedReason: row.removed_reason,
-      owner: owner?.business_name ?? 'נגרייה שנמחקה',
-      ownerActive: owner?.is_active ?? false,
+      owner: supplier ? `ספק: ${supplier.company_name}` : carpenter?.business_name ?? 'נגרייה שנמחקה',
+      ownerActive: supplier ? supplier.status === 'approved' : carpenter?.is_active ?? false,
     }
   })
 

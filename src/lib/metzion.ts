@@ -75,6 +75,21 @@ export interface MetzionCard {
   createdAt: string
   expiresAt: string
   mine: boolean
+  /** Set when a supplier posted it: their business name, shown as a badge. */
+  supplierName: string | null
+}
+
+/**
+ * Who stands behind a listing, from its two embedded owners: a carpenter who is
+ * not blocked, or a supplier who is still approved. One rule for the board and
+ * for the phone reveal, so a listing never shows where its phone would not.
+ */
+export function ownerOf(row: {
+  carpenters: { is_active: boolean | null } | null
+  suppliers: { company_name: string; status: string } | null
+}): { live: boolean; supplierName: string | null } {
+  if (row.suppliers) return { live: row.suppliers.status === 'approved', supplierName: row.suppliers.company_name }
+  return { live: Boolean(row.carpenters?.is_active), supplierName: null }
 }
 
 export function daysLeft(expiresAt: string, now = Date.now()): number {

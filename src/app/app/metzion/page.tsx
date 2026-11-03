@@ -3,7 +3,7 @@ import { Lock, Recycle } from 'lucide-react'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { isAdmin } from '@/lib/admin-auth'
-import type { DealType, MetzionCard } from '@/lib/metzion'
+import { ownerOf, type DealType, type MetzionCard } from '@/lib/metzion'
 import MetzionBoard from './MetzionBoard'
 
 export const dynamic = 'force-dynamic'
@@ -15,7 +15,8 @@ export const metadata = { title: 'מציאון — שוק הנגרים' }
  * open page are there for anyone to collect, and the board is for carpenters.
  *
  * Only live listings are read — active, not past their 60 days, and posted by a
- * carpenter who is not blocked. A blocked carpenter's listings leave with them.
+ * carpenter who is not blocked or a supplier who is still approved. A blocked
+ * owner's listings leave with them.
  */
 export default async function MetzionPage() {
   const [carpenter, admin] = await Promise.all([getSessionCarpenter(), isAdmin()])
@@ -44,34 +45,42 @@ export default async function MetzionPage() {
     )
   }
 
+  // Both kinds of owner are left joins, and the live-owner check happens here:
+  // PostgREST cannot OR across two embedded tables.
   const { data } = await getSupabaseAdmin()
     .from('metzion_listings')
     .select(
-      'id, title, description, category, condition, deal_type, quantity, unit, price_per_unit, city, regions, images, created_at, expires_at, carpenter_id, carpenters!inner(is_active)'
+      'id, title, description, category, condition, deal_type, quantity, unit, price_per_unit, city, regions, images, created_at, expires_at, carpenter_id, carpenters(is_active), suppliers(company_name, status)'
     )
     .eq('status', 'active')
     .gt('expires_at', new Date().toISOString())
-    .eq('carpenters.is_active', true)
     .order('created_at', { ascending: false })
     .limit(500)
 
-  const cards: MetzionCard[] = (data ?? []).map((row) => ({
-    id: row.id,
-    title: row.title,
-    description: row.description,
-    category: row.category,
-    condition: row.condition,
-    dealType: row.deal_type as DealType,
-    quantity: Number(row.quantity),
-    unit: row.unit,
-    pricePerUnit: row.price_per_unit == null ? null : Number(row.price_per_unit),
-    city: row.city,
-    regions: row.regions,
-    images: row.images,
-    createdAt: row.created_at,
-    expiresAt: row.expires_at,
-    mine: carpenter?.id === row.carpenter_id,
-  }))
+  const cards: MetzionCard[] = (data ?? []).flatMap((row) => {
+    const owner = ownerOf(row)
+    if (!owner.live) return []
+    return [
+      {
+        id: row.id,
+        title: row.title,
+        description: row.description,
+        category: row.category,
+        condition: row.condition,
+        dealType: row.deal_type as DealType,
+        quantity: Number(row.quantity),
+        unit: row.unit,
+        pricePerUnit: row.price_per_unit == null ? null : Number(row.price_per_unit),
+        city: row.city,
+        regions: row.regions,
+        images: row.images,
+        createdAt: row.created_at,
+        expiresAt: row.expires_at,
+        mine: Boolean(carpenter && carpenter.id === row.carpenter_id),
+        supplierName: owner.supplierName,
+      },
+    ]
+  })
 
   return <MetzionBoard cards={cards} canPost={Boolean(carpenter)} />
 }

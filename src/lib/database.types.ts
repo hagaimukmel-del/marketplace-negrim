@@ -567,7 +567,7 @@ export type Database = {
       }
       metzion_listings: {
         Row: {
-          carpenter_id: string
+          carpenter_id: string | null
           category: string
           city: string
           condition: string
@@ -585,12 +585,13 @@ export type Database = {
           removed_reason: string | null
           sold_at: string | null
           status: string
+          supplier_id: string | null
           title: string
           unit: string
           updated_at: string
         }
         Insert: {
-          carpenter_id: string
+          carpenter_id?: string | null
           category: string
           city: string
           condition: string
@@ -608,12 +609,13 @@ export type Database = {
           removed_reason?: string | null
           sold_at?: string | null
           status?: string
+          supplier_id?: string | null
           title: string
           unit?: string
           updated_at?: string
         }
         Update: {
-          carpenter_id?: string
+          carpenter_id?: string | null
           category?: string
           city?: string
           condition?: string
@@ -631,6 +633,7 @@ export type Database = {
           removed_reason?: string | null
           sold_at?: string | null
           status?: string
+          supplier_id?: string | null
           title?: string
           unit?: string
           updated_at?: string
@@ -641,6 +644,13 @@ export type Database = {
             columns: ["carpenter_id"]
             isOneToOne: false
             referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metzion_listings_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]

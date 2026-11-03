@@ -2,6 +2,13 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { OPERATOR, TERMS_UPDATED_LABEL, TERMS_VERSION } from '@/lib/terms'
+import {
+  BILLING_STARTS_LABEL,
+  PROMO_WEEK_EXCL_VAT,
+  SUPPLIER_AGREEMENT_MONTHS,
+  SUPPLIER_ANNUAL_EXCL_VAT,
+  SUPPLIER_MONTHLY_EXCL_VAT,
+} from '@/lib/supplier-plans'
 import Logo from '@/components/brand/Logo'
 
 export const metadata: Metadata = {
@@ -211,21 +218,24 @@ export default function TermsPage() {
             </li>
           </ul>
           <p>
-            <strong>דמי שימוש.</strong> אין עמלה על הזמנות. דמי מנוי חודשיים לספק, לפי מספר המוצרים
-            שהוא מציע, ומשבצת קידום בתשלום (״מוצר השבוע״), ייקבעו בהסכם נפרד או בהודעה מראש, ולא
-            ייגבו לפני שהספק הסכים להם. החיוב נעשה מחוץ לאתר.
+            <strong>דמי שימוש.</strong> אין עמלה על הזמנות. דמי המנוי לספק הם{' '}
+            {SUPPLIER_MONTHLY_EXCL_VAT.toLocaleString('he-IL')} ₪ לחודש לפני מע״מ, בהסכם שנתי
+            ל-{SUPPLIER_AGREEMENT_MONTHS} חודשים ({SUPPLIER_ANNUAL_EXCL_VAT.toLocaleString('he-IL')} ₪ לשנה
+            לפני מע״מ), בלי תלות במספר המוצרים. משבצת הקידום ״מוצר השבוע״ עולה{' '}
+            {PROMO_WEEK_EXCL_VAT.toLocaleString('he-IL')} ₪ לשבוע לפני מע״מ. החיוב מתחיל ב{BILLING_STARTS_LABEL},
+            נעשה מחוץ לאתר בחשבונית ישירה, ולא ייגבה דבר לפני שהספק הסכים לו.
           </p>
         </>
       ),
     },
     {
       id: 'metzion',
-      title: 'מציאון — לוח בין נגריות',
+      title: 'מציאון — לוח בין נגריות וספקים',
       body: (
         <>
           <p>
-            המציאון הוא לוח שבו נגריות רשומות מפרסמות חומרים, פרזול, מוצרים וציוד שהן מוכרות או
-            מוסרות. <strong>המפעילה אינה צד לעסקה, אינה בודקת את הפריטים ואינה אחראית למצבם, לאיכותם,
+            המציאון הוא לוח שבו נגריות רשומות וספקים מאושרים מפרסמים חומרים, פרזול, מוצרים וציוד
+            שהם מוכרים או מוסרים. מודעה של ספק מסומנת ככזו. <strong>המפעילה אינה צד לעסקה, אינה בודקת את הפריטים ואינה אחראית למצבם, לאיכותם,
             לחוקיותם או לקיום העסקה.</strong> התשלום, האיסוף וכל התיאום נעשים ישירות בין הצדדים.
           </p>
           <p>
@@ -263,7 +273,8 @@ export default function TermsPage() {
       title: 'תוכן ממומן — ״מוצר השבוע״',
       body: (
         <p>
-          ספק רשאי לרכוש משבצת קידום שבה מוצר שלו מוצג בבולטות לשבוע. מוצר כזה מסומן באתר כתוכן
+          ספק רשאי לרכוש משבצת קידום שבה מוצר שלו מוצג בבולטות לשבוע, במחיר{' '}
+          {PROMO_WEEK_EXCL_VAT.toLocaleString('he-IL')} ₪ לשבוע לפני מע״מ, בחיוב מחוץ לאתר. מוצר כזה מסומן באתר כתוכן
           ממומן. הסימון אינו המלצה של המפעילה, והמפעילה אינה בודקת את המוצר או את המחיר המוצג בו.
           כל ההוראות לנגריות ולספקים שבתקנון חלות גם עליו.
         </p>

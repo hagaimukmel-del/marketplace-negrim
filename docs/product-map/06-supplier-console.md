@@ -40,7 +40,7 @@ terms and documents. No password needed.
   `isAdminLookingAtSupplier()` in `lib/admin-scope.ts` is the one check.
 - A supplier's link edits what the whole marketplace pays, so treat it as a strong credential.
 - Delivery regions are required at `/supplier/join` and in the Terms tab (T-026). The join page
-  and the application/approval emails state the subscription tiers (`lib/supplier-plans.ts`).
+  and the application/approval emails state the subscription (`lib/supplier-plans.ts`).
 - Messages (`/supplier/messages`, bell in `SupplierNav`): reply, mark "טופל", write to a carpentry
   about an order. The operator sees counts only for a self-run supplier, never content.
 - Orders: confirm all, confirm with missing lines / amount / delivery date / note, or reject
@@ -52,8 +52,8 @@ terms and documents. No password needed.
 - Extra order recipients (`suppliers.order_cc_emails`, up to 5, migration 20261011120000) get a
   copy of each new-order email without the confirm button; confirming and messages stay with
   `suppliers.email`. Hidden on a database without the column (`lib/order-recipients.ts`).
-- The subscription tier shown in "מנוי ופרסום" is computed from the supplier's active offers
-  (`planFor`, `lib/supplier-plans.ts`); nothing is billed on the site. Taken weeks are shown
+- "מנוי ופרסום" shows the one supplier plan (since 2026-11-03: 350 ₪ a month on a 12-month annual
+  agreement, 4,200 ₪, `lib/supplier-plans.ts`); nothing is billed on the site. Taken weeks are shown
   without the other supplier's name.
 - Price mode (T-023): "מחירים באתר" at the top of the Terms tab switches between showing prices
   and quote only, saved on the spot through `PATCH /api/supplier/profile` (`price_mode`). The
