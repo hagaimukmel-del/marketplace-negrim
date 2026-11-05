@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fakeSupabase, type FakeCall } from '@/test/fake-supabase'
 
-// login_codes as the database would hold it, one carpentry's rows.
-const db = vi.hoisted(() => ({ rows: [] as Record<string, unknown>[] }))
+// login_codes and supplier_login_codes as the database would hold them.
+const db = vi.hoisted(() => ({ rows: [] as Record<string, unknown>[], supplierRows: [] as Record<string, unknown>[] }))
 
 function matches(row: Record<string, unknown>, call: FakeCall): boolean {
   return call.filters.every(([kind, column, value]) => (kind === 'eq' || kind === 'is' ? (row[column] ?? null) === value : true))
@@ -11,12 +11,13 @@ function matches(row: Record<string, unknown>, call: FakeCall): boolean {
 vi.mock('@/lib/supabase-admin', () => ({
   getSupabaseAdmin: () =>
     fakeSupabase((call: FakeCall) => {
-      if (call.table !== 'login_codes') return { data: null, error: null }
+      const rows = call.table === 'login_codes' ? db.rows : call.table === 'supplier_login_codes' ? db.supplierRows : null
+      if (!rows) return { data: null, error: null }
       if (call.op === 'insert') {
-        db.rows.push({ id: `r${db.rows.length + 1}`, attempts: 0, used_at: null, created_at: String(db.rows.length), ...(call.payload as object) })
+        rows.push({ id: `${call.table}-${rows.length + 1}`, attempts: 0, used_at: null, created_at: String(rows.length), ...(call.payload as object) })
         return { data: null, error: null }
       }
-      const hit = db.rows.filter((row) => matches(row, call))
+      const hit = rows.filter((row) => matches(row, call))
       if (call.op === 'update') {
         hit.forEach((row) => Object.assign(row, call.payload as object))
         return { data: hit.map((row) => ({ id: row.id })), error: null }
@@ -34,6 +35,7 @@ const wrong = (code: string) => String((Number(code) + 1) % 1_000_000).padStart(
 describe('login codes', () => {
   beforeEach(() => {
     db.rows = []
+    db.supplierRows = []
   })
 
   it('issues six digits and stores only a hash', async () => {
@@ -73,4 +75,19 @@ describe('login codes', () => {
     expect(await consumeLoginCode('c1', second)).toBe(true)
   })
 
+  it('keeps supplier codes in their own table, signing in that supplier only', async () => {
+    const code = await issueLoginCode('s1', 'supplier')
+    expect(db.rows).toHaveLength(0)
+    expect(db.supplierRows).toHaveLength(1)
+    expect(db.supplierRows[0].supplier_id).toBe('s1')
+    expect(await consumeLoginCode('s2', code, 'supplier')).toBe(false)
+    expect(await consumeLoginCode('s1', code, 'supplier')).toBe(true)
+    expect(await consumeLoginCode('s1', code, 'supplier')).toBe(false)
+  })
+
+  it("never lets a carpentry's code pass as a supplier's", async () => {
+    const code = await issueLoginCode('x1')
+    expect(await consumeLoginCode('x1', code, 'supplier')).toBe(false)
+    expect(await consumeLoginCode('x1', code)).toBe(true)
+  })
 })

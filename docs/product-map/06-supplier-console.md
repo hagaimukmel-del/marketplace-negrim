@@ -17,7 +17,7 @@ terms and documents. No password needed.
 | `POST/PATCH/DELETE /api/supplier/promo` | Book a week of "מוצר השבוע" for an active product (from next week, 12 ahead), with or without the price on the card; switch the price on or off on a booking that has not ended; or cancel a booking still waiting for approval (T-024). A new booking emails the owner at nagarim.b2b@gmail.com (`lib/emails/promo-request.ts`) |
 | `POST /api/supplier/offers` | Quick edit (עריכה מהירה): up to 500 price / stock / shown changes in one save |
 | `/supplier/enter` + `/api/supplier/session` | Link → cookie session (six months); approval is re-checked on every request |
-| `/api/supplier/login-link` | Re-sends the link to the address on file only |
+| `/supplier/join` login box → `POST /api/supplier/login-link`, then `POST /api/supplier/login-code` | Sign in on a new device the way carpentries do: email → a six-digit code mailed to the address on file (with the entry link) → typed on the same page. `lib/login-code.ts` (kind `supplier`), table `supplier_login_codes`. The admin "send login link" button uses the same mail |
 | `/supplier/confirm/[token]` | One-order confirmation link (see area 4) |
 | `/api/supplier/{orders,offers,products,profile,import,import/undo}` | Console actions |
 | `/admin/view/supplier` | The operator opens a supplier's real console |
@@ -27,11 +27,15 @@ terms and documents. No password needed.
 `src/app/supplier/UploadDocuments.tsx`, emails `supplier-approved.ts`, `supplier-login-link.ts`, `supplier-question.ts`.
 
 ## Data
-`suppliers` (status, token, terms such as MOQ, payment terms, logo), `supplier_offers`,
+`suppliers` (status, token, terms such as MOQ, payment terms, logo), `supplier_login_codes`
+(one-time login codes, service role only), `supplier_offers`,
 `import_batches`, `supplier_documents`, `orders`, `supplier_contact_requests`, `quote_requests`.
 
 ## Rules & invariants
 - Only an **approved** supplier can mint a session. Rejecting a supplier cuts access immediately.
+- No passwords for suppliers. A new device gets a one-time code by email (10 minutes, one use,
+  5 tries, only the latest counts; stored as an HMAC under its own label, so a carpentry's code
+  never signs in a supplier) plus the entry link. A code session is `via: own`, like the link.
 - When the operator opens a self-run supplier's console from `/admin/view/supplier`, the
   banner says view-only and every write route answers 403. See area 7. What decides it is the
   door the supplier session came through, signed into the cookie (`via`: `own` from

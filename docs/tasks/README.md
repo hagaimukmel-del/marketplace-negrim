@@ -60,6 +60,7 @@ python .claude/skills/product-map/scripts/task_index.py
 | [T-028](T-028.md) | P1 | in-progress | ops | 10-platform | Apply the 2026-10-08 migrations to staging, then production |  |
 | [T-032](T-032.md) | P1 | in-progress | ops | 01-public-onboarding | Login codes and Google sign-in: apply the migration and configure Google |  |
 | [T-036](T-036.md) | P1 | in-progress | incomplete | 02-carpenter-app | Reliable supplier-carpenter communication (communication plan, steps 1-7) |  |
+| [T-037](T-037.md) | P1 | in-progress | ops | 06-supplier-console | Supplier login codes: apply the migration |  |
 | [T-022](T-022.md) | P2 | in-progress | future | 04-orders-fulfilment | Purchase order and price quote as a file, per supplier | T-007 (agent tool only) |
 | [T-023](T-023.md) | P2 | in-progress | future | 05-catalogue-pricing | Per-supplier price visibility and quote requests (RFQ) | migration 20261011140000 (T-028) |
 | [T-025](T-025.md) | P2 | in-progress | future | 02-carpenter-app | Internal messages between carpenter and supplier |  |
