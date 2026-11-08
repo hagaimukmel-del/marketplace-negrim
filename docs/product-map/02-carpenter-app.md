@@ -36,6 +36,12 @@ Reads `products`, `supplier_offers`, `suppliers` (server-side), `categories`; wr
   product today, shows supplier logos and "לא מגיע לאזור שלך". The order page shows a supplier's
   delivery date, lines it will not supply, and a rejection reason.
 - Prices are fetched on the server and only for a signed-in carpenter (`lock_prices`, CLAUDE.md §6).
+- A visitor who has not registered sees only the category list on `/app/catalog` (owner, 08.11).
+  Category pages, product pages and search answer with `CatalogLocked` (sign-up prompt) and read
+  no product, supplier or promotion. Carpentries, approved suppliers and the operator browse as
+  before. One check, `lib/app/catalog-access.ts` (`loadCatalogViewer`), tested in
+  `src/app/app/catalog-gate.test.ts`. Migration `20261108190000_lock_products` closes the public
+  read of `products` to match.
 - Supplier names stay in server components (the `suppliers` table is closed to the browser).
 - Prices are excl. VAT and per base unit; VAT is display only (`lib/vat.ts`).
 - `bestOffer()` / `suggestedOffer()` decide the default supplier: in stock first, then cheapest. Don't re-implement them.
@@ -45,7 +51,7 @@ Live since 18.09. Product lists are photo-led cards (2 columns on phone, up to 4
 desktop table was dropped on 26.10 at the owner's request). A real photo opens full size on tap
 (`ProductImage` with `zoom`); without one the category glyph links to the product page. Photos come
 from Supabase Storage; Drive links fall back to the glyph. The product page shows
-`description_he`. Signed-out visitors see a registration line above every product list.
+`description_he`. Signed-out visitors no longer reach a product list (see Rules).
 Above every category and search list (27.10): a sort (מומלץ = photo first then most viewed, price
 both ways, הכי נצפים, חדשים) and filters (price range with suggested ranges, "עם תמונה", supplier,
 "אזור הספק" = where the supplier sits or delivers, brand), in a bottom sheet on a phone with a

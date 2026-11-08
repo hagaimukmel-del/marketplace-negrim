@@ -1,8 +1,9 @@
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { after } from 'next/server'
-import { getSessionCarpenter } from '@/lib/carpenter-auth'
-import { isAdmin } from '@/lib/admin-auth'
+import { loadCatalogViewer } from '@/lib/app/catalog-access'
+import CatalogLocked from '@/components/app/CatalogLocked'
+import { BackLink } from '@/components/app/ui'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { loadCategoryTree, loadProducts, recordProductView } from '@/lib/app/catalog-server'
 import { CATALOG_PREFIX, catalogUrl } from '@/lib/supplier-documents'
@@ -14,7 +15,11 @@ function nowMs(): number {
   return Date.now()
 }
 
-/** One product: the price as the anchor, who sells it and why, and one add action. */
+/**
+ * One product: the price as the anchor, who sells it and why, and one add action.
+ * A visitor who has not registered gets the sign-up prompt: not the name, not
+ * the sellers, not even whether the id exists.
+ */
 export default async function AppProduct({
   params,
   searchParams,
@@ -22,8 +27,16 @@ export default async function AppProduct({
   params: Promise<{ id: string }>
   searchParams: Promise<{ quote?: string }>
 }) {
-  const [{ id }, { quote }, carpenter, admin] = await Promise.all([params, searchParams, getSessionCarpenter(), isAdmin()])
-  const showPrices = Boolean(carpenter) || admin
+  const [{ id }, { quote }, viewer] = await Promise.all([params, searchParams, loadCatalogViewer()])
+  if (!viewer.mayBrowse) {
+    return (
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
+        <BackLink href="/app/catalog" label="קטלוג" />
+        <CatalogLocked />
+      </div>
+    )
+  }
+  const { carpenter, admin, showPrices } = viewer
   const [product] = await loadProducts({ showPrices, ids: [id], city: carpenter?.city })
   if (!product) notFound()
 

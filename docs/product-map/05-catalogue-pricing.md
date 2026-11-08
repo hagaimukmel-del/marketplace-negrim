@@ -31,6 +31,9 @@ See CLAUDE.md §6, "The catalogue's shape". Most important:
 - `base_unit` is closed: unit/kg/liter/meter/sqm.
 - A product without a live offer isn't in the catalogue.
 - Prices aren't public: `lock_prices` dropped the anon policy. Check it's applied on the database you're on.
+- Products aren't public either (owner, 08.11): `20261108190000_lock_products` closes
+  `catalogue_products_read`; only `categories` stays readable with the public key. A visitor sees
+  the category list and nothing inside it (`lib/app/catalog-access.ts`).
 - Matching: brand + mpn, otherwise the Hebrew + English name pair.
 - Delivery regions (`suppliers.delivery_regions`, `lib/delivery.ts`): with the carpentry's city,
   `loadProducts` marks each offer `delivers` and never suggests a supplier outside the carpentry's
