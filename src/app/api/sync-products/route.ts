@@ -232,7 +232,7 @@ export async function GET() {
     const names = [...new Set(sheetProducts.map((p) => p.name_he))]
     const { data: known, error: knownError } = await supabase
       .from('products')
-      .select('id, name_he, name_en')
+      .select('id, name_he, name_en, image_url')
       .in('name_he', names)
 
     if (knownError) {
@@ -271,6 +271,14 @@ export async function GET() {
       }
     }
 
+    // A photo the supplier uploaded in the console (to the product-images
+    // bucket) wins over the sheet's link, which is often empty or a Drive page.
+    const uploadedPhoto = new Set(
+      (known ?? [])
+        .filter((row) => row.image_url?.includes('/storage/v1/object/public/product-images/'))
+        .map((row) => row.id)
+    )
+
     // The sheet owns the descriptive side of the products it introduced.
     for (const p of sheetProducts) {
       const id = productIdByName.get(matchKey(p.name_he, p.name_en))
@@ -282,7 +290,7 @@ export async function GET() {
           name_ar: p.name_ar,
           description_he: p.description_he,
           description_en: p.description_en,
-          image_url: p.image_url,
+          ...(uploadedPhoto.has(id) ? {} : { image_url: p.image_url }),
           category_id: categories.get(p._category) ?? null,
           is_active: true,
           updated_at: new Date().toISOString(),

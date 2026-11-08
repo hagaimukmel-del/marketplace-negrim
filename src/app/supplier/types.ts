@@ -83,6 +83,8 @@ export interface ProductItem {
   isActive: boolean
   /** Only the supplier who created a product may change what is shared. */
   canEditProduct: boolean
+  /** May set the photo: the creator, or the only seller of a product without a creator (from the sheet). */
+  canEditPhoto: boolean
   /** This supplier attached at least one technical sheet or guide to it. */
   hasSheet: boolean
 }

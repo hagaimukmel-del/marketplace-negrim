@@ -6,6 +6,7 @@ import { BASE_UNITS, type BaseUnit } from '@/lib/catalog'
 import type { Database } from '@/lib/database.types'
 import { thresholdChange } from '@/lib/quote-rules'
 import { loadOfferForThreshold } from '@/lib/special-price'
+import { mayEditPhoto, productsSoldByOthers } from '@/lib/product-photo-access'
 
 type ProductInsert = Database['public']['Tables']['products']['Insert']
 type ProductUpdate = Database['public']['Tables']['products']['Update']
@@ -298,6 +299,7 @@ export async function PATCH(request: NextRequest) {
       const product = data.products as { created_by_supplier_id: string | null } | null
       return {
         productId: data.product_id,
+        createdBy: product?.created_by_supplier_id ?? null,
         ownsProduct: product?.created_by_supplier_id === supplier.id,
       }
     }
@@ -320,7 +322,10 @@ export async function PATCH(request: NextRequest) {
 
       const owned = await loadOwned(offerId)
       if (!owned) return NextResponse.json({ error: 'המוצר לא נמצא' }, { status: 404 })
-      if (!owned.ownsProduct) {
+      const soldByOthers =
+        owned.createdBy === null &&
+        (await productsSoldByOthers(supabase, supplier.id, [owned.productId])).has(owned.productId)
+      if (!mayEditPhoto(supplier.id, owned.createdBy, soldByOthers)) {
         return NextResponse.json(
           { error: 'התמונה של המוצר הזה משותפת לספקים נוספים ולא ניתנת להחלפה' },
           { status: 403 }

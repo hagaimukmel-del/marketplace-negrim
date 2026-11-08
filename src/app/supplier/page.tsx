@@ -11,6 +11,7 @@ import { deletedCarpenterIds } from '@/lib/carpenter-deletion-server'
 import { priceModeOf } from '@/lib/price-mode'
 import { loadThresholds } from '@/lib/special-price'
 import { addDays, bookableWeeks, currentWeek } from '@/lib/promo-weeks'
+import { mayEditPhoto, productsSoldByOthers } from '@/lib/product-photo-access'
 import SupplierApp from './SupplierApp'
 import {
   isTab,
@@ -186,8 +187,17 @@ export default async function SupplierHome({
     suppliersByOrder.set(line.order_id, set)
   }
 
+  // Sheet products have no creator; their photo is open to a supplier who is
+  // their only seller (see lib/product-photo-access).
+  const rawOffers = (offers ?? []) as unknown as RawOffer[]
+  const soldByOthers = await productsSoldByOthers(
+    supabase,
+    supplier.id,
+    rawOffers.filter((offer) => offer.products && offer.products.created_by_supplier_id === null).map((offer) => offer.product_id)
+  )
+
   const withSheet = new Set(documents.sheets.map((doc) => doc.productId))
-  const allProducts: ProductItem[] = ((offers ?? []) as unknown as RawOffer[])
+  const allProducts: ProductItem[] = rawOffers
     .filter((offer) => offer.products)
     .map((offer) => {
       const product = offer.products!
@@ -214,6 +224,7 @@ export default async function SupplierHome({
         specialPrice: thresholds.get(offer.id)?.price ?? null,
         isActive: offer.is_active,
         canEditProduct: product.created_by_supplier_id === supplier.id,
+        canEditPhoto: mayEditPhoto(supplier.id, product.created_by_supplier_id, soldByOthers.has(offer.product_id)),
         hasSheet: withSheet.has(offer.product_id),
       }
     })
