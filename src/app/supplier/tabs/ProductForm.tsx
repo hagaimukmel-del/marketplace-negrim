@@ -6,6 +6,7 @@ import { Camera, X, Trash2, Eye, EyeOff, Info } from 'lucide-react'
 import { formatIls, withVat } from '@/lib/vat'
 import { BASE_UNITS, unitLabel } from '@/lib/catalog'
 import { samePack } from '@/lib/quote-rules'
+import { downscaleImage } from '@/lib/image-downscale'
 import { callApi, jsonInit, type CatalogPick, type CategoryOption, type ProductItem } from '../types'
 import type { Notify } from '../SupplierApp'
 
@@ -93,6 +94,8 @@ export default function ProductForm({
   const fileInput = useRef<HTMLInputElement>(null)
   const isNew = product === null
   const canEditProduct = product ? product.canEditProduct : !attachTo
+  // A sheet product's photo is open to its only seller even though its name is not.
+  const canEditPhoto = product ? product.canEditPhoto : !attachTo
   // What the product is: from the supplier's own row, or from the catalogue.
   const shared = product ?? attachTo
 
@@ -156,7 +159,9 @@ export default function ProductForm({
     if (!file) return
     const data = new FormData()
     data.append('offer_id', offerId)
-    data.append('file', file)
+    // A phone photo is often over the 5MB the route takes and the 4.5MB body
+    // Vercel allows, so it is scaled down to a JPEG first.
+    data.append('file', await downscaleImage(file))
     await callApi('/api/supplier/products', { method: 'PATCH', body: data })
   }
 
@@ -226,7 +231,7 @@ export default function ProductForm({
             ...(canEditProduct ? productFields : {}),
           })
         )
-        if (canEditProduct) await uploadImage(product.offerId)
+        if (canEditPhoto) await uploadImage(product.offerId)
         notify('נשמר')
       }
 
@@ -301,15 +306,17 @@ export default function ProductForm({
               <Info size={17} className="mt-0.5 shrink-0" />
               {attachTo
                 ? 'המוצר כבר קיים באתר. מוסיפים אליו רק את המחיר, המלאי והאריזה שלך — השם, התמונה והקטגוריה משותפים לכל הספקים שמוכרים אותו.'
-                : 'המוצר הזה משותף לספקים נוספים, ולכן השם, הקטגוריה והתמונה שלו נעולים. אתה שולט במחיר, במלאי ובאריזה שלך.'}
+                : canEditPhoto
+                  ? 'השם, הקטגוריה והתיאור של המוצר הזה מנוהלים בקטלוג האתר ולכן נעולים כאן. התמונה, המחיר, המלאי והאריזה בשליטתך.'
+                  : 'המוצר הזה משותף לספקים נוספים, ולכן השם, הקטגוריה והתמונה שלו נעולים. אתה שולט במחיר, במלאי ובאריזה שלך.'}
             </p>
           )}
 
           <div className="flex items-center gap-4">
             <button
               type="button"
-              onClick={() => canEditProduct && fileInput.current?.click()}
-              disabled={!canEditProduct}
+              onClick={() => canEditPhoto && fileInput.current?.click()}
+              disabled={!canEditPhoto}
               className="relative flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-stone-300 bg-stone-50 text-stone-400 disabled:cursor-default"
             >
               {imageShown ? (
@@ -322,11 +329,11 @@ export default function ProductForm({
             <div className="min-w-0 text-base text-stone-600">
               <p className="font-semibold text-stone-900">תמונת מוצר</p>
               <p className="mt-0.5">
-                {canEditProduct
+                {canEditPhoto
                   ? 'צלם או בחר תמונה. מוצר עם תמונה נמכר יותר.'
                   : 'התמונה מנוהלת על ידי יוצר המוצר.'}
               </p>
-              {canEditProduct && (
+              {canEditPhoto && (
                 <button
                   type="button"
                   onClick={() => fileInput.current?.click()}

@@ -79,6 +79,14 @@ terms and documents. No password needed.
   offer, and the product when this supplier created it and nobody else sells it). An import that
   lists the product again takes it off the list. On a database without the migration the delete
   hides the product instead.
+- Product photo (2026-11-08): the creator of a product may change its photo, and so may the
+  only seller of a product with no creator (`created_by_supplier_id` null: it came from the
+  sheet or the operator). Before this, every sheet product's photo was locked, so the owner's
+  business could not add photos to its own products. Name, category and description of such a
+  product stay locked (the sheet sync matches on the name). `lib/product-photo-access.ts` holds
+  the rule for both the console and `PATCH /api/supplier/products`; the photo is downscaled in
+  the browser first (`lib/image-downscale.ts`), and the sheet sync keeps a photo uploaded to the
+  `product-images` bucket instead of overwriting it with the sheet's link.
 - Text is one size up from the rest of the site (2026-10-26, owner: suppliers should not strain
   to read). Dates in messages are full (`9.11.2026`, `validLabel` in `lib/quotes.ts`) and
   isolated with `<bdi>`, so a date next to a message's own time cannot read as one number.
