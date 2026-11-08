@@ -99,6 +99,8 @@ export async function POST(request: NextRequest) {
  * List all documents linked to a product.
  */
 export async function GET(request: NextRequest) {
+  // Read with the service role, so the operator check is the only gate.
+  if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const productId = request.nextUrl.searchParams.get('product_id')
     if (!productId) {

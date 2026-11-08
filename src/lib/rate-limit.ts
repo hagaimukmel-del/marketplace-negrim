@@ -13,6 +13,7 @@ const config = {
   supplierQuestion: { maxAttempts: 10, windowMs: 60 * 60 * 1000 }, // 10 questions per hour, per carpenter
   promoEvent: { maxAttempts: 300, windowMs: 60 * 60 * 1000 }, // "מוצר השבוע" views and adds, per network
   quoteRequest: { maxAttempts: 20, windowMs: 60 * 60 * 1000 }, // 20 quote requests per hour, per carpenter (T-023)
+  order: { maxAttempts: 30, windowMs: 60 * 60 * 1000 }, // 30 purchase orders per hour, per carpentry (one per supplier in a checkout)
   message: { maxAttempts: 60, windowMs: 60 * 60 * 1000 }, // 60 messages per hour, per carpentry or supplier (key 'msg:<id>')
   supplierLink: { maxAttempts: 5, windowMs: 15 * 60 * 1000 }, // 5 supplier sign-in links per 15 minutes, per network
   supplierJoin: { maxAttempts: 5, windowMs: 60 * 60 * 1000 }, // 5 supplier applications per hour, per network

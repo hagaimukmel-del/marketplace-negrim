@@ -10,6 +10,7 @@ const db = vi.hoisted(() => ({
   raceOnce: false,
 }))
 const notifyNewOrders = vi.hoisted(() => vi.fn(async () => undefined))
+const limit = vi.hoisted(() => ({ reached: false }))
 
 const CARPENTER = { id: 'c1', email: 'shop@example.com', email_verified_at: '2026-10-01', contact_name: 'דנה', business_name: 'נגריית בדיקה', phone: '0501234567' }
 const PRODUCT = '11111111-1111-4111-8111-111111111111'
@@ -19,6 +20,7 @@ const KEY = '33333333-3333-4333-8333-333333333333'
 vi.mock('@/lib/carpenter-auth', () => ({ getSessionCarpenter: async () => ({ token: 'session-token-123' }) }))
 vi.mock('@/lib/offer', () => ({ resolveCarpenter: async () => CARPENTER, logEvent: async () => undefined }))
 vi.mock('@/lib/notify-order', () => ({ notifyNewOrders }))
+vi.mock('@/lib/rate-limit-shared', () => ({ sharedLimitReached: async () => limit.reached }))
 vi.mock('@/lib/price-mode', () => ({ loadPriceModes: async () => ({ ready: true, quoteOnly: new Set() }) }))
 vi.mock('@/lib/supabase-admin', () => ({
   getSupabaseAdmin: () =>
@@ -76,6 +78,7 @@ beforeEach(() => {
   db.orders = []
   db.items = []
   db.raceOnce = false
+  limit.reached = false
   notifyNewOrders.mockClear()
 })
 
@@ -116,5 +119,36 @@ describe('POST /api/orders, sent once', () => {
     await send({ checkout_id: '44444444-4444-4444-8444-444444444444' })
     await send()
     expect(db.orders).toHaveLength(3)
+  })
+})
+
+describe('POST /api/orders, who it is from', () => {
+  it('takes the name, phone, email and business from the carpentry, never from the request', async () => {
+    const response = await send({
+      customer_name: 'מישהו אחר',
+      customer_email: 'victim@example.com',
+      customer_phone: '0529999999',
+      business_name: 'נגרייה אחרת',
+    })
+    expect(response.status).toBe(201)
+    expect(db.orders[0]).toMatchObject({
+      customer_name: 'דנה',
+      customer_email: 'shop@example.com',
+      customer_phone: '0501234567',
+      business_name: 'נגריית בדיקה',
+    })
+  })
+
+  it('keeps a delivery address the request names', async () => {
+    await send({ address: 'אתר בנייה 5', city: 'חיפה' })
+    expect(db.orders[0]).toMatchObject({ address: 'אתר בנייה 5', city: 'חיפה' })
+  })
+
+  it('refuses once the carpentry has sent its hourly share of orders, and writes nothing', async () => {
+    limit.reached = true
+    const response = await send({ checkout_id: KEY })
+    expect(response.status).toBe(429)
+    expect(db.orders).toHaveLength(0)
+    expect(notifyNewOrders).not.toHaveBeenCalled()
   })
 })

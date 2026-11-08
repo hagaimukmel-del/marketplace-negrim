@@ -7,14 +7,6 @@ import { carpenterLoginHtml, carpenterLoginSubject, carpenterWelcomeHtml, carpen
 import { checkRateLimit, getClientIP, getRateLimitHeaders, hashIdentifier } from '@/lib/rate-limit'
 import { validPhoneKey } from '@/lib/phone'
 
-/** "h****l@gmail.com" — enough to recognise your own address, not to read someone else's. */
-function maskEmail(email: string): string {
-  const [local, domain] = email.split('@')
-  if (!domain) return '***'
-  const visible = local.length <= 2 ? local[0] : `${local[0]}${'*'.repeat(Math.min(local.length - 2, 5))}${local[local.length - 1]}`
-  return `${visible}@${domain}`
-}
-
 /**
  * Self sign-up for a carpenter.
  *
@@ -126,7 +118,9 @@ export async function POST(request: NextRequest) {
         ok: true,
         existing: true,
         matchedOn: byPhone ? 'phone' : 'email',
-        emailedTo: existing.email ? maskEmail(existing.email) : null,
+        // Whether a code went out, not where: even a masked address told a
+        // stranger part of a registered carpentry's email.
+        emailed: Boolean(existing.email),
       })
     }
 

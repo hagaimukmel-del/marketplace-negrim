@@ -71,8 +71,8 @@ export default function JoinClient({ googleEnabled = false, contactEmail = null 
       if (!response.ok) throw new Error(data.error || 'ההרשמה נכשלה')
       if (data.existing) {
         // Already registered: the way in went to their email, not to this page.
-        setExisting(data.emailedTo ?? '')
-        if (data.emailedTo) setCodeFor(data.matchedOn === 'email' ? email : phone)
+        setExisting(data.emailed ? 'sent' : '')
+        if (data.emailed) setCodeFor(data.matchedOn === 'email' ? email : phone)
         setBusy(false)
         window.scrollTo({ top: 0, behavior: 'smooth' })
         return
@@ -110,7 +110,7 @@ export default function JoinClient({ googleEnabled = false, contactEmail = null 
             <p className="m-0 font-bold">הטלפון או המייל האלה כבר רשומים אצלנו לנגרייה קיימת</p>
             <p className="m-0 mt-1 text-sm">
               {existing
-                ? `שלחנו קוד כניסה ל-${existing}. הקלידו אותו כאן למטה ותהיו מחוברים.`
+                ? 'שלחנו קוד כניסה למייל של הנגרייה. הקלידו אותו כאן למטה ותהיו מחוברים.'
                 : contactEmail
                   ? `אין מייל בפרטי הנגרייה, ולכן לא יכולנו לשלוח קוד. כתבו לנו ל-${contactEmail} ונעזור.`
                   : 'אין מייל בפרטי הנגרייה, ולכן לא יכולנו לשלוח קוד. צרו קשר ונעזור.'}

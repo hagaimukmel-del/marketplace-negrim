@@ -10,14 +10,14 @@ import { limitOf } from './rate-limit'
  * checkRateLimit() counts in one server's memory, so on Vercel each instance
  * and every cold start begins again from zero. Behind it, these count the rows
  * the person actually wrote in the window: questions to suppliers, quote
- * requests, messages. The memory check stays in front as the cheap first gate.
+ * requests, messages, purchase orders. The memory check stays in front as the cheap first gate.
  *
  * A failed count lets the request through: the limit is a guard against
  * flooding, and refusing an honest message because a count failed is worse.
  */
 
 type Party = { side: 'carpenter' | 'supplier'; id: string }
-type Kind = 'supplierQuestion' | 'quoteRequest' | 'message'
+type Kind = 'supplierQuestion' | 'quoteRequest' | 'message' | 'order'
 
 async function countInWindow(kind: Kind, party: Party, since: string): Promise<number | null> {
   const supabase = getSupabaseAdmin()
@@ -32,6 +32,14 @@ async function countInWindow(kind: Kind, party: Party, since: string): Promise<n
   if (kind === 'quoteRequest') {
     const { count, error } = await supabase
       .from('quote_requests')
+      .select('id', { count: 'exact', head: true })
+      .eq('carpenter_id', party.id)
+      .gte('created_at', since)
+    return error ? null : (count ?? 0)
+  }
+  if (kind === 'order') {
+    const { count, error } = await supabase
+      .from('orders')
       .select('id', { count: 'exact', head: true })
       .eq('carpenter_id', party.id)
       .gte('created_at', since)
