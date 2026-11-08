@@ -4,7 +4,8 @@ import { siteUrl } from '../email'
 import { emailLogo } from './brand'
 
 /**
- * A fresh copy of the way in, for a supplier who lost it.
+ * A fresh copy of the way in, for a supplier who lost it: a six-digit code
+ * to type on the page that asked for it, and the entry link for any device.
  *
  * Sent only to the address already on file — never shown on screen — so asking
  * for it proves nothing beyond owning that mailbox, which is the same trust the
@@ -38,17 +39,22 @@ function sentAt(): string {
  * behind "•••" — button included — so a supplier asking a second time got what
  * looked like an email with no way in.
  */
-export function supplierLoginLinkSubject(): string {
-  return `קישור כניסה לשוק הנגרים · ${sentAt()}`
+export function supplierLoginLinkSubject(code?: string): string {
+  // The code in the subject shows in the phone's notification, so it can be
+  // typed without opening the mail at all. Each code differs, so no threading.
+  return code ? `קוד הכניסה לממשק הספק: ${code}` : `קישור כניסה לשוק הנגרים · ${sentAt()}`
 }
 
 export function supplierLoginLinkHtml({
   companyName,
   token,
   next = null,
+  code,
 }: {
   companyName: string
   token: string
+  /** The six-digit code to type on the page that asked (lib/login-code). */
+  code?: string
   /** A page in the console to land on after entering. */
   next?: string | null
 }): string {
@@ -64,9 +70,18 @@ export function supplierLoginLinkHtml({
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #e7e5e4;border-radius:12px">
         <tr><td style="padding:20px">
           <div style="font:bold 20px ${FONT}">כניסה לממשק הספק</div>
-          <p style="margin:12px 0 0">
-            ביקשתם קישור כניסה עבור <strong>${escapeHtml(companyName)}</strong> · ${sentAt()}.
+          ${
+            code
+              ? `<p style="margin:12px 0 0">
+            ביקשתם להיכנס עבור <strong>${escapeHtml(companyName)}</strong> · ${sentAt()}. הקלידו את הקוד בדף שבו ביקשתם אותו:
           </p>
+          <div dir="ltr" style="margin:14px 0 0;text-align:center;font:bold 34px/1.2 ${FONT};letter-spacing:8px;color:#1c1917;background:#f5f5f4;border-radius:12px;padding:14px">${code}</div>
+          <p style="margin:8px 0 0;font-size:13px;color:#78716c;text-align:center">הקוד תקף ל-10 דקות ולשימוש אחד.</p>
+          <p style="margin:16px 0 0">או לחצו על הכפתור, והמכשיר שבו תפתחו אותו יתחבר:</p>`
+              : `<p style="margin:12px 0 0">
+            ביקשתם קישור כניסה עבור <strong>${escapeHtml(companyName)}</strong> · ${sentAt()}.
+          </p>`
+          }
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:18px">
             <tr><td align="center">
               <a href="${link}" style="display:block;background:#047857;color:#ffffff;text-decoration:none;font:bold 17px ${FONT};padding:16px;border-radius:12px;text-align:center">

@@ -3,11 +3,14 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { isTestName, sendEmail } from '@/lib/email'
 import { supplierLoginLinkHtml, supplierLoginLinkSubject } from '@/lib/emails/supplier-login-link'
 import { safeNext } from '@/lib/notification-links'
+import { loginCodeForEmail } from '@/lib/login-code'
 import { checkRateLimit, getClientIP, getRateLimitHeaders, hashIdentifier } from '@/lib/rate-limit'
 
 /**
  * A registered supplier asks for their way in again.
  *
+ * The email carries a six-digit code to type on the page that asked
+ * (/api/supplier/login-code), and the entry link for opening on any device.
  * The link is mailed to the address already on file and never returned here.
  * Returning it would make an email address enough to take over a supplier's
  * price list; mailing it means you also have to own the inbox.
@@ -17,7 +20,7 @@ import { checkRateLimit, getClientIP, getRateLimitHeaders, hashIdentifier } from
  */
 const NEUTRAL = {
   ok: true,
-  message: 'אם הכתובת רשומה אצלנו כספק מאושר, קישור כניסה נשלח אליה עכשיו.',
+  message: 'אם הכתובת רשומה אצלנו כספק מאושר, שלחנו אליה קוד כניסה. הקלידו אותו כאן.',
 }
 
 export async function POST(request: NextRequest) {
@@ -45,17 +48,18 @@ export async function POST(request: NextRequest) {
 
     const { data: supplier } = await getSupabaseAdmin()
       .from('suppliers')
-      .select('company_name, email, token')
+      .select('id, company_name, email, token')
       .ilike('email', pattern)
       .eq('status', 'approved')
       .limit(1)
       .maybeSingle()
 
     if (supplier?.email && supplier.token) {
+      const code = await loginCodeForEmail(supplier.id, 'supplier')
       await sendEmail({
         to: supplier.email,
-        subject: supplierLoginLinkSubject(),
-        html: supplierLoginLinkHtml({ companyName: supplier.company_name, token: supplier.token, next }),
+        subject: supplierLoginLinkSubject(code),
+        html: supplierLoginLinkHtml({ companyName: supplier.company_name, token: supplier.token, next, code }),
         isTest: isTestName(supplier.company_name),
       })
     }

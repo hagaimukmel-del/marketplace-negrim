@@ -14,6 +14,9 @@ import { getSupabaseAdmin } from './supabase-admin'
  * Six digits can be guessed, so each code is a row (login_codes): it expires
  * after ten minutes, works once, and dies after five wrong tries. Asking for
  * a new code retires the older ones, so only the latest email counts.
+ *
+ * Suppliers sign in the same way (supplier_login_codes): same rules, their
+ * own table and their own hash label.
  */
 
 const TTL_MS = 10 * 60 * 1000
@@ -52,26 +55,79 @@ export function normalizeCode(input: string): string {
 }
 
 /**
- * Bound to the carpentry, so a code's hash means nothing for anyone else.
- * Its own label, so it can never pass as a session cookie or email proof.
+ * Who a code belongs to. Carpentries and suppliers keep their codes in
+ * separate tables, and each kind hashes under its own label, so a code
+ * issued to one can never sign in the other.
  */
-export function hashCode(carpenterId: string, code: string): string {
-  const secret = process.env.ADMIN_SECRET
-  if (!secret || secret.length < 16) throw new Error('ADMIN_SECRET is missing or too short (needs 16+ characters).')
-  const key = createHmac('sha256', secret).update('carpenter-login-code.v1').digest()
-  return createHmac('sha256', key).update(`${carpenterId}:${code}`).digest('base64url')
+export type LoginCodeKind = 'carpenter' | 'supplier'
+
+const LABEL: Record<LoginCodeKind, string> = {
+  carpenter: 'carpenter-login-code.v1',
+  supplier: 'supplier-login-code.v1',
 }
 
-/** A new code for this carpentry. Older unused ones stop working. */
-export async function issueLoginCode(carpenterId: string): Promise<string> {
+/**
+ * Bound to the account, so a code's hash means nothing for anyone else.
+ * Its own label, so it can never pass as a session cookie or email proof.
+ */
+export function hashCode(ownerId: string, code: string, kind: LoginCodeKind = 'carpenter'): string {
+  const secret = process.env.ADMIN_SECRET
+  if (!secret || secret.length < 16) throw new Error('ADMIN_SECRET is missing or too short (needs 16+ characters).')
+  const key = createHmac('sha256', secret).update(LABEL[kind]).digest()
+  return createHmac('sha256', key).update(`${ownerId}:${code}`).digest('base64url')
+}
+
+/**
+ * The few queries a code needs, against the kind's own table. Written out per
+ * table so each stays fully typed against database.types.
+ */
+function codeStore(kind: LoginCodeKind, ownerId: string) {
   const supabase = getSupabaseAdmin()
+  if (kind === 'supplier') {
+    return {
+      retireOpen: (usedAt: string) => supabase.from('supplier_login_codes').update({ used_at: usedAt }).eq('supplier_id', ownerId).is('used_at', null),
+      insert: (row: { code_hash: string; expires_at: string }) => supabase.from('supplier_login_codes').insert({ supplier_id: ownerId, ...row }),
+      latestOpen: () =>
+        supabase
+          .from('supplier_login_codes')
+          .select('id, code_hash, attempts, expires_at')
+          .eq('supplier_id', ownerId)
+          .is('used_at', null)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      count: (id: string, attempts: number) =>
+        supabase.from('supplier_login_codes').update({ attempts: attempts + 1 }).eq('id', id).eq('attempts', attempts).select('id'),
+      use: (id: string) => supabase.from('supplier_login_codes').update({ used_at: new Date().toISOString() }).eq('id', id).is('used_at', null).select('id'),
+    }
+  }
+  return {
+    retireOpen: (usedAt: string) => supabase.from('login_codes').update({ used_at: usedAt }).eq('carpenter_id', ownerId).is('used_at', null),
+    insert: (row: { code_hash: string; expires_at: string }) => supabase.from('login_codes').insert({ carpenter_id: ownerId, ...row }),
+    latestOpen: () =>
+      supabase
+        .from('login_codes')
+        .select('id, code_hash, attempts, expires_at')
+        .eq('carpenter_id', ownerId)
+        .is('used_at', null)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    count: (id: string, attempts: number) =>
+      supabase.from('login_codes').update({ attempts: attempts + 1 }).eq('id', id).eq('attempts', attempts).select('id'),
+    use: (id: string) => supabase.from('login_codes').update({ used_at: new Date().toISOString() }).eq('id', id).is('used_at', null).select('id'),
+  }
+}
+
+/** A new code for this account. Older unused ones stop working. */
+export async function issueLoginCode(ownerId: string, kind: LoginCodeKind = 'carpenter'): Promise<string> {
+  const store = codeStore(kind, ownerId)
   const now = new Date()
-  await supabase.from('login_codes').update({ used_at: now.toISOString() }).eq('carpenter_id', carpenterId).is('used_at', null)
+  await store.retireOpen(now.toISOString())
 
   const code = String(randomInt(0, 1_000_000)).padStart(6, '0')
-  const { error } = await supabase.from('login_codes').insert({
-    carpenter_id: carpenterId,
-    code_hash: hashCode(carpenterId, code),
+  const { error } = await store.insert({
+    code_hash: hashCode(ownerId, code, kind),
     expires_at: new Date(now.getTime() + TTL_MS).toISOString(),
   })
   if (error) throw new Error(`Could not store login code: ${error.message}`)
@@ -83,9 +139,9 @@ export async function issueLoginCode(carpenterId: string): Promise<string> {
  * email then goes out with the link alone: still a way in, just not the
  * typed one.
  */
-export async function loginCodeForEmail(carpenterId: string): Promise<string | undefined> {
+export async function loginCodeForEmail(ownerId: string, kind: LoginCodeKind = 'carpenter'): Promise<string | undefined> {
   try {
-    return await issueLoginCode(carpenterId)
+    return await issueLoginCode(ownerId, kind)
   } catch (err) {
     console.error('Login code not issued, sending the link alone:', err)
     return undefined
@@ -93,45 +149,28 @@ export async function loginCodeForEmail(carpenterId: string): Promise<string | u
 }
 
 /**
- * Whether `input` is this carpentry's live code. Every try counts against
+ * Whether `input` is this account's live code. Every try counts against
  * the code, and a match uses it up.
  */
-export async function consumeLoginCode(carpenterId: string, input: string): Promise<boolean> {
+export async function consumeLoginCode(ownerId: string, input: string, kind: LoginCodeKind = 'carpenter'): Promise<boolean> {
   const code = normalizeCode(input)
   if (code.length !== 6) return false
 
-  const supabase = getSupabaseAdmin()
-  const { data: row } = await supabase
-    .from('login_codes')
-    .select('id, code_hash, attempts, expires_at')
-    .eq('carpenter_id', carpenterId)
-    .is('used_at', null)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  const store = codeStore(kind, ownerId)
+  const { data: row } = await store.latestOpen()
 
   if (!row || row.attempts >= MAX_ATTEMPTS || new Date(row.expires_at).getTime() < Date.now()) return false
 
   // Every guess is counted before it is checked, and only if the count read
   // is still current: parallel guesses cannot share one attempt.
-  const { data: counted } = await supabase
-    .from('login_codes')
-    .update({ attempts: row.attempts + 1 })
-    .eq('id', row.id)
-    .eq('attempts', row.attempts)
-    .select('id')
+  const { data: counted } = await store.count(row.id, row.attempts)
   if (!counted || counted.length === 0) return false
 
   const expected = Buffer.from(row.code_hash)
-  const actual = Buffer.from(hashCode(carpenterId, code))
+  const actual = Buffer.from(hashCode(ownerId, code, kind))
   if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) return false
 
   // Only the request that flips used_at gets in, if the same code is sent twice.
-  const { data: used } = await supabase
-    .from('login_codes')
-    .update({ used_at: new Date().toISOString() })
-    .eq('id', row.id)
-    .is('used_at', null)
-    .select('id')
+  const { data: used } = await store.use(row.id)
   return Boolean(used && used.length > 0)
 }

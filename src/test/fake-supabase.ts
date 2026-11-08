@@ -46,6 +46,9 @@ class Query implements PromiseLike<ReturnType<Respond>> {
   eq(column: string, value: unknown) {
     return this.filter('eq', column, value)
   }
+  ilike(column: string, value: unknown) {
+    return this.filter('ilike', column, value)
+  }
   in(column: string, value: unknown) {
     return this.filter('in', column, value)
   }
