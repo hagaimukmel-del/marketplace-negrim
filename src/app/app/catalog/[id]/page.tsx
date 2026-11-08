@@ -1,8 +1,8 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Search } from 'lucide-react'
-import { getSessionCarpenter } from '@/lib/carpenter-auth'
-import { isAdmin } from '@/lib/admin-auth'
+import { loadCatalogViewer } from '@/lib/app/catalog-access'
+import CatalogLocked from '@/components/app/CatalogLocked'
 import { loadCategoryTree, loadProducts } from '@/lib/app/catalog-server'
 import ProductList from '@/components/app/ProductList'
 import CategoryGlyph from '@/components/app/CategoryGlyph'
@@ -13,7 +13,10 @@ import { regionsForCity } from '@/lib/regions'
 
 export const dynamic = 'force-dynamic'
 
-/** One main category: its branches as chips, then its products. */
+/**
+ * One main category: its branches as chips, then its products. A visitor who
+ * has not registered gets the sign-up prompt, and no product is read for them.
+ */
 export default async function AppCategory({
   params,
   searchParams,
@@ -21,8 +24,16 @@ export default async function AppCategory({
   params: Promise<{ id: string }>
   searchParams: Promise<{ b?: string }>
 }) {
-  const [{ id }, { b }, carpenter, admin] = await Promise.all([params, searchParams, getSessionCarpenter(), isAdmin()])
-  const showPrices = Boolean(carpenter) || admin
+  const [{ id }, { b }, viewer] = await Promise.all([params, searchParams, loadCatalogViewer()])
+  if (!viewer.mayBrowse) {
+    return (
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
+        <BackLink href="/app/catalog" label="קטלוג" />
+        <CatalogLocked />
+      </div>
+    )
+  }
+  const { carpenter, showPrices } = viewer
   const [products, promo] = await Promise.all([loadProducts({ showPrices, city: carpenter?.city, popularity: true }), loadCurrentPromo()])
   const tree = await loadCategoryTree(products)
   const top = tree.find((node) => node.id === id)

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { LayoutGrid, Recycle, Search } from 'lucide-react'
-import { getSessionCarpenter } from '@/lib/carpenter-auth'
-import { isAdmin } from '@/lib/admin-auth'
+import { loadCatalogViewer } from '@/lib/app/catalog-access'
+import CatalogLocked from '@/components/app/CatalogLocked'
 import { loadCategoryTree, loadProducts } from '@/lib/app/catalog-server'
 import ProductList from '@/components/app/ProductList'
 import { PageHeader, SectionTitle } from '@/components/app/ui'
@@ -16,12 +16,26 @@ export const dynamic = 'force-dynamic'
  * The catalogue: every category the same size and clickable, in the tree's own
  * order — or, with ?q=, what matches a search across names, brands, part
  * numbers and suppliers. The agent chat runs the same search (lib/catalog-search).
+ *
+ * A visitor who has not registered sees the categories only: no search, and
+ * the category pages behind them ask to register (lib/app/catalog-access).
  */
 export default async function AppCatalog({ searchParams }: { searchParams: Promise<{ q?: string; focus?: string }> }) {
-  const [{ q, focus }, carpenter, admin] = await Promise.all([searchParams, getSessionCarpenter(), isAdmin()])
-  const showPrices = Boolean(carpenter) || admin
-  const products = await loadProducts({ showPrices, city: carpenter?.city, popularity: true })
+  const [{ q, focus }, viewer] = await Promise.all([searchParams, loadCatalogViewer()])
+  const { carpenter, showPrices, mayBrowse } = viewer
   const query = (q ?? '').trim()
+
+  if (!mayBrowse && query) {
+    return (
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
+        <PageHeader icon={Search} title="חיפוש" />
+        <CatalogLocked />
+      </div>
+    )
+  }
+
+  // Read on the server even for a visitor, but only the category counts leave it.
+  const products = await loadProducts({ showPrices, city: carpenter?.city, popularity: mayBrowse })
 
   const search = (
     <form action="/app/catalog" className="relative md:hidden">
@@ -70,7 +84,7 @@ export default async function AppCatalog({ searchParams }: { searchParams: Promi
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <PageHeader icon={LayoutGrid} title="קטלוג" subtitle="מחירים לפני מע״מ, ישירות מהספקים" />
-      {search}
+      {mayBrowse ? search : <SignUpStrip />}
       <CategoryList categories={categories} />
       <section>
         <SectionTitle title="עוד" />
@@ -84,6 +98,20 @@ export default async function AppCatalog({ searchParams }: { searchParams: Promi
           </span>
         </Link>
       </section>
+    </div>
+  )
+}
+
+/** Above the categories for a visitor: why the categories do not open yet. */
+function SignUpStrip() {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-wood-soft px-3.5 py-3">
+      <span className="text-[14.5px] text-ink">
+        <b>המוצרים, הספקים והמחירים פתוחים לנגריות רשומות.</b> ההרשמה חינם.
+      </span>
+      <Link href="/join" className="inline-flex h-10 items-center rounded-[10px] bg-brand px-4 text-sm font-bold text-navy">
+        הרשמה חינם / כניסה
+      </Link>
     </div>
   )
 }
