@@ -12,7 +12,7 @@ export default function DemoPage() {
             🎯 נגרים B2B — מרכז הרכש
           </h1>
           <p className="text-xl text-slate-700 mb-2">
-            קטלוג מוצרים של איתמיר בעברית
+            קטלוג מוצרים לנגריות, בעברית
           </p>
           <p className="text-sm text-slate-500">
             סקירה חינם • אין אפליקציה דרושה
@@ -36,7 +36,7 @@ export default function DemoPage() {
           <div className="bg-white rounded-lg p-4 shadow">
             <div className="text-2xl mb-2">📦</div>
             <h3 className="font-bold text-slate-900">קטלוג שלם</h3>
-            <p className="text-sm text-slate-600">כל מוצרי איתמיר בממד אחד</p>
+            <p className="text-sm text-slate-600">כל מוצרי הספקים במקום אחד</p>
           </div>
           <div className="bg-white rounded-lg p-4 shadow">
             <div className="text-2xl mb-2">📄</div>
@@ -68,7 +68,7 @@ export default function DemoPage() {
 
         {/* Footer */}
         <div className="text-center mt-8 text-sm text-slate-500">
-          <p>Demo Mode • ספק: איתמיר דנינו דוד</p>
+          <p>Demo Mode</p>
           <p className="mt-2">
             רוצה להציע הזמנות? התחברו כנגרייה:{' '}
             <Link href="/join" className="text-blue-600 hover:underline">
