@@ -13,6 +13,7 @@ measured. A raffle among carpenters is the engagement tool.
 | `POST /api/offer/event`, `POST /api/offer/intent` | Measurement: page events and order intents |
 | `/admin/campaigns` (`/api/admin/campaigns`) | Build and track campaigns |
 | `/admin/promotions` (`/api/admin/promo`) | "מוצר השבוע": approve or reject a supplier's weekly booking, see each week's results, and set or edit a week by hand at a supplier's request (PUT/PATCH, rules in `lib/promo-admin-rules.ts`) |
+| `GET /api/cron/promo-social` (`/api/admin/promo/social`) | Sunday 07:00 Israel: this week's "מוצר השבוע" with ready social posts, mailed to the owner (`lib/promo-social.ts`) |
 | `POST /api/promo/event` | Counts a view or add-to-cart on the promoted card, for the week running now only |
 | `/api/admin/raffle` | Draw a winner with a cryptographic random pick; every draw is recorded |
 

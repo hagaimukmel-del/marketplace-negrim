@@ -310,6 +310,22 @@ function Row({ week, choices, onDone }: { week: PromoWeek; choices: Choices; onD
   const [error, setError] = useState<string | null>(null)
   const now = currentWeek()
 
+  const [mailed, setMailed] = useState(false)
+  const sendSocial = async () => {
+    setBusy(true)
+    setError(null)
+    try {
+      const response = await fetch('/api/admin/promo/social', { method: 'POST' })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.error ?? 'המייל לא נשלח')
+      setMailed(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'המייל לא נשלח')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const decide = async (action: 'approve' | 'reject') => {
     setBusy(true)
     setError(null)
@@ -353,6 +369,16 @@ function Row({ week, choices, onDone }: { week: PromoWeek; choices: Choices; onD
       {editing && <EditForm week={week} choices={choices} onDone={onDone} onClose={() => setEditing(false)} />}
       {!editing && (week.status === 'requested' || week.status === 'approved') && week.weekStart >= now && (
         <div className="mt-2 flex flex-wrap items-center gap-2">
+          {week.status === 'approved' && week.weekStart === now && (
+            <button
+              type="button"
+              onClick={sendSocial}
+              disabled={busy || mailed}
+              className="h-9 rounded-lg border border-stone-300 px-4 text-base font-semibold text-stone-700 disabled:opacity-50"
+            >
+              {mailed ? 'המייל לרשתות נשלח' : 'לשלוח עכשיו מייל לרשתות'}
+            </button>
+          )}
           {!rejecting && (
             <button
               type="button"
@@ -461,7 +487,7 @@ export default function PromotionsClient({
       <div>
         <h1 className="text-2xl font-bold text-stone-900">מוצר השבוע</h1>
         <p className="text-base text-stone-600">
-          ספקים מזמינים שבוע מתוך מסוף הספק, ואפשר גם להגדיר או לערוך שבוע ידנית לפי בקשת ספק. שבוע מאושר מוצג לנגרים עם התווית &quot;מוצר השבוע&quot;. החיוב מחוץ לאתר.
+          ספקים מזמינים שבוע מתוך מסוף הספק, ואפשר גם להגדיר או לערוך שבוע ידנית לפי בקשת ספק. שבוע מאושר מוצג לנגרים עם התווית &quot;מוצר השבוע&quot;. בכל יום ראשון ב־7:00 נשלח מייל עם פוסט מוכן לרשתות על המוצר של אותו שבוע. החיוב מחוץ לאתר.
         </p>
       </div>
       {!ready ? (
