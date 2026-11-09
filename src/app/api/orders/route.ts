@@ -7,6 +7,7 @@ import { notifyNewOrders } from '@/lib/notify-order'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { loadPriceModes } from '@/lib/price-mode'
 import { israelDate } from '@/lib/quotes'
+import { sharedLimitReached } from '@/lib/rate-limit-shared'
 
 /** One line as the checkout posts it. */
 interface IncomingItem {
@@ -140,14 +141,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // The purchasing app does not ask a signed-in carpentry to retype who it is:
-    // what the request leaves out comes from the carpentry's own record.
-    const customer_name = body.customer_name || carpenter.contact_name || carpenter.business_name
-    const customer_email = body.customer_email || carpenter.email
-    const customer_phone = body.customer_phone || carpenter.phone
+    // Who the order is from comes only from the carpentry's own record, never
+    // from the request. A signed-in carpentry could otherwise send a supplier a
+    // purchase order under another carpentry's name and phone, and have the
+    // confirmation mailed from our domain to any address it chose. Only where
+    // the goods go may differ per order (a job site), so address and city are
+    // the request's, falling back to the carpentry's own.
+    const customer_name = carpenter.contact_name || carpenter.business_name
+    const customer_email = carpenter.email
+    const customer_phone = carpenter.phone
     if (!customer_name || !customer_email || !customer_phone) {
-      return NextResponse.json({ error: 'חסרים פרטי קשר — שם, טלפון ומייל' }, { status: 400 })
+      return NextResponse.json({ error: 'חסרים פרטי קשר בפרטי הנגרייה: שם, טלפון ומייל' }, { status: 400 })
     }
+    const text = (value: unknown, max: number) => (typeof value === 'string' && value.trim() ? value.trim().slice(0, max) : null)
+    const deliveryAddress = text(body.address, 200) ?? carpenter.address ?? null
+    const deliveryCity = text(body.city, 80) ?? carpenter.city ?? null
 
     // The cart sends one checkout id with every attempt at the same send. A
     // second attempt (a double tap, a retry after a lost answer) gets back the
@@ -157,6 +165,12 @@ export async function POST(request: NextRequest) {
     if (clientCheckoutId) {
       const replay = await sentCheckout(carpenter.id, clientCheckoutId)
       if (replay) return replay
+    }
+
+    // A purchase order lands in a real supplier's inbox. Counted from the
+    // database, so it holds across server instances.
+    if (await sharedLimitReached('order', { side: 'carpenter', id: carpenter.id })) {
+      return NextResponse.json({ error: 'נשלחו הרבה הזמנות בשעה האחרונה. נסו שוב מאוחר יותר.', code: 'rate_limited' }, { status: 429 })
     }
 
     const items = parseItems(body.items)
@@ -382,10 +396,10 @@ export async function POST(request: NextRequest) {
           customer_name,
           customer_email,
           customer_phone,
-          business_name: body.business_name || null,
-          address: body.address || null,
-          city: body.city || null,
-          zip_code: body.zip_code || null,
+          business_name: carpenter.business_name,
+          address: deliveryAddress,
+          city: deliveryCity,
+          zip_code: text(body.zip_code, 20),
           payment_method: supplierById.get(group.supplierId)?.payment_terms?.length
             ? supplierById.get(group.supplierId)!.payment_terms.join(' / ')
             : body.payment_method || null,

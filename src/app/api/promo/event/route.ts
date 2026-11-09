@@ -21,9 +21,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'בקשה לא תקינה' }, { status: 400 })
   }
 
+  // Only a signed-in carpentry counts. These numbers are what a supplier pays
+  // for, and an anonymous count could be inflated by anyone with a script.
   const [promo, carpenter] = await Promise.all([loadCurrentPromo(), getSessionCarpenter()])
-  if (promo?.id === body.week_id) {
-    await recordPromoEvent({ weekId: promo.id, kind, placement, carpenterId: carpenter?.id ?? null })
+  if (carpenter && promo?.id === body.week_id) {
+    await recordPromoEvent({ weekId: promo.id, kind, placement, carpenterId: carpenter.id })
   }
   return new NextResponse(null, { status: 204 })
 }
