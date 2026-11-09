@@ -15,6 +15,7 @@ export interface AccountCarpenter {
   address: string | null
   city: string | null
   token: string
+  marketing_consent: boolean
 }
 
 type Field = 'business_name' | 'contact_name' | 'phone' | 'email' | 'address' | 'city'
@@ -35,6 +36,7 @@ export default function AccountView({ carpenter, origin }: { carpenter: AccountC
     address: carpenter.address ?? '',
     city: carpenter.city ?? '',
   })
+  const [marketing, setMarketing] = useState(carpenter.marketing_consent)
   const [busy, setBusy] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -55,7 +57,7 @@ export default function AccountView({ carpenter, origin }: { carpenter: AccountC
     setBusy(true)
     setError(null)
     try {
-      const response = await fetch('/api/carpenter/profile', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+      const response = await fetch('/api/carpenter/profile', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, marketing_consent: marketing }) })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'השמירה נכשלה')
       setSaved(true)
@@ -143,6 +145,21 @@ export default function AccountView({ carpenter, origin }: { carpenter: AccountC
               <input value={form.city} onChange={(e) => set('city', e.target.value)} className={input} />
             </label>
           </div>
+          <label className="flex items-start gap-2">
+            <input
+              type="checkbox"
+              checked={marketing}
+              onChange={(e) => {
+                setMarketing(e.target.checked)
+                setSaved(false)
+              }}
+              className="mt-0.5 h-5 w-5 shrink-0 accent-[#1E2A3B]"
+            />
+            <span className="text-sm">
+              אשמח לקבל במייל מבצעים, עדכונים ואת מוצר השבוע
+              <span className="block text-[13px] text-muted">מיילים על ההזמנות שלך מגיעים בכל מקרה.</span>
+            </span>
+          </label>
           {error && <p role="alert" className="m-0 rounded-lg bg-red-50 p-2.5 text-sm text-red-800">{error}</p>}
           <button
             type="submit"

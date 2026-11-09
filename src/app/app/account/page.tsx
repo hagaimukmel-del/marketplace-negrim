@@ -24,7 +24,7 @@ export default async function AppAccount() {
 
   const { data: carpenter } = await getSupabaseAdmin()
     .from('carpenters')
-    .select('business_name, contact_name, phone, email, address, city, token')
+    .select('business_name, contact_name, phone, email, address, city, token, marketing_consent')
     .eq('id', carpenterId)
     .eq('is_active', true)
     .maybeSingle()
