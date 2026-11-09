@@ -3,7 +3,7 @@ import 'server-only'
 import { getSupabaseAdmin } from './supabase-admin'
 import { isTestName, sendEmail, siteUrl } from './email'
 import { money } from './app/format'
-import { loadCurrentPromo } from './promo'
+import { loadCurrentPromo, type CurrentPromo } from './promo'
 import { currentWeek, weekLabel } from './promo-weeks'
 import { isSocialHour, socialKey, socialPosts } from './promo-social-rules'
 import { PROMO_REQUEST_EMAIL } from './emails/promo-request'
@@ -29,6 +29,42 @@ function absolute(url: string | null): string | null {
   return url.startsWith('/') ? `${siteUrl()}${url}` : null
 }
 
+export interface PromoDetails {
+  productName: string
+  supplierName: string
+  brand: string | null
+  imageUrl: string | null
+  productUrl: string
+  /** Only when the supplier asked for the price on the card. */
+  priceText: string | null
+}
+
+/** What a "מוצר השבוע" mail shows about the week's booking; null when its product or supplier is gone. */
+export async function loadPromoDetails(promo: CurrentPromo): Promise<PromoDetails | null> {
+  const supabase = getSupabaseAdmin()
+  const [{ data: product }, { data: supplier }, { data: offer }] = await Promise.all([
+    supabase.from('products').select('name_he, brand, image_url').eq('id', promo.productId).maybeSingle(),
+    supabase.from('suppliers').select('company_name').eq('id', promo.supplierId).maybeSingle(),
+    supabase
+      .from('supplier_offers')
+      .select('price_excl_vat')
+      .eq('product_id', promo.productId)
+      .eq('supplier_id', promo.supplierId)
+      .eq('is_active', true)
+      .limit(1)
+      .maybeSingle(),
+  ])
+  if (!product || !supplier) return null
+  return {
+    productName: product.name_he,
+    supplierName: supplier.company_name,
+    brand: product.brand,
+    imageUrl: absolute(product.image_url),
+    productUrl: `${siteUrl()}/app/product/${promo.productId}`,
+    priceText: promo.showPrice && offer ? money(Number(offer.price_excl_vat)) : null,
+  }
+}
+
 export async function runPromoSocial(now: Date = new Date(), { force = false } = {}): Promise<PromoSocialResult> {
   if (!force && !isSocialHour(now)) return { sent: false, reason: 'not-social-hour' }
 
@@ -51,34 +87,22 @@ export async function runPromoSocial(now: Date = new Date(), { force = false } =
   }
 
   try {
-    const [{ data: product }, { data: supplier }, { data: offer }] = await Promise.all([
-      supabase.from('products').select('name_he, brand, image_url').eq('id', promo.productId).maybeSingle(),
-      supabase.from('suppliers').select('company_name').eq('id', promo.supplierId).maybeSingle(),
-      supabase
-        .from('supplier_offers')
-        .select('price_excl_vat')
-        .eq('product_id', promo.productId)
-        .eq('supplier_id', promo.supplierId)
-        .eq('is_active', true)
-        .limit(1)
-        .maybeSingle(),
-    ])
-    if (!product || !supplier) throw new Error('product or supplier missing')
+    const details = await loadPromoDetails(promo)
+    if (!details) throw new Error('product or supplier missing')
 
-    const productUrl = `${siteUrl()}/app/product/${promo.productId}`
     const posts = socialPosts({
-      productName: product.name_he,
-      supplierName: supplier.company_name,
-      brand: product.brand,
-      priceText: promo.showPrice && offer ? money(Number(offer.price_excl_vat)) : null,
-      url: productUrl,
+      productName: details.productName,
+      supplierName: details.supplierName,
+      brand: details.brand,
+      priceText: details.priceText,
+      url: details.productUrl,
     })
     const mail = {
-      productName: product.name_he,
-      supplierName: supplier.company_name,
+      productName: details.productName,
+      supplierName: details.supplierName,
       weekText: weekLabel(currentWeek(now)),
-      imageUrl: absolute(product.image_url),
-      productUrl,
+      imageUrl: details.imageUrl,
+      productUrl: details.productUrl,
       shortPost: posts.short,
       longPost: posts.long,
     }
@@ -86,7 +110,7 @@ export async function runPromoSocial(now: Date = new Date(), { force = false } =
       to: PROMO_REQUEST_EMAIL,
       subject: promoSocialSubject(mail),
       html: promoSocialHtml(mail),
-      isTest: isTestName(supplier.company_name),
+      isTest: isTestName(details.supplierName),
     })
     if (!result.sent) throw new Error(result.error ?? result.reason ?? 'not sent')
     return { sent: true, key }

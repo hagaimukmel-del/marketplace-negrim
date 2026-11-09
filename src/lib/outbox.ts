@@ -55,7 +55,7 @@ function later(work: () => Promise<unknown>): void {
  * Queue mails and start sending them once the current request is done.
  * Returns how many were queued (held-back duplicates are not counted).
  */
-export async function queueEmails(emails: QueuedEmail[]): Promise<number> {
+export async function queueEmails(emails: QueuedEmail[], { sendNow = true }: { sendNow?: boolean } = {}): Promise<number> {
   const wanted = emails.filter((email) => email.to)
   if (wanted.length === 0) return 0
   const supabase = getSupabaseAdmin()
@@ -103,7 +103,8 @@ export async function queueEmails(emails: QueuedEmail[]): Promise<number> {
   for (const row of data.filter((row) => row.status === 'bounced')) await reportUndelivered(row)
 
   const ids = data.filter((row) => row.status === 'pending').map((row) => row.id)
-  if (ids.length === 0) return rows.length
+  // A mass mailing paces its own sending (lib/promo-carpenters.ts).
+  if (ids.length === 0 || !sendNow) return rows.length
   // These first, then anything else that is due while we are at it.
   later(async () => {
     await processOutbox({ ids })
@@ -150,7 +151,16 @@ async function sendRow(row: OutboxRow): Promise<'sent' | 'pending' | 'failed' | 
  * Send what is due: the given rows, or up to RUN_LIMIT of the oldest due rows.
  * Safe to run from several places at once; each row goes to one sender.
  */
-export async function processOutbox({ ids, limit = RUN_LIMIT }: { ids?: string[]; limit?: number } = {}): Promise<{ claimed: number; sent: number; failed: number }> {
+export async function processOutbox({
+  ids,
+  limit = RUN_LIMIT,
+  paceMs = 0,
+}: {
+  ids?: string[]
+  limit?: number
+  /** Wait between two sends, to stay under the provider's requests per second. */
+  paceMs?: number
+} = {}): Promise<{ claimed: number; sent: number; failed: number }> {
   const { data, error } = await getSupabaseAdmin().rpc('claim_email_outbox', {
     p_limit: ids ? ids.length : limit,
     ...(ids ? { p_ids: ids } : {}),
@@ -161,7 +171,8 @@ export async function processOutbox({ ids, limit = RUN_LIMIT }: { ids?: string[]
   }
   let sent = 0
   let failed = 0
-  for (const row of data) {
+  for (const [index, row] of data.entries()) {
+    if (paceMs > 0 && index > 0) await new Promise((resolve) => setTimeout(resolve, paceMs))
     const status = await sendRow(row)
     if (status === 'sent') sent += 1
     if (status === 'failed') failed += 1

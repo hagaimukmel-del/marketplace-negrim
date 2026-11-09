@@ -1,9 +1,10 @@
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
-import { loadPromoWeeks } from '@/lib/promo'
+import { loadCurrentPromo, loadPromoWeeks } from '@/lib/promo'
+import { loadPromoRecipients, promoCarpentersSent } from '@/lib/promo-carpenters'
 import { addDays, bookableWeeks, currentWeek } from '@/lib/promo-weeks'
 import { adminPromoWeeks } from '@/lib/promo-admin-rules'
 import { PROMO_WEEK_EXCL_VAT } from '@/lib/supplier-plans'
-import PromotionsClient, { type PromoSupplierOption } from './PromotionsClient'
+import PromotionsClient, { type CarpenterMailing, type PromoSupplierOption } from './PromotionsClient'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,14 +45,25 @@ async function loadPromoOptions(): Promise<PromoSupplierOption[]> {
  * coming weeks, what each week that ran did, and setting a week by hand at a
  * supplier's request.
  */
+/** This week's mail to the carpentries: how many get it, and whether it went. */
+async function loadMailing(): Promise<CarpenterMailing> {
+  const [promo, recipients] = await Promise.all([loadCurrentPromo(), loadPromoRecipients()])
+  return {
+    promoId: promo?.id ?? null,
+    recipients: recipients.length,
+    sent: promo ? await promoCarpentersSent(promo.id) : false,
+  }
+}
+
 export default async function AdminPromotions() {
-  const [{ ready, weeks }, suppliers] = await Promise.all([
+  const [{ ready, weeks }, suppliers, mailing] = await Promise.all([
     loadPromoWeeks({
       from: addDays(currentWeek(), -26 * 7),
       to: bookableWeeks().at(-1)!,
       statuses: ['requested', 'approved', 'rejected'],
     }),
     loadPromoOptions(),
+    loadMailing(),
   ])
   return (
     <PromotionsClient
@@ -60,6 +72,7 @@ export default async function AdminPromotions() {
       suppliers={suppliers}
       selectableWeeks={adminPromoWeeks()}
       defaultPrice={PROMO_WEEK_EXCL_VAT}
+      mailing={mailing}
     />
   )
 }

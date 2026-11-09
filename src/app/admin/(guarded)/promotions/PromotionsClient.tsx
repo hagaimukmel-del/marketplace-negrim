@@ -434,13 +434,92 @@ function Row({ week, choices, onDone }: { week: PromoWeek; choices: Choices; onD
   )
 }
 
+export interface CarpenterMailing {
+  /** The approved booking running this week; null when there is none. */
+  promoId: string | null
+  recipients: number
+  sent: boolean
+}
+
+/** This week's mail to the carpentries that agreed to offers: who gets it, a copy first, and sending it by hand. */
+function CarpenterMailingCard({ mailing }: { mailing: CarpenterMailing }) {
+  const [busy, setBusy] = useState<'sample' | 'send' | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [sent, setSent] = useState(mailing.sent)
+
+  const run = async (action: 'sample' | 'send') => {
+    if (action === 'send' && !window.confirm(`לשלוח עכשיו את מוצר השבוע ל־${mailing.recipients} נגריות?`)) return
+    setBusy(action)
+    setError(null)
+    setMessage(null)
+    try {
+      const response = await fetch('/api/admin/promo/carpenters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.error ?? 'המייל לא נשלח')
+      if (action === 'sample') setMessage('דוגמה נשלחה ל־nagarim.b2b@gmail.com')
+      else {
+        setSent(true)
+        setMessage(`נשלח ל־${data.sent} מתוך ${data.queued}. השאר יישלחו בדקות הקרובות.`)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'המייל לא נשלח')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  return (
+    <section className="rounded-xl border border-stone-200 bg-white px-4 py-3">
+      <h2 className="font-bold text-stone-900">מייל לנגריות</h2>
+      <p className="mt-1 text-base text-stone-600">
+        בכל יום ראשון ב־7:00 מוצר השבוע נשלח במייל לנגריות שהסכימו לקבל מבצעים, עם קישור להסרה. כל שבוע נשלח פעם אחת.
+      </p>
+      <p className="tnum mt-1 text-base text-stone-800">
+        <b>{mailing.recipients}</b> נגריות יקבלו אותו
+        {mailing.promoId ? (sent ? ' · השבוע כבר נשלח' : ' · השבוע עוד לא נשלח') : ' · אין השבוע מוצר מאושר'}
+      </p>
+      {mailing.promoId && (
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => run('sample')}
+            disabled={busy !== null}
+            className="h-9 rounded-lg border border-stone-300 px-4 text-base font-semibold text-stone-700 disabled:opacity-50"
+          >
+            {busy === 'sample' ? 'שולח…' : 'לשלוח לי דוגמה'}
+          </button>
+          {!sent && (
+            <button
+              type="button"
+              onClick={() => run('send')}
+              disabled={busy !== null || mailing.recipients === 0}
+              className="h-9 rounded-lg bg-emerald-700 px-4 text-base font-semibold text-white disabled:opacity-50"
+            >
+              {busy === 'send' ? 'שולח… (כמה דקות)' : 'לשלוח עכשיו לנגריות'}
+            </button>
+          )}
+          {message && <span className="text-base text-emerald-800">{message}</span>}
+          {error && <span className="text-base text-red-700">{error}</span>}
+        </div>
+      )}
+    </section>
+  )
+}
+
 export default function PromotionsClient({
   ready,
   weeks,
   suppliers,
   selectableWeeks,
   defaultPrice,
+  mailing,
 }: {
+  mailing: CarpenterMailing
   ready: boolean
   weeks: PromoWeek[]
   suppliers: PromoSupplierOption[]
@@ -487,7 +566,7 @@ export default function PromotionsClient({
       <div>
         <h1 className="text-2xl font-bold text-stone-900">מוצר השבוע</h1>
         <p className="text-base text-stone-600">
-          ספקים מזמינים שבוע מתוך מסוף הספק, ואפשר גם להגדיר או לערוך שבוע ידנית לפי בקשת ספק. שבוע מאושר מוצג לנגרים עם התווית &quot;מוצר השבוע&quot;. בכל יום ראשון ב־7:00 נשלח מייל עם פוסט מוכן לרשתות על המוצר של אותו שבוע. החיוב מחוץ לאתר.
+          ספקים מזמינים שבוע מתוך מסוף הספק, ואפשר גם להגדיר או לערוך שבוע ידנית לפי בקשת ספק. שבוע מאושר מוצג לנגרים עם התווית &quot;מוצר השבוע&quot;. בכל יום ראשון ב־7:00 נשלח מייל עם פוסט מוכן לרשתות על המוצר של אותו שבוע, ומייל על המוצר לנגריות שהסכימו לדיוור. החיוב מחוץ לאתר.
         </p>
       </div>
       {!ready ? (
@@ -496,6 +575,7 @@ export default function PromotionsClient({
         </p>
       ) : (
         <>
+          <CarpenterMailingCard mailing={mailing} />
           <ManualForm choices={choices} defaultPrice={defaultPrice} onDone={refresh} />
           {section('מחכים לאישור', waiting, 'אין בקשות שמחכות.')}
           {section('שבועות מאושרים', coming, 'אין שבוע מאושר כרגע.')}

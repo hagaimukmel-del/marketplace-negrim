@@ -88,6 +88,7 @@ export async function PATCH(request: NextRequest) {
         email,
         address: text(body.address, 200),
         city: text(body.city, 80),
+        ...(typeof body.marketing_consent === 'boolean' ? { marketing_consent: body.marketing_consent } : {}),
         updated_at: new Date().toISOString(),
       })
       .eq('id', carpenterId)
