@@ -180,6 +180,23 @@ export async function processOutbox({
   return { claimed: data.length, sent, failed }
 }
 
+/**
+ * Send what is queued, one at a time at the given pace, until the queue is
+ * empty or the window is over. What is left is sent by the outbox's later
+ * runs. For mailings that queue many rows with sendNow: false.
+ */
+export async function sendQueuedPaced(windowMs: number, paceMs: number): Promise<number> {
+  const until = Date.now() + windowMs
+  let sent = 0
+  while (Date.now() < until) {
+    const result = await processOutbox({ limit: 10, paceMs })
+    sent += result.sent
+    if (result.claimed === 0) break
+    await new Promise((resolve) => setTimeout(resolve, paceMs))
+  }
+  return sent
+}
+
 let lastKick = 0
 /** At most one opportunistic run per minute per server instance. */
 const KICK_INTERVAL_MS = 60_000

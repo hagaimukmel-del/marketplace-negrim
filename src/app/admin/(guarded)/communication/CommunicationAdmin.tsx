@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Activity, MailWarning, RotateCcw } from 'lucide-react'
 import type { CommunicationHealth } from '@/lib/communication-health'
+import AdminMailing from './AdminMailing'
 
 const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
   failed: { label: 'נכשל', tone: 'bg-red-100 text-red-800' },
@@ -80,6 +81,8 @@ export default function CommunicationAdmin({ health }: { health: CommunicationHe
           {message.text}
         </p>
       )}
+
+      <AdminMailing />
 
       <section className="grid grid-cols-2 gap-2 sm:grid-cols-5">
         <Tile label="נכנסו לתור" value={week.queued} />
