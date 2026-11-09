@@ -16,7 +16,7 @@ applications. A visitor can browse products without prices; prices appear after 
 | _Landing rule_ | Every way in for a carpentry (`/`, the personal link, the emailed link, the email code, Google, registration, the home-screen icon) lands on `/app`, the home screen. iOS saves the page open at "Add to Home Screen" and ignores `start_url`, so `components/app/HomeScreenLaunch.tsx` swaps the first page of each standalone launch for `/app`. Only an explicit `?next=` from a page the carpenter was on sends them back there |
 | `/carpenter/google` → `/carpenter/google/callback` | "כניסה עם גוגל": a verified Google email that is a carpentry's email on file signs in. Hidden until `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` are set (`lib/google-auth.ts`). Never creates a carpentry |
 | `/supplier/join` → `POST /api/supplier-join` | Supplier application; the operator approves it in `/admin/suppliers` |
-| `/terms` → `POST /api/terms/accept` | Terms; acceptance is mandatory at registration (`TermsGate`, `lib/terms.ts` version) |
+| `/terms` → `POST /api/terms/accept` | Terms; acceptance is mandatory at registration (`TermsGate`, `lib/terms.ts` version). The gate shows each role its own points; a supplier sees the subscription it agrees to |
 | Every page except `/admin`, `/supplier`, `/doc` | Launch-period welcome popup (`components/WelcomePopup.tsx`, mounted in the root layout). Once per visit (sessionStorage), new and returning visitors alike; sits under `TermsGate`. Says the site is free for everyone (and so is the work network, which opens soon) and gives the feedback address |
 | `/auth/login`, `/auth/signup` | **Legacy** pages from an abandoned account model. Nothing links to them |
 
@@ -39,7 +39,7 @@ acceptance columns, `login_codes` (one-time login codes, service role only).
 - Bumping `TERMS_VERSION` makes everyone re-accept. Change it only when the terms change in substance.
 
 ## Status
-Live. Accessibility statement and terms review before a wide launch are open in `TODO.md`.
+Live. The terms review of 2026-11-09 and its fixes, the supplier annex and the accessibility statement are tracked in T-038.
 
 ## Open tasks
 T-015, T-032, T-033

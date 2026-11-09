@@ -17,12 +17,20 @@ export const TERMS_VERSION = '2026-11-03'
  */
 export const TERMS_UPDATED_LABEL = '3 בנובמבר 2026'
 
-/** Who runs the site, as the terms and the privacy notice name it (owner, 2026-10-22). */
+/**
+ * Who runs the site, as the terms, the privacy notice and every marketing
+ * mail name it (owner, 2026-10-22; Hebrew name 2026-11-09). נגרים B2B has no
+ * registration of its own yet and runs under this עוסק מורשה.
+ */
 export const OPERATOR = {
-  name: 'HAGAI MUKMEL',
+  name: 'חגי מוקמל',
+  nameEn: 'HAGAI MUKMEL',
   registration: 'עוסק מורשה 300009339',
   address: 'אור עקיבא, מיקוד 3061878',
 }
+
+/** "חגי מוקמל (HAGAI MUKMEL), עוסק מורשה 300009339, אור עקיבא…" for mail footers. */
+export const OPERATOR_LINE = `${OPERATOR.name} (${OPERATOR.nameEn}), ${OPERATOR.registration}, ${OPERATOR.address}`
 
 export function acceptedCurrentTerms(version: string | null | undefined): boolean {
   return version === TERMS_VERSION

@@ -195,3 +195,26 @@ export function kickOutbox(): void {
   lastKick = now
   later(() => processOutbox())
 }
+
+/** How long a copy of a sent mail is kept (privacy notice, "תקופות שמירה"). */
+export const OUTBOX_RETENTION_MONTHS = 12
+
+/**
+ * Remove mails older than OUTBOX_RETENTION_MONTHS that are done with: each row
+ * holds the full mail, message text included, and nothing reads a year-old
+ * one. Pending and in-flight rows are never touched. Run daily from the cron.
+ */
+export async function purgeOldOutbox(now: Date = new Date()): Promise<number> {
+  const cutoff = new Date(now)
+  cutoff.setUTCMonth(cutoff.getUTCMonth() - OUTBOX_RETENTION_MONTHS)
+  const { count, error } = await getSupabaseAdmin()
+    .from('email_outbox')
+    .delete({ count: 'exact' })
+    .lt('created_at', cutoff.toISOString())
+    .not('status', 'in', '(pending,sending)')
+  if (error) {
+    console.error('[outbox] purge failed', error.message)
+    return 0
+  }
+  return count ?? 0
+}

@@ -3,6 +3,32 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ScrollText } from 'lucide-react'
+import {
+  BILLING_STARTS_LABEL,
+  SUPPLIER_AGREEMENT_MONTHS,
+  SUPPLIER_ANNUAL_EXCL_VAT,
+  SUPPLIER_MONTHLY_EXCL_VAT,
+} from '@/lib/supplier-plans'
+
+/**
+ * The gist each side agrees to, above the checkbox. A supplier sees the
+ * subscription it commits to: accepting the terms is agreeing to it, so the
+ * amount cannot live only on the terms page.
+ */
+const POINTS: Record<'carpenter' | 'supplier', string[]> = {
+  carpenter: [
+    'שוק הנגרים מחבר בין נגריות לספקים ואינו צד לעסקה.',
+    'הספק מוכר, מספק ומוציא חשבונית. התשלום עובר ישירות אליו.',
+    'הזמנה היא הזמנת רכש, ומחייבת אחרי שהספק אישר אותה.',
+    'נכנסים בקוד שנשלח למייל או עם Google. לא מעבירים אותם לאחרים.',
+  ],
+  supplier: [
+    'אתם המוכרים: מאשרים הזמנות, מספקים ומוציאים חשבונית לנגרייה. שוק הנגרים אינו צד לעסקה.',
+    `מנוי ${SUPPLIER_MONTHLY_EXCL_VAT.toLocaleString('he-IL')} ₪ לחודש לפני מע״מ, בהסכם ל-${SUPPLIER_AGREEMENT_MONTHS} חודשים (${SUPPLIER_ANNUAL_EXCL_VAT.toLocaleString('he-IL')} ₪ לשנה). אין עמלה על הזמנות.`,
+    `החיוב מתחיל ב${BILLING_STARTS_LABEL} ונעשה מחוץ לאתר, בחשבונית ישירה.`,
+    'פרטי הנגריות משמשים רק לטיפול בהזמנה או בפנייה שהגיעה מהן.',
+  ],
+}
 
 /**
  * Asks for the current terms before anything else on the page can be used.
@@ -66,10 +92,9 @@ export default function TermsGate({ role }: { role: 'carpenter' | 'supplier' }) 
         </div>
 
         <ul className="mt-4 space-y-1.5 text-sm text-stone-700">
-          <li>• שוק הנגרים מחבר בין נגריות לספקים ואינו צד לעסקה.</li>
-          <li>• הספק מוכר, מספק ומוציא חשבונית. התשלום עובר ישירות אליו.</li>
-          <li>• הזמנה היא הזמנת רכש, ומחייבת אחרי שהספק אישר אותה.</li>
-          <li>• הקישור האישי הוא הכניסה לחשבון — שומרים עליו.</li>
+          {POINTS[role].map((point) => (
+            <li key={point}>• {point}</li>
+          ))}
         </ul>
 
         <label className="mt-4 flex items-start gap-3 rounded-lg border border-stone-200 p-3">
