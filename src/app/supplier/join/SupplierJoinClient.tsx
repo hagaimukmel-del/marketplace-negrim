@@ -111,7 +111,7 @@ export default function SupplierJoinPage() {
               onChange={(e) => set('company_name', e.target.value)}
               required
               autoFocus
-              placeholder="איתמיר בע״מ"
+              placeholder="שם החברה בע״מ"
               className="mt-1 h-12 w-full rounded-lg border border-stone-300 px-3"
             />
           </label>
@@ -153,7 +153,7 @@ export default function SupplierJoinPage() {
             <input
               value={form.contact_name}
               onChange={(e) => set('contact_name', e.target.value)}
-              placeholder="דב"
+              placeholder="שם מלא"
               className="mt-1 h-12 w-full rounded-lg border border-stone-300 px-3"
             />
           </label>
@@ -165,7 +165,7 @@ export default function SupplierJoinPage() {
               onChange={(e) => set('email', e.target.value)}
               type="email"
               required
-              placeholder="dov@itamir.co.il"
+              placeholder="orders@example.co.il"
               className="mt-1 h-12 w-full rounded-lg border border-stone-300 px-3"
             />
           </label>
