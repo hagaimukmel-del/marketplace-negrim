@@ -1693,6 +1693,41 @@ export type Database = {
           },
         ]
       }
+      supplier_billing: {
+        Row: {
+          ends_month: string | null
+          monthly_excl_vat: number
+          note: string | null
+          starts_month: string
+          supplier_id: string
+          updated_at: string
+        }
+        Insert: {
+          ends_month?: string | null
+          monthly_excl_vat: number
+          note?: string | null
+          starts_month: string
+          supplier_id: string
+          updated_at?: string
+        }
+        Update: {
+          ends_month?: string | null
+          monthly_excl_vat?: number
+          note?: string | null
+          starts_month?: string
+          supplier_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_billing_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: true
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       supplier_contact_requests: {
         Row: {
           action_type: string
@@ -1955,6 +1990,59 @@ export type Database = {
           },
           {
             foreignKeyName: "supplier_offers_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_payments: {
+        Row: {
+          amount_excl_vat: number
+          covers_from: string
+          covers_months: number
+          created_at: string
+          id: string
+          installment_no: number | null
+          installments_total: number | null
+          kind: string
+          method: string | null
+          note: string | null
+          paid_on: string
+          supplier_id: string
+        }
+        Insert: {
+          amount_excl_vat: number
+          covers_from: string
+          covers_months?: number
+          created_at?: string
+          id?: string
+          installment_no?: number | null
+          installments_total?: number | null
+          kind: string
+          method?: string | null
+          note?: string | null
+          paid_on: string
+          supplier_id: string
+        }
+        Update: {
+          amount_excl_vat?: number
+          covers_from?: string
+          covers_months?: number
+          created_at?: string
+          id?: string
+          installment_no?: number | null
+          installments_total?: number | null
+          kind?: string
+          method?: string | null
+          note?: string | null
+          paid_on?: string
+          supplier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_payments_supplier_id_fkey"
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "suppliers"
