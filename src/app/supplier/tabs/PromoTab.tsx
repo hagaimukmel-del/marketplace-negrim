@@ -11,7 +11,7 @@ import {
   SUPPLIER_ANNUAL_EXCL_VAT,
   SUPPLIER_MONTHLY_EXCL_VAT,
 } from '@/lib/supplier-plans'
-import { PROMO_STATUS_LABEL, bookableWeeks, currentWeek, weekLabel, type PromoWeek } from '@/lib/promo-weeks'
+import { PROMO_STATUS_LABEL, bookableWeeks, canCancelPromo, currentWeek, weekLabel, type PromoWeek } from '@/lib/promo-weeks'
 import { callApi, jsonInit, type ProductItem, type SupplierPromo } from '../types'
 import type { Notify } from '../SupplierApp'
 
@@ -135,7 +135,7 @@ export default function PromoTab({
     setBusy(true)
     try {
       await callApi(`/api/supplier/promo?id=${week.id}`, { method: 'DELETE' })
-      notify('הבקשה בוטלה')
+      notify('השבוע בוטל')
       router.refresh()
     } catch (err) {
       notify(err instanceof Error ? err.message : 'הביטול נכשל', 'error')
@@ -157,7 +157,8 @@ export default function PromoTab({
           <p className="mt-0.5 text-base text-stone-600">
             מוצר אחד שלך מוצג שבוע שלם בראש דף הבית של כל הנגרים, בראש הקטגוריה שלו, וראשון אצל הסוכן כשמחפשים בתחום.
             הוא מסומן &quot;פרסומת&quot;, ומוצג בלי מחיר אלא אם תבחר להציג אותו.{' '}
-            <b className="tnum">{formatIls(PROMO_WEEK_EXCL_VAT)}</b> לשבוע, לפני מע״מ, בחיוב מחוץ לאתר.
+            <b className="tnum">{formatIls(PROMO_WEEK_EXCL_VAT)}</b> לשבוע, לפני מע״מ, בחיוב מחוץ לאתר. אפשר לבטל עד יום
+            חמישי שלפני השבוע.
           </p>
         </div>
 
@@ -195,12 +196,12 @@ export default function PromoTab({
                         <span className={`rounded-full px-2 py-0.5 text-sm font-semibold ${STATUS_TONE[booking.status]}`}>
                           {PROMO_STATUS_LABEL[booking.status]}
                         </span>
-                        {booking.status === 'requested' && (
+                        {canCancelPromo(booking.status, booking.weekStart) && (
                           <button
                             type="button"
                             onClick={() => cancel(booking)}
                             disabled={busy}
-                            aria-label={`בטל את הבקשה לשבוע ${weekLabel(week)}`}
+                            aria-label={`בטל את השבוע ${weekLabel(week)}`}
                             className="flex h-9 w-9 items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100"
                           >
                             <X size={16} />

@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionSupplier } from '@/lib/supplier-auth'
 import { refuseAdminWriteFor } from '@/lib/admin-scope'
 import { PROMO_WEEK_EXCL_VAT } from '@/lib/supplier-plans'
-import { bookableWeeks, currentWeek, isSunday, weekLabel } from '@/lib/promo-weeks'
+import { bookableWeeks, canCancelPromo, currentWeek, isSunday, weekLabel, type PromoStatus } from '@/lib/promo-weeks'
 import { isTestName, sendEmail } from '@/lib/email'
 import { PROMO_REQUEST_EMAIL, promoRequestHtml, promoRequestSubject } from '@/lib/emails/promo-request'
 import { money } from '@/lib/app/format'
@@ -106,7 +106,11 @@ export async function PATCH(request: NextRequest) {
   return NextResponse.json({ ok: true })
 }
 
-/** Cancels the supplier's own booking while it still waits for approval. */
+/**
+ * Cancels the supplier's own booking: a request at any time before it is
+ * decided, an approved week until the Thursday before it (supplier annex,
+ * lib/promo-weeks.ts canCancelPromo). A cancelled week is not owed.
+ */
 export async function DELETE(request: NextRequest) {
   const supplier = await getSessionSupplier()
   if (!supplier) return NextResponse.json({ error: 'צריך להיות מחובר' }, { status: 401 })
@@ -116,14 +120,25 @@ export async function DELETE(request: NextRequest) {
   const id = request.nextUrl.searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'חסר מזהה' }, { status: 400 })
 
-  const { data } = await getSupabaseAdmin()
+  const supabase = getSupabaseAdmin()
+  const { data: booking } = await supabase
+    .from('promo_weeks')
+    .select('id, status, week_start')
+    .eq('id', id)
+    .eq('supplier_id', supplier.id)
+    .maybeSingle()
+  if (!booking || !canCancelPromo(booking.status as PromoStatus, booking.week_start)) {
+    return NextResponse.json({ error: 'אפשר לבטל בקשה שעוד לא אושרה, או שבוע מאושר עד יום חמישי שלפניו' }, { status: 404 })
+  }
+
+  const { data } = await supabase
     .from('promo_weeks')
     .update({ status: 'cancelled', decided_at: new Date().toISOString() })
     .eq('id', id)
     .eq('supplier_id', supplier.id)
-    .eq('status', 'requested')
+    .eq('status', booking.status)
     .select('id')
     .maybeSingle()
-  if (!data) return NextResponse.json({ error: 'אפשר לבטל רק בקשה שעוד לא אושרה' }, { status: 404 })
+  if (!data) return NextResponse.json({ error: 'הביטול לא נשמר. רעננו ונסו שוב.' }, { status: 409 })
   return NextResponse.json({ ok: true })
 }

@@ -109,6 +109,14 @@ export default function TermsGate({ role }: { role: 'carpenter' | 'supplier' }) 
             <a href="/terms" target="_blank" rel="noreferrer" className="font-semibold text-emerald-800 underline">
               תקנון, לתנאי השימוש ולמדיניות הפרטיות
             </a>
+            {role === 'supplier' && (
+              <>
+                {' '}ול
+                <a href="/terms/suppliers" target="_blank" rel="noreferrer" className="font-semibold text-emerald-800 underline">
+                  נספח הספקים
+                </a>
+              </>
+            )}
           </span>
         </label>
 
