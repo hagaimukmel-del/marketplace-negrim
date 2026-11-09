@@ -121,6 +121,8 @@ export interface BillingPlan {
   startsMonth: string
   /** Last month owed, inclusive; null runs on. */
   endsMonth: string | null
+  /** A free period: nothing owed up to and including this month. */
+  freeUntil: string | null
   note: string | null
   /** Set by the operator (a supplier_billing row), rather than the default. */
   custom: boolean
@@ -161,6 +163,7 @@ export function defaultPlan(supplier: BillingSupplier): BillingPlan {
     monthly: owes ? SUPPLIER_MONTHLY_EXCL_VAT : 0,
     startsMonth: maxMonth(BILLING_START_MONTH, isMonth(since) ? since : BILLING_START_MONTH),
     endsMonth: null,
+    freeUntil: null,
     note: null,
     custom: false,
   }
@@ -218,9 +221,10 @@ function line(owed: number, paid: number): ChargeLine {
   return { owed: round2(owed), paid: round2(paid), balance: round2(owed - paid) }
 }
 
-/** Months of the plan that fall in [from, to], both inclusive. */
+/** Months the plan charges for that fall in [from, to], both inclusive: after any free period. */
 function planMonths(plan: BillingPlan, from: string | null, to: string): number {
-  const start = from ? maxMonth(plan.startsMonth, from) : plan.startsMonth
+  const paidFrom = plan.freeUntil ? maxMonth(plan.startsMonth, addMonths(plan.freeUntil, 1)) : plan.startsMonth
+  const start = from ? maxMonth(paidFrom, from) : paidFrom
   const end = plan.endsMonth ? minMonth(plan.endsMonth, to) : to
   return Math.max(0, monthsBetween(start, end))
 }
@@ -395,12 +399,12 @@ export function parsePayment(body: Record<string, unknown>): Parsed<PaymentInput
 export interface PlanInput {
   supplierId: string
   /** Null removes the operator's plan, back to the default. */
-  plan: { monthly: number; startsMonth: string; endsMonth: string | null; note: string | null } | null
+  plan: { monthly: number; startsMonth: string; endsMonth: string | null; freeUntil: string | null; note: string | null } | null
 }
 
 /**
  * The operator sets a supplier's subscription. Body: `{ supplier_id,
- * monthly_excl_vat, starts_month, ends_month?, note? }`, or `{ supplier_id,
+ * monthly_excl_vat, starts_month, ends_month?, free_until_month?, note? }`, or `{ supplier_id,
  * reset: true }` to go back to the default.
  */
 export function parsePlan(body: Record<string, unknown>): Parsed<PlanInput> {
@@ -414,8 +418,10 @@ export function parsePlan(body: Record<string, unknown>): Parsed<PlanInput> {
   const ends = text(body.ends_month)
   if (ends && !isMonth(ends)) return { ok: false, error: 'חודש סיום לא תקין' }
   if (ends && ends < startsMonth) return { ok: false, error: 'חודש הסיום לפני חודש ההתחלה' }
+  const free = text(body.free_until_month)
+  if (free && !isMonth(free)) return { ok: false, error: 'חודש סוף החינם לא תקין' }
   return {
     ok: true,
-    value: { supplierId, plan: { monthly, startsMonth, endsMonth: ends || null, note: text(body.note).slice(0, 300) || null } },
+    value: { supplierId, plan: { monthly, startsMonth, endsMonth: ends || null, freeUntil: free || null, note: text(body.note).slice(0, 300) || null } },
   }
 }

@@ -14,7 +14,7 @@ import {
 import { SUPPLIER_MONTHLY_EXCL_VAT } from './supplier-plans'
 
 const supplier: BillingSupplier = { id: 's1', name: 'ספק', status: 'approved', since: '2026-10-05T10:00:00Z', isTest: false }
-const plan: BillingPlan = { monthly: 350, startsMonth: '2027-01', endsMonth: null, note: null, custom: false }
+const plan: BillingPlan = { monthly: 350, startsMonth: '2027-01', endsMonth: null, freeUntil: null, note: null, custom: false }
 
 function payment(over: Partial<BillingPayment>): BillingPayment {
   return {
@@ -104,6 +104,14 @@ describe('supplierBilling', () => {
     expect(supplierBilling('2027-05', supplier, { ...plan, monthly: 0 }, [], []).subscription.owed).toBe(0)
   })
 
+  it('owes nothing during a free period, and counts only paid months in arrears', () => {
+    const free = { ...plan, freeUntil: '2027-03' }
+    expect(supplierBilling('2027-03', supplier, free, [], []).subscription.owed).toBe(0)
+    const apr = supplierBilling('2027-04', supplier, free, [], [])
+    expect(apr.subscription.owed).toBe(350)
+    expect(apr.arrears).toBe(350)
+  })
+
   it('a payment paid after the month is not counted as ahead for that month', () => {
     const paid = [payment({ amount: 700, coversMonths: 2, coversFrom: '2027-02', paidOn: '2027-02-01' })]
     expect(supplierBilling('2027-01', supplier, plan, [], paid).ahead).toBe(0)
@@ -168,6 +176,12 @@ describe('parsePlan', () => {
   it('accepts an exemption and a reset', () => {
     expect(parsePlan({ supplier_id: 's1', monthly_excl_vat: '0', starts_month: '2027-01' })).toMatchObject({ ok: true, value: { plan: { monthly: 0 } } })
     expect(parsePlan({ supplier_id: 's1', reset: true })).toEqual({ ok: true, value: { supplierId: 's1', plan: null } })
+  })
+
+  it('takes a free period', () => {
+    const parsed = parsePlan({ supplier_id: 's1', monthly_excl_vat: '350', starts_month: '2027-01', free_until_month: '2027-06' })
+    expect(parsed.ok && parsed.value.plan?.freeUntil).toBe('2027-06')
+    expect(parsePlan({ supplier_id: 's1', monthly_excl_vat: '350', starts_month: '2027-01', free_until_month: 'x' }).ok).toBe(false)
   })
 
   it('refuses an end before the start', () => {

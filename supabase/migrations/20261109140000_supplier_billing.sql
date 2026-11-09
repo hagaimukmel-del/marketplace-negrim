@@ -14,7 +14,9 @@
 -- from the month billing starts (January 2027) or the month they were
 -- approved, whichever is later (lib/billing-rules.ts). monthly_excl_vat = 0
 -- marks a supplier who pays nothing (the operator's own business, a free
--- founding period). Months are stored as the first day of the month.
+-- founding period). free_until_month gives a free period: nothing is owed up
+-- to and including that month, the plan runs as set after it. Months are
+-- stored as the first day of the month.
 --
 -- supplier_payments: money received, entered by the operator. A payment can
 -- cover several months (paid ahead: 4,200 for a year covers 12 months, 350
@@ -28,11 +30,13 @@ create table if not exists public.supplier_billing (
   monthly_excl_vat numeric(10, 2) not null,
   starts_month date not null,
   ends_month date,
+  free_until_month date,
   note text,
   updated_at timestamptz not null default now(),
   constraint supplier_billing_monthly check (monthly_excl_vat >= 0),
   constraint supplier_billing_starts_first check (extract(day from starts_month) = 1),
   constraint supplier_billing_ends_first check (ends_month is null or extract(day from ends_month) = 1),
+  constraint supplier_billing_free_first check (free_until_month is null or extract(day from free_until_month) = 1),
   constraint supplier_billing_range check (ends_month is null or ends_month >= starts_month)
 );
 

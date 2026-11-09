@@ -69,6 +69,7 @@ function PlanForm({ row, defaults, ready, onDone }: { row: SupplierBilling; defa
   const [monthly, setMonthly] = useState(String(row.plan.monthly))
   const [starts, setStarts] = useState(row.plan.startsMonth)
   const [ends, setEnds] = useState(row.plan.endsMonth ?? '')
+  const [freeUntil, setFreeUntil] = useState(row.plan.freeUntil ?? '')
   const [note, setNote] = useState(row.plan.note ?? '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -80,7 +81,7 @@ function PlanForm({ row, defaults, ready, onDone }: { row: SupplierBilling; defa
       'PUT',
       reset
         ? { supplier_id: row.supplier.id, reset: true }
-        : { supplier_id: row.supplier.id, monthly_excl_vat: monthly, starts_month: starts, ends_month: ends, note },
+        : { supplier_id: row.supplier.id, monthly_excl_vat: monthly, starts_month: starts, ends_month: ends, free_until_month: freeUntil, note },
     )
     setBusy(false)
     if (failed) setError(failed)
@@ -93,7 +94,7 @@ function PlanForm({ row, defaults, ready, onDone }: { row: SupplierBilling; defa
       <p className="text-sm text-stone-600">
         {row.plan.monthly === 0
           ? 'לא משלם מנוי.'
-          : `${formatIls(row.plan.monthly)} לחודש מ${monthLabel(row.plan.startsMonth)}${row.plan.endsMonth ? ` עד ${monthLabel(row.plan.endsMonth)}` : ''}.`}{' '}
+          : `${formatIls(row.plan.monthly)} לחודש מ${monthLabel(row.plan.startsMonth)}${row.plan.endsMonth ? ` עד ${monthLabel(row.plan.endsMonth)}` : ''}${row.plan.freeUntil ? `, חינם עד ${monthLabel(row.plan.freeUntil)} כולל` : ''}.`}{' '}
         {row.plan.custom
           ? 'נקבע ידנית.'
           : `ברירת מחדל: ספק מאושר משלם ${formatIls(defaults.monthly)} מ${monthLabel(defaults.billingStart)} או מחודש האישור, המאוחר מביניהם.`}
@@ -111,6 +112,10 @@ function PlanForm({ row, defaults, ready, onDone }: { row: SupplierBilling; defa
         <label className="flex flex-col text-sm text-stone-600">
           עד חודש (לא חובה)
           <input className={`${FIELD} w-36`} type="month" value={ends} onChange={(e) => setEnds(e.target.value)} />
+        </label>
+        <label className="flex flex-col text-sm text-stone-600">
+          חינם עד חודש (כולל)
+          <input className={`${FIELD} w-36`} type="month" value={freeUntil} onChange={(e) => setFreeUntil(e.target.value)} />
         </label>
         <label className="flex min-w-40 flex-1 flex-col text-sm text-stone-600">
           הערה
@@ -437,6 +442,9 @@ export default function BillingClient({
                         {row.supplier.status !== 'approved' ? <span className="rounded-full bg-stone-200 px-1.5">{row.supplier.status === 'blocked' ? 'חסום' : row.supplier.status === 'pending' ? 'ממתין' : 'נדחה'}</span> : null}
                         {row.plan.monthly === 0 ? <span className="rounded-full bg-stone-100 px-1.5 text-stone-500">ללא מנוי</span> : null}
                         {row.plan.custom ? <span className="rounded-full bg-sky-100 px-1.5 text-sky-800">מנוי ידני</span> : null}
+                        {row.plan.freeUntil && row.plan.freeUntil >= month && row.plan.monthly > 0 ? (
+                          <span className="rounded-full bg-emerald-100 px-1.5 text-emerald-800">חינם עד {monthLabel(row.plan.freeUntil)}</span>
+                        ) : null}
                       </div>
                     </td>
                     <td className="tnum px-3 py-2.5 text-end">
@@ -461,7 +469,7 @@ export default function BillingClient({
                         {row.received ? (
                           <p className="text-sm text-stone-600">התקבל בחודש הזה (לפי תאריך תשלום): {formatIls(row.received)}</p>
                         ) : null}
-                        <PlanForm key={`${row.plan.monthly}-${row.plan.startsMonth}-${row.plan.endsMonth}`} row={row} defaults={defaults} ready={ready} onDone={() => router.refresh()} />
+                        <PlanForm key={`${row.plan.monthly}-${row.plan.startsMonth}-${row.plan.endsMonth}-${row.plan.freeUntil}`} row={row} defaults={defaults} ready={ready} onDone={() => router.refresh()} />
                         <Payments row={row} ready={ready} onDone={() => router.refresh()} />
                         <PaymentForm row={row} month={month} defaults={defaults} ready={ready} onDone={() => router.refresh()} />
                       </td>
@@ -495,7 +503,7 @@ export default function BillingClient({
       </div>
 
       <p className="text-sm text-stone-500">
-        מנוי: ספק מאושר משלם {formatIls(defaults.monthly)} לחודש מ{monthLabel(defaults.billingStart)} או מחודש האישור, אלא אם נקבע לו אחרת (פותחים את השורה). פרסום: כל שבוע &quot;מוצר השבוע&quot; מאושר, במחיר שנקבע לו, נספר בחודש שבו השבוע מתחיל. תשלום שמכסה כמה חודשים מתחלק ביניהם שווה בשווה.
+        מנוי: ספק מאושר משלם {formatIls(defaults.monthly)} לחודש מ{monthLabel(defaults.billingStart)} או מחודש האישור, אלא אם נקבע לו אחרת, כולל תקופת חינם (פותחים את השורה). פרסום: כל שבוע &quot;מוצר השבוע&quot; מאושר, במחיר שנקבע לו, נספר בחודש שבו השבוע מתחיל. תשלום שמכסה כמה חודשים מתחלק ביניהם שווה בשווה.
       </p>
     </div>
   )

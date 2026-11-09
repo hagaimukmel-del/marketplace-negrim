@@ -83,7 +83,7 @@ export async function DELETE(request: NextRequest) {
 
 /**
  * The operator sets a supplier's subscription: monthly amount (0 = exempt),
- * first month and optional last month. `{ supplier_id, reset: true }` goes
+ * first month, optional last month and an optional free period. `{ supplier_id, reset: true }` goes
  * back to the default (list price from billing start or approval).
  */
 export async function PUT(request: NextRequest) {
@@ -101,6 +101,7 @@ export async function PUT(request: NextRequest) {
         monthly_excl_vat: plan.monthly,
         starts_month: monthToDate(plan.startsMonth),
         ends_month: plan.endsMonth ? monthToDate(plan.endsMonth) : null,
+        free_until_month: plan.freeUntil ? monthToDate(plan.freeUntil) : null,
         note: plan.note,
         updated_at: new Date().toISOString(),
       })
@@ -112,7 +113,7 @@ export async function PUT(request: NextRequest) {
   await logAdminAction({
     action: plan ? 'set_supplier_plan' : 'reset_supplier_plan',
     supplierId,
-    details: plan ? { monthly_excl_vat: plan.monthly, starts_month: plan.startsMonth, ends_month: plan.endsMonth } : {},
+    details: plan ? { monthly_excl_vat: plan.monthly, starts_month: plan.startsMonth, ends_month: plan.endsMonth, free_until_month: plan.freeUntil } : {},
   })
   return NextResponse.json({ ok: true })
 }

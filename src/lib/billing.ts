@@ -39,7 +39,7 @@ export async function loadBillingData(): Promise<BillingData> {
   const [{ data: supplierRows }, { data: promoRows }, billingResult, paymentResult] = await Promise.all([
     supabase.from('suppliers').select('id, company_name, status, decided_at, created_at').order('company_name'),
     supabase.from('promo_weeks').select('supplier_id, week_start, price_excl_vat').eq('status', 'approved').limit(5000),
-    supabase.from('supplier_billing').select('supplier_id, monthly_excl_vat, starts_month, ends_month, note'),
+    supabase.from('supplier_billing').select('supplier_id, monthly_excl_vat, starts_month, ends_month, free_until_month, note'),
     supabase
       .from('supplier_payments')
       .select('id, supplier_id, kind, amount_excl_vat, paid_on, covers_from, covers_months, installment_no, installments_total, method, note')
@@ -61,6 +61,7 @@ export async function loadBillingData(): Promise<BillingData> {
       monthly: Number(row.monthly_excl_vat),
       startsMonth: monthOf(row.starts_month),
       endsMonth: row.ends_month ? monthOf(row.ends_month) : null,
+      freeUntil: row.free_until_month ? monthOf(row.free_until_month) : null,
       note: row.note,
       custom: true,
     })

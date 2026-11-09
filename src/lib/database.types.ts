@@ -1696,6 +1696,7 @@ export type Database = {
       supplier_billing: {
         Row: {
           ends_month: string | null
+          free_until_month: string | null
           monthly_excl_vat: number
           note: string | null
           starts_month: string
@@ -1704,6 +1705,7 @@ export type Database = {
         }
         Insert: {
           ends_month?: string | null
+          free_until_month?: string | null
           monthly_excl_vat: number
           note?: string | null
           starts_month: string
@@ -1712,6 +1714,7 @@ export type Database = {
         }
         Update: {
           ends_month?: string | null
+          free_until_month?: string | null
           monthly_excl_vat?: number
           note?: string | null
           starts_month?: string
