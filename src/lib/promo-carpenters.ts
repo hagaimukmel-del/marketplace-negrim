@@ -2,7 +2,7 @@ import 'server-only'
 
 import { getSupabaseAdmin } from './supabase-admin'
 import { isTestName, siteUrl } from './email'
-import { processOutbox, queueEmails, type QueuedEmail } from './outbox'
+import { queueEmails, sendQueuedPaced, type QueuedEmail } from './outbox'
 import { loadCurrentPromo } from './promo'
 import { loadPromoDetails, type PromoDetails } from './promo-social'
 import { isSocialHour } from './promo-social-rules'
@@ -88,19 +88,6 @@ function mailFor(details: PromoDetails, unsubscribe: string) {
   }
 }
 
-/** Send what is queued, at the provider's pace, until the queue is empty or the time is up. */
-async function sendPaced(windowMs: number): Promise<number> {
-  const until = Date.now() + windowMs
-  let sent = 0
-  while (Date.now() < until) {
-    const result = await processOutbox({ limit: 10, paceMs: PROMO_SEND_PACE_MS })
-    sent += result.sent
-    if (result.claimed === 0) break
-    await new Promise((resolve) => setTimeout(resolve, PROMO_SEND_PACE_MS))
-  }
-  return sent
-}
-
 /**
  * Queue and send this week's mail to the carpentries. `anyHour` lets the
  * operator run it outside Sunday 07:00; the once-per-booking claim holds
@@ -148,7 +135,7 @@ export async function runPromoCarpenters(now: Date = new Date(), { anyHour = fal
     return { queued: 0, reason: 'failed', key: claim }
   }
 
-  const sent = await sendPaced(SEND_WINDOW_MS)
+  const sent = await sendQueuedPaced(SEND_WINDOW_MS, PROMO_SEND_PACE_MS)
   return { queued, sent, key: claim }
 }
 

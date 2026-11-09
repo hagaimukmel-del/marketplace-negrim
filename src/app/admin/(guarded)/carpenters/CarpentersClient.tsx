@@ -21,6 +21,7 @@ import {
   X,
 } from 'lucide-react'
 import { telUrl } from '@/lib/phone'
+import AdminMailButton from '../AdminMailButton'
 import { daysLeft, purgeDate, RETENTION_MONTHS } from '@/lib/carpenter-deletion'
 
 export interface CarpenterRow {
@@ -209,6 +210,10 @@ function Row({
               {row.marketing_consent ? ' · מסכים לדיוור' : ''}
             </Detail>
           </dl>
+
+          <div className="mt-3">
+            <AdminMailButton side="carpenter" id={row.id} email={row.email} name={row.business_name} />
+          </div>
 
           <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-white p-2.5">
             <span dir="ltr" className="min-w-0 flex-1 truncate font-mono text-sm text-stone-500">

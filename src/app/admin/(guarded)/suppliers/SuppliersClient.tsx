@@ -20,6 +20,7 @@ import {
   X,
 } from 'lucide-react'
 import { telUrl } from '@/lib/phone'
+import AdminMailButton from '../AdminMailButton'
 import { formatIls } from '@/lib/vat'
 import SupplierForm, { EMPTY_SUPPLIER, type SupplierFields } from './SupplierForm'
 
@@ -319,6 +320,10 @@ function SupplierCard({
                 {row.email}
               </a>
             )}
+          </div>
+
+          <div className="mt-3">
+            <AdminMailButton side="supplier" id={row.id} email={row.email} name={row.company_name} />
           </div>
 
           {row.sells_note && (
