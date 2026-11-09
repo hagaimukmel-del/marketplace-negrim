@@ -245,7 +245,11 @@ export default function SupplierJoinPage() {
             <span className="text-base text-stone-800">
               קראתי ואני מסכים/ה ל
               <a href="/terms" target="_blank" rel="noreferrer" className="font-semibold text-emerald-800 underline">
-                תקנון ולתנאי השימוש לספקים
+                תקנון
+              </a>{' '}
+              ול
+              <a href="/terms/suppliers" target="_blank" rel="noreferrer" className="font-semibold text-emerald-800 underline">
+                נספח הספקים (המנוי השנתי)
               </a>{' '}
               <span className="text-red-600">*</span>
             </span>

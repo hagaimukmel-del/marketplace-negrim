@@ -87,3 +87,22 @@ export function bookableWeeks(now: Date = new Date()): string[] {
   const next = addDays(currentWeek(now), 7)
   return Array.from({ length: PROMO_BOOKING_WEEKS }, (_, i) => addDays(next, i * 7))
 }
+
+/**
+ * The last day a booked week can be cancelled: the Thursday before its Sunday
+ * (owner, 2026-11-09; supplier annex). After it the week is owed in full.
+ */
+export function cancelDeadline(weekStart: string): string {
+  return addDays(weekStart, -3)
+}
+
+/**
+ * Whether the supplier may still cancel a booking. A request not yet decided
+ * can always be withdrawn; an approved week until its cancelDeadline, in
+ * Israel's date.
+ */
+export function canCancelPromo(status: PromoStatus, weekStart: string, now: Date = new Date()): boolean {
+  if (status === 'requested') return true
+  if (status === 'approved') return israelToday(now) <= cancelDeadline(weekStart)
+  return false
+}

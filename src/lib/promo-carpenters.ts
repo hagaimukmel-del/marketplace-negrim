@@ -46,7 +46,7 @@ function secret(): string | null {
 }
 
 function contactEmail(): string {
-  return process.env.EMAIL_REPLY_TO || PROMO_REQUEST_EMAIL
+  return process.env.CONTACT_EMAIL || process.env.EMAIL_REPLY_TO || PROMO_REQUEST_EMAIL
 }
 
 export function unsubscribeUrl(carpenterId: string, key: string): string {

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isCronRequest } from '@/lib/cron-auth'
-import { processOutbox } from '@/lib/outbox'
+import { processOutbox, purgeOldOutbox } from '@/lib/outbox'
 import { runReminders, sendDailySummaries } from '@/lib/reminders'
 import { purgeExpiredCarpenters } from '@/lib/carpenter-deletion-server'
+import { purgeExpiredLoginCodes } from '@/lib/login-code'
 
 /**
  * GET /api/cron/outbox — the scheduled run of the email outbox (vercel.json).
@@ -16,12 +17,15 @@ import { purgeExpiredCarpenters } from '@/lib/carpenter-deletion-server'
  * summary (step 5) before draining the outbox, so they go out in this call.
  *
  * It also removes for good the carpentries the operator deleted more than
- * three months ago (lib/carpenter-deletion.ts).
+ * three months ago (lib/carpenter-deletion.ts), and login codes that expired
+ * more than a day ago, and copies of mails older than a year.
  */
 export async function GET(request: NextRequest) {
   if (!isCronRequest(request)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const purgedCarpenters = await purgeExpiredCarpenters()
+  const purgedLoginCodes = await purgeExpiredLoginCodes()
+  const purgedMails = await purgeOldOutbox()
   const reminders = await runReminders()
   const summaries = await sendDailySummaries()
 
@@ -34,5 +38,5 @@ export async function GET(request: NextRequest) {
     totals.failed += result.failed
     if (result.claimed === 0) break
   }
-  return NextResponse.json({ ok: true, ...totals, reminders, summaries, purgedCarpenters })
+  return NextResponse.json({ ok: true, ...totals, reminders, summaries, purgedCarpenters, purgedLoginCodes, purgedMails })
 }

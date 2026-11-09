@@ -174,3 +174,20 @@ export async function consumeLoginCode(ownerId: string, input: string, kind: Log
   const { data: used } = await store.use(row.id)
   return Boolean(used && used.length > 0)
 }
+
+/**
+ * Remove code rows that expired more than a day ago. A spent or expired code
+ * opens nothing, so keeping it only keeps data the privacy notice says is
+ * short-lived. Run daily from the outbox cron.
+ */
+export async function purgeExpiredLoginCodes(now: Date = new Date()): Promise<number> {
+  const supabase = getSupabaseAdmin()
+  const cutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+  let removed = 0
+  for (const table of ['login_codes', 'supplier_login_codes'] as const) {
+    const { count, error } = await supabase.from(table).delete({ count: 'exact' }).lt('expires_at', cutoff)
+    if (error) console.error(`[login-code] purge ${table} failed`, error.message)
+    else removed += count ?? 0
+  }
+  return removed
+}

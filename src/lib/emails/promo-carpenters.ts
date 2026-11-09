@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { emailLogo } from './brand'
+import { OPERATOR } from '../terms'
 
 /**
  * "מוצר השבוע" to the carpentries that agreed to offers by mail (owner,
@@ -60,6 +61,7 @@ export function promoCarpentersHtml(p: PromoCarpentersEmail): string {
       </div>
       <div style="text-align:center;color:#78716c;font-size:12px;padding-top:16px">
         קיבלתם את המייל כי הסכמתם לקבל מבצעים ועדכונים מנגרים B2B (nagarimb2b.com).<br>
+        השולח: ${escapeHtml(OPERATOR.name)}, נגרים B2B<br>
         <a href="${escapeHtml(p.unsubscribeUrl)}" style="color:#78716c;font-weight:bold">להסרה מרשימת התפוצה</a><br>
         אפשר גם להשיב למייל הזה עם המילה "הסר" · ${escapeHtml(p.contactEmail)}
       </div>
