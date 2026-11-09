@@ -11,6 +11,7 @@ carpenters, run campaigns and raffles, moderate the Metzion, read reports.
 | `/admin/login` → `/api/admin/login` | One shared passphrase (`ADMIN_PASSWORD` + `ADMIN_SECRET`), throttled (`admin_login_attempts`) |
 | `/admin` | Dashboard |
 | `/admin/promotions` | "מוצר השבוע" bookings: approve, reject with a note shown to the supplier, withdraw a coming week, results per week (T-024). Logged in `admin_actions` |
+| `/admin/billing` | Supplier billing per month: subscription and "מוצר השבוע" owed, paid (allocated over the months a payment covers), balance, running arrears and paid ahead. The operator records payments (installments too) and sets a supplier's plan (amount, first/last month, a free period, 0 = exempt). Billing itself happens outside the site. `lib/billing-rules.ts`, tables `supplier_billing`, `supplier_payments` (migration 20261109140000) |
 | `/admin/orders`, `/suppliers`, `/carpenters`, `/products`, `/categories` | Core management |
 | `/admin/carpenters` → filter "נמחקו" | Deleted carpentries, kept 3 months: restore in one click, or "מחק סופית" now. `lib/carpenter-deletion.ts` (rules), `lib/carpenter-deletion-server.ts` |
 | `/admin/campaigns`, `/api/admin/raffle` | Campaigns and raffle draws (area 9) |

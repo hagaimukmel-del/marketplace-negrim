@@ -57,6 +57,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: '/admin/categories', label: 'קטגוריות' },
     { href: '/admin/campaigns', label: 'קמפיינים' },
     { href: '/admin/promotions', label: 'מוצר השבוע', count: pendingPromos ?? 0 },
+    { href: '/admin/billing', label: 'חיובים' },
     { href: '/admin/suppliers', label: 'ספקים', count: pendingSuppliers ?? 0 },
     { href: '/admin/carpenters', label: 'נגריות' },
     { href: '/admin/metzion', label: 'מציאון', count: openReports ?? 0 },
