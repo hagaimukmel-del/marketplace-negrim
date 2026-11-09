@@ -6,7 +6,7 @@
  * next time they come in — "accepted the terms" means nothing once the terms
  * are different.
  */
-export const TERMS_VERSION = '2026-11-03'
+export const TERMS_VERSION = '2026-11-09'
 
 /**
  * Shown at the top of the terms page. 16.09: the Metzion section was added.
@@ -14,8 +14,11 @@ export const TERMS_VERSION = '2026-11-03'
  * messages, "מוצר השבוע", the work board, and the supplier subscription.
  * 03.11: suppliers on the Metzion, the supplier annual agreement (350 ₪ a
  * month for 12 months) and the "מוצר השבוע" price (95 ₪).
+ * 09.11: the terms review (T-038): the supplier annex (/terms/suppliers), the
+ * privacy notice rewritten with retention periods, account deletion, the
+ * operator in Hebrew. Merged before the lawyer's review (owner).
  */
-export const TERMS_UPDATED_LABEL = '3 בנובמבר 2026'
+export const TERMS_UPDATED_LABEL = '9 בנובמבר 2026'
 
 /**
  * Who runs the site, as the terms and the privacy notice name it (owner,
