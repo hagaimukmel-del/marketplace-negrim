@@ -3,6 +3,8 @@
   "crons": [
     { "path": "/api/cron/outbox", "schedule": "0 6 * * *" },
     { "path": "/api/cron/weekly-report", "schedule": "0 12 * * 4" },
-    { "path": "/api/cron/weekly-report", "schedule": "0 13 * * 4" }
+    { "path": "/api/cron/weekly-report", "schedule": "0 13 * * 4" },
+    { "path": "/api/cron/promo-social", "schedule": "0 4 * * 0" },
+    { "path": "/api/cron/promo-social", "schedule": "0 5 * * 0" }
   ]
 }
