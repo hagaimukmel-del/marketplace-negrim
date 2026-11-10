@@ -80,7 +80,7 @@ export default function HomeView({
   promoted?: PromotedSlot | null
   /** The work board is open: its card drops "בקרוב". */
   workOpen?: boolean
-  /** דרושים is open (JOBS_BOARD_OPEN); until then its card says בבנייה. */
+  /** דרושים is open (JOBS_BOARD_OPEN); until then its card says בהמשך. */
   jobsOpen?: boolean
 }) {
   const cart = useCart()
@@ -481,7 +481,7 @@ function Jobs({ open }: { open: boolean }) {
         <b className="block text-[15px]">דרושים</b>
         <span className="text-[13.5px] text-muted">משרות בנגריות ואצל ספקים</span>
       </span>
-      {!open && <span className="ms-auto shrink-0 rounded-full bg-brand px-2.5 py-0.5 text-xs font-extrabold text-navy">בבנייה</span>}
+      {!open && <span className="ms-auto shrink-0 rounded-full bg-brand px-2.5 py-0.5 text-xs font-extrabold text-navy">בהמשך</span>}
     </Link>
   )
 }

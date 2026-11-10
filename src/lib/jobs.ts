@@ -62,6 +62,13 @@ export function jobScopeName(key: string | null): string | null {
 
 export type DaysMode = 'weekdays' | 'dates' | 'free'
 
+/**
+ * What the poster agrees to before sending (owner, 2026-11-10): the request
+ * goes to a staffing company that works with the site, not to other carpentries.
+ */
+export const JOB_CONSENT_TEXT =
+  'אני מאשר/ת שפרטי הבקשה, כולל שם העסק והטלפון, יועברו לחברת כוח אדם שעובדת עם נגרים B2B, לצורך איתור עובדים. הבקשה לא תוצג לנגריות אחרות.'
+
 /** How long an ad stays on the board. */
 export const JOB_POST_DAYS = 30
 /** How far ahead a work date may be picked. */
@@ -86,6 +93,8 @@ export interface JobInput {
   scope?: unknown
   description?: unknown
   phone?: unknown
+  /** The poster agreed that the request goes to the staffing partner (JOB_CONSENT_TEXT). */
+  consent?: unknown
 }
 
 /** The checked row, in the table's column names. */
@@ -161,6 +170,8 @@ export function readJobInput(input: JobInput, now: Date): JobFields | string {
 
   const phone = nationalPhone(typeof input.phone === 'string' ? input.phone : null)
   if (!phone) return 'צריך מספר טלפון תקין לפניות'
+
+  if (input.consent !== true) return 'צריך לאשר את העברת הפרטים לחברת כוח האדם'
 
   return {
     business_name: businessName,

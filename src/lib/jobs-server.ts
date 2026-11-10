@@ -10,7 +10,7 @@ import type { DaysMode, JobCard, MyJob } from './jobs'
  */
 
 /**
- * Whether דרושים is open (owner, 2026-11-10: "under construction" until he says).
+ * Whether דרושים is open (owner, 2026-11-10: "בהמשך" until the staffing partner is signed).
  * Until JOBS_BOARD_OPEN=true is set on Vercel, carpentries and suppliers see a
  * coming-soon page and the API refuses them; the operator still sees and uses
  * the real board to check it.

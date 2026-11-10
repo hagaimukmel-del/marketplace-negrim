@@ -20,7 +20,7 @@ export default function SupplierNav({
   notifications,
   jobsOpen = false,
 }: {
-  /** דרושים is open (JOBS_BOARD_OPEN); until then its link says בבנייה. */
+  /** דרושים is open (JOBS_BOARD_OPEN); until then its link says בהמשך. */
   jobsOpen?: boolean
   company: string
   logo: string | null
@@ -85,7 +85,7 @@ export default function SupplierNav({
         >
           <Briefcase size={18} />
           <span className="hidden sm:inline">דרושים</span>
-          {!jobsOpen && <span className="hidden rounded-full bg-amber-100 px-1.5 text-[11px] font-bold text-amber-900 sm:inline">בבנייה</span>}
+          {!jobsOpen && <span className="hidden rounded-full bg-amber-100 px-1.5 text-[11px] font-bold text-amber-900 sm:inline">בהמשך</span>}
         </Link>
         <Link
           href="/supplier/messages"

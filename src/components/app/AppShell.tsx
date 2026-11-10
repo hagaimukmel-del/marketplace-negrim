@@ -76,7 +76,7 @@ export default function AppShell({
   initial: string
   /** The work board is open (WORK_BOARD_OPEN): drops "בקרוב" from its link. */
   workOpen?: boolean
-  /** דרושים is open (JOBS_BOARD_OPEN): drops "בבנייה" from its link. */
+  /** דרושים is open (JOBS_BOARD_OPEN): drops "בהמשך" from its link. */
   jobsOpen?: boolean
   children: React.ReactNode
 }) {
@@ -148,7 +148,7 @@ export default function AppShell({
           )}
           <SideLink href="/app/metzion" label="מציאון" active={is('/app/metzion')} icon={<Recycle size={19} />} />
           <SideLink href={signedIn ? '/app/account' : '/join'} label={signedIn ? 'הנגרייה שלי' : 'כניסה / הרשמה'} active={is('/app/account')} icon={<UserRound size={19} />} />
-          <SideLink href="/app/jobs" label="דרושים" active={is('/app/jobs')} icon={<Briefcase size={19} />} tag={jobsOpen ? undefined : 'בבנייה'} />
+          <SideLink href="/app/jobs" label="דרושים" active={is('/app/jobs')} icon={<Briefcase size={19} />} tag={jobsOpen ? undefined : 'בהמשך'} />
         </nav>
       </aside>
 

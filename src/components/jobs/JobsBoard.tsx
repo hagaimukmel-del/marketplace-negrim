@@ -62,7 +62,7 @@ export default function JobsBoard({
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4 pb-6">
       {preview && (
         <p className="rounded-xl bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-900">
-          תצוגת מנהל: דרושים עוד בבנייה וסגור לנגריות ולספקים (JOBS_BOARD_OPEN).
+          תצוגת מנהל: דרושים עוד סגור (בהמשך) לנגריות ולספקים (JOBS_BOARD_OPEN).
         </p>
       )}
       <PageHeader
