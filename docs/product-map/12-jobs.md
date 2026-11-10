@@ -31,9 +31,18 @@ One owner per row, a carpenter or a supplier (`job_posts_one_owner`).
 - Ads of a blocked carpenter or an unapproved supplier disappear from the board.
 
 ## Status
-Built; `job_posts` applied on staging and production (2026-11-10). **Closed as "בבנייה"** (owner, 2026-11-10):
+Built; `job_posts` applied on staging and production (2026-11-10). **Closed as "בהמשך"** (owner, 2026-11-10):
 until `JOBS_BOARD_OPEN=true` is set on Vercel, carpentries and suppliers see a coming-soon page,
-the nav links say בבנייה, and `/api/jobs*` answer 403. The operator still sees and uses the board.
+the nav links say בהמשך, and `/api/jobs*` answer 403. The operator still sees and uses the board.
 
 ## Open tasks
 None yet. Ideas not built: reporting an ad, admin moderation, contact through site messages.
+
+## Planned direction (owner, 2026-11-10)
+Carpentries must not poach each other's workers, so the public board goes away: a carpentry's
+request for a worker is not shown to other carpentries. With the carpentry's consent
+(`JOB_CONSENT_TEXT`, required by the form and `readJobInput`), it goes to a staffing company that
+works with the site. No company and no agreement yet. The coming-soon page already explains this
+flow. Still to build once a company is signed: send each request to it by email, a "my requests"
+status (sent / in progress / filled), and dropping the board and the phone reveal. Consent is
+checked but not yet stored in a column.

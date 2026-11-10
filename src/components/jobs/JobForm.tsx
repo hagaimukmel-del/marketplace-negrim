@@ -11,6 +11,7 @@ import {
   JOB_POST_DAYS,
   JOB_REGIONS,
   JOB_SCOPES,
+  JOB_CONSENT_TEXT,
   WEEKDAYS,
   daysLabel,
   type DaysMode,
@@ -163,6 +164,7 @@ export default function JobForm({
   const [scope, setScope] = useState('')
   const [description, setDescription] = useState('')
   const [phone, setPhone] = useState(initial.phone)
+  const [consent, setConsent] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -197,7 +199,7 @@ export default function JobForm({
       const response = await fetch('/api/jobs', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ side, businessName, region, location, role, salary, daysMode, weekdays, dates, daysText, hours, scope, description, phone }),
+        body: JSON.stringify({ side, businessName, region, location, role, salary, daysMode, weekdays, dates, daysText, hours, scope, description, phone, consent }),
       })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data.error || 'הפרסום נכשל')
@@ -386,6 +388,14 @@ export default function JobForm({
             </label>
           </section>
 
+          <label className="flex items-start gap-2.5 rounded-xl border border-hair bg-white p-3.5 text-[14.5px] text-ink">
+            <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-[#1E2A3B]" />
+            <span>
+              {JOB_CONSENT_TEXT}
+              <Req />
+            </span>
+          </label>
+
           <p className="text-[13.5px] text-muted">המודעה יורדת מהלוח אחרי {JOB_POST_DAYS} יום. אפשר לסגור אותה קודם ב&quot;המודעות שלי&quot;.</p>
 
           {error && (
@@ -394,7 +404,7 @@ export default function JobForm({
             </p>
           )}
 
-          <button type="submit" disabled={busy} className="h-[52px] rounded-[11px] bg-brand text-lg font-extrabold text-navy hover:bg-brand-hover disabled:opacity-50">
+          <button type="submit" disabled={busy || !consent} className="h-[52px] rounded-[11px] bg-brand text-lg font-extrabold text-navy hover:bg-brand-hover disabled:opacity-50">
             {busy ? 'מפרסם…' : 'פרסום המודעה'}
           </button>
         </form>

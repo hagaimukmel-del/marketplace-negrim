@@ -15,6 +15,7 @@ const base: JobInput = {
   scope: 'full',
   description: 'ניסיון במטבחים',
   phone: '050-123-4567',
+  consent: true,
 }
 
 describe('readJobInput', () => {
@@ -41,6 +42,8 @@ describe('readJobInput', () => {
     expect(readJobInput({ ...base, weekdays: [] }, NOW)).toBe('צריך לסמן לפחות יום עבודה אחד')
     expect(readJobInput({ ...base, phone: '123' }, NOW)).toBe('צריך מספר טלפון תקין לפניות')
     expect(readJobInput({ ...base, scope: 'forever' }, NOW)).toBe('היקף משרה לא מוכר')
+    expect(readJobInput({ ...base, consent: undefined }, NOW)).toBe('צריך לאשר את העברת הפרטים לחברת כוח האדם')
+    expect(readJobInput({ ...base, consent: 'true' }, NOW)).toBe('צריך לאשר את העברת הפרטים לחברת כוח האדם')
   })
 
   it('keeps only dates from today up to 90 days ahead', () => {
