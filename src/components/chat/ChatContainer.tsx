@@ -400,7 +400,7 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
               <AgentAvatar size={88} />
               <p className="mt-3 font-bold text-slate-900">שלום, אני פקיד הקבלה של נגרים B2B</p>
               <p className="mt-1 max-w-[300px] text-sm text-slate-600">
-                אצלי מחפשים מוצר ומכינים עגלה, בודקים הזמנה או הצעת מחיר, ושואלים על כל דבר באתר. גם עם שגיאות כתיב.
+                אצלי מחפשים מוצר ומכינים עגלה, בודקים הזמנה או הצעת מחיר, ושואלים על כל דבר באתר.
               </p>
             </div>
           ) : (
