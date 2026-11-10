@@ -10,6 +10,7 @@ import { splitItems, supplierPreference } from '@/lib/agent-request'
 import { statusQuestion } from '@/lib/agent-shortcuts'
 import { answerStatus } from '@/lib/agent-status'
 import { cartQuantity, formatUnitPrice, parseQuantity, type WrittenQuantity } from '@/lib/agent-quantity'
+import { siteTopicMatch, type SiteTopic } from '@/lib/site-knowledge'
 
 /**
  * Procurement agent for carpenters. Keyword matching, not an LLM (T-007).
@@ -18,9 +19,11 @@ import { cartQuantity, formatUnitPrice, parseQuantity, type WrittenQuantity } fr
  * 2. Search the catalogue with the catalogue's own search (lib/catalog-search).
  * 3. Answer in Hebrew with the offers the catalogue would show this carpentry,
  *    and buttons that carry the product, so the chat itself stays stateless.
+ * A question about the site itself ("מי מוציא חשבונית?", "דרושים") is
+ * answered from lib/site-knowledge when no product matches it fully.
  */
 
-type ConversationState = 'results_single' | 'results_multiple' | 'results_order' | 'status' | 'no_results' | 'done'
+type ConversationState = 'results_single' | 'results_multiple' | 'results_order' | 'status' | 'site' | 'no_results' | 'done'
 
 /**
  * A cart line, built server-side from the offer the carpenter was shown.
@@ -76,6 +79,8 @@ interface MatchedOffer {
   packLabel: string | null
   packQty: number | null
   minOrderQty: number
+  /** From this many base units the carpenter may ask for a special price; null when the offer has none. */
+  specialMinQty: number | null
   leadTimeDays: number | null
   /** False when the supplier does not deliver to this carpentry's region. */
   delivers: boolean | null
@@ -102,6 +107,7 @@ function offerOf(offer: AppOffer): MatchedOffer {
     packLabel: offer.packLabel,
     packQty: offer.packQty,
     minOrderQty: offer.minOrderQty,
+    specialMinQty: offer.specialMinQty,
     leadTimeDays: offer.leadDays,
     delivers: offer.delivers,
   }
@@ -252,7 +258,16 @@ function quantityLine(product: MatchedProduct, written: WrittenQuantity | null):
   const { quantity, ignored } = cartQuantity(written, { baseUnit: product.baseUnit, packQty: offer.packQty, minOrderQty: offer.minOrderQty })
   if (ignored) return `\n\nאת הכמות "${written.text}" לא הצלחתי להמיר: המוצר נמכר לפי ${unit}. לעגלה ייכנסו ${quantity} ${unit}, ואפשר לשנות שם.`
   const packs = offer.packQty && offer.packQty > 1 ? ` (${quantity / offer.packQty} × ${offer.packLabel ?? 'אריזה'} של ${offer.packQty} ${unit})` : ''
-  return `\n\nכמות לעגלה: ${quantity} ${unit}${packs}`
+  const special = specialPriceFor(product, written) ? `\nבכמות כזו אפשר לבקש מהספק מחיר מיוחד.` : ''
+  return `\n\nכמות לעגלה: ${quantity} ${unit}${packs}${special}`
+}
+
+/** The written quantity reaches the lead offer's special-price threshold (stage 1 RFQ rules). */
+function specialPriceFor(product: MatchedProduct, written: WrittenQuantity | null): boolean {
+  const offer = product.offers[0]
+  if (!written || !offer?.specialMinQty || offer.priceExclVat == null) return false
+  const { quantity, ignored } = cartQuantity(written, { baseUnit: product.baseUnit, packQty: offer.packQty, minOrderQty: offer.minOrderQty })
+  return !ignored && quantity >= offer.specialMinQty
 }
 
 function generateResponse(
@@ -261,7 +276,7 @@ function generateResponse(
   { total, partial, written }: { total: number; partial: boolean; written: WrittenQuantity | null }
 ): string {
   if (matches.length === 0) {
-    return `לא מצאתי בקטלוג מוצר שמתאים ל"${message.trim()}".\nנסה מילה אחרת, שם יצרן או מק״ט, או עיין בקטלוג לפי קטגוריות.`
+    return `לא מצאתי בקטלוג מוצר שמתאים ל"${message.trim()}".\nנסה מילה אחרת, שם יצרן או מק״ט, או עיין בקטלוג לפי קטגוריות.\n\nאפשר לשאול אותי גם על הזמנות והצעות מחיר, חשבוניות ותשלום, המציאון, דרושים, נגרים עובדים ביחד או כל דבר אחר באתר.`
   }
 
   if (matches.length === 1) {
@@ -286,6 +301,7 @@ function generateResponse(
         const lead = formatLeadTime(offer.leadTimeDays)
         if (lead) response += ` • אספקה: ${lead}`
         if (offer.delivers === false) response += ' • לא מגיע לאזור שלך'
+        if (offer.specialMinQty && offer.priceExclVat != null) response += ` • מחיר מיוחד אפשרי מ-${offer.specialMinQty} ${unit}`
       }
     } else {
       response += '\n\nאין כרגע ספק שמציע את המוצר הזה.'
@@ -362,6 +378,17 @@ function orderLinesResponse(lines: OrderLine[], preferredName: string | null, pr
   return { success: true, message, state: 'results_order', matchCount: found.length, actions }
 }
 
+/** A question about the site, answered from lib/site-knowledge with its links as buttons. */
+function siteResponse(topic: SiteTopic): ProcurementResponse {
+  return {
+    success: true,
+    message: topic.answer,
+    state: 'site',
+    matchCount: 0,
+    actions: topic.links.map((link) => ({ label: link.label, action: 'open-page', value: link.href })),
+  }
+}
+
 /**
  * Products from the carpenter's recent orders, newest first, for
  * "כמו בפעם שעברה". Reads only this carpenter's orders.
@@ -403,12 +430,23 @@ export async function processProcurementRequest(request: ProcurementRequest): Pr
     const preferredId = preference
       ? live.flatMap((product) => product.offers).find((offer) => offer.supplierName === preference.supplierName)?.supplierId ?? null
       : null
-    const text = preference?.rest || request.userMessage
 
     // One product, matched on every word, is the common case. Only when the
     // whole sentence matches nothing fully is it read as several products.
+    let text = preference?.rest || request.userMessage
     const whole = searchProducts(live, text)
-    if (whole.partial || whole.products.length === 0) {
+    let fullMatch = !whole.partial && whole.products.length > 0
+    // A question about the site ("מי מוציא חשבונית?"), unless what is left
+    // once the site words are taken out names a product ("הצעת מחיר לדבק PUR")
+    const site = fullMatch ? null : siteTopicMatch(text)
+    const topic = site?.topic ?? null
+    if (site) {
+      const rest = site.rest ? searchProducts(live, site.rest) : null
+      if (!rest || rest.partial || rest.products.length === 0) return siteResponse(site.topic)
+      text = site.rest
+      fullMatch = true
+    }
+    if (!fullMatch) {
       const lines = findOrderLines(live, text, preferredId)
       if (lines) return orderLinesResponse(lines, preference?.supplierName ?? null, preferredId)
     }
@@ -446,10 +484,16 @@ export async function processProcurementRequest(request: ProcurementRequest): Pr
         actions.push({ label: 'בקש הצעת מחיר', action: 'open-page', value: `/app/product/${product.productId}?quote=1` })
       } else if (item) {
         actions.push({ label: '➕ הוסף לעגלה', action: 'add-to-cart', value: product.productId, item })
+        if (specialPriceFor(product, written)) {
+          actions.push({ label: 'בקש מחיר מיוחד', action: 'open-page', value: `/app/product/${product.productId}?quote=1` })
+        }
       }
       actions.push({ label: 'לדף המוצר', action: 'open-page', value: `/app/product/${product.productId}` })
       if (item) actions.push({ label: 'שאלה לספק', action: 'contact-supplier', value: item.supplier_id, item })
     }
+
+    // Words that name a product and a site topic ("הצעת מחיר לדבק PUR"): the product answers, the topic's page is a button
+    if (topic?.links[0] && matches.length > 0) actions.push({ label: topic.links[0].label, action: 'open-page', value: topic.links[0].href })
 
     // The same words in the search bar show the full list
     if (matches.length === 0) {

@@ -1,5 +1,5 @@
 # 3 · Agent chat (search assistant)
-Verified: 2026-10-18
+Verified: 2026-11-10
 
 ## Purpose
 A Hebrew chat inside the carpenter app: the carpenter writes what they need, the assistant finds
@@ -57,6 +57,24 @@ development. The browser speech recognition behind it is kept and comes back wit
 Tests: `lib/agent-chat.test.ts`, `lib/procurement-agent.test.ts`. Anything else, "הזמנה של דבק" included, is a
 search. Every search logs one `agent.search` line (carpenter id, message, state, match count) for
 the Vercel logs; messages are cut at 300 characters.
+
+**Site questions, typos and the receptionist (2026-11-10, owner: "ממש פקיד הקבלה").**
+`lib/site-knowledge.ts` holds what the site offers (invoices and payment, free for carpentries,
+ordering, quotes and special price, מוצר השבוע, המציאון, נגרים עובדים ביחד, דרושים, messages,
+delivery region, sign-in, documents, joining as a supplier, terms, contact, voice). A message that
+matches a topic (typos forgiven) and no product fully gets the topic's answer and its pages as
+buttons; when the rest of the message names a product ("הצעת מחיר לדבק PUR") the product answers
+and the topic's page is a button. A message that splits into found products stays an order sentence.
+`searchProducts()` forgives typos too: a word of 4+ letters found nowhere also matches catalogue
+words one edit away (two from 7 letters); model numbers and short words stay exact. The chat opens
+new pages by name (הצעות מחיר, דרושים, נגרים עובדים ביחד, הודעות, התראות, תקנון, בית). With a
+written quantity at the offer's special-price threshold, the answer says a special price can be
+asked for and adds "בקש מחיר מיוחד". "לא מצאתי" lists what else can be asked.
+The agent has a face: a wooden figure with a headset (`components/chat/AgentAvatar.tsx`) on the
+phone bubble, the desktop pill, the sidebar, the search-bar button, the chat header and each
+answer. The greeting introduces it as פקיד הקבלה with four starter questions.
+**Keep it true:** a feature that changes what carpenters can do updates `lib/site-knowledge.ts`
+in the same commit.
 
 ## Data
 `products`, `supplier_offers`, `product_specifications`, `product_documents`,

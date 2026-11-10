@@ -2,11 +2,12 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Bell, Briefcase, ClipboardList, FileText, Handshake, Home, LayoutGrid, MessageSquare, Recycle, Search, ShoppingBag, Sparkles, UserRound } from 'lucide-react'
+import { Bell, Briefcase, ClipboardList, FileText, Handshake, Home, LayoutGrid, MessageSquare, Recycle, Search, ShoppingBag, UserRound } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import HomeScreenLaunch from './HomeScreenLaunch'
 import { LogoMark } from '@/components/brand/Logo'
 import { ChatContainer } from '@/components/chat/ChatContainer'
+import { AgentAvatar } from '@/components/chat/AgentAvatar'
 import { OpenAgentContext } from '@/components/chat/agent-context'
 import { useChat } from '@/hooks/useChat'
 import { getCarpenterToken } from '@/lib/carpenter-session'
@@ -133,7 +134,7 @@ export default function AppShell({
             aria-pressed={isOpen}
             className={`flex items-center gap-2.5 rounded-[10px] px-2.5 py-2 text-start text-[15px] ${isOpen ? 'bg-white/10 font-bold text-white' : 'font-medium text-slate-300 hover:bg-white/5'}`}
           >
-            <Sparkles size={19} />
+            <AgentAvatar size={22} />
             הסוכן
           </button>
           <SideLink href="/app/orders" label="הזמנות" active={is('/app/orders')} icon={<ClipboardList size={19} />} count={attention} />
@@ -197,9 +198,9 @@ export default function AppShell({
           <button
             type="button"
             onClick={() => openAgent()}
-            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-[11px] border-[1.5px] border-purple-200 bg-white px-3.5 text-[15px] font-bold text-purple-700 hover:bg-purple-50"
+            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-[11px] border-[1.5px] border-hair bg-white pe-3.5 ps-1.5 text-[15px] font-bold text-navy hover:bg-warm"
           >
-            <Sparkles size={18} />
+            <AgentAvatar size={26} />
             שאל את הסוכן
           </button>
           <Link
@@ -253,13 +254,10 @@ export default function AppShell({
       {!cartActive && (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-24 start-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-blue-600 text-white shadow-[0_8px_24px_rgba(88,28,135,.4)] hover:shadow-[0_12px_32px_rgba(88,28,135,.5)] transition-shadow active:scale-95 md:hidden"
+        className="fixed bottom-24 start-4 z-30 flex h-16 w-16 items-center justify-center rounded-full border-[3px] border-white bg-brand-soft shadow-[0_8px_24px_rgba(30,42,59,.35)] transition-shadow hover:shadow-[0_12px_32px_rgba(30,42,59,.45)] active:scale-95 md:hidden"
         aria-label="הסוכן של נגרים B2B"
       >
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-          <circle cx="11" cy="11" r="8" />
-          <path d="m21 21-4.35-4.35" />
-        </svg>
+        <AgentAvatar size={58} />
       </button>
       )}
 
@@ -268,9 +266,9 @@ export default function AppShell({
         <button
           type="button"
           onClick={() => openAgent()}
-          className="fixed bottom-6 end-6 z-30 hidden h-14 items-center gap-2.5 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 pe-6 ps-5 text-[16px] font-bold text-white shadow-[0_8px_24px_rgba(88,28,135,.4)] transition-shadow hover:shadow-[0_12px_32px_rgba(88,28,135,.5)] active:scale-95 md:flex"
+          className="fixed bottom-6 end-6 z-30 hidden h-16 items-center gap-3 rounded-full bg-navy pe-6 ps-1.5 text-[16px] font-bold text-white shadow-[0_8px_24px_rgba(30,42,59,.35)] transition-shadow hover:shadow-[0_12px_32px_rgba(30,42,59,.45)] active:scale-95 md:flex"
         >
-          <Sparkles size={22} />
+          <AgentAvatar size={52} />
           שאל את הסוכן
         </button>
       )}
