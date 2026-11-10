@@ -97,6 +97,46 @@ function tokensOf(query: string): QueryToken[] {
     .map((word) => ({ variants: variantsOf(word), required: !OPTIONAL_WORDS.has(word) && !/^\d+(\.\d+)?$/.test(word) }))
 }
 
+/** Edit distance, stopping early once it passes cap (then returns cap + 1). */
+export function editDistance(a: string, b: string, cap: number): number {
+  if (Math.abs(a.length - b.length) > cap) return cap + 1
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i)
+  for (let i = 1; i <= a.length; i++) {
+    const row = [i]
+    let best = i
+    for (let j = 1; j <= b.length; j++) {
+      row[j] = Math.min(prev[j] + 1, row[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1))
+      best = Math.min(best, row[j])
+    }
+    if (best > cap) return cap + 1
+    prev = row
+  }
+  return prev[b.length]
+}
+
+/** Typos forgiven in a word: none under 4 letters, one up to 6, two from 7. */
+export function typoAllowance(word: string): number {
+  return word.length >= 7 ? 2 : word.length >= 4 ? 1 : 0
+}
+
+/**
+ * A typed word that appears nowhere ("טיטבנד" for "טיטבונד", "פורמיקה" for
+ * "פורמייקה") also finds the catalogue words a typo or two away. Only words
+ * with letters and no digits, so model numbers stay exact.
+ */
+function addTypoVariants(tokens: QueryToken[], vocabulary: Set<string>, haystack: string) {
+  for (const token of tokens) {
+    if (token.variants.some((variant) => haystack.includes(variant))) continue
+    const near = new Set<string>()
+    for (const form of token.variants) {
+      const cap = typoAllowance(form)
+      if (cap === 0 || /\d/.test(form)) continue
+      for (const word of vocabulary) if (editDistance(form, word, cap) <= cap) near.add(word)
+    }
+    token.variants.push(...near)
+  }
+}
+
 const FIELD_WEIGHTS = { name: 3, mpn: 3, brand: 2, supplier: 1, attributes: 1 } as const
 
 export interface SearchResult {
@@ -119,14 +159,19 @@ export function searchProducts(products: AppProduct[], query: string): SearchRes
   const required = tokens.filter((token) => token.required).length
   const exactMpn = normalize(query).replace(/\s+/g, '')
 
-  const scored = products.map((product) => {
-    const fields: [keyof typeof FIELD_WEIGHTS, string][] = [
-      ['name', normalize(product.name)],
-      ['mpn', normalize(product.mpn ?? '')],
-      ['brand', normalize(product.brand ?? '')],
-      ['supplier', normalize(product.offers.map((offer) => offer.supplierName).join(' '))],
-      ['attributes', normalize(product.attributes.map(([, value]) => value).join(' '))],
-    ]
+  const fieldsOf = products.map((product): [keyof typeof FIELD_WEIGHTS, string][] => [
+    ['name', normalize(product.name)],
+    ['mpn', normalize(product.mpn ?? '')],
+    ['brand', normalize(product.brand ?? '')],
+    ['supplier', normalize(product.offers.map((offer) => offer.supplierName).join(' '))],
+    ['attributes', normalize(product.attributes.map(([, value]) => value).join(' '))],
+  ])
+  const haystack = fieldsOf.map((fields) => fields.map(([, text]) => text).join(' ')).join(' ')
+  const vocabulary = new Set(haystack.split(' ').filter((word) => word.length >= 3 && !/\d/.test(word)))
+  addTypoVariants(tokens, vocabulary, haystack)
+
+  const scored = products.map((product, index) => {
+    const fields = fieldsOf[index]
     let score = 0
     let matched = 0
     for (const token of tokens) {

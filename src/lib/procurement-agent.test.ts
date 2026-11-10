@@ -50,6 +50,7 @@ const CATALOGUE: AppProduct[] = [
   product('hinge', 'ציר בלום קליפ טופ', 'unit', [offer('גלעד', 9.5, 10, { suggested: true })]),
   product('hinge2', 'ציר בלום 110 מעלות', 'unit', [offer('גלעד', 11, 10, { suggested: true })]),
   product('acrylic', 'סיליקון אקרילי לבן', 'unit', [offer('גלעד', null, 12, { suggested: true })]),
+  product('thinner', 'מדלל לכה פוליאוריתן', 'liter', [offer('גלעד', 30, 5, { suggested: true, specialMinQty: 100 })]),
 ]
 
 vi.mock('@/lib/app/catalog-server', () => ({ loadProducts: async () => CATALOGUE }))
@@ -156,5 +157,46 @@ describe('status questions', () => {
     expect(answer.message).toContain('יש לך הצעה אחת שנענתה')
     expect(answer.message).toContain('₪21.50 לק״ג לפני מע״מ · בתוקף עד 14.11.2026')
     expect(answer.message).toContain('מחכה לתשובת הספק')
+  })
+})
+
+describe('site questions and typos', () => {
+  it('answers a question about the site from the site knowledge', async () => {
+    const answer = await ask('מי שולח לי חשבונית?')
+    expect(answer.state).toBe('site')
+    expect(answer.message).toContain('הספק')
+    expect(answer.actions.some((action) => action.value === '/app/orders')).toBe(true)
+  })
+
+  it('understands a site question with a typo', async () => {
+    const answer = await ask('איפה המציאן')
+    expect(answer.state).toBe('site')
+    expect(answer.actions.some((action) => action.value === '/app/metzion')).toBe(true)
+  })
+
+  it('finds a product written with a typo', async () => {
+    const answer = await ask('מדדל לכה')
+    expect(answer.state).toBe('results_single')
+    expect(answer.message).toContain('מדלל לכה פוליאוריתן')
+  })
+
+  it('a product word wins over a site word, and the topic page stays a button', async () => {
+    const answer = await ask('הצעת מחיר דבק PUR')
+    expect(answer.state).toBe('results_single')
+    expect(answer.actions.some((action) => action.value === '/app/quotes')).toBe(true)
+  })
+
+  it('offers a special price when the written quantity reaches the threshold', async () => {
+    const answer = await ask('מדלל לכה 100 ליטר')
+    expect(answer.message).toContain('מחיר מיוחד')
+    expect(answer.actions.some((action) => action.label === 'בקש מחיר מיוחד')).toBe(true)
+    const small = await ask('מדלל לכה 10 ליטר')
+    expect(small.actions.some((action) => action.label === 'בקש מחיר מיוחד')).toBe(false)
+  })
+
+  it('says what else it can help with when nothing is found', async () => {
+    const answer = await ask('מסור עגול')
+    expect(answer.state).toBe('no_results')
+    expect(answer.message).toContain('דרושים')
   })
 })

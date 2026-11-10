@@ -14,6 +14,13 @@ describe('pageFor', () => {
     expect(pageFor('פתח את הקטלוג')).toBe('/app/catalog')
     expect(pageFor('עבור לפרופיל')).toBe('/app/account')
     expect(pageFor('הזמנות')).toBe('/app/orders')
+    expect(pageFor('הצעות מחיר')).toBe('/app/quotes')
+    expect(pageFor('קח אותי לדרושים')).toBe('/app/jobs')
+    expect(pageFor('נגרים עובדים ביחד')).toBe('/app/work')
+    expect(pageFor('הודעות')).toBe('/app/messages')
+    expect(pageFor('התראות')).toBe('/app/notifications')
+    expect(pageFor('תקנון')).toBe('/terms')
+    expect(pageFor('בית')).toBe('/app')
   })
 
   it('leaves a search with a page word in it to the search', () => {
@@ -108,6 +115,20 @@ describe('search with a quantity', () => {
     expect(partial).toBe(false)
     expect(products.map((p) => p.id)).toEqual(['a'])
   })
+
+  it('forgives a typo in a word the catalogue does not have', () => {
+    const catalogue = [product('a', 'פורמייקה לבנה מבריקה'), product('b', 'מדלל לכה'), product('c', 'דבק טיטבונד 3')]
+    expect(searchProducts(catalogue, 'פורמיקה').products.map((p) => p.id)).toEqual(['a'])
+    expect(searchProducts(catalogue, 'מדדל').products.map((p) => p.id)).toEqual(['b'])
+    expect(searchProducts(catalogue, 'טיטבנד').products.map((p) => p.id)).toEqual(['c'])
+    expect(searchProducts(catalogue, 'מדלל').partial).toBe(false)
+  })
+
+  it('keeps short words and model numbers exact', () => {
+    const catalogue = [product('a', 'דבק PUR 501'), product('b', 'ציר 110')]
+    expect(searchProducts(catalogue, 'דבר').products).toEqual([])
+    expect(searchProducts(catalogue, '502').products).toEqual([])
+  })
 })
 
 describe('splitItems', () => {
@@ -160,6 +181,7 @@ describe('statusQuestion', () => {
   it('reads a question about quotes or an order number', () => {
     expect(statusQuestion('מה מצב ההצעות שלי?')).toEqual({ kind: 'quotes' })
     expect(statusQuestion('הצעות המחיר שלי')).toEqual({ kind: 'quotes' })
+    expect(statusQuestion('הצעות מחיר שלי')).toEqual({ kind: 'quotes' })
     expect(statusQuestion('ההצעה נענתה?')).toEqual({ kind: 'quotes' })
     expect(statusQuestion('הזמנה 1048 אושרה?')).toEqual({ kind: 'order', number: 1048 })
     expect(statusQuestion('מה עם הזמנה #1050')).toEqual({ kind: 'order', number: 1050 })

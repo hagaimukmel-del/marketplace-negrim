@@ -10,6 +10,10 @@ import { STATUS_LABEL, type OrderStatus } from '@/lib/app/orders'
 import { ORDER_HISTORY, PREVIOUS_PRODUCTS, pageFor } from '@/lib/agent-shortcuts'
 import { refineQuery } from '@/lib/agent-request'
 import { formatUnitPrice } from '@/lib/agent-quantity'
+import { AgentAvatar } from './AgentAvatar'
+
+/** Shown under the greeting, so a carpenter sees what can be asked besides products. */
+const STARTERS = ['דבק PUR 20 ק״ג', 'מה מצב ההצעות שלי', 'מי מוציא את החשבונית?', 'מה יש באתר חוץ מהקטלוג?']
 
 /**
  * Voice ordering is in development (owner, 2026-10-25): the agent is text
@@ -375,7 +379,13 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-          <h2 className="font-bold text-slate-900">הסוכן של נגרים B2B</h2>
+          <div className="flex items-center gap-2.5">
+            <AgentAvatar size={40} />
+            <div>
+              <h2 className="font-bold leading-tight text-slate-900">הסוכן של נגרים B2B</h2>
+              <p className="text-xs text-slate-500">פקיד הקבלה של האתר</p>
+            </div>
+          </div>
           <button
             onClick={onClose}
             aria-label="סגור"
@@ -388,8 +398,24 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
           {messages.length === 0 ? (
-            <div className="text-center text-slate-500 pt-8">
-              <p className="text-sm">{'שלום! מה אתה מחפש היום? אפשר לכתוב גם כמות, למשל "דבק PUR 20 ק״ג".'}</p>
+            <div className="flex flex-col items-center pt-6 text-center">
+              <AgentAvatar size={88} />
+              <p className="mt-3 font-bold text-slate-900">שלום, אני פקיד הקבלה של נגרים B2B</p>
+              <p className="mt-1 max-w-[300px] text-sm text-slate-600">
+                אצלי מחפשים מוצר ומכינים עגלה, בודקים הזמנה או הצעת מחיר, ושואלים על כל דבר באתר. גם עם שגיאות כתיב.
+              </p>
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                {STARTERS.map((starter) => (
+                  <button
+                    key={starter}
+                    type="button"
+                    onClick={() => void handleSend(starter)}
+                    className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+                  >
+                    {starter}
+                  </button>
+                ))}
+              </div>
             </div>
           ) : (
             messages.map((msg) => (
@@ -417,7 +443,7 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="דבק, צבע, כלים..."
+              placeholder="מוצר, הזמנה או שאלה על האתר"
               className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={isLoading}
             />

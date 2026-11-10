@@ -1,5 +1,6 @@
 'use client'
 
+import { AgentAvatar } from './AgentAvatar'
 import { Loader } from 'lucide-react'
 import type { ActionButton } from '@/lib/procurement-agent'
 
@@ -48,6 +49,7 @@ export function ChatMessage({ message, onOptionSelect, onAddToCart, onContactSup
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-3`}>
+      {!isUser && <AgentAvatar size={30} className="me-2 mt-0.5 shrink-0" />}
       <div
         className={`max-w-xs rounded-lg px-4 py-2.5 ${
           isUser
