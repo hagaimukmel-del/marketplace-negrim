@@ -31,7 +31,9 @@ One owner per row, a carpenter or a supplier (`job_posts_one_owner`).
 - Ads of a blocked carpenter or an unapproved supplier disappear from the board.
 
 ## Status
-Built, migration not yet applied (staging first, then production on the owner's yes).
+Built; `job_posts` applied on staging and production (2026-11-10). **Closed as "בבנייה"** (owner, 2026-11-10):
+until `JOBS_BOARD_OPEN=true` is set on Vercel, carpentries and suppliers see a coming-soon page,
+the nav links say בבנייה, and `/api/jobs*` answer 403. The operator still sees and uses the board.
 
 ## Open tasks
 None yet. Ideas not built: reporting an ad, admin moderation, contact through site messages.

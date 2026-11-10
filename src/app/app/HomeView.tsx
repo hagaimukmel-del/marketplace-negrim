@@ -68,6 +68,7 @@ export default function HomeView({
   minimums,
   promoted = null,
   workOpen = false,
+  jobsOpen = false,
 }: {
   greeting: string
   now: number
@@ -79,6 +80,8 @@ export default function HomeView({
   promoted?: PromotedSlot | null
   /** The work board is open: its card drops "בקרוב". */
   workOpen?: boolean
+  /** דרושים is open (JOBS_BOARD_OPEN); until then its card says בבנייה. */
+  jobsOpen?: boolean
 }) {
   const cart = useCart()
   const actions = actionsFor(orders, cart.items, minimums, now)
@@ -96,7 +99,7 @@ export default function HomeView({
         <HowItWorks />
         <Metzion />
         <WorkNetwork open={workOpen} />
-        <Jobs />
+        <Jobs open={jobsOpen} />
       </div>
     )
   }
@@ -140,7 +143,7 @@ export default function HomeView({
           <CategoryStrip categories={categories} />
           <Metzion />
           <WorkNetwork open={workOpen} />
-          <Jobs />
+          <Jobs open={jobsOpen} />
         </div>
       </div>
     </div>
@@ -468,16 +471,17 @@ function Metzion() {
 }
 
 /** דרושים: job ads from carpentries and suppliers. On a phone this is the way in; the sidebar has it on a desktop. */
-function Jobs() {
+function Jobs({ open }: { open: boolean }) {
   return (
     <Link href="/app/jobs" className="flex items-center gap-3 rounded-xl border border-hair bg-white px-3.5 py-3">
       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] bg-navy text-brand">
         <Briefcase size={22} />
       </span>
-      <span>
+      <span className="min-w-0 flex-1">
         <b className="block text-[15px]">דרושים</b>
         <span className="text-[13.5px] text-muted">משרות בנגריות ואצל ספקים</span>
       </span>
+      {!open && <span className="ms-auto shrink-0 rounded-full bg-brand px-2.5 py-0.5 text-xs font-extrabold text-navy">בבנייה</span>}
     </Link>
   )
 }

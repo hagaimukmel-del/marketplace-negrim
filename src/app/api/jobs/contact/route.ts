@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { getSessionSupplier } from '@/lib/supplier-auth'
 import { isAdmin } from '@/lib/admin-auth'
-import { ownerLive } from '@/lib/jobs-server'
+import { jobsBoardOpen, ownerLive } from '@/lib/jobs-server'
 
 /**
  * The phone behind an ad, on request. Kept out of the board's payload: a page
@@ -12,6 +12,9 @@ import { ownerLive } from '@/lib/jobs-server'
  */
 export async function GET(request: NextRequest) {
   const [carpenter, supplier, admin] = await Promise.all([getSessionCarpenter(), getSessionSupplier(), isAdmin()])
+  if (!jobsBoardOpen() && !admin) {
+    return NextResponse.json({ error: 'דרושים עוד בבנייה' }, { status: 403 })
+  }
   if (!carpenter && !supplier && !admin) {
     return NextResponse.json({ error: 'צריך להיות נגרייה או ספק רשומים' }, { status: 401 })
   }

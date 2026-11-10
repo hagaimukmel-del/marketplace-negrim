@@ -3,6 +3,8 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { getSessionSupplier } from '@/lib/supplier-auth'
 import { refuseAdminWriteFor } from '@/lib/admin-scope'
+import { isAdmin } from '@/lib/admin-auth'
+import { jobsBoardOpen } from '@/lib/jobs-server'
 import { jobExpiry, readJobInput, type JobInput } from '@/lib/jobs'
 
 /** Far above honest use, low enough to stop a flood. */
@@ -15,6 +17,10 @@ const OPEN_MAX = 20
  * the id always comes from that side's session, never from the request.
  */
 async function sessionOwner(side: unknown): Promise<{ column: 'carpenter_id' | 'supplier_id'; id: string } | NextResponse> {
+  // Closed while under construction; the operator can still try it.
+  if (!jobsBoardOpen() && !(await isAdmin())) {
+    return NextResponse.json({ error: 'דרושים עוד בבנייה' }, { status: 403 })
+  }
   if (side === 'supplier') {
     const supplier = await getSessionSupplier()
     if (!supplier) return NextResponse.json({ error: 'צריך להיות ספק מאושר' }, { status: 401 })

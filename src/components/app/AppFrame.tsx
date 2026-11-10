@@ -12,6 +12,7 @@ import EmailProblemBanner from '@/components/EmailProblemBanner'
 import { answeredQuoteCount } from '@/lib/quotes-server'
 import TermsGate from '@/components/TermsGate'
 import { workBoardOpen } from '@/lib/work-server'
+import { jobsBoardOpen } from '@/lib/jobs-server'
 import AppShell from './AppShell'
 
 function nowMs(): number {
@@ -43,7 +44,7 @@ export default async function AppFrame({ children }: { children: React.ReactNode
   const needsTerms = carpenter && !admin && !acceptedCurrentTerms(carpenter.terms_version)
 
   return (
-    <AppShell attention={attention} unread={unread} notifications={notifications} quotes={quotes} signedIn={Boolean(carpenter)} workOpen={workBoardOpen()} initial={(carpenter?.business_name ?? 'נ').trim().charAt(0)}>
+    <AppShell attention={attention} unread={unread} notifications={notifications} quotes={quotes} signedIn={Boolean(carpenter)} workOpen={workBoardOpen()} jobsOpen={jobsBoardOpen()} initial={(carpenter?.business_name ?? 'נ').trim().charAt(0)}>
       {emailProblem && <EmailProblemBanner problem={emailProblem} fixHref="/app/account" />}
       {children}
       {needsTerms && <TermsGate role="carpenter" />}

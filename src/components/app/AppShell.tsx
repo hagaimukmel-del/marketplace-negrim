@@ -59,6 +59,7 @@ export default function AppShell({
   initial,
   signedIn,
   workOpen = false,
+  jobsOpen = false,
   children,
 }: {
   /** No carpentry signed in: the avatar becomes the way in. */
@@ -75,6 +76,8 @@ export default function AppShell({
   initial: string
   /** The work board is open (WORK_BOARD_OPEN): drops "בקרוב" from its link. */
   workOpen?: boolean
+  /** דרושים is open (JOBS_BOARD_OPEN): drops "בבנייה" from its link. */
+  jobsOpen?: boolean
   children: React.ReactNode
 }) {
   const pathname = usePathname() ?? '/app'
@@ -145,7 +148,7 @@ export default function AppShell({
           )}
           <SideLink href="/app/metzion" label="מציאון" active={is('/app/metzion')} icon={<Recycle size={19} />} />
           <SideLink href={signedIn ? '/app/account' : '/join'} label={signedIn ? 'הנגרייה שלי' : 'כניסה / הרשמה'} active={is('/app/account')} icon={<UserRound size={19} />} />
-          <SideLink href="/app/jobs" label="דרושים" active={is('/app/jobs')} icon={<Briefcase size={19} />} />
+          <SideLink href="/app/jobs" label="דרושים" active={is('/app/jobs')} icon={<Briefcase size={19} />} tag={jobsOpen ? undefined : 'בבנייה'} />
         </nav>
       </aside>
 
@@ -309,7 +312,7 @@ export default function AppShell({
   )
 }
 
-function SideLink({ href, label, active, icon, count }: { href: string; label: string; active: boolean; icon: React.ReactNode; count?: number }) {
+function SideLink({ href, label, active, icon, count, tag }: { href: string; label: string; active: boolean; icon: React.ReactNode; count?: number; tag?: string }) {
   return (
     <Link
       href={href}
@@ -319,6 +322,7 @@ function SideLink({ href, label, active, icon, count }: { href: string; label: s
       {icon}
       {label}
       {count ? <span className="tnum ms-auto rounded-full bg-brand px-1.5 text-xs font-bold text-navy">{count}</span> : null}
+      {tag && <span className="ms-auto rounded-full bg-white/15 px-1.5 text-[11px] font-bold text-slate-200">{tag}</span>}
     </Link>
   )
 }
