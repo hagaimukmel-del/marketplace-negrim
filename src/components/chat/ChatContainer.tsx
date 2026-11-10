@@ -12,8 +12,6 @@ import { refineQuery } from '@/lib/agent-request'
 import { formatUnitPrice } from '@/lib/agent-quantity'
 import { AgentAvatar } from './AgentAvatar'
 
-/** Shown under the greeting, so a carpenter sees what can be asked besides products. */
-const STARTERS = ['דבק PUR 20 ק״ג', 'מה מצב ההצעות שלי', 'מי מוציא את החשבונית?', 'מה יש באתר חוץ מהקטלוג?']
 
 /**
  * Voice ordering is in development (owner, 2026-10-25): the agent is text
@@ -404,18 +402,6 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
               <p className="mt-1 max-w-[300px] text-sm text-slate-600">
                 אצלי מחפשים מוצר ומכינים עגלה, בודקים הזמנה או הצעת מחיר, ושואלים על כל דבר באתר. גם עם שגיאות כתיב.
               </p>
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
-                {STARTERS.map((starter) => (
-                  <button
-                    key={starter}
-                    type="button"
-                    onClick={() => void handleSend(starter)}
-                    className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
-                  >
-                    {starter}
-                  </button>
-                ))}
-              </div>
             </div>
           ) : (
             messages.map((msg) => (
