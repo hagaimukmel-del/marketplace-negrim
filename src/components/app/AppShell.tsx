@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Bell, ClipboardList, FileText, Handshake, Home, LayoutGrid, MessageSquare, Recycle, Search, ShoppingBag, Sparkles, UserRound } from 'lucide-react'
+import { Bell, Briefcase, ClipboardList, FileText, Handshake, Home, LayoutGrid, MessageSquare, Recycle, Search, ShoppingBag, Sparkles, UserRound } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import HomeScreenLaunch from './HomeScreenLaunch'
 import { LogoMark } from '@/components/brand/Logo'
@@ -145,6 +145,7 @@ export default function AppShell({
           )}
           <SideLink href="/app/metzion" label="מציאון" active={is('/app/metzion')} icon={<Recycle size={19} />} />
           <SideLink href={signedIn ? '/app/account' : '/join'} label={signedIn ? 'הנגרייה שלי' : 'כניסה / הרשמה'} active={is('/app/account')} icon={<UserRound size={19} />} />
+          <SideLink href="/app/jobs" label="דרושים" active={is('/app/jobs')} icon={<Briefcase size={19} />} />
         </nav>
       </aside>
 
