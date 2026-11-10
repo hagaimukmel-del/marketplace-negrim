@@ -9,6 +9,16 @@ import type { DaysMode, JobCard, MyJob } from './jobs'
  * is not blocked or a supplier who is still approved), and never the phone.
  */
 
+/**
+ * Whether דרושים is open (owner, 2026-11-10: "under construction" until he says).
+ * Until JOBS_BOARD_OPEN=true is set on Vercel, carpentries and suppliers see a
+ * coming-soon page and the API refuses them; the operator still sees and uses
+ * the real board to check it.
+ */
+export function jobsBoardOpen(): boolean {
+  return process.env.JOBS_BOARD_OPEN === 'true'
+}
+
 const COLUMNS =
   'id, carpenter_id, supplier_id, business_name, region, location, role, salary, days_mode, weekdays, work_dates, days_text, hours, scope, description, created_at, expires_at, status, carpenters(is_active), suppliers(status)'
 

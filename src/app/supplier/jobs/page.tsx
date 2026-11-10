@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
 import { getSessionSupplier } from '@/lib/supplier-auth'
-import { loadJobBoard } from '@/lib/jobs-server'
+import { isAdmin } from '@/lib/admin-auth'
+import { jobsBoardOpen, loadJobBoard } from '@/lib/jobs-server'
+import JobsComingSoon from '@/components/jobs/JobsComingSoon'
 import JobsBoard from '@/components/jobs/JobsBoard'
 
 export const dynamic = 'force-dynamic'
@@ -14,6 +16,7 @@ function nowMs(): number {
 export default async function SupplierJobsPage() {
   const supplier = await getSessionSupplier()
   if (!supplier) redirect('/supplier/join')
+  if (!jobsBoardOpen() && !(await isAdmin())) return <JobsComingSoon />
   const cards = await loadJobBoard({ supplierId: supplier.id })
-  return <JobsBoard cards={cards} newHref="/supplier/jobs/new" mineHref="/supplier/jobs/mine" now={nowMs()} />
+  return <JobsBoard preview={!jobsBoardOpen()} cards={cards} newHref="/supplier/jobs/new" mineHref="/supplier/jobs/mine" now={nowMs()} />
 }

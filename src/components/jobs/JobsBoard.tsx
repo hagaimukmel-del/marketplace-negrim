@@ -33,7 +33,10 @@ export default function JobsBoard({
   newHref,
   mineHref,
   now,
+  preview = false,
 }: {
+  /** The board is closed and the operator is looking (JOBS_BOARD_OPEN). */
+  preview?: boolean
   cards: JobCard[]
   newHref: string
   mineHref: string
@@ -57,6 +60,11 @@ export default function JobsBoard({
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4 pb-6">
+      {preview && (
+        <p className="rounded-xl bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-900">
+          תצוגת מנהל: דרושים עוד בבנייה וסגור לנגריות ולספקים (JOBS_BOARD_OPEN).
+        </p>
+      )}
       <PageHeader
         icon={Briefcase}
         title="דרושים"

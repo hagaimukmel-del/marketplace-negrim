@@ -2,7 +2,8 @@ import Link from 'next/link'
 import { Briefcase, Lock } from 'lucide-react'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { isAdmin } from '@/lib/admin-auth'
-import { loadJobBoard } from '@/lib/jobs-server'
+import { jobsBoardOpen, loadJobBoard } from '@/lib/jobs-server'
+import JobsComingSoon from '@/components/jobs/JobsComingSoon'
 import JobsBoard from '@/components/jobs/JobsBoard'
 
 export const dynamic = 'force-dynamic'
@@ -19,6 +20,8 @@ function nowMs(): number {
  */
 export default async function JobsPage() {
   const [carpenter, admin] = await Promise.all([getSessionCarpenter(), isAdmin()])
+
+  if (!jobsBoardOpen() && !admin) return <JobsComingSoon />
 
   if (!carpenter && !admin) {
     return (
@@ -42,5 +45,5 @@ export default async function JobsPage() {
   }
 
   const cards = await loadJobBoard({ carpenterId: carpenter?.id })
-  return <JobsBoard cards={cards} newHref={carpenter ? '/app/jobs/new' : '/join'} mineHref="/app/jobs/mine" now={nowMs()} />
+  return <JobsBoard preview={!jobsBoardOpen()} cards={cards} newHref={carpenter ? '/app/jobs/new' : '/join'} mineHref="/app/jobs/mine" now={nowMs()} />
 }

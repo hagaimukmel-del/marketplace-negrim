@@ -5,6 +5,7 @@ import { loadCategoryTree, loadProducts, loadReorder } from '@/lib/app/catalog-s
 import { redirect } from 'next/navigation'
 import { loadCurrentPromo, promotedSlot } from '@/lib/promo'
 import { workBoardOpen } from '@/lib/work-server'
+import { jobsBoardOpen } from '@/lib/jobs-server'
 import HomeView from './HomeView'
 
 export const dynamic = 'force-dynamic'
@@ -48,6 +49,7 @@ export default async function AppHome({ searchParams }: { searchParams: Promise<
       categories={categories}
       promoted={promotedSlot(products, promo)}
       workOpen={workBoardOpen()}
+      jobsOpen={jobsBoardOpen()}
       minimums={Object.fromEntries((suppliers ?? []).map((s) => [s.id, { name: s.company_name, min: s.min_order_value_excl_vat == null ? null : Number(s.min_order_value_excl_vat) }]))}
     />
   )

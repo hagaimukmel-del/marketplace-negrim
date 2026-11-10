@@ -7,6 +7,7 @@ import { kickOutbox } from '@/lib/outbox'
 import { kickReminders } from '@/lib/reminders'
 import { emailProblemFor } from '@/lib/email-delivery'
 import EmailProblemBanner from '@/components/EmailProblemBanner'
+import { jobsBoardOpen } from '@/lib/jobs-server'
 import SupplierNav from './SupplierNav'
 import TermsGate from '@/components/TermsGate'
 
@@ -50,7 +51,7 @@ export default async function SupplierLayout({ children }: { children: React.Rea
             : `מצב אדמין — אתה מנהל את הממשק של ${supplier.company_name}. שינויים כאן נשמרים אצלו.`}
         </div>
       )}
-      {supplier && <SupplierNav company={supplier.company_name} logo={supplier.logo_url} unread={unread} notifications={notifications} />}
+      {supplier && <SupplierNav company={supplier.company_name} logo={supplier.logo_url} unread={unread} notifications={notifications} jobsOpen={jobsBoardOpen()} />}
       {emailProblem && <EmailProblemBanner problem={emailProblem} fixHref="/supplier?tab=business" />}
       <main className="w-full flex-1 px-4 py-5">
         <div className="mx-auto max-w-4xl">{children}</div>

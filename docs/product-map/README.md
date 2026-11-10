@@ -22,7 +22,7 @@ Last verified against the code: **2026-10-03**.
 | 9 | Campaigns, offer pages, raffle | [09-campaigns-offers.md](09-campaigns-offers.md) | operator → carpenters | live, older |
 | 10 | Platform: auth, email, data, envs | [10-platform.md](10-platform.md) | developers | live |
 | 11 | נגרים עובדים ביחד (`/app/work`) | [11-work-network.md](11-work-network.md) | carpenters | phase 1 built, closed until launch |
-| 12 | דרושים (`/app/jobs`, `/supplier/jobs`) | [12-jobs.md](12-jobs.md) | carpenters, suppliers | built, migration pending |
+| 12 | דרושים (`/app/jobs`, `/supplier/jobs`) | [12-jobs.md](12-jobs.md) | carpenters, suppliers | built, closed (בבנייה) until JOBS_BOARD_OPEN |
 
 **State** = `live` (works and is reachable) · `partial` (reachable, some promised behaviour
 missing) · `dormant` (built but not exercised, e.g. waits for a second supplier) · `legacy`
