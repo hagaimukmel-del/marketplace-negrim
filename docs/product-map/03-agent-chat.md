@@ -72,7 +72,7 @@ written quantity at the offer's special-price threshold, the answer says a speci
 asked for and adds "בקש מחיר מיוחד". "לא מצאתי" lists what else can be asked.
 The agent has a face: a wooden figure with a headset (`components/chat/AgentAvatar.tsx`) on the
 phone bubble, the desktop pill, the sidebar, the search-bar button, the chat header and each
-answer. The greeting introduces it as פקיד הקבלה with four starter questions.
+answer. The greeting introduces it as פקיד הקבלה.
 **Keep it true:** a feature that changes what carpenters can do updates `lib/site-knowledge.ts`
 in the same commit.
 
