@@ -255,7 +255,7 @@ export default function AppShell({
       <button
         onClick={() => setIsOpen(true)}
         className="fixed bottom-24 start-4 z-30 flex h-16 w-16 items-center justify-center rounded-full border-[3px] border-white bg-brand-soft shadow-[0_8px_24px_rgba(30,42,59,.35)] transition-shadow hover:shadow-[0_12px_32px_rgba(30,42,59,.45)] active:scale-95 md:hidden"
-        aria-label="הסוכן של נגרים B2B"
+        aria-label="שאל את פקיד הקבלה"
       >
         <AgentAvatar size={58} />
       </button>
@@ -269,7 +269,7 @@ export default function AppShell({
           className="fixed bottom-6 end-6 z-30 hidden h-16 items-center gap-3 rounded-full bg-navy pe-6 ps-1.5 text-[16px] font-bold text-white shadow-[0_8px_24px_rgba(30,42,59,.35)] transition-shadow hover:shadow-[0_12px_32px_rgba(30,42,59,.45)] active:scale-95 md:flex"
         >
           <AgentAvatar size={52} />
-          שאל את הסוכן
+          שאל את פקיד הקבלה
         </button>
       )}
 
