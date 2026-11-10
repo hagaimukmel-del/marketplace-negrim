@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { ChevronLeft, Handshake, MessageCircle, Recycle, Search } from 'lucide-react'
+import { Briefcase, ChevronLeft, Handshake, MessageCircle, Recycle, Search } from 'lucide-react'
 import { useCart, type CartItem } from '@/lib/cart-context'
 import { money, when, packText } from '@/lib/app/format'
 import { attentionOf, supplierOrderMessage, totalOf, STATUS_LABEL, type AppOrder } from '@/lib/app/orders'
@@ -96,6 +96,7 @@ export default function HomeView({
         <HowItWorks />
         <Metzion />
         <WorkNetwork open={workOpen} />
+        <Jobs />
       </div>
     )
   }
@@ -139,6 +140,7 @@ export default function HomeView({
           <CategoryStrip categories={categories} />
           <Metzion />
           <WorkNetwork open={workOpen} />
+          <Jobs />
         </div>
       </div>
     </div>
@@ -460,6 +462,21 @@ function Metzion() {
       <span>
         <b className="block text-[15px]">מציאון</b>
         <span className="text-[13.5px] text-[#6B4E2E]">עודפים ומכונות מנגרים לנגרים</span>
+      </span>
+    </Link>
+  )
+}
+
+/** דרושים: job ads from carpentries and suppliers. On a phone this is the way in; the sidebar has it on a desktop. */
+function Jobs() {
+  return (
+    <Link href="/app/jobs" className="flex items-center gap-3 rounded-xl border border-hair bg-white px-3.5 py-3">
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] bg-navy text-brand">
+        <Briefcase size={22} />
+      </span>
+      <span>
+        <b className="block text-[15px]">דרושים</b>
+        <span className="text-[13.5px] text-muted">משרות בנגריות ואצל ספקים</span>
       </span>
     </Link>
   )

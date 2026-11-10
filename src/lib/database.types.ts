@@ -405,6 +405,93 @@ export type Database = {
           },
         ]
       }
+      job_posts: {
+        Row: {
+          business_name: string
+          carpenter_id: string | null
+          closed_at: string | null
+          contact_phone: string
+          created_at: string
+          days_mode: string
+          days_text: string | null
+          description: string | null
+          expires_at: string
+          hours: string | null
+          id: string
+          location: string
+          region: string
+          role: string
+          salary: string | null
+          scope: string | null
+          status: string
+          supplier_id: string | null
+          updated_at: string
+          weekdays: number[]
+          work_dates: string[]
+        }
+        Insert: {
+          business_name: string
+          carpenter_id?: string | null
+          closed_at?: string | null
+          contact_phone: string
+          created_at?: string
+          days_mode: string
+          days_text?: string | null
+          description?: string | null
+          expires_at: string
+          hours?: string | null
+          id?: string
+          location: string
+          region: string
+          role: string
+          salary?: string | null
+          scope?: string | null
+          status?: string
+          supplier_id?: string | null
+          updated_at?: string
+          weekdays?: number[]
+          work_dates?: string[]
+        }
+        Update: {
+          business_name?: string
+          carpenter_id?: string | null
+          closed_at?: string | null
+          contact_phone?: string
+          created_at?: string
+          days_mode?: string
+          days_text?: string | null
+          description?: string | null
+          expires_at?: string
+          hours?: string | null
+          id?: string
+          location?: string
+          region?: string
+          role?: string
+          salary?: string | null
+          scope?: string | null
+          status?: string
+          supplier_id?: string | null
+          updated_at?: string
+          weekdays?: number[]
+          work_dates?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_posts_carpenter_id_fkey"
+            columns: ["carpenter_id"]
+            isOneToOne: false
+            referencedRelation: "carpenters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_posts_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       login_codes: {
         Row: {
           attempts: number
