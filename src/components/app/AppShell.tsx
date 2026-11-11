@@ -138,7 +138,7 @@ export default function AppShell({
             className={`flex items-center gap-2.5 rounded-[10px] px-2.5 py-2 text-start text-[15px] ${isOpen ? 'bg-white/10 font-bold text-white' : 'font-medium text-slate-300 hover:bg-white/5'}`}
           >
             <AgentAvatar size={22} />
-            הסוכן
+            עוזר הרכש
           </button>
           <SideLink href="/app/orders" label="הזמנות" active={is('/app/orders')} icon={<ClipboardList size={19} />} count={attention} />
           {signedIn && (
@@ -149,7 +149,10 @@ export default function AppShell({
           )}
           <SideLink href="/app/metzion" label="מציאון" active={is('/app/metzion')} icon={<Recycle size={19} />} />
           <SideLink href={signedIn ? '/app/account' : '/join'} label={signedIn ? 'הנגרייה שלי' : 'כניסה / הרשמה'} active={is('/app/account')} icon={<UserRound size={19} />} />
-          <SideLink href="/app/jobs" label="דרושים" active={is('/app/jobs')} icon={<Briefcase size={19} />} tag={jobsOpen ? undefined : 'בהמשך'} />
+          {/* Out of the sidebar while it is closed; the home screen still explains it */}
+          {(jobsOpen || is('/app/jobs')) && (
+            <SideLink href="/app/jobs" label="דרושים" active={is('/app/jobs')} icon={<Briefcase size={19} />} tag={jobsOpen ? undefined : 'בהמשך'} />
+          )}
         </nav>
       </aside>
 
@@ -204,7 +207,7 @@ export default function AppShell({
             className="inline-flex h-11 shrink-0 items-center gap-2 rounded-[11px] border-[1.5px] border-hair bg-white pe-3.5 ps-1.5 text-[15px] font-bold text-navy hover:bg-warm"
           >
             <AgentAvatar size={26} />
-            שאל את הסוכן
+            שאל את עוזר הרכש
           </button>
           <Link
             href="/app/work"
@@ -258,7 +261,7 @@ export default function AppShell({
       <button
         onClick={() => setIsOpen(true)}
         className="fixed bottom-24 start-4 z-30 flex h-16 w-16 items-center justify-center rounded-full border-[3px] border-white bg-brand-soft shadow-[0_8px_24px_rgba(30,42,59,.35)] transition-shadow hover:shadow-[0_12px_32px_rgba(30,42,59,.45)] active:scale-95 md:hidden"
-        aria-label="שאל את פקיד הקבלה"
+        aria-label="שאל את עוזר הרכש"
       >
         <AgentAvatar size={58} />
       </button>
@@ -272,7 +275,7 @@ export default function AppShell({
           className="fixed bottom-6 end-6 z-30 hidden h-16 items-center gap-3 rounded-full bg-navy pe-6 ps-1.5 text-[16px] font-bold text-white shadow-[0_8px_24px_rgba(30,42,59,.35)] transition-shadow hover:shadow-[0_12px_32px_rgba(30,42,59,.45)] active:scale-95 md:flex"
         >
           <AgentAvatar size={52} />
-          שאל את פקיד הקבלה
+          שאל את עוזר הרכש
         </button>
       )}
 
@@ -303,7 +306,8 @@ export default function AppShell({
           עגלה
         </Link>
         <BottomLink href="/app/orders" label="הזמנות" active={is('/app/orders') || is('/app/quotes')} icon={<ClipboardList size={22} />} dot={attention > 0 || quotes > 0} />
-        <BottomLink href={signedIn ? '/app/account' : '/join'} label={signedIn ? 'אני' : 'כניסה'} active={is('/app/account')} icon={<UserRound size={22} />} />
+        {/* The account is the avatar in the top bar; this slot is the Metzion (product review, 2026-11-11) */}
+        <BottomLink href="/app/metzion" label="מציאון" active={is('/app/metzion')} icon={<Recycle size={22} />} />
       </nav>
     </div>
     </OpenAgentContext.Provider>

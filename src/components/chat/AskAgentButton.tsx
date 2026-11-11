@@ -13,7 +13,7 @@ export default function AskAgentButton({ query }: { query: string }) {
       className="mt-2 inline-flex h-10 items-center gap-1.5 rounded-[10px] border-[1.5px] border-hair bg-white px-3 text-sm font-semibold text-navy hover:bg-warm"
     >
       <MessageCircle size={17} />
-      שאל את הסוכן על ״{query}״
+      שאל את עוזר הרכש על ״{query}״
     </button>
   )
 }
