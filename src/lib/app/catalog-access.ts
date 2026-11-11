@@ -7,8 +7,9 @@ import { getSessionSupplier } from '@/lib/supplier-auth'
 /**
  * Who may look inside the catalogue (owner, 2026-11-08).
  *
- * A visitor who has not registered sees the list of categories and nothing
- * more: no category page, no product, no supplier name, no price. A signed-in
+ * A visitor who has not registered sees the list of categories and, inside a
+ * category, each product's photo and name (owner, 2026-11-11). No product
+ * page, no search, no supplier name, no price. A signed-in
  * carpentry, an approved supplier and the operator see the catalogue as before.
  * Prices are a separate, narrower question (carpentry or operator only).
  *
