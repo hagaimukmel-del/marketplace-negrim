@@ -1,5 +1,5 @@
 # 1 · Public site & onboarding
-Verified: 2026-10-05
+Verified: 2026-11-11
 
 ## Purpose
 The front door: explains the marketplace, registers carpenters (free) and takes supplier
@@ -8,7 +8,7 @@ applications. A visitor can browse products without prices; prices appear after 
 ## Entry points
 | Route | What |
 |---|---|
-| `/` | Landing page (`app/Landing.tsx`, static, no DB read) for visitors; a signed-in carpenter is redirected to `/app`. A visitor who opens `/app`, signs out, or leaves the terms gate lands back here. Copy must stay within CLAUDE.md §0's "safe to advertise" list |
+| `/` | Landing page (`app/Landing.tsx`, static, no DB read) for visitors: "הנגרייה שלך מחוברת", one CTA (free registration) and three path cards (products and suppliers, נגרים עובדים ביחד, Metzion), then how an order works and a supplier section (product review, 2026-11-11). A signed-in carpenter is redirected to `/app`. A visitor who opens `/app`, signs out, or leaves the terms gate lands back here. Copy must stay within CLAUDE.md §0's "safe to advertise" list |
 | `/join` → `POST /api/join` | Carpenter registration. The only public endpoint that writes. Dedupes on the last 9 phone digits and emails a login link to the address on file. Rate-limited in memory: 3 per phone and 10 per IP per hour. A new registration goes through `/carpenter/link/[token]` to `/app`, never to the offer page or the catalogue |
 | `/o/[token]` | A carpenter's personal link. The token **is** the identity; resolved on the server every time. With no active campaign it goes through `/carpenter/link/[token]` (sets the session cookie) to the carpentry's home `/app`; with a campaign it shows the offer page, which has a "למסך הבית" button |
 | `/carpenter/enter/[token]` + `/api/carpenter/session` | Link → carpenter cookie session, the carpenter counterpart of `/supplier/enter` |

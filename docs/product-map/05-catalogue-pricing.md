@@ -1,5 +1,5 @@
 # 5 · Catalogue & pricing
-Verified: 2026-10-12
+Verified: 2026-11-11
 
 ## Purpose
 What can be bought and at what price: canonical products, each supplier's offer on them,
@@ -56,6 +56,9 @@ See CLAUDE.md §6, "The catalogue's shape". Most important:
   that reaches the threshold is then answered at once with it (`instantQuotePrice`), as an ordinary
   quote valid 14 days that the carpenter accepts from its quotes; supplier and carpenter are mailed.
   The price is never shown before asking and never changes a cart price by itself.
+
+Search (`lib/catalog-search.ts`) matches name, mpn, brand, supplier, attributes and, since 11.11, the
+category and branch names (`AppProduct.categoryName`) and the description, both at the lowest weight.
 
 ## Status
 Live but thin: essentially one supplier, mostly adhesives (about 30 offers from the sheet). Most
