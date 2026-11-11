@@ -1,5 +1,5 @@
 # 2 · Carpenter purchasing app (`/app`)
-Verified: 2026-10-27
+Verified: 2026-11-11
 
 ## Purpose
 Where a carpenter buys: browse the catalogue, compare suppliers on a product, build a cart that
@@ -36,7 +36,7 @@ Reads `products`, `supplier_offers`, `suppliers` (server-side), `categories`; wr
   product today, shows supplier logos and "לא מגיע לאזור שלך". The order page shows a supplier's
   delivery date, lines it will not supply, and a rejection reason.
 - Prices are fetched on the server and only for a signed-in carpenter (`lock_prices`, CLAUDE.md §6).
-- A visitor who has not registered sees only the category list on `/app/catalog` (owner, 08.11).
+- A visitor who has not registered sees the category list on `/app/catalog` and, inside a category, each product's photo and name only (`PublicProductGrid`, owner 11.11). No product page, no search, no supplier, no price; `catalog-gate.test.ts` checks that only those four fields leave the server.
   Category pages, product pages and search answer with `CatalogLocked` (sign-up prompt) and read
   no product, supplier or promotion. Carpentries, approved suppliers and the operator browse as
   before. One check, `lib/app/catalog-access.ts` (`loadCatalogViewer`), tested in
@@ -45,6 +45,9 @@ Reads `products`, `supplier_offers`, `suppliers` (server-side), `categories`; wr
 - Supplier names stay in server components (the `suppliers` table is closed to the browser).
 - Prices are excl. VAT and per base unit; VAT is display only (`lib/vat.ts`).
 - `bestOffer()` / `suggestedOffer()` decide the default supplier: in stock first, then cheapest. Don't re-implement them.
+
+- Categories with products come first; empty ones are folded under "בקרוב" (`CategoryList`), and the home strip shows only filled ones (11.11).
+- Phone bottom bar: בית, קטלוג, עגלה, הזמנות, מציאון. The account is the avatar in the top bar. The desktop sidebar hides דרושים while it is closed (11.11).
 
 ## Status
 Live since 18.09. Product lists are photo-led cards (2 columns on phone, up to 4 on desktop; the

@@ -49,6 +49,8 @@ export interface AppProduct {
   subId: string | null
   /** The product's own description, when it has one. */
   description: string | null
+  /** Its main category and branch names, for search ("דבקים קונטקט"). */
+  categoryName?: string | null
   createdAt: string | null
   /** 0 is the most viewed product in the catalogue; null when popularity was not loaded. */
   popularRank: number | null

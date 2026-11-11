@@ -139,6 +139,7 @@ export async function loadProducts(opts: { showPrices: boolean; ids?: string[]; 
       topId,
       subId: category && topId !== category.id ? category.id : null,
       description: row.description_he?.trim() || null,
+      categoryName: [topId ? byId.get(topId)?.name_he : null, category && topId !== category.id ? category.name_he : null].filter(Boolean).join(' ') || null,
       createdAt: row.created_at,
       popularRank: rank?.get(row.id) ?? null,
       offers: row.supplier_offers.map((offer) => ({

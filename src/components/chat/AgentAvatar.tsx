@@ -2,7 +2,7 @@ import { useId } from 'react'
 
 /**
  * The agent's face: a wooden figure with a receptionist's headset, so the
- * chat reads as "פקיד הקבלה" of the site rather than a search box. Drawn
+ * chat reads as "עוזר הרכש" of the site rather than a search box. Drawn
  * inline so it costs no request and stays sharp at every size.
  */
 export function AgentAvatar({ size = 40, className = '' }: { size?: number; className?: string }) {

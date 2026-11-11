@@ -305,7 +305,7 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
           {
             id: (Date.now() + 1).toString(),
             role: 'agent',
-            content: 'כדי לחפש עם הסוכן ולראות מחירים צריך להירשם. ההרשמה חינמית ולוקחת דקה.',
+            content: 'כדי לחפש עם עוזר הרכש ולראות מחירים צריך להירשם. ההרשמה חינמית ולוקחת דקה.',
             timestamp: Date.now(),
             actions: [{ label: 'כניסה / הרשמה', action: 'open-page', value: '/join' }],
           },
@@ -371,7 +371,7 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
     <div className="fixed inset-0 z-50 bg-black/40 md:bg-black/20" onClick={onClose}>
       <div
         role="dialog"
-        aria-label="הסוכן של נגרים B2B"
+        aria-label="עוזר הרכש של נגרים B2B"
         className="absolute inset-x-0 bottom-0 flex max-h-[80vh] flex-col rounded-t-2xl bg-white shadow-2xl md:inset-x-auto md:end-0 md:top-0 md:h-dvh md:max-h-none md:w-[420px] md:rounded-none md:rounded-s-2xl"
         onClick={(e) => e.stopPropagation()}
       >
@@ -380,8 +380,8 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
           <div className="flex items-center gap-2.5">
             <AgentAvatar size={40} />
             <div>
-              <h2 className="font-bold leading-tight text-slate-900">הסוכן של נגרים B2B</h2>
-              <p className="text-xs text-slate-500">פקיד הקבלה של האתר</p>
+              <h2 className="font-bold leading-tight text-slate-900">עוזר הרכש של נגרים B2B</h2>
+              <p className="text-xs text-slate-500">מוצא מוצרים ועונה על שאלות על האתר</p>
             </div>
           </div>
           <button
@@ -398,7 +398,7 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
           {messages.length === 0 ? (
             <div className="flex flex-col items-center pt-6 text-center">
               <AgentAvatar size={88} />
-              <p className="mt-3 font-bold text-slate-900">שלום, אני פקיד הקבלה של נגרים B2B</p>
+              <p className="mt-3 font-bold text-slate-900">שלום, אני עוזר הרכש של נגרים B2B</p>
               <p className="mt-1 max-w-[300px] text-sm text-slate-600">
                 אצלי מחפשים מוצר ומכינים עגלה, בודקים הזמנה או הצעת מחיר, ושואלים על כל דבר באתר.
               </p>
@@ -464,7 +464,7 @@ export function ChatContainer({ isOpen, onClose, carpenterId, onSearch, askRef }
           </div>
           {voiceNote && !VOICE_READY && (
             <div className="text-xs text-slate-600 text-center">
-              הזמנה בקול בפיתוח. בינתיים כתבו לסוכן מה אתם צריכים.
+              הזמנה בקול בפיתוח. בינתיים כתבו לעוזר הרכש מה אתם צריכים.
             </div>
           )}
           {isListening && (

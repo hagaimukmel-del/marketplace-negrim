@@ -137,7 +137,9 @@ function addTypoVariants(tokens: QueryToken[], vocabulary: Set<string>, haystack
   }
 }
 
-const FIELD_WEIGHTS = { name: 3, mpn: 3, brand: 2, supplier: 1, attributes: 1 } as const
+// Category and description count least: they widen what a word finds without
+// letting a long description outrank a product whose name matches.
+const FIELD_WEIGHTS = { name: 3, mpn: 3, brand: 2, supplier: 1, attributes: 1, category: 1, description: 1 } as const
 
 export interface SearchResult {
   products: AppProduct[]
@@ -165,6 +167,8 @@ export function searchProducts(products: AppProduct[], query: string): SearchRes
     ['brand', normalize(product.brand ?? '')],
     ['supplier', normalize(product.offers.map((offer) => offer.supplierName).join(' '))],
     ['attributes', normalize(product.attributes.map(([, value]) => value).join(' '))],
+    ['category', normalize(product.categoryName ?? '')],
+    ['description', normalize(product.description ?? '')],
   ])
   const haystack = fieldsOf.map((fields) => fields.map(([, text]) => text).join(' ')).join(' ')
   const vocabulary = new Set(haystack.split(' ').filter((word) => word.length >= 3 && !/\d/.test(word)))

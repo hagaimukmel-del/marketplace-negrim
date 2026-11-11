@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Search } from 'lucide-react'
 import { loadCatalogViewer } from '@/lib/app/catalog-access'
-import CatalogLocked from '@/components/app/CatalogLocked'
+import PublicProductGrid from '@/components/app/PublicProductGrid'
 import { loadCategoryTree, loadProducts } from '@/lib/app/catalog-server'
 import ProductList from '@/components/app/ProductList'
 import CategoryGlyph from '@/components/app/CategoryGlyph'
@@ -15,7 +15,9 @@ export const dynamic = 'force-dynamic'
 
 /**
  * One main category: its branches as chips, then its products. A visitor who
- * has not registered gets the sign-up prompt, and no product is read for them.
+ * has not registered sees each product's photo and name only (owner,
+ * 2026-11-11): no supplier, no price, no promotion, no product page. The full
+ * product is mapped down to those fields here, on the server.
  */
 export default async function AppCategory({
   params,
@@ -25,16 +27,11 @@ export default async function AppCategory({
   searchParams: Promise<{ b?: string }>
 }) {
   const [{ id }, { b }, viewer] = await Promise.all([params, searchParams, loadCatalogViewer()])
-  if (!viewer.mayBrowse) {
-    return (
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
-        <BackLink href="/app/catalog" label="קטלוג" />
-        <CatalogLocked />
-      </div>
-    )
-  }
-  const { carpenter, showPrices } = viewer
-  const [products, promo] = await Promise.all([loadProducts({ showPrices, city: carpenter?.city, popularity: true }), loadCurrentPromo()])
+  const { carpenter, showPrices, mayBrowse } = viewer
+  const [products, promo] = await Promise.all([
+    loadProducts({ showPrices, city: carpenter?.city, popularity: true }),
+    mayBrowse ? loadCurrentPromo() : null,
+  ])
   const tree = await loadCategoryTree(products)
   const top = tree.find((node) => node.id === id)
   if (!top) notFound()
@@ -55,7 +52,9 @@ export default async function AppCategory({
         </span>
         <div>
           <h1 className="m-0 text-2xl font-extrabold leading-tight md:text-[28px]">{top.name}</h1>
-          <div className="text-sm text-muted">{inTop.length ? <><span className="tnum">{inTop.length}</span> מוצרים · לפני מע״מ</> : 'בקרוב'}</div>
+          <div className="text-sm text-muted">
+            {inTop.length ? <><span className="tnum">{inTop.length}</span> מוצרים{mayBrowse ? ' · לפני מע״מ' : ''}</> : 'בקרוב'}
+          </div>
         </div>
       </div>
 
@@ -88,10 +87,33 @@ export default async function AppCategory({
               </div>
             </nav>
           )}
-          {slot && <PromotedCard slot={slot} placement="category" showPrices={showPrices} />}
-          <ProductList products={shown} showPrices={showPrices} myRegions={regionsForCity(carpenter?.city)} />
+          {mayBrowse ? (
+            <>
+              {slot && <PromotedCard slot={slot} placement="category" showPrices={showPrices} />}
+              <ProductList products={shown} showPrices={showPrices} myRegions={regionsForCity(carpenter?.city)} />
+            </>
+          ) : (
+            <>
+              <VisitorStrip />
+              <PublicProductGrid products={shown.map((p) => ({ id: p.id, name: p.name, imageUrl: p.imageUrl, icon: p.icon }))} />
+            </>
+          )}
         </>
       )}
+    </div>
+  )
+}
+
+/** Above a visitor's products: what registering opens. */
+function VisitorStrip() {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-wood-soft px-3.5 py-3">
+      <span className="text-[14.5px] text-ink">
+        <b>המחירים, הספקים וההזמנה פתוחים לנגריות רשומות.</b> ההרשמה חינם.
+      </span>
+      <Link href="/join" className="inline-flex h-10 items-center rounded-[10px] bg-brand px-4 text-sm font-bold text-navy">
+        הרשמה חינם / כניסה
+      </Link>
     </div>
   )
 }

@@ -17,8 +17,8 @@ export const dynamic = 'force-dynamic'
  * order — or, with ?q=, what matches a search across names, brands, part
  * numbers and suppliers. The agent chat runs the same search (lib/catalog-search).
  *
- * A visitor who has not registered sees the categories only: no search, and
- * the category pages behind them ask to register (lib/app/catalog-access).
+ * A visitor who has not registered sees the categories and, behind them, each
+ * product's photo and name only; no search (lib/app/catalog-access).
  */
 export default async function AppCatalog({ searchParams }: { searchParams: Promise<{ q?: string; focus?: string }> }) {
   const [{ q, focus }, viewer] = await Promise.all([searchParams, loadCatalogViewer()])
@@ -73,7 +73,7 @@ export default async function AppCatalog({ searchParams }: { searchParams: Promi
         ) : (
           <div className="rounded-xl border-[1.5px] border-dashed border-[#D9CFC1] p-3.5 text-sm text-muted">
             <b className="block text-ink">לא נמצא</b>
-            נסה שם מוצר, מותג, מק״ט או שם ספק, או תאר לסוכן מה אתה צריך.
+            נסה שם מוצר, מותג, מק״ט או שם ספק, או תאר לעוזר הרכש מה אתה צריך.
           </div>
         )}
       </div>
@@ -102,12 +102,12 @@ export default async function AppCatalog({ searchParams }: { searchParams: Promi
   )
 }
 
-/** Above the categories for a visitor: why the categories do not open yet. */
+/** Above the categories for a visitor: what registering opens. */
 function SignUpStrip() {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-wood-soft px-3.5 py-3">
       <span className="text-[14.5px] text-ink">
-        <b>המוצרים, הספקים והמחירים פתוחים לנגריות רשומות.</b> ההרשמה חינם.
+        <b>המחירים, הספקים וההזמנה פתוחים לנגריות רשומות.</b> ההרשמה חינם.
       </span>
       <Link href="/join" className="inline-flex h-10 items-center rounded-[10px] bg-brand px-4 text-sm font-bold text-navy">
         הרשמה חינם / כניסה

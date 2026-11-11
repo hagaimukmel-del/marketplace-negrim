@@ -377,7 +377,8 @@ function CategoryStrip({ categories }: { categories: CategoryNode[] }) {
     <section>
       <SectionTitle title="קטגוריות" href="/app/catalog" action="לקטלוג" />
       <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] md:grid md:grid-cols-2 md:overflow-visible">
-        {categories.map((c) => (
+        {/* Only shelves with products; the empty ones are a tap away in the catalogue, under "בקרוב" */}
+        {(categories.some((c) => c.count > 0) ? categories.filter((c) => c.count > 0) : categories).map((c) => (
           <Link
             key={c.id}
             href={`/app/catalog/${c.id}`}
@@ -394,42 +395,65 @@ function CategoryStrip({ categories }: { categories: CategoryNode[] }) {
   )
 }
 
+/**
+ * The categories with products first, in the tree's own order; the ones no
+ * supplier has filled yet wait folded under "בקרוב", so the catalogue does not
+ * open on empty shelves (product review, 2026-11-11).
+ */
 export function CategoryList({ categories }: { categories: CategoryNode[] }) {
+  const live = categories.filter((c) => c.count > 0)
+  const soon = categories.filter((c) => c.count === 0)
   return (
     <section>
       <SectionTitle title="קטגוריות" />
-      <div className="grid overflow-hidden rounded-2xl border border-hair bg-white md:grid-cols-2">
-        {categories.map((c) => {
-          const names = (c.count ? c.children.filter((ch) => ch.count) : c.children).map((ch) => ch.name)
-          return (
-            <Link
-              key={c.id}
-              href={`/app/catalog/${c.id}`}
-              className="grid grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-3 border-t border-hair px-3.5 py-2.5 first:border-t-0 hover:bg-[#FDFBF8] md:[&:nth-child(2)]:border-t-0 md:odd:border-e"
-            >
-              <span className={`grid h-11 w-11 place-items-center rounded-xl ${c.count ? 'bg-wood-soft text-navy' : 'bg-[#F1EDE7] text-muted'}`}>
-                <CategoryGlyph icon={c.icon} size={22} />
-              </span>
-              <span className="grid min-w-0 leading-snug">
-                <b className="text-base">{c.name}</b>
-                <small className="truncate text-[13px] text-muted">
-                  {c.count ? (
-                    <>
-                      <span className="tnum">{c.count}</span> מוצרים ·{' '}
-                    </>
-                  ) : (
-                    <span className="me-1 rounded-full bg-[#F1F2F4] px-1.5 text-[11.5px] font-bold">בקרוב</span>
-                  )}
-                  {names.slice(0, 2).join(', ')}
-                  {names.length > 2 ? '…' : ''}
-                </small>
-              </span>
-              <ChevronLeft size={18} className="text-faint" />
-            </Link>
-          )
-        })}
-      </div>
+      {live.length > 0 && <CategoryGrid categories={live} />}
+      {soon.length > 0 && (
+        <details className="group mt-3 rounded-2xl border border-hair bg-white" open={live.length === 0}>
+          <summary className="flex cursor-pointer list-none items-center gap-2 px-3.5 py-3 text-[15px] font-bold text-muted [&::-webkit-details-marker]:hidden">
+            <span className="rounded-full bg-[#F1F2F4] px-2 text-[12.5px] font-bold">בקרוב</span>
+            עוד <span className="tnum">{soon.length}</span> קטגוריות שנפתחות עם ספקים חדשים
+            <ChevronLeft size={18} className="ms-auto text-faint transition-transform group-open:-rotate-90" />
+          </summary>
+          <div className="border-t border-hair">
+            <CategoryGrid categories={soon} flat />
+          </div>
+        </details>
+      )}
     </section>
+  )
+}
+
+function CategoryGrid({ categories, flat = false }: { categories: CategoryNode[]; flat?: boolean }) {
+  return (
+    <div className={`grid overflow-hidden bg-white md:grid-cols-2 ${flat ? 'rounded-b-2xl' : 'rounded-2xl border border-hair'}`}>
+      {categories.map((c) => {
+        const names = (c.count ? c.children.filter((ch) => ch.count) : c.children).map((ch) => ch.name)
+        return (
+          <Link
+            key={c.id}
+            href={`/app/catalog/${c.id}`}
+            className="grid grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-3 border-t border-hair px-3.5 py-2.5 first:border-t-0 hover:bg-[#FDFBF8] md:[&:nth-child(2)]:border-t-0 md:odd:border-e"
+          >
+            <span className={`grid h-11 w-11 place-items-center rounded-xl ${c.count ? 'bg-wood-soft text-navy' : 'bg-[#F1EDE7] text-muted'}`}>
+              <CategoryGlyph icon={c.icon} size={22} />
+            </span>
+            <span className="grid min-w-0 leading-snug">
+              <b className="text-base">{c.name}</b>
+              <small className="truncate text-[13px] text-muted">
+                {c.count ? (
+                  <>
+                    <span className="tnum">{c.count}</span> מוצרים ·{' '}
+                  </>
+                ) : null}
+                {names.slice(0, 2).join(', ')}
+                {names.length > 2 ? '…' : ''}
+              </small>
+            </span>
+            <ChevronLeft size={18} className="text-faint" />
+          </Link>
+        )
+      })}
+    </div>
   )
 }
 

@@ -1,15 +1,15 @@
 # 3 · Agent chat (search assistant)
-Verified: 2026-11-10
+Verified: 2026-11-11
 
 ## Purpose
 A Hebrew chat inside the carpenter app: the carpenter writes what they need, the assistant finds
 products, shows the supplier price excl. VAT, adds to the cart, and passes a question to the
-supplier ("שאלה לספק"). Marketed publicly as "הסוכן של נגרים B2B" (see CLAUDE.md §0 for what may be claimed).
+supplier ("שאלה לספק"). Named "עוזר הרכש" everywhere in the UI (owner, 2026-11-11; was "הסוכן" / "פקיד הקבלה"). Marketing copy may still say "הסוכן של נגרים B2B" (see CLAUDE.md §0 for what may be claimed).
 
 ## Entry points
 | Where | What |
 |---|---|
-| Chat panel in `AppShell` | `components/chat/ChatContainer.tsx`, `ChatMessage.tsx`, titled "הסוכן של נגרים B2B". Opened from a floating bubble (phone: round; desktop: "שאל את הסוכן" pill; both hidden on the cart), a button beside the desktop search bar, and the sidebar |
+| Chat panel in `AppShell` | `components/chat/ChatContainer.tsx`, `ChatMessage.tsx`, titled "עוזר הרכש של נגרים B2B". Opened from a floating bubble (phone: round; desktop: "שאל את עוזר הרכש" pill; both hidden on the cart), a button beside the desktop search bar, and the sidebar |
 | `POST /api/carpenter/search` | Runs the procurement agent on a message |
 | `GET /api/carpenter/previous-products` | "What did I order last time" |
 | `POST /api/carpenter/contact-supplier` | "שאלה לספק": stores a `supplier_contact_requests` row and emails the supplier (approved suppliers only, 10 per carpenter per hour, in memory) |
@@ -36,7 +36,7 @@ name without such a word stays a search word. A short follow-up starting with ו
 the last search (client side, `ChatContainer.tsx`). The agent adds to the cart and sends the carpenter to `/app/order`; it never creates orders itself.
 Product matching is `searchProducts()` in `lib/catalog-search.ts`, the same function the
 catalogue search bar uses (Hebrew normalization, prefixes, plurals, a seed synonym list), over
-live products only. The catalogue results page has "שאל את הסוכן" (`AskAgentButton`, which opens
+live products only. The catalogue results page has "שאל את עוזר הרכש" (`AskAgentButton`, which opens
 the chat already asking the query), and every agent answer with results has "כל התוצאות בקטלוג". A single match also gets "לדף המוצר".
 A signed-out visitor who asks the chat gets an invitation to /join instead of the 401.
 A single match (or a chosen option) also gets "שאלה לספק": the chat asks for the question, the next
@@ -72,7 +72,7 @@ written quantity at the offer's special-price threshold, the answer says a speci
 asked for and adds "בקש מחיר מיוחד". "לא מצאתי" lists what else can be asked.
 The agent has a face: a wooden figure with a headset (`components/chat/AgentAvatar.tsx`) on the
 phone bubble, the desktop pill, the sidebar, the search-bar button, the chat header and each
-answer. The greeting introduces it as פקיד הקבלה.
+answer. The greeting introduces it as עוזר הרכש (renamed 2026-11-11).
 **Keep it true:** a feature that changes what carpenters can do updates `lib/site-knowledge.ts`
 in the same commit.
 

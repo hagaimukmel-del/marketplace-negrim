@@ -1,10 +1,13 @@
 import Link from 'next/link'
-import { Check, ChevronLeft, Recycle, RotateCcw, Search, Send, Store, Tag } from 'lucide-react'
+import { ChevronLeft, Handshake, LayoutGrid, Recycle, RotateCcw, Search, Send, Store, Tag } from 'lucide-react'
 import Logo from '@/components/brand/Logo'
+import { WORK_FREE_UNTIL } from '@/lib/work'
 
 /**
- * The front door for someone who is not signed in: what the site is, how an
- * order works, and the two ways in (register, or look at the catalogue).
+ * The front door for someone who is not signed in: the three things a
+ * carpentry does here (products and suppliers, work between carpentries, the
+ * Metzion), how an order works, and one way in: free registration. Suppliers
+ * keep their own section at the end (product review, 2026-11-11).
  *
  * Static on purpose — no database read — so it is fast and cannot break. Every
  * claim here must be on CLAUDE.md §0's "safe to advertise as live" list; the
@@ -37,50 +40,39 @@ function PrimaryCta({ className = '' }: { className?: string }) {
   )
 }
 
-function SecondaryCta({ className = '' }: { className?: string }) {
-  return (
-    <Link
-      href="/app/catalog"
-      className={`inline-flex h-12 items-center justify-center rounded-xl border-[1.5px] border-hair bg-white px-6 text-base font-bold text-navy hover:border-wood ${className}`}
-    >
-      לצפייה בקטלוג
-    </Link>
-  )
-}
-
-/** An illustration of one order's path, drawn in the app's own style. No real data. */
-function OrderPreview() {
-  const steps = ['נשלחה לספק', 'הספק אישר', 'סופקה']
-  return (
-    <div className="relative mx-auto w-full max-w-[380px]" aria-hidden>
-      <div className="absolute -inset-4 -z-10 rounded-[28px] bg-wood-soft" />
-      <div className="rounded-2xl border border-hair bg-white p-5 shadow-[0_12px_32px_rgba(30,42,59,.10)]">
-        <div className="flex items-center justify-between">
-          <span className="rounded-full bg-navy-soft px-2.5 py-0.5 text-[13px] font-bold text-navy">הזמנת רכש</span>
-          <span className="text-[13px] text-muted">לפני מע״מ</span>
-        </div>
-        <div className="mt-3 grid gap-2">
-          {['דבק PU לעץ', 'לכה פוליאוריתן', 'מדלל לניקוי'].map((name) => (
-            <div key={name} className="flex items-center gap-2.5 rounded-xl bg-warm px-3 py-2.5 text-[15px] font-semibold">
-              <span className="h-2 w-2 rounded-full bg-wood" />
-              {name}
-            </div>
-          ))}
-        </div>
-        <ol className="m-0 mt-4 grid list-none gap-2 p-0">
-          {steps.map((label, i) => (
-            <li key={label} className="flex items-center gap-2.5 text-[14.5px]">
-              <span className={`grid h-6 w-6 place-items-center rounded-full ${i < 2 ? 'bg-ok text-white' : 'border-2 border-hair bg-white'}`}>
-                {i < 2 && <Check size={14} strokeWidth={3} />}
-              </span>
-              <span className={i < 2 ? 'font-semibold text-ink' : 'text-faint'}>{label}</span>
-            </li>
-          ))}
-        </ol>
-      </div>
-    </div>
-  )
-}
+/** The three ways a carpentry uses the site, each a card that opens its area. */
+const PATHS: { href: string; icon: React.ReactNode; title: string; text: string; cta: string; tone: string; iconTone: string; ctaTone: string }[] = [
+  {
+    href: '/app/catalog',
+    icon: <LayoutGrid size={24} />,
+    title: 'מוצרים וספקים',
+    text: 'מוצאים מוצר, רואים מחיר ספק לפני מע״מ ושולחים הזמנת רכש ישר לספק.',
+    cta: 'לקטלוג',
+    tone: 'border-hair bg-white hover:border-wood',
+    iconTone: 'bg-navy-soft text-navy',
+    ctaTone: 'text-brand-ink',
+  },
+  {
+    href: '/app/work',
+    icon: <Handshake size={24} />,
+    title: 'נגרים עובדים ביחד',
+    text: `צריך עזרה בפרויקט? יש לך זמן פנוי או מכונה שיכולה לעזור לנגרייה אחרת? כאן עובדים ביחד. ${WORK_FREE_UNTIL}.`,
+    cta: 'ללוח העבודות',
+    tone: 'border-[#BFDCD9] bg-[#EEF7F6] hover:border-[#0E5E5E]',
+    iconTone: 'bg-[#0E5E5E] text-white',
+    ctaTone: 'text-[#0B4F4F]',
+  },
+  {
+    href: '/app/metzion',
+    icon: <Recycle size={24} />,
+    title: 'מציאון',
+    text: 'עודפי חומרים, פרזול ומכונות מנגרים לנגרים. מוכרים, מוסרים או מוצאים מציאה.',
+    cta: 'למציאון',
+    tone: 'border-[#E6D6C2] bg-wood-soft hover:border-wood',
+    iconTone: 'bg-white text-[#6B4E2E]',
+    ctaTone: 'text-[#6B4E2E]',
+  },
+]
 
 export default function Landing() {
   return (
@@ -92,8 +84,9 @@ export default function Landing() {
           </Link>
           <span className="flex-1" />
           <nav className="hidden items-center gap-5 text-[15px] font-semibold text-muted md:flex" aria-label="ניווט">
-            <a href="#how" className="hover:text-ink">איך זה עובד</a>
             <Link href="/app/catalog" className="hover:text-ink">קטלוג</Link>
+            <Link href="/app/work" className="hover:text-ink">נגרים עובדים ביחד</Link>
+            <Link href="/app/metzion" className="hover:text-ink">מציאון</Link>
             <a href="#suppliers" className="hover:text-ink">לספקים</a>
           </nav>
           <Link href="/join" className="inline-flex h-10 items-center rounded-xl bg-navy px-4 text-sm font-bold text-white">
@@ -103,29 +96,42 @@ export default function Landing() {
       </header>
 
       <main>
-        {/* Hero */}
-        <section className="mx-auto grid max-w-[1120px] items-center gap-10 px-4 pb-14 pt-10 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] md:px-7 md:pb-20 md:pt-16">
-          <div>
+        {/* Hero: who it is for, the one way in, then the three paths */}
+        <section className="mx-auto max-w-[1120px] px-4 pb-12 pt-10 md:px-7 md:pb-16 md:pt-14">
+          <div className="max-w-[640px]">
             <span className="inline-flex rounded-full bg-brand-soft px-3 py-1 text-sm font-bold text-attn">לנגריות בישראל</span>
-            <h1 className="m-0 mt-4 text-[34px] font-extrabold leading-[1.15] tracking-tight text-navy text-balance md:text-[48px]">
-              מזמינים חומרים לנגרייה, הכל במקום אחד
+            <h1 className="m-0 mt-4 text-[36px] font-extrabold leading-[1.15] tracking-tight text-navy text-balance md:text-[52px]">
+              הנגרייה שלך מחוברת
             </h1>
-            <p className="m-0 mt-4 max-w-[520px] text-lg leading-relaxed text-muted">
-              מוצאים את המוצר, שולחים הזמנת רכש, והספק מאשר, מספק ומוציא לכם חשבונית. בלי טלפונים ובלי הודעות שהולכות לאיבוד.
+            <p className="m-0 mt-4 text-lg leading-relaxed text-muted">
+              מוצרים וספקים, עבודות בין נגריות ומציאות מהשטח. הכול במקום אחד.
             </p>
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <PrimaryCta />
-              <SecondaryCta />
+            <div className="mt-7">
+              <PrimaryCta className="w-full sm:w-auto" />
             </div>
-            <p className="m-0 mt-3 text-sm text-faint">ההרשמה לוקחת פחות מדקה. מחירים והצעות מחיר אחרי ההרשמה.</p>
+            <p className="m-0 mt-3 text-sm text-faint">ההרשמה חינם ולוקחת פחות מדקה.</p>
           </div>
-          <OrderPreview />
+
+          <ul className="m-0 mt-10 grid list-none gap-3 p-0 md:grid-cols-3 md:gap-4">
+            {PATHS.map((path) => (
+              <li key={path.href}>
+                <Link href={path.href} className={`flex h-full flex-col rounded-2xl border p-5 ${path.tone}`}>
+                  <span className={`grid h-11 w-11 place-items-center rounded-xl ${path.iconTone}`}>{path.icon}</span>
+                  <h2 className="m-0 mt-3 text-xl font-extrabold text-navy">{path.title}</h2>
+                  <p className="m-0 mt-1.5 flex-1 text-[15px] leading-relaxed text-muted">{path.text}</p>
+                  <span className={`mt-4 inline-flex items-center gap-1 text-[15px] font-bold ${path.ctaTone}`}>
+                    {path.cta} <ChevronLeft size={17} />
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </section>
 
         {/* What you get */}
         <section className="border-y border-hair bg-white">
           <div className="mx-auto max-w-[1120px] px-4 py-14 md:px-7">
-            <h2 className="m-0 text-2xl font-extrabold text-navy md:text-[30px]">מה מקבלים</h2>
+            <h2 className="m-0 text-2xl font-extrabold text-navy md:text-[30px]">בהזמנת חומרים</h2>
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {FEATURES.map((f) => (
                 <div key={f.title} className="flex gap-3.5 rounded-2xl border border-hair bg-warm p-4 sm:block sm:p-5">
@@ -142,7 +148,7 @@ export default function Landing() {
 
         {/* How it works */}
         <section id="how" className="mx-auto max-w-[1120px] scroll-mt-20 px-4 py-14 md:px-7">
-          <h2 className="m-0 text-2xl font-extrabold text-navy md:text-[30px]">איך זה עובד</h2>
+          <h2 className="m-0 text-2xl font-extrabold text-navy md:text-[30px]">איך הזמנה עובדת</h2>
           <ol className="m-0 mt-6 grid list-none grid-cols-2 gap-3 p-0 lg:grid-cols-4">
             {STEPS.map(([title, text], i) => (
               <li key={title} className="rounded-2xl border border-hair bg-white p-4 md:p-5">
@@ -155,33 +161,6 @@ export default function Landing() {
           <p className="m-0 mt-5 text-[15px] text-muted">
             הספק הוא המוכר: הוא קובע את תנאי התשלום ומוציא את החשבונית. האתר לא גובה תשלום על סחורה.
           </p>
-        </section>
-
-        {/* Catalogue today + Metzion */}
-        <section className="mx-auto grid max-w-[1120px] gap-4 px-4 pb-14 md:grid-cols-2 md:px-7">
-          <Link href="/app/catalog" className="group rounded-2xl border border-hair bg-white p-6 hover:border-wood">
-            <h3 className="m-0 text-xl font-bold text-navy">הקטלוג</h3>
-            <p className="m-0 mt-1.5 text-[15px] leading-relaxed text-muted">
-              היום בעיקר דבקים וחומרי גימור, ועוד קטגוריות נפתחות עם כל ספק שמצטרף.
-            </p>
-            <span className="mt-4 inline-flex items-center gap-1 text-[15px] font-bold text-brand-ink">
-              לצפייה בקטלוג <ChevronLeft size={17} />
-            </span>
-          </Link>
-          <Link href="/app/metzion" className="group rounded-2xl border border-[#E6D6C2] bg-wood-soft p-6">
-            <span className="flex items-center gap-2.5">
-              <span className="grid h-10 w-10 place-items-center rounded-[10px] bg-white text-[#6B4E2E]">
-                <Recycle size={22} />
-              </span>
-              <h3 className="m-0 text-xl font-bold">המציאון</h3>
-            </span>
-            <p className="m-0 mt-1.5 text-[15px] leading-relaxed text-[#6B4E2E]">
-              עודפי חומרים ומכונות מנגרים לנגרים. העסקה נעשית ישירות ביניכם.
-            </p>
-            <span className="mt-4 inline-flex items-center gap-1 text-[15px] font-bold text-[#6B4E2E]">
-              למציאון <ChevronLeft size={17} />
-            </span>
-          </Link>
         </section>
 
         {/* Suppliers */}
@@ -208,11 +187,10 @@ export default function Landing() {
 
         {/* Closing call */}
         <section className="mx-auto max-w-[1120px] px-4 py-16 text-center md:px-7">
-          <h2 className="m-0 text-2xl font-extrabold text-navy md:text-[30px]">מוכנים להזמנה הראשונה?</h2>
+          <h2 className="m-0 text-2xl font-extrabold text-navy md:text-[30px]">מצטרפים?</h2>
           <p className="m-0 mt-2 text-[16px] text-muted">הרשמה חינם, בלי התחייבות.</p>
-          <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+          <div className="mt-6 flex justify-center">
             <PrimaryCta />
-            <SecondaryCta />
           </div>
         </section>
       </main>
