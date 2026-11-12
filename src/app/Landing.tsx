@@ -4,9 +4,10 @@ import Logo from '@/components/brand/Logo'
 import { WORK_FREE_UNTIL } from '@/lib/work'
 
 /**
- * The front door for someone who is not signed in: the three things a
- * carpentry does here (products and suppliers, work between carpentries, the
- * Metzion), how an order works, and one way in: free registration. Suppliers
+ * The front door for someone who is not signed in: a search that works before
+ * registering, the three things a carpentry does here (products and
+ * suppliers, work between carpentries, the Metzion), how an order works, and
+ * one way in: free registration. Suppliers
  * keep their own section at the end (product review, 2026-11-11).
  *
  * Static on purpose — no database read — so it is fast and cannot break. Every
@@ -106,7 +107,21 @@ export default function Landing() {
             <p className="m-0 mt-4 text-lg leading-relaxed text-muted">
               מוצרים וספקים, עבודות בין נגריות ומציאות מהשטח. הכול במקום אחד.
             </p>
-            <div className="mt-7">
+            {/* Search first: anyone may look before registering (owner, 2026-11-12) */}
+            <form action="/app/catalog" className="relative mt-7" role="search">
+              <Search size={20} className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 text-muted" />
+              <input
+                name="q"
+                type="search"
+                placeholder="מה אתה צריך? מוצר, מותג או ספק"
+                aria-label="חיפוש מוצרים וספקים"
+                className="h-[52px] w-full rounded-xl border-[1.5px] border-hair bg-white ps-11 pe-[92px] text-base placeholder:text-faint"
+              />
+              <button type="submit" className="absolute end-1.5 top-1/2 h-10 -translate-y-1/2 rounded-[10px] bg-navy px-4 text-[15px] font-bold text-white">
+                חיפוש
+              </button>
+            </form>
+            <div className="mt-4">
               <PrimaryCta className="w-full sm:w-auto" />
             </div>
             <p className="m-0 mt-3 text-sm text-faint">ההרשמה חינם ולוקחת פחות מדקה.</p>

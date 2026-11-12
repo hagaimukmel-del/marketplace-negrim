@@ -3,9 +3,10 @@ import { isValidElement, type ReactNode } from 'react'
 
 /**
  * The catalogue's category pages, product pages and search, opened by URL by a
- * visitor who has not registered. Product pages and search give the sign-up
- * prompt and read nothing. A category page shows each product's photo and name
- * only (owner, 2026-11-11): no supplier, no price, no weekly promotion.
+ * visitor who has not registered. Product pages give the sign-up prompt and
+ * read nothing. A category page and a search show each product's photo, name
+ * and supplier (owner, 2026-11-12: supplier names are public): no price,
+ * brand, part number or weekly promotion.
  */
 
 const state = vi.hoisted(() => ({
@@ -30,7 +31,7 @@ vi.mock('@/lib/app/catalog-server', () => ({
         id: 'p1', name: 'דבק לעץ', brand: 'SECRET-BRAND', mpn: 'SECRET-MPN', baseUnit: 'kg', unit: 'ק״ג',
         imageUrl: 'https://example.test/p1.jpg', attributes: [], categoryId: 'top1', icon: 'glue', topId: 'top1', subId: null,
         description: null, createdAt: null, popularRank: 0,
-        offers: [{ supplierId: 's1', supplierName: 'SECRET-SUPPLIER', price: 123.45, suggested: true }],
+        offers: [{ supplierId: 's1', supplierName: 'ספק א', supplierLogo: null, price: 123.45, suggested: true }],
       },
     ]
   },
@@ -96,12 +97,14 @@ beforeEach(() => {
 })
 
 describe('catalogue for a visitor who has not registered', () => {
-  it('a category page shows photo and name only: no supplier, price, brand or promotion', async () => {
+  const visible = { id: 'p1', name: 'דבק לעץ', imageUrl: 'https://example.test/p1.jpg', icon: 'glue', supplierName: 'ספק א', supplierLogo: null }
+
+  it('a category page shows photo, name and supplier: no price, brand or promotion', async () => {
     const page = await CategoryPage({ params: Promise.resolve({ id: 'top1' }), searchParams: Promise.resolve({}) })
     const grid = find(page, PublicProductGrid)
     expect(grid).not.toBeNull()
     expect(contains(page, ProductList)).toBe(false)
-    expect(grid!.props).toEqual({ products: [{ id: 'p1', name: 'דבק לעץ', imageUrl: 'https://example.test/p1.jpg', icon: 'glue' }] })
+    expect(grid!.props).toEqual({ products: [visible] })
     expect(JSON.stringify(grid!.props)).not.toMatch(/SECRET|123\.45/)
     expect(state.reads).not.toContain('promo')
   })
@@ -112,10 +115,19 @@ describe('catalogue for a visitor who has not registered', () => {
     expect(state.reads).toEqual([])
   })
 
-  it('a search shows the sign-up prompt and reads no products', async () => {
+  it('a search finds products and shows photo, name and supplier only', async () => {
     const page = await CatalogPage({ searchParams: Promise.resolve({ q: 'דבק' }) })
-    expect(contains(page, CatalogLocked)).toBe(true)
-    expect(state.reads).toEqual([])
+    const grid = find(page, PublicProductGrid)
+    expect(grid).not.toBeNull()
+    expect(contains(page, ProductList)).toBe(false)
+    expect(contains(page, CatalogLocked)).toBe(false)
+    expect(grid!.props).toEqual({ products: [visible] })
+    expect(JSON.stringify(grid!.props)).not.toMatch(/SECRET|123\.45/)
+  })
+
+  it('a search by supplier name finds that supplier\'s products', async () => {
+    const page = await CatalogPage({ searchParams: Promise.resolve({ q: 'ספק א' }) })
+    expect(find(page, PublicProductGrid)!.props).toEqual({ products: [visible] })
   })
 
   it('the catalogue itself still lists the categories', async () => {
@@ -133,10 +145,11 @@ describe('catalogue for a registered viewer', () => {
     expect(state.reads).toContain('products')
   })
 
-  it('a search runs, not the prompt', async () => {
+  it('a search shows the full product list, not the visitor grid', async () => {
     state.mayBrowse = true
     const page = await CatalogPage({ searchParams: Promise.resolve({ q: 'דבק' }) })
-    expect(contains(page, CatalogLocked)).toBe(false)
+    expect(contains(page, ProductList)).toBe(true)
+    expect(contains(page, PublicProductGrid)).toBe(false)
     expect(state.reads).toContain('products')
   })
 })
