@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { LayoutGrid, Recycle, Search } from 'lucide-react'
 import { loadCatalogViewer } from '@/lib/app/catalog-access'
-import CatalogLocked from '@/components/app/CatalogLocked'
+import PublicProductGrid, { toPublicProduct } from '@/components/app/PublicProductGrid'
 import { loadCategoryTree, loadProducts } from '@/lib/app/catalog-server'
 import ProductList from '@/components/app/ProductList'
 import { PageHeader, SectionTitle } from '@/components/app/ui'
@@ -17,24 +17,16 @@ export const dynamic = 'force-dynamic'
  * order — or, with ?q=, what matches a search across names, brands, part
  * numbers and suppliers. The agent chat runs the same search (lib/catalog-search).
  *
- * A visitor who has not registered sees the categories and, behind them, each
- * product's photo and name only; no search (lib/app/catalog-access).
+ * A visitor who has not registered may search too (owner, 2026-11-12): the
+ * results, like the categories, show each product's photo, name and supplier,
+ * with no price and no way into the product page (lib/app/catalog-access).
  */
 export default async function AppCatalog({ searchParams }: { searchParams: Promise<{ q?: string; focus?: string }> }) {
   const [{ q, focus }, viewer] = await Promise.all([searchParams, loadCatalogViewer()])
   const { carpenter, showPrices, mayBrowse } = viewer
   const query = (q ?? '').trim()
 
-  if (!mayBrowse && query) {
-    return (
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
-        <PageHeader icon={Search} title="חיפוש" />
-        <CatalogLocked />
-      </div>
-    )
-  }
-
-  // Read on the server even for a visitor, but only the category counts leave it.
+  // Read on the server even for a visitor; only toPublicProduct's fields leave it.
   const products = await loadProducts({ showPrices, city: carpenter?.city, popularity: mayBrowse })
 
   const search = (
@@ -68,12 +60,17 @@ export default async function AppCatalog({ searchParams }: { searchParams: Promi
         />
         {search}
         {carpenter && <AskAgentButton query={query} />}
+        {!mayBrowse && <SignUpStrip />}
         {hits.length ? (
-          <ProductList products={hits} showPrices={showPrices} myRegions={regionsForCity(carpenter?.city)} />
+          mayBrowse ? (
+            <ProductList products={hits} showPrices={showPrices} myRegions={regionsForCity(carpenter?.city)} />
+          ) : (
+            <PublicProductGrid products={hits.map(toPublicProduct)} />
+          )
         ) : (
           <div className="rounded-xl border-[1.5px] border-dashed border-[#D9CFC1] p-3.5 text-sm text-muted">
             <b className="block text-ink">לא נמצא</b>
-            נסה שם מוצר, מותג, מק״ט או שם ספק, או תאר לעוזר הרכש מה אתה צריך.
+            {mayBrowse ? 'נסה שם מוצר, מותג, מק״ט או שם ספק, או תאר לעוזר הרכש מה אתה צריך.' : 'נסה שם מוצר, מותג, מק״ט או שם ספק.'}
           </div>
         )}
       </div>
@@ -84,7 +81,8 @@ export default async function AppCatalog({ searchParams }: { searchParams: Promi
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <PageHeader icon={LayoutGrid} title="קטלוג" subtitle="מחירים לפני מע״מ, ישירות מהספקים" />
-      {mayBrowse ? search : <SignUpStrip />}
+      {search}
+      {!mayBrowse && <SignUpStrip />}
       <CategoryList categories={categories} />
       <section>
         <SectionTitle title="עוד" />
@@ -107,7 +105,7 @@ function SignUpStrip() {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-wood-soft px-3.5 py-3">
       <span className="text-[14.5px] text-ink">
-        <b>המחירים, הספקים וההזמנה פתוחים לנגריות רשומות.</b> ההרשמה חינם.
+        <b>המחירים, עמוד המוצר וההזמנה פתוחים לנגריות רשומות.</b> ההרשמה חינם.
       </span>
       <Link href="/join" className="inline-flex h-10 items-center rounded-[10px] bg-brand px-4 text-sm font-bold text-navy">
         הרשמה חינם / כניסה

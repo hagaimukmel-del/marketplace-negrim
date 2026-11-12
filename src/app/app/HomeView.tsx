@@ -93,13 +93,15 @@ export default function HomeView({
         <Hello greeting={greeting}>
           <p className="mt-1 mb-0 text-[15px] text-muted">חיפוש, קטגוריות, והזמנה ראשונה ישירות מהספק.</p>
         </Hello>
-        {promoted && <PromotedCard slot={promoted} placement="home" showPrices />}
         <SearchBlock />
+        {promoted && <PromotedCard slot={promoted} placement="home" showPrices />}
+        <div className="grid gap-2.5 sm:grid-cols-2">
+          <Metzion />
+          <WorkNetwork open={workOpen} />
+        </div>
         <CategoryList categories={categories} />
         <HowItWorks />
-        <Metzion />
-        <WorkNetwork open={workOpen} />
-        <Jobs open={jobsOpen} />
+        {jobsOpen && <Jobs open />}
       </div>
     )
   }
@@ -115,6 +117,10 @@ export default function HomeView({
           {actions.length === 1 ? 'דבר אחד דורש את תשומת לבך' : 'דברים דורשים את תשומת לבך'}
         </AttentionLine>
       </Hello>
+
+      <div className="md:hidden">
+        <SearchBlock />
+      </div>
 
       {promoted && <PromotedCard slot={promoted} placement="home" showPrices />}
 
@@ -135,15 +141,14 @@ export default function HomeView({
           )}
           <ActiveOrders orders={orders} excludeId={cardOrderId} now={now} />
           <Reorder items={reorder} />
-          <div className="md:hidden">
-            <SearchBlock />
-          </div>
         </div>
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5">
+          <div className="grid gap-2.5">
+            <Metzion />
+            <WorkNetwork open={workOpen} />
+          </div>
           <CategoryStrip categories={categories} />
-          <Metzion />
-          <WorkNetwork open={workOpen} />
-          <Jobs open={jobsOpen} />
+          {jobsOpen && <Jobs open />}
         </div>
       </div>
     </div>

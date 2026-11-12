@@ -1,5 +1,5 @@
 # 2 · Carpenter purchasing app (`/app`)
-Verified: 2026-11-11
+Verified: 2026-11-12
 
 ## Purpose
 Where a carpenter buys: browse the catalogue, compare suppliers on a product, build a cart that
@@ -36,7 +36,8 @@ Reads `products`, `supplier_offers`, `suppliers` (server-side), `categories`; wr
   product today, shows supplier logos and "לא מגיע לאזור שלך". The order page shows a supplier's
   delivery date, lines it will not supply, and a rejection reason.
 - Prices are fetched on the server and only for a signed-in carpenter (`lock_prices`, CLAUDE.md §6).
-- A visitor who has not registered sees the category list on `/app/catalog` and, inside a category, each product's photo and name only (`PublicProductGrid`, owner 11.11). No product page, no search, no supplier, no price; `catalog-gate.test.ts` checks that only those four fields leave the server.
+- A visitor who has not registered sees the category list on `/app/catalog` and, inside a category or a search, each product's photo, name and supplier name and logo (`PublicProductGrid` / `toPublicProduct`; photo and name owner 11.11, search and supplier names owner 12.11). No product page and no price; `catalog-gate.test.ts` checks that only those six fields leave the server.
+- Home (`/app`): search sits at the top on a phone (the desktop head always carries it), then the weekly promotion, then the Metzion and work-network cards above the categories. דרושים appears on home only once `JOBS_BOARD_OPEN` is set (product review 12.11).
   Category pages, product pages and search answer with `CatalogLocked` (sign-up prompt) and read
   no product, supplier or promotion. Carpentries, approved suppliers and the operator browse as
   before. One check, `lib/app/catalog-access.ts` (`loadCatalogViewer`), tested in

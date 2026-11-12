@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Search } from 'lucide-react'
 import { loadCatalogViewer } from '@/lib/app/catalog-access'
-import PublicProductGrid from '@/components/app/PublicProductGrid'
+import PublicProductGrid, { toPublicProduct } from '@/components/app/PublicProductGrid'
 import { loadCategoryTree, loadProducts } from '@/lib/app/catalog-server'
 import ProductList from '@/components/app/ProductList'
 import CategoryGlyph from '@/components/app/CategoryGlyph'
@@ -95,7 +95,7 @@ export default async function AppCategory({
           ) : (
             <>
               <VisitorStrip />
-              <PublicProductGrid products={shown.map((p) => ({ id: p.id, name: p.name, imageUrl: p.imageUrl, icon: p.icon }))} />
+              <PublicProductGrid products={shown.map(toPublicProduct)} />
             </>
           )}
         </>
@@ -109,7 +109,7 @@ function VisitorStrip() {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-wood-soft px-3.5 py-3">
       <span className="text-[14.5px] text-ink">
-        <b>המחירים, הספקים וההזמנה פתוחים לנגריות רשומות.</b> ההרשמה חינם.
+        <b>המחירים, עמוד המוצר וההזמנה פתוחים לנגריות רשומות.</b> ההרשמה חינם.
       </span>
       <Link href="/join" className="inline-flex h-10 items-center rounded-[10px] bg-brand px-4 text-sm font-bold text-navy">
         הרשמה חינם / כניסה
