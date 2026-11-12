@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteUrl()
-  const fixed = ['', '/join', '/supplier/join', '/terms', '/app/suppliers'].map((path) => ({ url: `${base}${path}` }))
+  const fixed = ['', '/join', '/supplier/join', '/suppliers-join', '/terms', '/app/suppliers'].map((path) => ({ url: `${base}${path}` }))
   try {
     const suppliers = await loadPublicSuppliers(await loadProducts({ showPrices: false }))
     return [...fixed, ...suppliers.map((supplier) => ({ url: `${base}/app/suppliers/${supplier.id}` }))]

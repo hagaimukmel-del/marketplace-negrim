@@ -192,10 +192,10 @@ export default function Landing() {
               </p>
             </div>
             <Link
-              href="/supplier/join"
+              href="/suppliers-join?ref=home"
               className="inline-flex h-12 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-white px-6 font-bold text-navy hover:bg-slate-100"
             >
-              הצטרפות כספק
+              מה ספק מקבל
               <ChevronLeft size={18} strokeWidth={2.4} />
             </Link>
           </div>
