@@ -116,14 +116,6 @@ const STEPS: [string, string][] = [
   ['העמוד שלכם באוויר', 'נגריות מוצאות, פונות ומזמינות'],
 ]
 
-const FAQ: [string, string][] = [
-  ['מי מוציא חשבונית לנגר?', 'אתם. אתם המוכרים: קובעים את תנאי התשלום, מספקים ומוציאים חשבונית ישירות לנגרייה. האתר לא גובה תשלום על סחורה.'],
-  ['יש עמלה על הזמנות?', 'לא. יש מנוי קבוע, בלי קשר למספר ההזמנות או המוצרים.'],
-  ['מי רואה את המחירים שלי?', 'רק נגריות שנרשמו. מבקר שלא נרשם רואה את המוצר ואת העמוד שלכם, בלי מחיר.'],
-  ['אני לא רוצה להציג מחיר', 'אפשר. במקום מחיר נגר שולח בקשה להצעת מחיר, ואתם עונים לו.'],
-  ['כמה נגריות יש באתר?', 'האתר חדש ואנחנו בונים אותו עם הספקים הראשונים. לא נבטיח לכם מספר. מה שכן: כל נגר שמחפש את מה שאתם מוכרים יגיע לעמוד שלכם.'],
-]
-
 function joinHref(ref: string | null): string {
   return ref ? `/supplier/join?ref=${encodeURIComponent(ref)}` : '/supplier/join'
 }
@@ -363,24 +355,8 @@ export default async function SuppliersJoinPage({ searchParams }: PageProps) {
           </div>
         </section>
 
-        {/* Questions */}
-        <section className="mx-auto max-w-[820px] px-4 py-14 md:px-7">
-          <h2 className="m-0 text-2xl font-extrabold text-navy md:text-[30px]">שאלות שספקים שואלים</h2>
-          <div className="mt-5 grid gap-2.5">
-            {FAQ.map(([q, a]) => (
-              <details key={q} className="group rounded-2xl border border-hair bg-white p-4 open:pb-5">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-[16px] font-bold text-ink">
-                  {q}
-                  <ChevronLeft size={18} className="shrink-0 text-faint transition-transform group-open:-rotate-90" />
-                </summary>
-                <p className="m-0 mt-2 text-[15px] leading-relaxed text-muted">{a}</p>
-              </details>
-            ))}
-          </div>
-        </section>
-
         {/* Closing call */}
-        <section className="mx-auto max-w-[1120px] px-4 pb-16 text-center md:px-7">
+        <section className="mx-auto max-w-[1120px] px-4 py-16 text-center md:px-7">
           <h2 className="m-0 text-2xl font-extrabold text-navy md:text-[30px]">בואו להיות איפה שנגרים מחפשים</h2>
           <p className="m-0 mt-2 text-[16px] text-muted">שתי דקות של טופס, ואנחנו חוזרים אליכם.</p>
           <div className="mt-6 flex justify-center">
