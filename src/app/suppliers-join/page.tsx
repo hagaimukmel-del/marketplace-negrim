@@ -240,7 +240,10 @@ export default async function SuppliersJoinPage({ searchParams }: PageProps) {
         {/* Hero: the supplier's own objection first */}
         <section className="mx-auto grid max-w-[1120px] gap-10 px-4 pb-14 pt-10 md:grid-cols-[1.15fr_1fr] md:items-center md:px-7 md:pt-14">
           <div>
-            <span className="inline-flex rounded-full bg-brand-soft px-3 py-1 text-sm font-bold text-attn">לספקים שמוכרים לנגריות</span>
+            {/* Who it is for, loud enough that a supplier recognises itself (owner, 2026-11-12) */}
+            <p className="m-0 text-[22px] font-extrabold leading-snug text-brand-ink text-balance md:text-[28px]">
+              פרזוליה? ספק לוחות עץ? יבואן דבקים? מוכרים לנגריות?
+            </p>
             <h1 className="m-0 mt-4 text-[34px] font-extrabold leading-[1.15] tracking-tight text-navy text-balance md:text-[48px]">
               יש לכם כבר אתר. ועדיין אין הזמנות?
             </h1>
