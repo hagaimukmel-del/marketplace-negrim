@@ -2,8 +2,7 @@ import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { after } from 'next/server'
 import { loadCatalogViewer } from '@/lib/app/catalog-access'
-import CatalogLocked from '@/components/app/CatalogLocked'
-import { BackLink } from '@/components/app/ui'
+import { forVisitor } from '@/lib/app/products'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { loadCategoryTree, loadProducts, recordProductView } from '@/lib/app/catalog-server'
 import { CATALOG_PREFIX, catalogUrl } from '@/lib/supplier-documents'
@@ -17,8 +16,8 @@ function nowMs(): number {
 
 /**
  * One product: the price as the anchor, who sells it and why, and one add action.
- * A visitor who has not registered gets the sign-up prompt: not the name, not
- * the sellers, not even whether the id exists.
+ * A visitor who has not registered sees the product, its documents and who
+ * sells it (owner, 2026-11-12), with no price, no terms and no add action.
  */
 export default async function AppProduct({
   params,
@@ -28,17 +27,11 @@ export default async function AppProduct({
   searchParams: Promise<{ quote?: string }>
 }) {
   const [{ id }, { quote }, viewer] = await Promise.all([params, searchParams, loadCatalogViewer()])
-  if (!viewer.mayBrowse) {
-    return (
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
-        <BackLink href="/app/catalog" label="קטלוג" />
-        <CatalogLocked />
-      </div>
-    )
-  }
-  const { carpenter, admin, showPrices } = viewer
-  const [product] = await loadProducts({ showPrices, ids: [id], city: carpenter?.city })
-  if (!product) notFound()
+  const { carpenter, admin, showPrices, mayBrowse } = viewer
+  const [loaded] = await loadProducts({ showPrices, ids: [id], city: carpenter?.city })
+  if (!loaded) notFound()
+  // A visitor sees who sells it, never a price or the supplier's terms.
+  const product = mayBrowse ? loaded : forVisitor(loaded)
 
   // "הכי נצפים" in the catalogue: one count per opening, after the page is
   // sent. Not the operator's own looks, and not a link prefetch (the app's
@@ -106,6 +99,7 @@ export default async function AppProduct({
       docs={docs}
       product={product}
       showPrices={showPrices}
+      visitor={!mayBrowse}
       askQuote={quote === '1'}
       last={last}
       now={nowMs()}

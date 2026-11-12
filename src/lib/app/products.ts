@@ -83,3 +83,25 @@ export interface CategoryNode {
   count: number
   children: { id: string; name: string; count: number }[]
 }
+
+/**
+ * A product as a visitor who has not registered may see it (owner,
+ * 2026-11-12): who sells it, but no price and no commercial terms. Applied on
+ * the server before the product reaches a client component, so nothing
+ * removed here is ever sent to the browser.
+ */
+export function forVisitor(product: AppProduct): AppProduct {
+  return {
+    ...product,
+    offers: product.offers.map((offer) => ({
+      ...offer,
+      price: null,
+      leadDays: null,
+      terms: [],
+      minOrder: null,
+      minOrderQty: 1,
+      specialMinQty: null,
+      delivers: null,
+    })),
+  }
+}

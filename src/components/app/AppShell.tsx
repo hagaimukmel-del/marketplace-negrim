@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Bell, Briefcase, ClipboardList, FileText, Handshake, Home, LayoutGrid, MessageSquare, Recycle, Search, ShoppingBag, UserRound } from 'lucide-react'
+import { Bell, Briefcase, ClipboardList, FileText, Handshake, Home, LayoutGrid, MessageSquare, Recycle, Search, ShoppingBag, Store, UserRound } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import HomeScreenLaunch from './HomeScreenLaunch'
 import { LogoMark } from '@/components/brand/Logo'
@@ -130,6 +130,7 @@ export default function AppShell({
             {!workOpen && <span className="ms-auto rounded-full bg-white/20 px-1.5 text-[11px] font-bold">בקרוב</span>}
           </Link>
           <SideLink href="/app/catalog" label="קטלוג" active={catalogActive} icon={<LayoutGrid size={19} />} />
+          <SideLink href="/app/suppliers" label="ספקים" active={is('/app/suppliers')} icon={<Store size={19} />} />
           <SideLink href="/app/order" label="עגלה" active={cartActive} icon={<ShoppingBag size={19} />} count={lines} />
           <button
             type="button"

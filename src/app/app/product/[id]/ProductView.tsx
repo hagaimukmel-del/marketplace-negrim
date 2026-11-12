@@ -51,12 +51,15 @@ export default function ProductView({
   crumbs,
   docs,
   askQuote = false,
+  visitor = false,
 }: {
   product: AppProduct
   docs: ProductDoc[]
   /** Arrived from the agent's "בקש הצעת מחיר": open the request at once. */
   askQuote?: boolean
   showPrices: boolean
+  /** Not registered: who sells it, no terms, no comparison, no way to buy (owner, 2026-11-12). */
+  visitor?: boolean
   last: LastPurchase | null
   now: number
   crumbs: { topId: string | null; top: string; sub: string | null }
@@ -149,10 +152,10 @@ export default function ProductView({
         />
       )}
       <div className="mt-1.5 flex flex-wrap items-center gap-2 border-t border-hair pt-2.5 text-[15px]">
-        <span className="inline-flex items-center gap-1.5 font-bold">
+        <Link href={`/app/suppliers/${offer.supplierId}`} className="inline-flex items-center gap-1.5 font-bold text-ink underline-offset-2 hover:underline">
           {offer.supplierLogo ? <SupplierLogo url={offer.supplierLogo} /> : <Building2 size={17} className="text-muted" />}
           {offer.supplierName}
-        </span>
+        </Link>
         {offer.delivers === false && <span className="text-[13px] font-semibold text-attn">לא מגיע לאזור שלך</span>}
         {/* A question goes into a conversation in the site; signed out, sign in first and come back here. */}
         <Link
@@ -166,8 +169,8 @@ export default function ProductView({
           <MessageSquare size={16} aria-hidden />
           שאלה לספק
         </Link>
-        {offer.suggested ? <Reason product={product} offer={offer} /> : <span className="text-[13.5px] text-muted">בחרת ספק אחר</span>}
-        {product.offers.length > 1 && (
+        {visitor ? null : offer.suggested ? <Reason product={product} offer={offer} /> : <span className="text-[13.5px] text-muted">בחרת ספק אחר</span>}
+        {product.offers.length > 1 && !visitor && (
           <button type="button" onClick={() => setSheet(true)} className="ms-auto text-sm font-semibold text-brand-ink md:hidden">
             החלף ספק · <span className="tnum">{product.offers.length}</span>
           </button>
@@ -178,12 +181,12 @@ export default function ProductView({
           </button>
         )}
       </div>
-      <div className="flex flex-wrap gap-x-3.5 gap-y-0.5 text-[13.5px] text-muted">
+      {!visitor && <div className="flex flex-wrap gap-x-3.5 gap-y-0.5 text-[13.5px] text-muted">
         {offer.leadDays != null && <span>אספקה עד {offer.leadDays} ימי עסקים</span>}
         <span>{termsText(offer.terms)}</span>
         {offer.minOrder ? <span>מינימום הזמנה <span className="tnum">{money(offer.minOrder)}</span></span> : null}
         {!offer.inStock && <span className="font-semibold text-red-700">אזל אצל הספק</span>}
-      </div>
+      </div>}
       {inCart && (
         <div className="inline-flex items-center gap-1.5 text-sm font-semibold text-ok-ink">
           <Check size={15} strokeWidth={2.6} /> כבר בהזמנה: <span className="tnum">{Math.round(inCart.quantity / stepOf({ packQty: inCart.pack_qty ?? null }))}</span> × {packText(inCart.pack_label ?? null, inCart.pack_qty ?? null, product.unit) ?? product.unit}

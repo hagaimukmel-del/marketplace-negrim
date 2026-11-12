@@ -3,10 +3,11 @@ import { isValidElement, type ReactNode } from 'react'
 
 /**
  * The catalogue's category pages, product pages and search, opened by URL by a
- * visitor who has not registered. Product pages give the sign-up prompt and
- * read nothing. A category page and a search show each product's photo, name
- * and supplier (owner, 2026-11-12: supplier names are public): no price,
- * brand, part number or weekly promotion.
+ * visitor who has not registered, and a supplier's page. Since 2026-11-12
+ * (owner) supplier names are public and prices and terms are not: a category
+ * page and a search show each product's photo, name and supplier; a product
+ * page shows the product and who sells it with no price or terms; a supplier
+ * page shows who the supplier is but not its terms.
  */
 
 const state = vi.hoisted(() => ({
@@ -31,7 +32,7 @@ vi.mock('@/lib/app/catalog-server', () => ({
         id: 'p1', name: 'דבק לעץ', brand: 'SECRET-BRAND', mpn: 'SECRET-MPN', baseUnit: 'kg', unit: 'ק״ג',
         imageUrl: 'https://example.test/p1.jpg', attributes: [], categoryId: 'top1', icon: 'glue', topId: 'top1', subId: null,
         description: null, createdAt: null, popularRank: 0,
-        offers: [{ supplierId: 's1', supplierName: 'ספק א', supplierLogo: null, price: 123.45, suggested: true }],
+        offers: [{ supplierId: 's1', supplierName: 'ספק א', supplierLogo: null, price: 123.45, suggested: true, terms: ['SECRET-TERMS'], minOrder: 999, leadDays: 4, minOrderQty: 5, specialMinQty: 50, delivers: true }],
       },
     ]
   },
@@ -48,11 +49,28 @@ vi.mock('@/lib/promo', () => ({
   },
   promotedSlot: () => null,
 }))
+// Any table read answers "nothing": chainable, and awaitable as { data: [] }.
+function emptyQuery(): unknown {
+  const query: Record<string, unknown> = {}
+  for (const name of ['select', 'eq', 'neq', 'in', 'like', 'order', 'limit']) query[name] = () => query
+  query.maybeSingle = async () => ({ data: null })
+  query.then = (resolve: (value: { data: unknown[] }) => unknown) => resolve({ data: [] })
+  return query
+}
 vi.mock('@/lib/supabase-admin', () => ({
   getSupabaseAdmin: () => {
     state.reads.push('supabase')
-    throw new Error('no database in this test')
+    return { from: () => emptyQuery() }
   },
+}))
+const supplier = { id: 's1', name: 'ספק א', logoUrl: null, city: 'חולון', about: 'דבקים לנגרות', regions: [], productCount: 1 }
+vi.mock('@/lib/app/suppliers-public', async (load) => ({
+  ...(await load<typeof import('@/lib/app/suppliers-public')>()),
+  loadPublicSuppliers: async () => [supplier],
+  loadPublicSupplier: async (id: string) =>
+    id === 's1' ? { supplier, terms: { paymentTerms: ['SECRET-TERMS'], minOrder: 999, leadDays: 4, freeDeliveryFrom: 777 } } : null,
+  loadSupplierCatalogs: async () => [],
+  recordSupplierView: async () => undefined,
 }))
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }))
 vi.mock('next/server', () => ({ after: () => undefined }))
@@ -62,12 +80,14 @@ vi.mock('next/navigation', () => ({
   },
 }))
 
-const CatalogLocked = (await import('@/components/app/CatalogLocked')).default
 const PublicProductGrid = (await import('@/components/app/PublicProductGrid')).default
 const ProductList = (await import('@/components/app/ProductList')).default
 const CatalogPage = (await import('./catalog/page')).default
 const CategoryPage = (await import('./catalog/[id]/page')).default
 const ProductPage = (await import('./product/[id]/page')).default
+const ProductView = (await import('./product/[id]/ProductView')).default
+const SupplierPage = (await import('./suppliers/[id]/page')).default
+const SupplierCard = (await import('@/components/app/SupplierCard')).default
 
 /** The first element of this component type in a rendered tree, or null. */
 function find(node: ReactNode, type: unknown): { props: Record<string, unknown> } | null {
@@ -81,6 +101,14 @@ function find(node: ReactNode, type: unknown): { props: Record<string, unknown> 
   if (!isValidElement(node)) return null
   if (node.type === type) return { props: node.props as Record<string, unknown> }
   return find((node.props as { children?: ReactNode }).children, type)
+}
+
+/** Every string and number in a rendered tree, its text and its props alike. */
+function textOf(node: unknown): string {
+  if (typeof node === 'string' || typeof node === 'number') return String(node)
+  if (Array.isArray(node)) return node.map(textOf).join(' ')
+  if (!isValidElement(node)) return ''
+  return Object.values(node.props as Record<string, unknown>).map(textOf).join(' ')
 }
 
 /** Whether a rendered tree contains an element of this component type. */
@@ -109,10 +137,29 @@ describe('catalogue for a visitor who has not registered', () => {
     expect(state.reads).not.toContain('promo')
   })
 
-  it('a product page by URL shows the sign-up prompt and reads nothing', async () => {
+  it('a product page shows the product and its supplier, with no price or terms', async () => {
     const page = await ProductPage({ params: Promise.resolve({ id: 'p1' }), searchParams: Promise.resolve({}) })
-    expect(contains(page, CatalogLocked)).toBe(true)
-    expect(state.reads).toEqual([])
+    const view = find(page, ProductView)
+    expect(view).not.toBeNull()
+    expect(view!.props.visitor).toBe(true)
+    expect(view!.props.showPrices).toBe(false)
+    const offers = (view!.props.product as { offers: Record<string, unknown>[] }).offers
+    expect(offers[0]).toMatchObject({ supplierName: 'ספק א', price: null, terms: [], minOrder: null, leadDays: null, specialMinQty: null })
+    expect(JSON.stringify(view!.props)).not.toMatch(/SECRET-TERMS|123\.45|999/)
+  })
+
+  it('a supplier page shows who the supplier is and its products, not its terms', async () => {
+    const page = await SupplierPage({ params: Promise.resolve({ id: 's1' }) })
+    expect(contains(page, PublicProductGrid)).toBe(true)
+    expect(contains(page, ProductList)).toBe(false)
+    const text = textOf(page)
+    expect(text).toContain('דבקים לנגרות')
+    expect(text).not.toMatch(/SECRET|123\.45|999|777/)
+  })
+
+  it('a search that names a supplier shows its card', async () => {
+    const page = await CatalogPage({ searchParams: Promise.resolve({ q: 'ספק' }) })
+    expect(find(page, SupplierCard)!.props).toEqual({ supplier })
   })
 
   it('a search finds products and shows photo, name and supplier only', async () => {
@@ -120,7 +167,6 @@ describe('catalogue for a visitor who has not registered', () => {
     const grid = find(page, PublicProductGrid)
     expect(grid).not.toBeNull()
     expect(contains(page, ProductList)).toBe(false)
-    expect(contains(page, CatalogLocked)).toBe(false)
     expect(grid!.props).toEqual({ products: [visible] })
     expect(JSON.stringify(grid!.props)).not.toMatch(/SECRET|123\.45/)
   })
@@ -131,18 +177,24 @@ describe('catalogue for a visitor who has not registered', () => {
   })
 
   it('the catalogue itself still lists the categories', async () => {
-    const page = await CatalogPage({ searchParams: Promise.resolve({}) })
-    expect(contains(page, CatalogLocked)).toBe(false)
+    await CatalogPage({ searchParams: Promise.resolve({}) })
     expect(state.reads).toContain('categories')
   })
 })
 
 describe('catalogue for a registered viewer', () => {
-  it('a category page shows its products, not the prompt', async () => {
+  it('a category page shows its products, not the visitor grid', async () => {
     state.mayBrowse = true
     const page = await CategoryPage({ params: Promise.resolve({ id: 'top1' }), searchParams: Promise.resolve({}) })
-    expect(contains(page, CatalogLocked)).toBe(false)
+    expect(contains(page, PublicProductGrid)).toBe(false)
     expect(state.reads).toContain('products')
+  })
+
+  it('a supplier page shows its terms and the full product list', async () => {
+    state.mayBrowse = true
+    const page = await SupplierPage({ params: Promise.resolve({ id: 's1' }) })
+    expect(contains(page, ProductList)).toBe(true)
+    expect(textOf(page)).toContain('SECRET-TERMS')
   })
 
   it('a search shows the full product list, not the visitor grid', async () => {

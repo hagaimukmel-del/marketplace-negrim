@@ -2734,6 +2734,10 @@ export type Database = {
         Args: { p_product_id: string }
         Returns: undefined
       }
+      bump_supplier_view: {
+        Args: { p_supplier_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
