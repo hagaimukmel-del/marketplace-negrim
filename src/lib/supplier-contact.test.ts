@@ -2,22 +2,22 @@ import { describe, expect, it } from 'vitest'
 import { contactMessage, contactOf } from './supplier-contact'
 
 describe('contactOf', () => {
-  it('before the supplier confirms, uses the business phone: WhatsApp when it is a mobile', () => {
-    expect(contactOf({ phone: '0501234567' })).toEqual({ phone: '050-123-4567', whatsapp: '050-123-4567' })
-    expect(contactOf({ phone: '03-1234567' })).toEqual({ phone: '03-123-4567', whatsapp: null })
+  it('nothing until the supplier entered numbers itself: never the business phone', () => {
+    expect(contactOf({})).toBeNull()
+    expect(contactOf({ contact_phone: '0501234567', whatsapp_phone: '0501234567' })).toBeNull()
   })
 
-  it('once confirmed, exactly the confirmed numbers', () => {
-    const confirmed = { phone: '0501234567', contact_confirmed_at: '2026-11-12T10:00:00Z' }
-    expect(contactOf({ ...confirmed, contact_phone: '03-7654321', whatsapp_phone: '052-1112222' })).toEqual({ phone: '03-765-4321', whatsapp: '052-111-2222' })
-    // An empty WhatsApp is the supplier's choice: no WhatsApp button, not the business phone.
-    expect(contactOf({ ...confirmed, contact_phone: '03-7654321', whatsapp_phone: null })).toEqual({ phone: '03-765-4321', whatsapp: null })
+  it('exactly the numbers the supplier entered', () => {
+    const at = '2026-11-12T10:00:00Z'
+    expect(contactOf({ contact_confirmed_at: at, contact_phone: '03-7654321', whatsapp_phone: '052-1112222' })).toEqual({ phone: '03-765-4321', whatsapp: '052-111-2222' })
+    expect(contactOf({ contact_confirmed_at: at, contact_phone: null, whatsapp_phone: '0521112222' })).toEqual({ phone: null, whatsapp: '052-111-2222' })
+    expect(contactOf({ contact_confirmed_at: at, contact_phone: '03-7654321', whatsapp_phone: null })).toEqual({ phone: '03-765-4321', whatsapp: null })
   })
 
-  it('nothing to show without a usable number', () => {
-    expect(contactOf({ phone: null })).toBeNull()
-    expect(contactOf({ phone: '12' })).toBeNull()
-    expect(contactOf({ phone: '0501234567', contact_confirmed_at: 'x', contact_phone: null, whatsapp_phone: '03-1234567' })).toBeNull()
+  it('saved empty (in-site messages only), or a landline as WhatsApp: nothing to show', () => {
+    const at = '2026-11-12T10:00:00Z'
+    expect(contactOf({ contact_confirmed_at: at, contact_phone: null, whatsapp_phone: null })).toBeNull()
+    expect(contactOf({ contact_confirmed_at: at, contact_phone: null, whatsapp_phone: '03-1234567' })).toBeNull()
   })
 })
 

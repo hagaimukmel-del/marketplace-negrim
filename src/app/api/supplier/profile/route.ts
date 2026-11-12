@@ -224,14 +224,14 @@ export async function PATCH(request: NextRequest) {
     }
 
     // The numbers carpentries reach by WhatsApp and call (migration
-    // 20261112130000), on their own and confirmed by saving them. A call
-    // number is required; WhatsApp may be left empty (then no WhatsApp button),
-    // and must be a mobile when given.
+    // 20261112130000), on their own. Both optional: WhatsApp and calls are the
+    // supplier's choice (owner, 2026-11-12); left empty, carpentries write in
+    // the site as before. WhatsApp must be a mobile.
     if ('contact' in body) {
       const phoneRaw = text(body.contact?.phone, 40)
       const whatsappRaw = text(body.contact?.whatsapp, 40)
-      if (!phoneRaw || !nationalPhone(phoneRaw)) {
-        return NextResponse.json({ error: 'צריך מספר טלפון תקין לשיחות' }, { status: 400 })
+      if (phoneRaw && !nationalPhone(phoneRaw)) {
+        return NextResponse.json({ error: 'מספר הטלפון לשיחות לא תקין' }, { status: 400 })
       }
       if (whatsappRaw && !isMobilePhone(whatsappRaw)) {
         return NextResponse.json({ error: 'וואטסאפ עובד רק עם מספר נייד (05X)' }, { status: 400 })
@@ -239,7 +239,7 @@ export async function PATCH(request: NextRequest) {
       const { error: contactError } = await supabase
         .from('suppliers')
         .update({
-          contact_phone: formatPhone(phoneRaw),
+          contact_phone: phoneRaw ? formatPhone(phoneRaw) : null,
           whatsapp_phone: whatsappRaw ? formatPhone(whatsappRaw) : null,
           contact_confirmed_at: new Date().toISOString(),
         })

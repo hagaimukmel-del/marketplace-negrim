@@ -98,13 +98,14 @@ function OrderCopies({ profile, notify }: { profile: SupplierProfile; notify: No
 
 /**
  * The numbers carpentries reach by WhatsApp and call, from the product pages
- * and the supplier's own page (owner, 2026-11-12). Until the supplier saves
- * them here, the pages use the business phone; saving is the confirmation.
+ * and the supplier's own page (owner, 2026-11-12). Both are the supplier's
+ * choice: without them nothing changes, carpentries write in the site and the
+ * supplier gets the message here and by email, as before.
  */
 function ContactNumbers({ profile, notify }: { profile: SupplierProfile; notify: Notify }) {
   const router = useRouter()
   const { contact } = profile
-  const [phone, setPhone] = useState(contact.phone ?? profile.phone ?? '')
+  const [phone, setPhone] = useState(contact.phone ?? '')
   const [whatsapp, setWhatsapp] = useState(contact.whatsapp ?? '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -115,7 +116,7 @@ function ContactNumbers({ profile, notify }: { profile: SupplierProfile; notify:
     setBusy(true)
     try {
       await callApi('/api/supplier/profile', jsonInit('PATCH', { contact: { phone, whatsapp } }))
-      notify('מספרי הפניות אושרו')
+      notify(whatsapp.trim() || phone.trim() ? 'המספרים נשמרו ויופיעו לנגריות' : 'נשמר: הפניות יגיעו כהודעות באתר')
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'השמירה נכשלה')
@@ -128,30 +129,30 @@ function ContactNumbers({ profile, notify }: { profile: SupplierProfile; notify:
     <form onSubmit={save} className={`rounded-xl border bg-white p-4 ${contact.confirmedAt ? 'border-stone-200' : 'border-amber-300'}`}>
       <h2 className="flex items-center gap-1.5 font-bold text-stone-900">
         <MessageCircle size={18} className="text-emerald-700" />
-        פניות מנגריות בוואטסאפ ובטלפון
+        רוצים שנגריות יפנו אליכם בוואטסאפ?
       </h2>
       <p className="mt-0.5 text-base text-stone-600">
-        נגריות רשומות רואות בעמודי המוצרים ובעמוד הספק שלכם כפתור וואטסאפ וכפתור חיוג. ההודעה נפתחת אצלן בוואטסאפ עם
-        שם המוצר, והאתר לא שולח דבר בשמכם.
+        הכניסו מספר נייד, ובעמודי המוצרים שלכם ובעמוד הספק יופיע לנגריות רשומות כפתור וואטסאפ. ההודעה נפתחת אצלן
+        בוואטסאפ עם שם המוצר, ומגיעה ישר לנייד הזה. האתר לא שולח דבר בשמכם.
+      </p>
+      <p className="mt-2 rounded-lg bg-stone-50 p-3 text-base text-stone-700">
+        בלי מספר, הכל נשאר כמו היום: נגריות שולחות שאלה באתר, והיא מגיעה אליכם כאן ובמייל.
       </p>
       {!contact.confirmedAt && (
         <p className="mt-2 rounded-lg bg-amber-50 p-3 text-base text-amber-900">
-          {contact.phone || contact.whatsapp
-            ? `עד שתאשרו, הנגריות פונות למספר העסק שנרשם: ${contact.whatsapp ?? contact.phone}. אשרו או עדכנו.`
-            : 'עדיין אין מספר שהנגריות יכולות לפנות אליו. הוסיפו מספר כדי שיופיעו הכפתורים.'}
+          כרגע אין לכם כפתור וואטסאפ. מספר הטלפון של העסק לא מוצג לנגריות עד שתכניסו אותו כאן.
         </p>
       )}
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <label className="block">
-          <span className="text-base font-medium text-stone-700">
-            טלפון לשיחות <span className="text-red-600">*</span>
-          </span>
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} required type="tel" inputMode="tel" dir="ltr" className={`tnum text-start ${INPUT}`} />
-        </label>
-        <label className="block">
           <span className="text-base font-medium text-stone-700">נייד לוואטסאפ</span>
           <input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} type="tel" inputMode="tel" dir="ltr" placeholder="05X-XXX-XXXX" className={`tnum text-start ${INPUT}`} />
-          <span className="mt-1 block text-sm text-stone-500">ריק: בלי כפתור וואטסאפ, רק חיוג.</span>
+          <span className="mt-1 block text-sm text-stone-500">רק מספר נייד (05X). ריק: בלי וואטסאפ.</span>
+        </label>
+        <label className="block">
+          <span className="text-base font-medium text-stone-700">טלפון לשיחות (לא חובה)</span>
+          <input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" inputMode="tel" dir="ltr" className={`tnum text-start ${INPUT}`} />
+          <span className="mt-1 block text-sm text-stone-500">ריק: בלי כפתור חיוג.</span>
         </label>
       </div>
       {error && <p className="mt-3 rounded-lg bg-red-50 p-3 text-base text-red-700">{error}</p>}
@@ -161,7 +162,7 @@ function ContactNumbers({ profile, notify }: { profile: SupplierProfile; notify:
         className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-emerald-700 font-bold text-white disabled:bg-stone-200 disabled:text-stone-500 sm:w-auto sm:px-8"
       >
         <Check size={18} />
-        {busy ? 'שומר…' : contact.confirmedAt ? 'שמור מספרים' : 'אשר מספרים'}
+        {busy ? 'שומר…' : 'שמור'}
       </button>
     </form>
   )
