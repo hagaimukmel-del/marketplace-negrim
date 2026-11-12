@@ -153,7 +153,7 @@ export default async function SupplierHome({
     loadSupplierQuotes(supplier.id),
     priceModeOf(supplier.id),
     loadThresholds({ supplierId: supplier.id }),
-    loadContactSettings(supplier.id, supplier.phone),
+    loadContactSettings(supplier.id),
   ])
 
   // Lines the supplier said it could not supply (migration 20261008140000).

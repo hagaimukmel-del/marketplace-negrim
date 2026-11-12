@@ -17,7 +17,6 @@ export interface SupplierContact {
 }
 
 export interface ContactRow {
-  phone: string | null
   contact_phone?: string | null
   whatsapp_phone?: string | null
   contact_confirmed_at?: string | null
@@ -26,15 +25,15 @@ export interface ContactRow {
 /**
  * The numbers to show, or null when there is nothing to show.
  *
- * Once the supplier confirmed its numbers in the console, exactly those (an
- * empty WhatsApp means no WhatsApp button). Before that, the business phone it
- * registered with: a call always, WhatsApp when it is a mobile.
+ * Only numbers the supplier entered for this in its console (owner,
+ * 2026-11-12): WhatsApp is its choice. Never the business phone it registered
+ * with. A supplier without them is reached as before, by a message in the site
+ * (and its email).
  */
 export function contactOf(row: ContactRow): SupplierContact | null {
-  const confirmed = Boolean(row.contact_confirmed_at)
-  const phone = nationalPhone(confirmed ? row.contact_phone : row.phone)
-  const whatsappRaw = confirmed ? row.whatsapp_phone : row.phone
-  const whatsapp = isMobilePhone(whatsappRaw) ? nationalPhone(whatsappRaw) : null
+  if (!row.contact_confirmed_at) return null
+  const phone = nationalPhone(row.contact_phone)
+  const whatsapp = isMobilePhone(row.whatsapp_phone) ? nationalPhone(row.whatsapp_phone) : null
   if (!phone && !whatsapp) return null
   return { phone: phone ? formatPhone(phone) : null, whatsapp: whatsapp ? formatPhone(whatsapp) : null }
 }

@@ -2,18 +2,18 @@
 -- (product review 2026-11-12: contact is the main action, a purchase order the
 -- other option). Shown to registered carpentries only.
 --
--- 1. The supplier confirms which numbers carpentries reach in its console:
---    a phone for calls and a mobile for WhatsApp (empty: no WhatsApp button).
---    Until it confirms, the pages use the business phone it registered with,
---    which order pages already show to the carpentry that ordered.
+-- 1. The supplier chooses in its console whether carpentries reach it by
+--    WhatsApp (a mobile) and by call (any phone). Both optional, and the
+--    business phone is never used for this (owner, 2026-11-12): without them
+--    carpentries write in the site, as before.
 --
 -- 2. contact_clicks (20261025150000) gets where the press happened and about
 --    which product, so a supplier can be shown how many carpentries reached it
 --    from its page and from each product. Presses on an order or a quote keep
 --    source null: their order_id / quote_request_id already says where.
 --
--- Additive only. The app reads these columns with a fallback, so code can ship
--- before this migration is applied. RLS stays as it was: suppliers and
+-- Additive only. Before this migration is applied no supplier has buttons and
+-- the pages keep the in-site question. RLS stays as it was: suppliers and
 -- contact_clicks are server only.
 
 alter table public.suppliers
