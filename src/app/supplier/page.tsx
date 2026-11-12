@@ -9,6 +9,7 @@ import { loadPromoWeeks } from '@/lib/promo'
 import { loadSupplierQuotes } from '@/lib/quotes-server'
 import { deletedCarpenterIds } from '@/lib/carpenter-deletion-server'
 import { priceModeOf } from '@/lib/price-mode'
+import { loadContactSettings } from '@/lib/supplier-contact-server'
 import { loadThresholds } from '@/lib/special-price'
 import { addDays, bookableWeeks, currentWeek } from '@/lib/promo-weeks'
 import { mayEditPhoto, productsSoldByOthers } from '@/lib/product-photo-access'
@@ -148,7 +149,12 @@ export default async function SupplierHome({
   ])
 
   // Quote requests and the price mode (T-023, migration 20261011140000).
-  const [quotes, priceMode, thresholds] = await Promise.all([loadSupplierQuotes(supplier.id), priceModeOf(supplier.id), loadThresholds({ supplierId: supplier.id })])
+  const [quotes, priceMode, thresholds, contact] = await Promise.all([
+    loadSupplierQuotes(supplier.id),
+    priceModeOf(supplier.id),
+    loadThresholds({ supplierId: supplier.id }),
+    loadContactSettings(supplier.id, supplier.phone),
+  ])
 
   // Lines the supplier said it could not supply (migration 20261008140000).
   // Read on their own so a database without the column just has none.
@@ -356,6 +362,7 @@ export default async function SupplierHome({
         order_cc_ready: orderCc.ready,
         order_cc_emails: orderCc.bySupplier.get(supplier.id) ?? [],
         price_mode: priceMode,
+        contact,
       }}
       products={products}
       deletedProducts={deletedProducts}

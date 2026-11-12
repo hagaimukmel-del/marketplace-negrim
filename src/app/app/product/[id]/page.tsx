@@ -6,6 +6,8 @@ import { forVisitor } from '@/lib/app/products'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { loadCategoryTree, loadProducts, recordProductView } from '@/lib/app/catalog-server'
 import { CATALOG_PREFIX, catalogUrl } from '@/lib/supplier-documents'
+import { loadSupplierContacts } from '@/lib/supplier-contact-server'
+import type { SupplierContact } from '@/lib/supplier-contact'
 import ProductView, { type LastPurchase, type ProductDoc } from './ProductView'
 
 export const dynamic = 'force-dynamic'
@@ -24,9 +26,9 @@ export default async function AppProduct({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ quote?: string }>
+  searchParams: Promise<{ quote?: string; contact?: string }>
 }) {
-  const [{ id }, { quote }, viewer] = await Promise.all([params, searchParams, loadCatalogViewer()])
+  const [{ id }, { quote, contact }, viewer] = await Promise.all([params, searchParams, loadCatalogViewer()])
   const { carpenter, admin, showPrices, mayBrowse } = viewer
   const [loaded] = await loadProducts({ showPrices, ids: [id], city: carpenter?.city })
   if (!loaded) notFound()
@@ -39,6 +41,13 @@ export default async function AppProduct({
   if (!admin && !(await headers()).has('next-router-prefetch')) {
     after(() => recordProductView(product.id).catch(() => undefined))
   }
+
+  // WhatsApp and call to the supplier (owner, 2026-11-12): the numbers only for
+  // a registered carpentry or the operator; a visitor learns only which
+  // suppliers can be reached, and the button leads to registration and back.
+  const reachable = await loadSupplierContacts(product.offers.map((offer) => offer.supplierId))
+  const contacts: Record<string, SupplierContact> = showPrices ? Object.fromEntries(reachable) : {}
+  const contactable = !mayBrowse ? [...reachable.keys()] : []
 
   const tree = await loadCategoryTree([product])
   const top = tree.find((node) => node.id === product.topId)
@@ -101,6 +110,9 @@ export default async function AppProduct({
       showPrices={showPrices}
       visitor={!mayBrowse}
       askQuote={quote === '1'}
+      contacts={contacts}
+      contactable={contactable}
+      justJoined={Boolean(carpenter) && contact === '1'}
       last={last}
       now={nowMs()}
       crumbs={{ topId: top?.id ?? null, top: top?.name ?? 'קטלוג', sub: sub?.name ?? null }}

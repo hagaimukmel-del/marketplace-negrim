@@ -12,11 +12,14 @@ import { money, termsText } from '@/lib/app/format'
 import ProductList from '@/components/app/ProductList'
 import PublicProductGrid, { toPublicProduct } from '@/components/app/PublicProductGrid'
 import SupplierLogo from '@/components/app/SupplierLogo'
+import SupplierContactButtons from '@/components/app/SupplierContactButtons'
+import { loadSupplierContacts } from '@/lib/supplier-contact-server'
 import { BackLink, SectionTitle } from '@/components/app/ui'
 
 export const dynamic = 'force-dynamic'
 
 type Params = { params: Promise<{ id: string }> }
+type PageProps = Params & { searchParams: Promise<{ contact?: string }> }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params
@@ -33,10 +36,12 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
  * where it delivers and its catalogues, open to anyone. Its terms (payment,
  * minimum order, lead time) and its prices are for registered carpentries.
  * Each opening is counted for the supplier, never the operator's or the
- * supplier's own, nor a link prefetch.
+ * supplier's own, nor a link prefetch. WhatsApp and a call to the supplier are
+ * the main action, for registered carpentries; a visitor's button leads to
+ * registration and back (owner, 2026-11-12).
  */
-export default async function SupplierPage({ params }: Params) {
-  const [{ id }, viewer] = await Promise.all([params, loadCatalogViewer()])
+export default async function SupplierPage({ params, searchParams }: PageProps) {
+  const [{ id }, { contact: back }, viewer] = await Promise.all([params, searchParams, loadCatalogViewer()])
   const { carpenter, admin, showPrices, mayBrowse } = viewer
   const products = await loadProducts({ showPrices, city: carpenter?.city })
   const found = await loadPublicSupplier(id, products)
@@ -47,7 +52,9 @@ export default async function SupplierPage({ params }: Params) {
     after(() => recordSupplierView(supplier.id).catch(() => undefined))
   }
 
-  const catalogs = await loadSupplierCatalogs(supplier.id)
+  const [catalogs, reachable] = await Promise.all([loadSupplierCatalogs(supplier.id), loadSupplierContacts([supplier.id])])
+  const contact = showPrices ? reachable.get(supplier.id) ?? null : null
+  const joinHref = !mayBrowse && reachable.has(supplier.id) ? `/join?next=${encodeURIComponent(`/app/suppliers/${supplier.id}?contact=1`)}` : null
   const theirs = productsOf(supplier.id, products)
   const askHref = showPrices
     ? `/app/messages/new?supplier=${supplier.id}`
@@ -92,10 +99,11 @@ export default async function SupplierPage({ params }: Params) {
               <Link href="/join" className="font-bold text-brand-ink">הרשמה חינם / כניסה</Link>
             </p>
           )}
-          <div className="mt-1">
-            <Link href={askHref} className="inline-flex h-11 items-center gap-2 rounded-[11px] border-[1.5px] border-hair bg-white px-4 text-[15px] font-bold text-navy">
+          <div className="mt-1 grid gap-2">
+            <SupplierContactButtons supplierId={supplier.id} contact={contact} joinHref={joinHref} source="supplier" justJoined={Boolean(carpenter) && back === '1'} />
+            <Link href={askHref} className="inline-flex h-11 w-fit items-center gap-2 rounded-[11px] border-[1.5px] border-hair bg-white px-4 text-[15px] font-bold text-navy">
               <MessageSquare size={17} aria-hidden />
-              שאלה לספק
+              {contact || joinHref ? 'או שאלה בהודעה באתר' : 'שאלה לספק'}
             </Link>
           </div>
         </div>

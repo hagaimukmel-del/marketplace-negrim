@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ImagePlus, Trash2, Check, Plus, X } from 'lucide-react'
+import { ImagePlus, Trash2, Check, Plus, X, MessageCircle } from 'lucide-react'
 import { callApi, jsonInit, type SupplierProfile } from '../types'
 import type { Notify } from '../SupplierApp'
 
@@ -97,6 +97,77 @@ function OrderCopies({ profile, notify }: { profile: SupplierProfile; notify: No
 }
 
 /**
+ * The numbers carpentries reach by WhatsApp and call, from the product pages
+ * and the supplier's own page (owner, 2026-11-12). Until the supplier saves
+ * them here, the pages use the business phone; saving is the confirmation.
+ */
+function ContactNumbers({ profile, notify }: { profile: SupplierProfile; notify: Notify }) {
+  const router = useRouter()
+  const { contact } = profile
+  const [phone, setPhone] = useState(contact.phone ?? profile.phone ?? '')
+  const [whatsapp, setWhatsapp] = useState(contact.whatsapp ?? '')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const save = async (event: React.FormEvent) => {
+    event.preventDefault()
+    setError(null)
+    setBusy(true)
+    try {
+      await callApi('/api/supplier/profile', jsonInit('PATCH', { contact: { phone, whatsapp } }))
+      notify('מספרי הפניות אושרו')
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'השמירה נכשלה')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <form onSubmit={save} className={`rounded-xl border bg-white p-4 ${contact.confirmedAt ? 'border-stone-200' : 'border-amber-300'}`}>
+      <h2 className="flex items-center gap-1.5 font-bold text-stone-900">
+        <MessageCircle size={18} className="text-emerald-700" />
+        פניות מנגריות בוואטסאפ ובטלפון
+      </h2>
+      <p className="mt-0.5 text-base text-stone-600">
+        נגריות רשומות רואות בעמודי המוצרים ובעמוד הספק שלכם כפתור וואטסאפ וכפתור חיוג. ההודעה נפתחת אצלן בוואטסאפ עם
+        שם המוצר, והאתר לא שולח דבר בשמכם.
+      </p>
+      {!contact.confirmedAt && (
+        <p className="mt-2 rounded-lg bg-amber-50 p-3 text-base text-amber-900">
+          {contact.phone || contact.whatsapp
+            ? `עד שתאשרו, הנגריות פונות למספר העסק שנרשם: ${contact.whatsapp ?? contact.phone}. אשרו או עדכנו.`
+            : 'עדיין אין מספר שהנגריות יכולות לפנות אליו. הוסיפו מספר כדי שיופיעו הכפתורים.'}
+        </p>
+      )}
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className="text-base font-medium text-stone-700">
+            טלפון לשיחות <span className="text-red-600">*</span>
+          </span>
+          <input value={phone} onChange={(e) => setPhone(e.target.value)} required type="tel" inputMode="tel" dir="ltr" className={`tnum text-start ${INPUT}`} />
+        </label>
+        <label className="block">
+          <span className="text-base font-medium text-stone-700">נייד לוואטסאפ</span>
+          <input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} type="tel" inputMode="tel" dir="ltr" placeholder="05X-XXX-XXXX" className={`tnum text-start ${INPUT}`} />
+          <span className="mt-1 block text-sm text-stone-500">ריק: בלי כפתור וואטסאפ, רק חיוג.</span>
+        </label>
+      </div>
+      {error && <p className="mt-3 rounded-lg bg-red-50 p-3 text-base text-red-700">{error}</p>}
+      <button
+        type="submit"
+        disabled={busy}
+        className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-emerald-700 font-bold text-white disabled:bg-stone-200 disabled:text-stone-500 sm:w-auto sm:px-8"
+      >
+        <Check size={18} />
+        {busy ? 'שומר…' : contact.confirmedAt ? 'שמור מספרים' : 'אשר מספרים'}
+      </button>
+    </form>
+  )
+}
+
+/**
  * Who the supplier is, as carpenters and the operator see them.
  *
  * The logo uploads the moment a file is picked — there is nothing to confirm
@@ -175,6 +246,9 @@ export default function BusinessTab({ profile, notify }: { profile: SupplierProf
 
   return (
     <div className="space-y-4">
+      {/* Not confirmed yet: first thing on the tab. */}
+      {profile.contact.ready && !profile.contact.confirmedAt && <ContactNumbers profile={profile} notify={notify} />}
+
       <section className="flex items-center gap-4 rounded-xl border border-stone-200 bg-white p-4">
         <button
           type="button"
@@ -321,6 +395,8 @@ export default function BusinessTab({ profile, notify }: { profile: SupplierProf
           {busy ? 'שומר…' : dirty ? 'שמור שינויים' : 'הכל שמור'}
         </button>
       </form>
+
+      {profile.contact.ready && profile.contact.confirmedAt && <ContactNumbers profile={profile} notify={notify} />}
 
       {profile.order_cc_ready && <OrderCopies profile={profile} notify={notify} />}
     </div>

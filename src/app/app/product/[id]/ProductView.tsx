@@ -12,6 +12,8 @@ import { BackLink } from '@/components/app/ui'
 import SupplierLogo from '@/components/app/SupplierLogo'
 import { quantityText } from '@/lib/quotes'
 import QuoteRequest from '@/components/app/QuoteRequest'
+import SupplierContactButtons from '@/components/app/SupplierContactButtons'
+import type { SupplierContact } from '@/lib/supplier-contact'
 
 /** A technical sheet or guide a supplier attached to this product (product_documents). */
 export interface ProductDoc {
@@ -39,9 +41,11 @@ function Reason({ product, offer }: { product: AppProduct; offer: AppOffer }) {
 
 /**
  * The product page. The price is the anchor; under it, from whom and why that
- * supplier was suggested, with a way to switch. What this carpentry bought last
- * time is a quiet line, and the quantity starts where it was then — so there is
- * one add action, not two.
+ * supplier was suggested, with a way to switch, and WhatsApp or a call to that
+ * supplier as the main action (owner, 2026-11-12). Adding to a purchase order
+ * stays, as the other option: when the supplier can be reached, the add button
+ * is the quieter one. What this carpentry bought last time is a quiet line, and
+ * the quantity starts where it was then — so there is one add action, not two.
  */
 export default function ProductView({
   product,
@@ -52,6 +56,9 @@ export default function ProductView({
   docs,
   askQuote = false,
   visitor = false,
+  contacts = {},
+  contactable = [],
+  justJoined = false,
 }: {
   product: AppProduct
   docs: ProductDoc[]
@@ -60,6 +67,12 @@ export default function ProductView({
   showPrices: boolean
   /** Not registered: who sells it, no terms, no comparison, no way to buy (owner, 2026-11-12). */
   visitor?: boolean
+  /** Each supplier's numbers, for a registered carpentry or the operator only. */
+  contacts?: Record<string, SupplierContact>
+  /** For a visitor: the suppliers that can be reached once registered, without their numbers. */
+  contactable?: string[]
+  /** Back from the registration the contact button led to. */
+  justJoined?: boolean
   last: LastPurchase | null
   now: number
   crumbs: { topId: string | null; top: string; sub: string | null }
@@ -77,6 +90,12 @@ export default function ProductView({
   const total = (offer.price ?? 0) * packs * step
   // The chosen supplier answers with quotes only (T-023): the buy box asks for one.
   const quoting = showPrices && offer.quoteOnly
+  const contact = contacts[offer.supplierId] ?? null
+  const joinHref = visitor && contactable.includes(offer.supplierId) ? `/join?next=${encodeURIComponent(`/app/product/${product.id}?contact=1`)}` : null
+  // Contact first, the purchase order the other option (owner, 2026-11-12).
+  const orderLook = contact
+    ? 'border-[1.5px] border-navy bg-white text-navy hover:bg-navy-soft'
+    : 'bg-brand text-navy hover:bg-brand-hover'
 
   const choose = (id: string) => {
     setSupplierId(id)
@@ -181,6 +200,14 @@ export default function ProductView({
           </button>
         )}
       </div>
+      <SupplierContactButtons
+        supplierId={offer.supplierId}
+        contact={contact}
+        joinHref={joinHref}
+        source="product"
+        product={{ id: product.id, name: product.name }}
+        justJoined={justJoined}
+      />
       {!visitor && <div className="flex flex-wrap gap-x-3.5 gap-y-0.5 text-[13.5px] text-muted">
         {offer.leadDays != null && <span>אספקה עד {offer.leadDays} ימי עסקים</span>}
         <span>{termsText(offer.terms)}</span>
@@ -264,7 +291,7 @@ export default function ProductView({
       type="button"
       onClick={add}
       disabled={!offer.inStock || offer.price == null}
-      className={`inline-flex h-12 items-center justify-center gap-1.5 rounded-[11px] bg-brand px-4 font-bold text-navy hover:bg-brand-hover disabled:bg-[#EFE9E0] disabled:text-faint ${full ? 'w-full' : 'flex-1'}`}
+      className={`inline-flex h-12 items-center justify-center gap-1.5 rounded-[11px] px-4 font-bold ${orderLook} disabled:border-transparent disabled:bg-[#EFE9E0] disabled:text-faint ${full ? 'w-full' : 'flex-1'}`}
     >
       {added ? (
         <>
@@ -291,7 +318,7 @@ export default function ProductView({
         <button
           type="button"
           onClick={open}
-          className={`inline-flex h-12 items-center justify-center gap-1.5 rounded-[11px] bg-brand px-4 font-bold text-navy hover:bg-brand-hover ${full ? 'w-full' : 'flex-1'}`}
+          className={`inline-flex h-12 items-center justify-center gap-1.5 rounded-[11px] px-4 font-bold ${orderLook} ${full ? 'w-full' : 'flex-1'}`}
         >
           <FileText size={18} /> {full ? 'בקש הצעת מחיר' : 'בקש הצעה'}
         </button>
@@ -379,7 +406,7 @@ export default function ProductView({
         {showPrices && (
           <section className="sticky top-[90px] hidden gap-3 rounded-2xl border border-hair bg-white p-3.5 md:grid">
             <div className="flex items-baseline justify-between">
-              <h3 className="m-0 text-base font-bold">כמות</h3>
+              <h3 className="m-0 text-base font-bold">{contact ? 'או הזמנת רכש באתר' : 'כמות'}</h3>
               <span className="text-muted">{pack ?? product.unit}</span>
             </div>
             <div className="flex items-center gap-3">
