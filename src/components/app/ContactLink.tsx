@@ -12,12 +12,14 @@ import { telUrl, whatsappUrl } from '@/lib/phone'
  *
  * With an order, the press is reported (sendBeacon, never blocking the link)
  * so the order's history shows that the carpenter reached out off the site.
+ * From a product or supplier page (`track`), it is counted for the supplier.
  */
 export default function ContactLink({
   channel,
   phone,
   text,
   orderId,
+  track,
   className,
   ariaLabel,
   children,
@@ -26,6 +28,7 @@ export default function ContactLink({
   phone: string | null | undefined
   text?: string
   orderId?: string
+  track?: { supplierId: string; source: 'product' | 'supplier'; productId?: string }
   className?: string
   ariaLabel?: string
   children: ReactNode
@@ -34,10 +37,11 @@ export default function ContactLink({
   if (!href) return null
 
   const report = () => {
-    if (!orderId) return
+    const url = orderId ? `/api/app/orders/${orderId}/contact` : track ? `/api/app/suppliers/${track.supplierId}/contact` : null
+    if (!url) return
     try {
-      const payload = new Blob([JSON.stringify({ channel })], { type: 'application/json' })
-      navigator.sendBeacon(`/api/app/orders/${orderId}/contact`, payload)
+      const body = track && !orderId ? { channel, source: track.source, productId: track.productId } : { channel }
+      navigator.sendBeacon(url, new Blob([JSON.stringify(body)], { type: 'application/json' }))
     } catch {
       // Reporting is a nicety; the call or chat goes ahead either way.
     }

@@ -6,7 +6,7 @@ import { PAYMENT_TERMS } from '@/app/supplier/types'
 import { isRegionKey } from '@/lib/regions'
 import type { Database } from '@/lib/database.types'
 import { cleanOrderCc } from '@/lib/order-recipients'
-import { formatPhone, validPhoneKey } from '@/lib/phone'
+import { formatPhone, isMobilePhone, nationalPhone, validPhoneKey } from '@/lib/phone'
 
 type SupplierUpdate = Database['public']['Tables']['suppliers']['Update']
 
@@ -220,6 +220,33 @@ export async function PATCH(request: NextRequest) {
       if (modeError) {
         console.error('Supplier price mode update failed:', modeError)
         return NextResponse.json({ error: 'לא הצלחתי לשמור את מצב המחירים' }, { status: 500 })
+      }
+    }
+
+    // The numbers carpentries reach by WhatsApp and call (migration
+    // 20261112130000), on their own and confirmed by saving them. A call
+    // number is required; WhatsApp may be left empty (then no WhatsApp button),
+    // and must be a mobile when given.
+    if ('contact' in body) {
+      const phoneRaw = text(body.contact?.phone, 40)
+      const whatsappRaw = text(body.contact?.whatsapp, 40)
+      if (!phoneRaw || !nationalPhone(phoneRaw)) {
+        return NextResponse.json({ error: 'צריך מספר טלפון תקין לשיחות' }, { status: 400 })
+      }
+      if (whatsappRaw && !isMobilePhone(whatsappRaw)) {
+        return NextResponse.json({ error: 'וואטסאפ עובד רק עם מספר נייד (05X)' }, { status: 400 })
+      }
+      const { error: contactError } = await supabase
+        .from('suppliers')
+        .update({
+          contact_phone: formatPhone(phoneRaw),
+          whatsapp_phone: whatsappRaw ? formatPhone(whatsappRaw) : null,
+          contact_confirmed_at: new Date().toISOString(),
+        })
+        .eq('id', supplier.id)
+      if (contactError) {
+        console.error('Supplier contact update failed:', contactError)
+        return NextResponse.json({ error: 'לא הצלחתי לשמור את מספרי הפניות' }, { status: 500 })
       }
     }
 

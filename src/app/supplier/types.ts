@@ -54,6 +54,12 @@ export interface SupplierProfile {
   order_cc_emails: string[]
   /** "להציג מחירים / רק הצעת מחיר" (T-023); null on a database without migration 20261011140000. */
   price_mode: 'shown' | 'quote' | null
+  /**
+   * The numbers carpentries reach by WhatsApp and call from the product and
+   * supplier pages (lib/supplier-contact). Until confirmed, the business phone.
+   * ready is false on a database without migration 20261112130000.
+   */
+  contact: { ready: boolean; confirmedAt: string | null; phone: string | null; whatsapp: string | null }
 }
 
 export interface ProductItem {

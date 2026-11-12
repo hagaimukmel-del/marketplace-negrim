@@ -72,6 +72,10 @@ vi.mock('@/lib/app/suppliers-public', async (load) => ({
   loadSupplierCatalogs: async () => [],
   recordSupplierView: async () => undefined,
 }))
+// Supplier s1 can be reached; its number must reach a registered viewer only.
+vi.mock('@/lib/supplier-contact-server', () => ({
+  loadSupplierContacts: async () => new Map([['s1', { phone: '050-111-2222', whatsapp: '050-111-2222' }]]),
+}))
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }))
 vi.mock('next/server', () => ({ after: () => undefined }))
 vi.mock('next/navigation', () => ({
@@ -88,6 +92,7 @@ const ProductPage = (await import('./product/[id]/page')).default
 const ProductView = (await import('./product/[id]/ProductView')).default
 const SupplierPage = (await import('./suppliers/[id]/page')).default
 const SupplierCard = (await import('@/components/app/SupplierCard')).default
+const SupplierContactButtons = (await import('@/components/app/SupplierContactButtons')).default
 
 /** The first element of this component type in a rendered tree, or null. */
 function find(node: ReactNode, type: unknown): { props: Record<string, unknown> } | null {
@@ -148,8 +153,24 @@ describe('catalogue for a visitor who has not registered', () => {
     expect(JSON.stringify(view!.props)).not.toMatch(/SECRET-TERMS|123\.45|999/)
   })
 
+  it('a product page offers contact through registration, never the number', async () => {
+    const page = await ProductPage({ params: Promise.resolve({ id: 'p1' }), searchParams: Promise.resolve({}) })
+    const view = find(page, ProductView)!
+    expect(view.props.contacts).toEqual({})
+    expect(view.props.contactable).toEqual(['s1'])
+    expect(JSON.stringify(view.props)).not.toContain('111-2222')
+  })
+
+  it('a supplier page offers contact through registration and back, never the number', async () => {
+    const page = await SupplierPage({ params: Promise.resolve({ id: 's1' }), searchParams: Promise.resolve({}) })
+    const buttons = find(page, SupplierContactButtons)!
+    expect(buttons.props.contact).toBeNull()
+    expect(buttons.props.joinHref).toBe(`/join?next=${encodeURIComponent('/app/suppliers/s1?contact=1')}`)
+    expect(textOf(page)).not.toContain('111-2222')
+  })
+
   it('a supplier page shows who the supplier is and its products, not its terms', async () => {
-    const page = await SupplierPage({ params: Promise.resolve({ id: 's1' }) })
+    const page = await SupplierPage({ params: Promise.resolve({ id: 's1' }), searchParams: Promise.resolve({}) })
     expect(contains(page, PublicProductGrid)).toBe(true)
     expect(contains(page, ProductList)).toBe(false)
     const text = textOf(page)
@@ -192,9 +213,19 @@ describe('catalogue for a registered viewer', () => {
 
   it('a supplier page shows its terms and the full product list', async () => {
     state.mayBrowse = true
-    const page = await SupplierPage({ params: Promise.resolve({ id: 's1' }) })
+    const page = await SupplierPage({ params: Promise.resolve({ id: 's1' }), searchParams: Promise.resolve({}) })
     expect(contains(page, ProductList)).toBe(true)
     expect(textOf(page)).toContain('SECRET-TERMS')
+    expect(find(page, SupplierContactButtons)!.props).toMatchObject({ contact: { whatsapp: '050-111-2222' }, joinHref: null, source: 'supplier' })
+  })
+
+  it('a product page gives the numbers of the suppliers that sell it', async () => {
+    state.mayBrowse = true
+    const page = await ProductPage({ params: Promise.resolve({ id: 'p1' }), searchParams: Promise.resolve({ contact: '1' }) })
+    const view = find(page, ProductView)!
+    expect(view.props.contacts).toEqual({ s1: { phone: '050-111-2222', whatsapp: '050-111-2222' } })
+    expect(view.props.contactable).toEqual([])
+    expect(view.props.justJoined).toBe(true)
   })
 
   it('a search shows the full product list, not the visitor grid', async () => {

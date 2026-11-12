@@ -246,7 +246,9 @@ export type Database = {
           created_at: string
           id: string
           order_id: string | null
+          product_id: string | null
           quote_request_id: string | null
+          source: string | null
           supplier_id: string | null
         }
         Insert: {
@@ -255,7 +257,9 @@ export type Database = {
           created_at?: string
           id?: string
           order_id?: string | null
+          product_id?: string | null
           quote_request_id?: string | null
+          source?: string | null
           supplier_id?: string | null
         }
         Update: {
@@ -264,7 +268,9 @@ export type Database = {
           created_at?: string
           id?: string
           order_id?: string | null
+          product_id?: string | null
           quote_request_id?: string | null
+          source?: string | null
           supplier_id?: string | null
         }
         Relationships: []
@@ -2185,7 +2191,9 @@ export type Database = {
           business_id: string
           city: string | null
           company_name: string
+          contact_confirmed_at: string | null
           contact_name: string | null
+          contact_phone: string | null
           created_at: string | null
           decided_at: string | null
           default_lead_time_days: number | null
@@ -2211,6 +2219,7 @@ export type Database = {
           terms_version: string | null
           token: string
           updated_at: string | null
+          whatsapp_phone: string | null
           zip_code: string | null
         }
         Insert: {
@@ -2218,7 +2227,9 @@ export type Database = {
           business_id: string
           city?: string | null
           company_name: string
+          contact_confirmed_at?: string | null
           contact_name?: string | null
+          contact_phone?: string | null
           created_at?: string | null
           decided_at?: string | null
           default_lead_time_days?: number | null
@@ -2244,6 +2255,7 @@ export type Database = {
           terms_version?: string | null
           token?: string
           updated_at?: string | null
+          whatsapp_phone?: string | null
           zip_code?: string | null
         }
         Update: {
@@ -2251,7 +2263,9 @@ export type Database = {
           business_id?: string
           city?: string | null
           company_name?: string
+          contact_confirmed_at?: string | null
           contact_name?: string | null
+          contact_phone?: string | null
           created_at?: string | null
           decided_at?: string | null
           default_lead_time_days?: number | null
@@ -2277,6 +2291,7 @@ export type Database = {
           terms_version?: string | null
           token?: string
           updated_at?: string | null
+          whatsapp_phone?: string | null
           zip_code?: string | null
         }
         Relationships: []

@@ -31,7 +31,16 @@ const BENEFITS = ['מחירים והצעות מחיר מספקים, לפני מ�
  * Registration and login for carpenters. There is no password and no account to
  * manage: the personal link is the account.
  */
-export default function JoinClient({ googleEnabled = false, contactEmail = null }: { googleEnabled?: boolean; contactEmail?: string | null }) {
+export default function JoinClient({
+  googleEnabled = false,
+  contactEmail = null,
+  next = null,
+}: {
+  googleEnabled?: boolean
+  contactEmail?: string | null
+  /** Where to land after registering (checked on the server, a path inside /app). */
+  next?: string | null
+}) {
   const router = useRouter()
   const [businessName, setBusinessName] = useState('')
   const [contactName, setContactName] = useState('')
@@ -80,7 +89,7 @@ export default function JoinClient({ googleEnabled = false, contactEmail = null 
       // Straight to their home screen — the link is the account, so there is
       // nothing to confirm and nothing to log into. Not /o/[token]: that page
       // shows a running campaign, and a new carpentry starts at home.
-      router.replace(`/carpenter/link/${encodeURIComponent(data.token)}`)
+      router.replace(`/carpenter/link/${encodeURIComponent(data.token)}${next ? `?next=${encodeURIComponent(next)}` : ''}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ההרשמה נכשלה')
       setBusy(false)
