@@ -28,7 +28,7 @@ const EMPTY = {
  * anything: the operator approves each supplier by hand, so the page ends on a
  * screen that says exactly that rather than pretending an account now exists.
  */
-export default function SupplierJoinPage() {
+export default function SupplierJoinPage({ source = null }: { source?: string | null }) {
   const [form, setForm] = useState(EMPTY)
   const [regions, setRegions] = useState<string[]>([])
   const [acceptTerms, setAcceptTerms] = useState(false)
@@ -47,7 +47,7 @@ export default function SupplierJoinPage() {
       const response = await fetch('/api/supplier-join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, delivery_regions: regions, accept_terms: acceptTerms }),
+        body: JSON.stringify({ ...form, delivery_regions: regions, accept_terms: acceptTerms, ref: source }),
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'ההרשמה נכשלה')

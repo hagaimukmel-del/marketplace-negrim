@@ -24,6 +24,8 @@ export interface SupplierApplication {
   email: string | null
   city: string | null
   sellsNote: string | null
+  /** Where the applicant came from (`?ref=` / utm), operator's email only. */
+  source?: string | null
 }
 
 function escapeHtml(value: string): string {
@@ -95,6 +97,7 @@ export function newApplicationHtml(application: SupplierApplication): string {
       ${row('טלפון', application.phone)}
       ${row('מייל', application.email)}
       ${row('עיר', application.city)}
+      ${row('הגיע מ', application.source ?? null)}
     </table>
     ${
       application.sellsNote

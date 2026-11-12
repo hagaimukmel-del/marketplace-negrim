@@ -4,6 +4,7 @@ import { TERMS_VERSION } from '@/lib/terms'
 import { isRegionKey } from '@/lib/regions'
 import { isTestName, operatorEmail, sendEmail } from '@/lib/email'
 import { formatPhone, validPhoneKey } from '@/lib/phone'
+import { cleanRef } from '@/lib/landing-ref'
 import { checkRateLimit, getClientIP, getRateLimitHeaders, hashIdentifier } from '@/lib/rate-limit'
 import {
   applicationReceivedHtml,
@@ -168,6 +169,9 @@ export async function POST(request: NextRequest) {
       email,
       city: text(body.city, 80),
       sellsNote: text(body.sells_note, 600),
+      // The link's ref / utm, so the operator knows which channel worked.
+      // Only in the email: suppliers.source is a closed seed/self column.
+      source: cleanRef(body.ref),
     }
 
     if (email) {
