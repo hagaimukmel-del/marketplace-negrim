@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { LayoutGrid, Recycle, Search } from 'lucide-react'
+import { LayoutGrid, Recycle, Search, Store } from 'lucide-react'
 import { loadCatalogViewer } from '@/lib/app/catalog-access'
 import PublicProductGrid, { toPublicProduct } from '@/components/app/PublicProductGrid'
 import { loadCategoryTree, loadProducts } from '@/lib/app/catalog-server'
@@ -9,6 +9,8 @@ import { CategoryList } from '../HomeView'
 import { searchProducts } from '@/lib/catalog-search'
 import AskAgentButton from '@/components/chat/AskAgentButton'
 import { regionsForCity } from '@/lib/regions'
+import { loadPublicSuppliers, type PublicSupplier } from '@/lib/app/suppliers-public'
+import SupplierCard from '@/components/app/SupplierCard'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,6 +48,7 @@ export default async function AppCatalog({ searchParams }: { searchParams: Promi
 
   if (query) {
     const { products: hits, partial } = searchProducts(products, query)
+    const suppliers = matchingSuppliers(await loadPublicSuppliers(products), query)
     return (
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
         <PageHeader
@@ -61,6 +64,16 @@ export default async function AppCatalog({ searchParams }: { searchParams: Promi
         {search}
         {carpenter && <AskAgentButton query={query} />}
         {!mayBrowse && <SignUpStrip />}
+        {suppliers.length > 0 && (
+          <section>
+            <SectionTitle title="ספקים" href="/app/suppliers" action="כל הספקים" />
+            <div className="grid gap-2.5 md:grid-cols-2">
+              {suppliers.map((supplier) => (
+                <SupplierCard key={supplier.id} supplier={supplier} />
+              ))}
+            </div>
+          </section>
+        )}
         {hits.length ? (
           mayBrowse ? (
             <ProductList products={hits} showPrices={showPrices} myRegions={regionsForCity(carpenter?.city)} />
@@ -86,6 +99,15 @@ export default async function AppCatalog({ searchParams }: { searchParams: Promi
       <CategoryList categories={categories} />
       <section>
         <SectionTitle title="עוד" />
+        <Link href="/app/suppliers" className="mb-2.5 flex items-center gap-3 rounded-xl border border-hair bg-white px-3.5 py-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] bg-navy-soft text-navy">
+            <Store size={22} />
+          </span>
+          <span>
+            <b className="block text-[15px]">ספקים</b>
+            <span className="text-[13.5px] text-muted">מי מוכר כאן ומה הוא מוכר</span>
+          </span>
+        </Link>
         <Link href="/app/metzion" className="flex items-center gap-3 rounded-xl border border-[#E6D6C2] bg-wood-soft px-3.5 py-3">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] bg-white text-[#6B4E2E]">
             <Recycle size={22} />
@@ -112,4 +134,11 @@ function SignUpStrip() {
       </Link>
     </div>
   )
+}
+
+/** Suppliers whose name holds one of the searched words (two letters or more), at most three. */
+function matchingSuppliers(suppliers: PublicSupplier[], query: string): PublicSupplier[] {
+  const words = query.toLowerCase().split(/\s+/).filter((word) => word.length >= 2)
+  if (!words.length) return []
+  return suppliers.filter((supplier) => words.some((word) => supplier.name.toLowerCase().includes(word))).slice(0, 3)
 }

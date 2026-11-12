@@ -86,6 +86,7 @@ export default function Landing() {
           <span className="flex-1" />
           <nav className="hidden items-center gap-5 text-[15px] font-semibold text-muted md:flex" aria-label="ניווט">
             <Link href="/app/catalog" className="hover:text-ink">קטלוג</Link>
+            <Link href="/app/suppliers" className="hover:text-ink">ספקים</Link>
             <Link href="/app/work" className="hover:text-ink">נגרים עובדים ביחד</Link>
             <Link href="/app/metzion" className="hover:text-ink">מציאון</Link>
             <a href="#suppliers" className="hover:text-ink">לספקים</a>
