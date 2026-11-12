@@ -242,7 +242,7 @@ export default async function SuppliersJoinPage({ searchParams }: PageProps) {
           <div>
             <span className="inline-flex rounded-full bg-brand-soft px-3 py-1 text-sm font-bold text-attn">לספקים שמוכרים לנגריות</span>
             <h1 className="m-0 mt-4 text-[34px] font-extrabold leading-[1.15] tracking-tight text-navy text-balance md:text-[48px]">
-              יש לכם כבר אתר. הנגרים עדיין מתקשרים.
+              יש לכם כבר אתר. ועדיין אין הזמנות?
             </h1>
             <p className="m-0 mt-4 text-lg leading-relaxed text-muted">
               נגרים B2B הוא המקום שבו נגריות מחפשות מוצר ומזמינות ישר מהספק. עמוד ספק משלכם, מחיר B2B לנגריות
