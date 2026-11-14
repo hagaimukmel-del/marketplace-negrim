@@ -91,6 +91,7 @@ const CategoryPage = (await import('./catalog/[id]/page')).default
 const ProductPage = (await import('./product/[id]/page')).default
 const ProductView = (await import('./product/[id]/ProductView')).default
 const SupplierPage = (await import('./suppliers/[id]/page')).default
+const SuppliersPage = (await import('./suppliers/page')).default
 const SupplierCard = (await import('@/components/app/SupplierCard')).default
 const SupplierContactButtons = (await import('@/components/app/SupplierContactButtons')).default
 
@@ -183,6 +184,12 @@ describe('catalogue for a visitor who has not registered', () => {
     expect(find(page, SupplierCard)!.props).toEqual({ supplier })
   })
 
+  it('the supplier list gives a visitor no WhatsApp number', async () => {
+    const page = await SuppliersPage()
+    expect(find(page, SupplierCard)!.props).toEqual({ supplier })
+    expect(textOf(page)).not.toContain('050-111-2222')
+  })
+
   it('a search finds products and shows photo, name and supplier only', async () => {
     const page = await CatalogPage({ searchParams: Promise.resolve({ q: 'דבק' }) })
     const grid = find(page, PublicProductGrid)
@@ -226,6 +233,14 @@ describe('catalogue for a registered viewer', () => {
     expect(view.props.contacts).toEqual({ s1: { phone: '050-111-2222', whatsapp: '050-111-2222' } })
     expect(view.props.contactable).toEqual([])
     expect(view.props.justJoined).toBe(true)
+  })
+
+  it('the supplier list and a search put WhatsApp on the supplier\'s card', async () => {
+    state.mayBrowse = true
+    const list = await SuppliersPage()
+    expect(find(list, SupplierCard)!.props).toEqual({ supplier, whatsapp: '050-111-2222' })
+    const search = await CatalogPage({ searchParams: Promise.resolve({ q: 'ספק' }) })
+    expect(find(search, SupplierCard)!.props).toEqual({ supplier, whatsapp: '050-111-2222' })
   })
 
   it('a search shows the full product list, not the visitor grid', async () => {
