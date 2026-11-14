@@ -11,6 +11,7 @@ import AskAgentButton from '@/components/chat/AskAgentButton'
 import { regionsForCity } from '@/lib/regions'
 import { loadPublicSuppliers, type PublicSupplier } from '@/lib/app/suppliers-public'
 import SupplierCard from '@/components/app/SupplierCard'
+import { loadSupplierContacts } from '@/lib/supplier-contact-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -49,6 +50,8 @@ export default async function AppCatalog({ searchParams }: { searchParams: Promi
   if (query) {
     const { products: hits, partial } = searchProducts(products, query)
     const suppliers = matchingSuppliers(await loadPublicSuppliers(products), query)
+    // WhatsApp on each card for a registered carpentry only, as on the supplier page.
+    const contacts = showPrices && suppliers.length ? await loadSupplierContacts(suppliers.map((s) => s.id)) : null
     return (
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
         <PageHeader
@@ -69,7 +72,7 @@ export default async function AppCatalog({ searchParams }: { searchParams: Promi
             <SectionTitle title="ספקים" href="/app/suppliers" action="כל הספקים" />
             <div className="grid gap-2.5 md:grid-cols-2">
               {suppliers.map((supplier) => (
-                <SupplierCard key={supplier.id} supplier={supplier} />
+                <SupplierCard key={supplier.id} supplier={supplier} whatsapp={contacts?.get(supplier.id)?.whatsapp} />
               ))}
             </div>
           </section>
