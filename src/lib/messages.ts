@@ -468,18 +468,50 @@ export async function setHandled(party: Party, threadId: string, handled: boolea
   return !error
 }
 
+/**
+ * Of these threads, the ones a carpentry actually wrote in.
+ *
+ * `last_sender = 'carpenter'` alone does not mean a carpentry is waiting: a
+ * quote thread opens with it even when the carpentry added no note, and the
+ * supplier's answer to the quote is a system line, which leaves last_sender
+ * alone. Such a thread would read "waiting for the supplier" for good (the
+ * daily summary kept counting two answered quotes). A thread waits only if a
+ * carpentry wrote in it; last_sender then says whether it was answered.
+ */
+export async function threadsWithCarpenterMessage(threadIds: string[]): Promise<Set<string>> {
+  const found = new Set<string>()
+  const ids = [...new Set(threadIds)]
+  for (let i = 0; i < ids.length; i += 200) {
+    const { data, error } = await getSupabaseAdmin()
+      .from('messages')
+      .select('thread_id')
+      .eq('sender', 'carpenter')
+      .in('thread_id', ids.slice(i, i + 200))
+      .limit(5000)
+    if (error) {
+      // Better a possibly stale count than none: fall back to last_sender alone.
+      console.error('[messages] carpenter-message check failed', error)
+      return new Set(ids)
+    }
+    for (const row of data ?? []) found.add(row.thread_id)
+  }
+  return found
+}
+
 /** For the admin console: how many threads a supplier has and how many wait for its answer. No content. */
 export async function threadCountsBySupplier(): Promise<Map<string, { total: number; unanswered: number }>> {
   const { data, error } = await getSupabaseAdmin()
     .from('message_threads')
-    .select('supplier_id, last_sender, status')
+    .select('id, supplier_id, last_sender, status')
     .limit(20000)
   const counts = new Map<string, { total: number; unanswered: number }>()
   if (error) return counts
+  const candidates = (data ?? []).filter((row) => row.last_sender === 'carpenter' && row.status === 'open').map((row) => row.id)
+  const written = await threadsWithCarpenterMessage(candidates)
   for (const row of data ?? []) {
     const entry = counts.get(row.supplier_id) ?? { total: 0, unanswered: 0 }
     entry.total += 1
-    if (row.last_sender === 'carpenter' && row.status === 'open') entry.unanswered += 1
+    if (row.last_sender === 'carpenter' && row.status === 'open' && written.has(row.id)) entry.unanswered += 1
     counts.set(row.supplier_id, entry)
   }
   return counts

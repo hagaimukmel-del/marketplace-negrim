@@ -5,7 +5,7 @@ import { getSupabaseAdmin } from './supabase-admin'
 import { isTestName, operatorEmail, sendEmail, siteUrl } from './email'
 import { notify } from './notifications'
 import { queueEmail } from './outbox'
-import { postSystemMessage } from './messages'
+import { postSystemMessage, threadsWithCarpenterMessage } from './messages'
 import { confirmUrl } from './supplier-link'
 import { deletedCarpenterIds } from './carpenter-deletion-server'
 import { isWorkingTime, israelWorkday, workingMinutesBetween } from './working-hours'
@@ -233,12 +233,15 @@ export async function sendDailySummaries(now: Date = new Date()): Promise<number
   const [{ data: allOrders }, { data: allQuotes }, { data: allThreads }, deleted] = await Promise.all([
     supabase.from('orders').select('supplier_id, carpenter_id').eq('status', 'pending').not('supplier_id', 'is', null).limit(2000),
     supabase.from('quote_requests').select('supplier_id, carpenter_id').eq('status', 'requested').limit(2000),
-    supabase.from('message_threads').select('supplier_id, carpenter_id').eq('last_sender', 'carpenter').eq('status', 'open').limit(2000),
+    supabase.from('message_threads').select('id, supplier_id, carpenter_id').eq('last_sender', 'carpenter').eq('status', 'open').limit(2000),
     deletedCarpenterIds(),
   ])
   const visible = <T extends { carpenter_id: string | null }>(rows: T[] | null) =>
     (rows ?? []).filter((row) => !row.carpenter_id || !deleted.has(row.carpenter_id))
-  const [orders, quotes, threads] = [visible(allOrders), visible(allQuotes), visible(allThreads)]
+  const [orders, quotes, openThreads] = [visible(allOrders), visible(allQuotes), visible(allThreads)]
+  // Only threads a carpentry wrote in: an answered quote with no note is not a message waiting.
+  const written = await threadsWithCarpenterMessage(openThreads.map((t) => t.id))
+  const threads = openThreads.filter((t) => written.has(t.id))
   const counts = new Map<string, { orders: number; quotes: number; messages: number }>()
   const bump = (id: string | null, field: 'orders' | 'quotes' | 'messages') => {
     if (!id) return

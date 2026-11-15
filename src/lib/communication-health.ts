@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from './supabase-admin'
 import { nationalPhone, isMobilePhone } from './phone'
 import { workingMinutesBetween } from './working-hours'
 import { rungDue } from './reminder-rules'
+import { threadsWithCarpenterMessage } from './messages'
 
 /**
  * What the operator sees on "בריאות תקשורת" (communication plan, step 6):
@@ -101,6 +102,8 @@ export async function loadCommunicationHealth(now: Date = new Date()): Promise<C
     : { data: [] as { key: string }[] }
   const handled = new Set((handledRows ?? []).map((row) => row.key))
 
+  const written = await threadsWithCarpenterMessage((threads.data ?? []).map((t) => t.id))
+
   const ready = !week.error
   const counts = { queued: 0, sent: 0, delivered: 0, failed: 0, pending: 0 }
   for (const row of week.data ?? []) {
@@ -180,7 +183,7 @@ export async function loadCommunicationHealth(now: Date = new Date()): Promise<C
     })),
     suppressions: (suppressions.data ?? []).map((row) => ({ email: row.email, reason: row.reason, createdAt: row.created_at })),
     waiting,
-    unanswered: (threads.data ?? []).map((t) => ({
+    unanswered: (threads.data ?? []).filter((t) => written.has(t.id)).map((t) => ({
       id: t.id,
       subject: t.subject,
       carpenter: name(t.carpenters, 'business_name') ?? 'נגרייה',
