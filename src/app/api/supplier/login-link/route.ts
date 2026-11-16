@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase-admin'
-import { isTestName, sendEmail } from '@/lib/email'
-import { supplierLoginLinkHtml, supplierLoginLinkSubject } from '@/lib/emails/supplier-login-link'
 import { safeNext } from '@/lib/notification-links'
-import { loginCodeForEmail } from '@/lib/login-code'
+import { findApprovedSupplierByEmail, sendSupplierLoginEmail } from '@/lib/supplier-login'
 import { checkRateLimit, getClientIP, getRateLimitHeaders, hashIdentifier } from '@/lib/rate-limit'
 
 /**
@@ -40,29 +37,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'כתובת מייל לא תקינה' }, { status: 400 })
     }
 
-    // Case-insensitive, because rows written before emails were lowercased on
-    // save still hold them as typed — an exact match missed ITAMIRLTD1@GMAIL.COM
-    // and silently sent nothing. The pattern's wildcards are escaped so an
-    // underscore in an address matches only an underscore.
-    const pattern = email.replace(/[\\%_]/g, (char: string) => `\\${char}`)
-
-    const { data: supplier } = await getSupabaseAdmin()
-      .from('suppliers')
-      .select('id, company_name, email, token')
-      .ilike('email', pattern)
-      .eq('status', 'approved')
-      .limit(1)
-      .maybeSingle()
-
-    if (supplier?.email && supplier.token) {
-      const code = await loginCodeForEmail(supplier.id, 'supplier')
-      await sendEmail({
-        to: supplier.email,
-        subject: supplierLoginLinkSubject(code),
-        html: supplierLoginLinkHtml({ companyName: supplier.company_name, token: supplier.token, next, code }),
-        isTest: isTestName(supplier.company_name),
-      })
-    }
+    const supplier = await findApprovedSupplierByEmail(email)
+    if (supplier) await sendSupplierLoginEmail(supplier, next)
 
     return NextResponse.json(NEUTRAL)
   } catch (err) {

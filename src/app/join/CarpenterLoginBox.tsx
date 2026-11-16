@@ -94,6 +94,12 @@ export default function CarpenterLoginBox({ sentTo, googleEnabled = false }: { s
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'הכניסה נכשלה')
+      // A supplier who signed in here goes to their own console.
+      if (data.redirect === '/supplier') {
+        router.replace('/supplier')
+        router.refresh()
+        return
+      }
       // The session cookie is set; refresh so every server component reads it.
       // Back to the screen an email link pointed at, when there is one.
       router.replace(safeNext(new URLSearchParams(window.location.search).get('next'), '/app') ?? '/app')
