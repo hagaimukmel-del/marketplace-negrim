@@ -4,6 +4,7 @@ import { findCarpenterByIdentifier, loginCodeForEmail } from '@/lib/login-code'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { isTestName, sendEmail } from '@/lib/email'
 import { carpenterLoginHtml, carpenterLoginSubject } from '@/lib/emails/carpenter'
+import { findApprovedSupplierByEmail, sendSupplierLoginEmail } from '@/lib/supplier-login'
 import { checkRateLimit, getRateLimitHeaders, getClientIP, hashIdentifier } from '@/lib/rate-limit'
 
 const NEUTRAL = {
@@ -66,6 +67,17 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'מספר טלפון לא תקין' }, { status: 400 })
       }
       carpenter = await findCarpenterByIdentifier(identifier)
+
+      // A supplier who pressed the site's main "כניסה" lands here, on the
+      // carpentry login. No carpentry holds their email, so this used to
+      // answer "we sent a code" and send nothing. Their own code goes out
+      // instead, and /api/carpenter/login-code accepts it and signs them in
+      // as the supplier. Same neutral answer either way.
+      if (!carpenter && identifier.includes('@')) {
+        const supplier = await findApprovedSupplierByEmail(identifier)
+        if (supplier) await sendSupplierLoginEmail(supplier, '/supplier')
+        return NextResponse.json(NEUTRAL)
+      }
     }
 
     if (carpenter?.email) {
