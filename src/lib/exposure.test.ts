@@ -18,35 +18,64 @@ function query(table: string): unknown {
 }
 vi.mock('@/lib/supabase-admin', () => ({ getSupabaseAdmin: () => ({ from: (table: string) => query(table) }) }))
 
-const { loadExposure, loadSearchStats, logSearch, searchLogText } = await import('./exposure')
+const { loadExposureReport, loadSearchStats, sumMonths, logSearch, searchLogText } = await import('./exposure')
 
 beforeEach(() => {
   tables.rows = {}
   tables.inserts = []
 })
 
-describe('loadExposure', () => {
-  it('adds up each source per supplier, zeros for a supplier with nothing', async () => {
+describe('loadExposureReport', () => {
+  // 17.11.2026, 22:00 in Israel.
+  const now = new Date('2026-11-17T20:00:00Z')
+
+  it('adds up each source per supplier over 30 days, zeros for a supplier with nothing', async () => {
     tables.rows = {
-      supplier_page_views: [{ supplier_id: 'A', views: 4 }, { supplier_id: 'A', views: 2 }],
-      search_queries: [{ supplier_ids: ['A', 'B'] }, { supplier_ids: ['A', 'X'] }],
+      supplier_page_views: [{ supplier_id: 'A', views: 4, day: '2026-11-15' }, { supplier_id: 'A', views: 2, day: '2026-11-01' }],
+      search_queries: [{ supplier_ids: ['A', 'B'], created_at: '2026-11-16T10:00:00Z' }, { supplier_ids: ['A', 'X'], created_at: '2026-11-10T10:00:00Z' }],
       supplier_offers: [{ supplier_id: 'A', product_id: 'p1' }, { supplier_id: 'B', product_id: 'p1' }],
-      product_view_counts: [{ product_id: 'p1', views: 9 }],
-      contact_clicks: [{ supplier_id: 'A', channel: 'whatsapp' }, { supplier_id: 'A', channel: 'phone' }],
-      message_threads: [{ supplier_id: 'B' }],
-      quote_requests: [{ supplier_id: 'A' }],
-      orders: [{ supplier_id: 'A' }, { supplier_id: 'A' }],
+      product_view_days: [{ product_id: 'p1', day: '2026-11-02', views: 5 }, { product_id: 'p1', day: '2026-11-17', views: 4 }],
+      contact_clicks: [{ supplier_id: 'A', channel: 'whatsapp', created_at: '2026-11-12T08:00:00Z' }, { supplier_id: 'A', channel: 'phone', created_at: '2026-11-12T08:00:00Z' }],
+      message_threads: [{ supplier_id: 'B', created_at: '2026-11-03T08:00:00Z' }],
+      quote_requests: [{ supplier_id: 'A', created_at: '2026-11-03T08:00:00Z' }],
+      orders: [{ supplier_id: 'A', created_at: '2026-11-04T08:00:00Z' }, { supplier_id: 'A', created_at: '2026-11-05T08:00:00Z' }],
     }
-    const result = await loadExposure(['A', 'B', 'C'])
-    expect(result.get('A')).toEqual({ pageViews: 6, searchAppearances: 2, productViews: 9, whatsapp: 1, calls: 1, questions: 0, quoteRequests: 1, orders: 2 })
-    expect(result.get('B')).toMatchObject({ searchAppearances: 1, productViews: 9, questions: 1 })
-    expect(result.get('C')).toEqual({ pageViews: 0, searchAppearances: 0, productViews: 0, whatsapp: 0, calls: 0, questions: 0, quoteRequests: 0, orders: 0 })
+    const { recent } = await loadExposureReport(['A', 'B', 'C'], now)
+    expect(recent.get('A')).toEqual({ pageViews: 6, searchAppearances: 2, productViews: 9, whatsapp: 1, calls: 1, questions: 0, quoteRequests: 1, orders: 2 })
+    expect(recent.get('B')).toMatchObject({ searchAppearances: 1, productViews: 9, questions: 1 })
+    expect(recent.get('C')).toEqual({ pageViews: 0, searchAppearances: 0, productViews: 0, whatsapp: 0, calls: 0, questions: 0, quoteRequests: 0, orders: 0 })
+  })
+
+  it('older than 30 days counts in its month only', async () => {
+    tables.rows = {
+      supplier_page_views: [{ supplier_id: 'A', views: 3, day: '2026-09-20' }, { supplier_id: 'A', views: 1, day: '2026-11-17' }],
+      orders: [{ supplier_id: 'A', created_at: '2026-09-30T22:30:00Z' }],
+    }
+    const { recent, months } = await loadExposureReport(['A'], now)
+    expect(recent.get('A')?.pageViews).toBe(1)
+    expect(recent.get('A')?.orders).toBe(0)
+    // 30.09 at 22:30 UTC is already 1 October in Israel.
+    expect(months.get('A')).toEqual([
+      { month: '2026-09', seen: 3, reached: 0 },
+      { month: '2026-10', seen: 0, reached: 1 },
+      { month: '2026-11', seen: 1, reached: 0 },
+    ])
+  })
+
+  it('months start at the first month with anything, at least three, across a year', async () => {
+    tables.rows = { supplier_page_views: [{ supplier_id: 'A', views: 2, day: '2025-12-05' }] }
+    const { months } = await loadExposureReport(['A', 'B'], now)
+    expect(months.get('A')?.map((m) => m.month)).toEqual([
+      '2025-12', '2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08', '2026-09', '2026-10', '2026-11',
+    ])
+    expect(months.get('B')?.map((m) => m.month)).toEqual(['2026-09', '2026-10', '2026-11'])
+    expect(sumMonths([months.get('A')!, months.get('B')!])[0]).toEqual({ month: '2025-12', seen: 2, reached: 0 })
   })
 
   it('a missing table counts as zero, not an error', async () => {
-    tables.rows = { search_queries: 'error', supplier_page_views: 'error' }
-    const result = await loadExposure(['A'])
-    expect(result.get('A')?.searchAppearances).toBe(0)
+    tables.rows = { search_queries: 'error', supplier_page_views: 'error', product_view_days: 'error' }
+    const { recent } = await loadExposureReport(['A'], now)
+    expect(recent.get('A')?.searchAppearances).toBe(0)
   })
 })
 

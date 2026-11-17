@@ -8,7 +8,7 @@ import BusinessTab from './tabs/BusinessTab'
 import TermsTab from './tabs/TermsTab'
 import SalesTab from './tabs/SalesTab'
 import ExposurePanel from './ExposurePanel'
-import type { Exposure } from '@/lib/exposure'
+import type { Exposure, ExposureMonth } from '@/lib/exposure'
 import PromoTab from './tabs/PromoTab'
 import UploadDocuments from './UploadDocuments'
 import type { Sales } from './sales'
@@ -120,7 +120,7 @@ export default function SupplierApp({
   catalog: CatalogPick[]
   sales: Sales
   /** "החשיפה שלך" (PR 4): counts over the last `days` days. */
-  exposure: { days: number; counts: Exposure }
+  exposure: { days: number; counts: Exposure; months: ExposureMonth[] }
   documents: SupplierDocs
   promo: SupplierPromo
   quotes: SupplierQuotes
@@ -223,7 +223,7 @@ export default function SupplierApp({
         )}
         {tab === 'sales' && (
           <div className="space-y-4">
-            <ExposurePanel exposure={exposure.counts} days={exposure.days} />
+            <ExposurePanel exposure={exposure.counts} days={exposure.days} months={exposure.months} />
             <SalesTab sales={sales} />
           </div>
         )}

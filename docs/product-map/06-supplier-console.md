@@ -20,7 +20,7 @@ terms and documents. No password needed.
 | `/supplier/join` login box → `POST /api/supplier/login-link`, then `POST /api/supplier/login-code` | Sign in on a new device the way carpentries do: email → a six-digit code mailed to the address on file (with the entry link) → typed on the same page. `lib/login-code.ts` (kind `supplier`), table `supplier_login_codes`. The admin "send login link" button uses the same mail. A supplier who uses the site's main "כניסה" (`/join`, the carpentry login) with an email no carpentry holds gets the same supplier code there, and `/api/carpenter/login-code` signs them in to `/supplier` (`lib/supplier-login.ts`) |
 | `/supplier/confirm/[token]` | One-order confirmation link (see area 4) |
 | `/api/supplier/{orders,offers,products,profile,import,import/undo}` | Console actions |
-| `/supplier?tab=sales` | "חשיפה ומכירות": the "החשיפה שלך" panel (PR 4, `ExposurePanel.tsx`, `lib/exposure.ts`) over 30 days, above the sales |
+| `/supplier?tab=sales` | "חשיפה ומכירות": the "החשיפה שלך" panel (PR 4, `ExposurePanel.tsx`, `lib/exposure.ts`) over 30 days with a monthly chart below it ("ראו אתכם" / "פנו אליכם", up to 12 months, `components/ExposureChart.tsx`), above the sales |
 | `/admin/view/supplier` | The operator opens a supplier's real console |
 
 ## Code

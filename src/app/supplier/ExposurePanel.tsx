@@ -1,5 +1,6 @@
 import { Eye, MessageCircle, MessageSquare, Phone, Search, FileText, Truck, Store } from 'lucide-react'
-import type { Exposure } from '@/lib/exposure'
+import type { Exposure, ExposureMonth } from '@/lib/exposure'
+import ExposureChart from '@/components/ExposureChart'
 
 function Tile({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
   return (
@@ -18,8 +19,9 @@ function Tile({ icon, label, value }: { icon: React.ReactNode; label: string; va
  * How often carpentries came across it (searches, its page, its products) and
  * how often they reached out (WhatsApp, call, a question, a quote, an order).
  * Only counts, never who: the carpentries behind an order are in sales.
+ * Below the tiles, the same two totals month by month (owner, 2026-11-17).
  */
-export default function ExposurePanel({ exposure, days }: { exposure: Exposure; days: number }) {
+export default function ExposurePanel({ exposure, days, months }: { exposure: Exposure; days: number; months: ExposureMonth[] }) {
   const reached = exposure.whatsapp + exposure.calls + exposure.questions + exposure.quoteRequests + exposure.orders
   return (
     <section className="rounded-xl border border-stone-200 bg-stone-50 p-4">
@@ -31,7 +33,7 @@ export default function ExposurePanel({ exposure, days }: { exposure: Exposure; 
       <div className="mt-1.5 grid grid-cols-2 gap-2 sm:grid-cols-3">
         <Tile icon={<Search size={15} />} label="הופעתם בחיפושים" value={exposure.searchAppearances} />
         <Tile icon={<Store size={15} />} label="כניסות לעמוד הספק" value={exposure.pageViews} />
-        <Tile icon={<Eye size={15} />} label="צפיות במוצרים שלכם*" value={exposure.productViews} />
+        <Tile icon={<Eye size={15} />} label="צפיות במוצרים שלכם" value={exposure.productViews} />
       </div>
       <h3 className="mt-3 text-sm font-semibold text-stone-500">פנו אליכם</h3>
       <div className="mt-1.5 grid grid-cols-2 gap-2 sm:grid-cols-5">
@@ -41,7 +43,9 @@ export default function ExposurePanel({ exposure, days }: { exposure: Exposure; 
         <Tile icon={<FileText size={15} />} label="בקשות הצעת מחיר" value={exposure.quoteRequests} />
         <Tile icon={<Truck size={15} />} label="הזמנות" value={exposure.orders} />
       </div>
-      <p className="mt-2 text-sm text-stone-500">* צפיות במוצרים נספרות מתחילת המדידה, לא רק ב-{days} הימים האחרונים.</p>
+      <div className="mt-4">
+        <ExposureChart months={months} />
+      </div>
     </section>
   )
 }

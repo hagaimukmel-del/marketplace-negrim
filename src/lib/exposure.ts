@@ -17,7 +17,7 @@ export interface Exposure {
   pageViews: number
   /** Catalogue searches whose results held one of its products (search_queries, 20261117200000). */
   searchAppearances: number
-  /** Openings of the product pages it sells, since counting began (product_view_counts has no dates). */
+  /** Openings of the product pages it sells (product_view_days, 20261117200000). */
   productViews: number
   whatsapp: number
   calls: number
@@ -28,63 +28,138 @@ export interface Exposure {
 }
 
 export const EXPOSURE_DAYS = 30
+/** How far back the monthly chart goes, this month included. */
+export const EXPOSURE_MONTHS = 12
 
-const EMPTY: Exposure = { pageViews: 0, searchAppearances: 0, productViews: 0, whatsapp: 0, calls: 0, questions: 0, quoteRequests: 0, orders: 0 }
-
-function since(days: number): { iso: string; day: string } {
-  const at = new Date(Date.now() - days * 86_400_000)
-  return { iso: at.toISOString(), day: at.toISOString().slice(0, 10) }
+/** One calendar month of the chart: "2026-11", what carpentries saw and how often they reached out. */
+export interface ExposureMonth {
+  month: string
+  seen: number
+  reached: number
 }
 
-function add(map: Map<string, Exposure>, id: string | null, key: keyof Exposure, by = 1) {
-  if (!id) return
-  const row = map.get(id) ?? { ...EMPTY }
-  row[key] += by
-  map.set(id, row)
+export interface ExposureReport {
+  /** The last EXPOSURE_DAYS days, per supplier. */
+  recent: Map<string, Exposure>
+  /** Per supplier, month by month up to this one: from the first month with anything, at least three. */
+  months: Map<string, ExposureMonth[]>
+}
+
+const EMPTY: Exposure = { pageViews: 0, searchAppearances: 0, productViews: 0, whatsapp: 0, calls: 0, questions: 0, quoteRequests: 0, orders: 0 }
+const SEEN: (keyof Exposure)[] = ['pageViews', 'searchAppearances', 'productViews']
+
+const ZONE = 'Asia/Jerusalem'
+
+/** "YYYY-MM-DD" of an instant, in Israel. */
+function israelDay(at: Date): string {
+  return at.toLocaleDateString('en-CA', { timeZone: ZONE })
+}
+
+/** "YYYY-MM" of the month `back` months before this one, in Israel. */
+function monthBefore(now: Date, back: number): string {
+  const [year, month] = israelDay(now).split('-').map(Number)
+  const index = year * 12 + (month - 1) - back
+  return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, '0')}`
+}
+
+/** One counted thing: whose, which tile, how many, and on which Israeli day. */
+interface Hit {
+  id: string | null
+  key: keyof Exposure
+  by: number
+  day: string
 }
 
 /**
- * The exposure of the given suppliers over the last `days` days, keyed by id.
- * Every id given gets a row, zeros included.
+ * What the site brought the given suppliers: the last `EXPOSURE_DAYS` days,
+ * and month by month over the last `EXPOSURE_MONTHS` months, keyed by id.
+ * Every id given gets a row, zeros included. One read of each source covers both.
  */
-export async function loadExposure(supplierIds: string[], days = EXPOSURE_DAYS): Promise<Map<string, Exposure>> {
+export async function loadExposureReport(supplierIds: string[], now = new Date()): Promise<ExposureReport> {
   const ids = [...new Set(supplierIds)]
-  const result = new Map<string, Exposure>(ids.map((id) => [id, { ...EMPTY }]))
-  if (ids.length === 0) return result
+  const recent = new Map<string, Exposure>(ids.map((id) => [id, { ...EMPTY }]))
+  const months = new Map<string, ExposureMonth[]>()
+  if (ids.length === 0) return { recent, months }
+
+  const firstMonth = monthBefore(now, EXPOSURE_MONTHS - 1)
+  const fromDay = `${firstMonth}-01`
+  // A day early, so the first Israeli day of the month is whole whatever the offset.
+  const fromIso = new Date(Date.parse(fromDay) - 86_400_000).toISOString()
+  const recentDay = israelDay(new Date(now.getTime() - EXPOSURE_DAYS * 86_400_000))
 
   const supabase = getSupabaseAdmin()
-  const from = since(days)
   const [views, searches, offers, clicks, threads, quotes, orders] = await Promise.all([
-    supabase.from('supplier_page_views').select('supplier_id, views').in('supplier_id', ids).gte('day', from.day),
-    supabase.from('search_queries').select('supplier_ids').overlaps('supplier_ids', ids).gte('created_at', from.iso).limit(20000),
+    supabase.from('supplier_page_views').select('supplier_id, views, day').in('supplier_id', ids).gte('day', fromDay).limit(20000),
+    supabase.from('search_queries').select('supplier_ids, created_at').overlaps('supplier_ids', ids).gte('created_at', fromIso).limit(20000),
     supabase.from('supplier_offers').select('supplier_id, product_id').in('supplier_id', ids).limit(20000),
-    supabase.from('contact_clicks').select('supplier_id, channel').in('supplier_id', ids).gte('created_at', from.iso).limit(20000),
+    supabase.from('contact_clicks').select('supplier_id, channel, created_at').in('supplier_id', ids).gte('created_at', fromIso).limit(20000),
     supabase
       .from('message_threads')
-      .select('supplier_id')
+      .select('supplier_id, created_at')
       .in('supplier_id', ids)
       .is('order_id', null)
       .is('quote_request_id', null)
-      .gte('created_at', from.iso)
+      .gte('created_at', fromIso)
       .limit(20000),
-    supabase.from('quote_requests').select('supplier_id').in('supplier_id', ids).gte('created_at', from.iso).limit(20000),
-    supabase.from('orders').select('supplier_id').in('supplier_id', ids).neq('status', 'cancelled').gte('created_at', from.iso).limit(20000),
+    supabase.from('quote_requests').select('supplier_id, created_at').in('supplier_id', ids).gte('created_at', fromIso).limit(20000),
+    supabase.from('orders').select('supplier_id, created_at').in('supplier_id', ids).neq('status', 'cancelled').gte('created_at', fromIso).limit(20000),
   ])
 
-  for (const row of views.data ?? []) add(result, row.supplier_id, 'pageViews', row.views)
-  for (const row of searches.data ?? []) for (const id of row.supplier_ids) if (result.has(id)) add(result, id, 'searchAppearances')
-  for (const row of clicks.data ?? []) add(result, row.supplier_id, row.channel === 'whatsapp' ? 'whatsapp' : 'calls')
-  for (const row of threads.data ?? []) add(result, row.supplier_id, 'questions')
-  for (const row of quotes.data ?? []) add(result, row.supplier_id, 'quoteRequests')
-  for (const row of orders.data ?? []) add(result, row.supplier_id, 'orders')
+  const at = (iso: string | null) => (iso ? israelDay(new Date(iso)) : '')
+  const hits: Hit[] = []
+  for (const row of views.data ?? []) hits.push({ id: row.supplier_id, key: 'pageViews', by: row.views, day: row.day })
+  for (const row of searches.data ?? [])
+    for (const id of row.supplier_ids) if (recent.has(id)) hits.push({ id, key: 'searchAppearances', by: 1, day: at(row.created_at) })
+  for (const row of clicks.data ?? [])
+    hits.push({ id: row.supplier_id, key: row.channel === 'whatsapp' ? 'whatsapp' : 'calls', by: 1, day: at(row.created_at) })
+  for (const row of threads.data ?? []) hits.push({ id: row.supplier_id, key: 'questions', by: 1, day: at(row.created_at) })
+  for (const row of quotes.data ?? []) hits.push({ id: row.supplier_id, key: 'quoteRequests', by: 1, day: at(row.created_at) })
+  for (const row of orders.data ?? []) hits.push({ id: row.supplier_id, key: 'orders', by: 1, day: at(row.created_at) })
 
-  const productIds = [...new Set((offers.data ?? []).map((row) => row.product_id))]
-  if (productIds.length) {
-    const { data: counts } = await supabase.from('product_view_counts').select('product_id, views').in('product_id', productIds)
-    const viewsOf = new Map((counts ?? []).map((row) => [row.product_id, row.views]))
-    for (const row of offers.data ?? []) add(result, row.supplier_id, 'productViews', viewsOf.get(row.product_id) ?? 0)
+  // A product sold by two suppliers counts for each of them.
+  const sellers = new Map<string, string[]>()
+  for (const row of offers.data ?? []) sellers.set(row.product_id, [...(sellers.get(row.product_id) ?? []), row.supplier_id])
+  const productIds = [...sellers.keys()]
+  const productDays = productIds.length
+    ? await supabase.from('product_view_days').select('product_id, day, views').in('product_id', productIds).gte('day', fromDay).limit(20000)
+    : null
+  for (const row of productDays?.data ?? [])
+    for (const id of sellers.get(row.product_id) ?? []) hits.push({ id, key: 'productViews', by: row.views, day: row.day })
+
+  const byMonth = new Map<string, Map<string, ExposureMonth>>()
+  for (const hit of hits) {
+    if (!hit.id || !recent.has(hit.id) || hit.day < fromDay) continue
+    if (hit.day >= recentDay) recent.get(hit.id)![hit.key] += hit.by
+    const month = hit.day.slice(0, 7)
+    const perMonth = byMonth.get(hit.id) ?? new Map<string, ExposureMonth>()
+    const point = perMonth.get(month) ?? { month, seen: 0, reached: 0 }
+    if (SEEN.includes(hit.key)) point.seen += hit.by
+    else point.reached += hit.by
+    perMonth.set(month, point)
+    byMonth.set(hit.id, perMonth)
   }
-  return result
+
+  const calendar = Array.from({ length: EXPOSURE_MONTHS }, (_, i) => monthBefore(now, EXPOSURE_MONTHS - 1 - i))
+  for (const id of ids) {
+    const perMonth = byMonth.get(id)
+    const first = calendar.findIndex((month) => perMonth?.has(month))
+    const start = first === -1 ? EXPOSURE_MONTHS - 3 : Math.min(first, EXPOSURE_MONTHS - 3)
+    months.set(id, calendar.slice(start).map((month) => perMonth?.get(month) ?? { month, seen: 0, reached: 0 }))
+  }
+  return { recent, months }
+}
+
+/** The months of several suppliers added together, for the operator's whole-site chart. */
+export function sumMonths(series: ExposureMonth[][]): ExposureMonth[] {
+  const total = new Map<string, ExposureMonth>()
+  for (const points of series)
+    for (const point of points) {
+      const sum = total.get(point.month) ?? { month: point.month, seen: 0, reached: 0 }
+      sum.seen += point.seen
+      sum.reached += point.reached
+      total.set(point.month, sum)
+    }
+  return [...total.values()].sort((a, b) => a.month.localeCompare(b.month))
 }
 
 /** Cleans a typed search for the log: trimmed, spaces folded, at most 120 characters. */
@@ -113,7 +188,7 @@ export async function loadSearchStats(days = EXPOSURE_DAYS): Promise<{ ready: bo
   const { data, error } = await getSupabaseAdmin()
     .from('search_queries')
     .select('query, results, created_at')
-    .gte('created_at', since(days).iso)
+    .gte('created_at', new Date(Date.now() - days * 86_400_000).toISOString())
     .order('created_at', { ascending: false })
     .limit(20000)
   if (error) return { ready: false, total: 0, top: [], empty: [] }

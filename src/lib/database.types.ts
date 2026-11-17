@@ -1318,6 +1318,32 @@ export type Database = {
           },
         ]
       }
+      product_view_days: {
+        Row: {
+          day: string
+          product_id: string
+          views: number
+        }
+        Insert: {
+          day?: string
+          product_id: string
+          views?: number
+        }
+        Update: {
+          day?: string
+          product_id?: string
+          views?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_view_days_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           attributes: Json

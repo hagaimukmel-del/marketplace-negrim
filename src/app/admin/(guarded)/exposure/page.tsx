@@ -1,13 +1,14 @@
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { isTestName } from '@/lib/email'
-import { EXPOSURE_DAYS, loadExposure, loadSearchStats, type Exposure, type SearchStat } from '@/lib/exposure'
+import { EXPOSURE_DAYS, loadExposureReport, loadSearchStats, sumMonths, type Exposure, type SearchStat } from '@/lib/exposure'
+import ExposureChart from '@/components/ExposureChart'
 
 export const dynamic = 'force-dynamic'
 
 const COLUMNS: [keyof Exposure, string][] = [
   ['searchAppearances', 'בחיפושים'],
   ['pageViews', 'עמוד ספק'],
-  ['productViews', 'צפיות מוצר*'],
+  ['productViews', 'צפיות מוצר'],
   ['whatsapp', 'וואטסאפ'],
   ['calls', 'חיוג'],
   ['questions', 'שאלות'],
@@ -54,9 +55,9 @@ function SearchTable({ title, rows, empty }: { title: string; rows: SearchStat[]
 export default async function ExposurePage() {
   const { data: suppliers } = await getSupabaseAdmin().from('suppliers').select('id, company_name').eq('status', 'approved')
   const real = (suppliers ?? []).filter((row) => !isTestName(row.company_name))
-  const [exposure, searches] = await Promise.all([loadExposure(real.map((row) => row.id)), loadSearchStats()])
+  const [exposure, searches] = await Promise.all([loadExposureReport(real.map((row) => row.id)), loadSearchStats()])
   const rows = real
-    .map((row) => ({ ...row, counts: exposure.get(row.id)! }))
+    .map((row) => ({ ...row, counts: exposure.recent.get(row.id)! }))
     .sort((a, b) => b.counts.pageViews + b.counts.searchAppearances - (a.counts.pageViews + a.counts.searchAppearances))
 
   return (
@@ -90,7 +91,10 @@ export default async function ExposurePage() {
             ))}
           </tbody>
         </table>
-        <p className="px-3 py-2 text-sm text-stone-500">* צפיות במוצרים מתחילת המדידה, לא רק בתקופה.</p>
+      </section>
+
+      <section className="rounded-xl border border-stone-200 bg-stone-50 p-4">
+        <ExposureChart months={sumMonths([...exposure.months.values()])} title="כל הספקים יחד, לפי חודש" />
       </section>
 
       {!searches.ready ? (

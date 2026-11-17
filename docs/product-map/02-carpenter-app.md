@@ -64,7 +64,8 @@ both ways, הכי נצפים, חדשים) and filters (price range with suggeste
 "באזור שלי" shortcut. Logic in `lib/app/catalog-filters.ts` (tested); state lives in the URL
 (`sort img min max sup reg brand`). A filter is only offered when it would split the list.
 "הכי נצפים" counts product page openings in `product_view_counts` (migration
-`20261027072150_product_views`, `bump_product_view()`, service role only), not the operator's and
+`20261027072150_product_views`, `bump_product_view()`, service role only; since `20261117200000` it also
+writes `product_view_days`, one row per product and day, for the supplier's exposure), not the operator's and
 not prefetches; ties go to the product on more purchase orders. Only a rank reaches the browser.
 `stock_qty` is not read as stock (`STOCK_IS_TRACKED = false` in `catalog-server.ts`): nothing shows
 "אזל" or is blocked from ordering until a supplier keeps stock current. Supplier comparison and switching are built but **dormant**: with one live
