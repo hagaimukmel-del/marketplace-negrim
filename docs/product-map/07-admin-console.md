@@ -10,6 +10,7 @@ carpenters, run campaigns and raffles, moderate the Metzion, read reports.
 |---|---|
 | `/admin/login` → `/api/admin/login` | One shared passphrase (`ADMIN_PASSWORD` + `ADMIN_SECRET`), throttled (`admin_login_attempts`) |
 | `/admin` | Dashboard |
+| `/admin/exposure` | "חשיפה וחיפושים" (PR 4, 17.11): per supplier over 30 days, searches it appeared in, page views, product views (all-time), WhatsApp/call clicks, questions, quotes, orders (`lib/exposure.ts`); most searched words and searches with no results (`search_queries`, migration `20261117200000`, not applied yet) |
 | `/admin/promotions` | "מוצר השבוע" bookings: approve, reject with a note shown to the supplier, withdraw a coming week, results per week (T-024). Logged in `admin_actions` |
 | `/admin/billing` | Supplier billing per month: subscription and "מוצר השבוע" owed, paid (allocated over the months a payment covers), balance, running arrears and paid ahead. The operator records payments (installments too) and sets a supplier's plan (amount, first/last month, a free period, 0 = exempt). Billing itself happens outside the site. `lib/billing-rules.ts`, tables `supplier_billing`, `supplier_payments` (migration 20261109140000) |
 | `/admin/orders`, `/suppliers`, `/carpenters`, `/products`, `/categories` | Core management |

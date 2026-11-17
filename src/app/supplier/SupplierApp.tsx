@@ -7,6 +7,8 @@ import ProductsTab from './tabs/ProductsTab'
 import BusinessTab from './tabs/BusinessTab'
 import TermsTab from './tabs/TermsTab'
 import SalesTab from './tabs/SalesTab'
+import ExposurePanel from './ExposurePanel'
+import type { Exposure } from '@/lib/exposure'
 import PromoTab from './tabs/PromoTab'
 import UploadDocuments from './UploadDocuments'
 import type { Sales } from './sales'
@@ -18,7 +20,7 @@ export type Notify = (text: string, kind?: 'ok' | 'error') => void
 const TAB_META: Record<Tab, { label: string; short: string; Icon: typeof Truck }> = {
   orders: { label: 'הזמנות נכנסות', short: 'הזמנות', Icon: Truck },
   products: { label: 'מוצרים', short: 'מוצרים', Icon: Package },
-  sales: { label: 'מכירות', short: 'מכירות', Icon: TrendingUp },
+  sales: { label: 'חשיפה ומכירות', short: 'חשיפה', Icon: TrendingUp },
   promo: { label: 'מנוי ופרסום', short: 'פרסום', Icon: Megaphone },
   documents: { label: 'דפים טכניים', short: 'מסמכים', Icon: FileText },
   business: { label: 'פרטי העסק', short: 'העסק', Icon: Building2 },
@@ -103,6 +105,7 @@ export default function SupplierApp({
   categories,
   catalog,
   sales,
+  exposure,
   documents,
   promo,
   quotes,
@@ -116,6 +119,8 @@ export default function SupplierApp({
   categories: CategoryOption[]
   catalog: CatalogPick[]
   sales: Sales
+  /** "החשיפה שלך" (PR 4): counts over the last `days` days. */
+  exposure: { days: number; counts: Exposure }
   documents: SupplierDocs
   promo: SupplierPromo
   quotes: SupplierQuotes
@@ -216,7 +221,12 @@ export default function SupplierApp({
         {tab === 'products' && (
           <ProductsTab products={products} deletedProducts={deletedProducts} categories={categories} catalog={catalog} notify={notify} />
         )}
-        {tab === 'sales' && <SalesTab sales={sales} />}
+        {tab === 'sales' && (
+          <div className="space-y-4">
+            <ExposurePanel exposure={exposure.counts} days={exposure.days} />
+            <SalesTab sales={sales} />
+          </div>
+        )}
         {tab === 'promo' && <PromoTab promo={promo} products={products} notify={notify} />}
         {tab === 'documents' && <UploadDocuments products={products} documents={documents} notify={notify} />}
         {tab === 'business' && <BusinessTab profile={profile} notify={notify} />}

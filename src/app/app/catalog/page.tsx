@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { headers } from 'next/headers'
+import { after } from 'next/server'
 import { LayoutGrid, Recycle, Search, Store } from 'lucide-react'
 import { loadCatalogViewer } from '@/lib/app/catalog-access'
 import PublicProductGrid, { toPublicProduct } from '@/components/app/PublicProductGrid'
@@ -12,6 +14,7 @@ import { regionsForCity } from '@/lib/regions'
 import { loadPublicSuppliers, type PublicSupplier } from '@/lib/app/suppliers-public'
 import SupplierCard from '@/components/app/SupplierCard'
 import { loadSupplierContacts } from '@/lib/supplier-contact-server'
+import { logSearch } from '@/lib/exposure'
 
 export const dynamic = 'force-dynamic'
 
@@ -50,6 +53,12 @@ export default async function AppCatalog({ searchParams }: { searchParams: Promi
   if (query) {
     const { products: hits, partial } = searchProducts(products, query)
     const suppliers = matchingSuppliers(await loadPublicSuppliers(products), query)
+    // Logged after the page is sent, with which suppliers' products came up (PR 4).
+    // Not the operator's or a supplier's own searches, nor a link prefetch.
+    if (!viewer.admin && !viewer.supplier && !(await headers()).has('next-router-prefetch')) {
+      const supplierIds = [...hits.flatMap((product) => product.offers.map((offer) => offer.supplierId)), ...suppliers.map((s) => s.id)]
+      after(() => logSearch({ query, results: hits.length, supplierIds, carpenterId: carpenter?.id ?? null }).catch(() => undefined))
+    }
     // WhatsApp on each card for a registered carpentry only, as on the supplier page.
     const contacts = showPrices && suppliers.length ? await loadSupplierContacts(suppliers.map((s) => s.id)) : null
     return (
