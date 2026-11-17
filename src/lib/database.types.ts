@@ -1318,6 +1318,32 @@ export type Database = {
           },
         ]
       }
+      product_view_days: {
+        Row: {
+          day: string
+          product_id: string
+          views: number
+        }
+        Insert: {
+          day?: string
+          product_id: string
+          views?: number
+        }
+        Update: {
+          day?: string
+          product_id?: string
+          views?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_view_days_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           attributes: Json
@@ -1786,6 +1812,33 @@ export type Database = {
           },
         ]
       }
+      search_queries: {
+        Row: {
+          carpenter_id: string | null
+          created_at: string
+          id: number
+          query: string
+          results: number
+          supplier_ids: string[]
+        }
+        Insert: {
+          carpenter_id?: string | null
+          created_at?: string
+          id?: never
+          query: string
+          results?: number
+          supplier_ids?: string[]
+        }
+        Update: {
+          carpenter_id?: string | null
+          created_at?: string
+          id?: never
+          query?: string
+          results?: number
+          supplier_ids?: string[]
+        }
+        Relationships: []
+      }
       supplier_billing: {
         Row: {
           ends_month: string | null
@@ -2092,6 +2145,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      supplier_page_views: {
+        Row: {
+          day: string
+          supplier_id: string
+          views: number
+        }
+        Insert: {
+          day: string
+          supplier_id: string
+          views?: number
+        }
+        Update: {
+          day?: string
+          supplier_id?: string
+          views?: number
+        }
+        Relationships: []
       }
       supplier_payments: {
         Row: {

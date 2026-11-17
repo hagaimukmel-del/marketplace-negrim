@@ -10,6 +10,7 @@ import { loadSupplierQuotes } from '@/lib/quotes-server'
 import { deletedCarpenterIds } from '@/lib/carpenter-deletion-server'
 import { priceModeOf } from '@/lib/price-mode'
 import { loadContactSettings } from '@/lib/supplier-contact-server'
+import { EXPOSURE_DAYS, loadExposureReport } from '@/lib/exposure'
 import { loadThresholds } from '@/lib/special-price'
 import { addDays, bookableWeeks, currentWeek } from '@/lib/promo-weeks'
 import { mayEditPhoto, productsSoldByOthers } from '@/lib/product-photo-access'
@@ -155,6 +156,7 @@ export default async function SupplierHome({
     loadThresholds({ supplierId: supplier.id }),
     loadContactSettings(supplier.id),
   ])
+  const exposure = await loadExposureReport([supplier.id])
 
   // Lines the supplier said it could not supply (migration 20261008140000).
   // Read on their own so a database without the column just has none.
@@ -371,6 +373,7 @@ export default async function SupplierHome({
       categories={(categories ?? []) as CategoryOption[]}
       catalog={catalog}
       sales={computeSales(orders, new Date())}
+      exposure={{ days: EXPOSURE_DAYS, counts: exposure.recent.get(supplier.id)!, months: exposure.months.get(supplier.id)! }}
       documents={documents}
       promo={{ ready: myWeeks.ready, weeks: myWeeks.weeks, taken: liveWeeks.weeks.map((week) => week.weekStart) }}
       quotes={quotes}

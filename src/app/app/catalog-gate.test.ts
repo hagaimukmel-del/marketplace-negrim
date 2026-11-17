@@ -13,6 +13,7 @@ import { isValidElement, type ReactNode } from 'react'
 const state = vi.hoisted(() => ({
   mayBrowse: false,
   reads: [] as string[],
+  searches: [] as { query: string; results: number; supplierIds: string[]; carpenterId: string | null }[],
 }))
 
 vi.mock('@/lib/app/catalog-access', () => ({
@@ -77,7 +78,12 @@ vi.mock('@/lib/supplier-contact-server', () => ({
   loadSupplierContacts: async () => new Map([['s1', { phone: '050-111-2222', whatsapp: '050-111-2222' }]]),
 }))
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }))
-vi.mock('next/server', () => ({ after: () => undefined }))
+vi.mock('next/server', () => ({ after: (task: () => unknown) => task() }))
+vi.mock('@/lib/exposure', () => ({
+  logSearch: async (entry: (typeof state.searches)[number]) => {
+    state.searches.push(entry)
+  },
+}))
 vi.mock('next/navigation', () => ({
   notFound: () => {
     throw new Error('NOT_FOUND')
@@ -128,6 +134,7 @@ function contains(node: ReactNode, type: unknown): boolean {
 beforeEach(() => {
   state.mayBrowse = false
   state.reads = []
+  state.searches = []
 })
 
 describe('catalogue for a visitor who has not registered', () => {
@@ -204,6 +211,18 @@ describe('catalogue for a visitor who has not registered', () => {
     expect(find(page, PublicProductGrid)!.props).toEqual({ products: [visible] })
   })
 
+  it('a search is logged with its result count and the suppliers it showed, no visitor identity', async () => {
+    await CatalogPage({ searchParams: Promise.resolve({ q: '  דבק   לעץ ' }) })
+    expect(state.searches).toHaveLength(1)
+    expect(state.searches[0]).toMatchObject({ query: 'דבק   לעץ', results: 1, carpenterId: null })
+    expect(state.searches[0].supplierIds).toContain('s1')
+  })
+
+  it('the catalogue without a search logs nothing', async () => {
+    await CatalogPage({ searchParams: Promise.resolve({}) })
+    expect(state.searches).toHaveLength(0)
+  })
+
   it('the catalogue itself still lists the categories', async () => {
     await CatalogPage({ searchParams: Promise.resolve({}) })
     expect(state.reads).toContain('categories')
@@ -241,6 +260,12 @@ describe('catalogue for a registered viewer', () => {
     expect(find(list, SupplierCard)!.props).toEqual({ supplier, whatsapp: '050-111-2222' })
     const search = await CatalogPage({ searchParams: Promise.resolve({ q: 'ספק' }) })
     expect(find(search, SupplierCard)!.props).toEqual({ supplier, whatsapp: '050-111-2222' })
+  })
+
+  it('a registered carpentry\'s search is logged under it', async () => {
+    state.mayBrowse = true
+    await CatalogPage({ searchParams: Promise.resolve({ q: 'דבק' }) })
+    expect(state.searches[0]).toMatchObject({ query: 'דבק', carpenterId: 'C1' })
   })
 
   it('a search shows the full product list, not the visitor grid', async () => {

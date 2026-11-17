@@ -168,3 +168,18 @@ export async function canSeePrices(): Promise<boolean> {
   if (await getSessionCarpenter()) return true
   return isAdmin()
 }
+
+/**
+ * "Last visit" on every visit, not only when the personal link is opened
+ * (PR 4): the carpentry's cookie is enough. At most one write an hour per
+ * carpentry: the update only matches a row last seen over an hour ago.
+ */
+export async function touchCarpenterSeen(carpenterId: string): Promise<void> {
+  const now = new Date()
+  const hourAgo = new Date(now.getTime() - 60 * 60 * 1000).toISOString()
+  await getSupabaseAdmin()
+    .from('carpenters')
+    .update({ last_seen_at: now.toISOString() })
+    .eq('id', carpenterId)
+    .or(`last_seen_at.is.null,last_seen_at.lt.${hourAgo}`)
+}

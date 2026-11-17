@@ -53,6 +53,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: '/admin', label: 'תוצאות' },
     { href: '/admin/communication', label: 'בריאות תקשורת', count: mailProblems },
     { href: '/admin/reports', label: 'דוחות' },
+    { href: '/admin/exposure', label: 'חשיפה וחיפושים' },
     { href: '/admin/products', label: 'מוצרים' },
     { href: '/admin/categories', label: 'קטגוריות' },
     { href: '/admin/campaigns', label: 'קמפיינים' },
