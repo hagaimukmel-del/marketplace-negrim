@@ -3,6 +3,7 @@ import { AuthProvider } from "@/lib/auth-context";
 import { CartProvider } from "@/lib/cart-context";
 import WelcomePopup from "@/components/WelcomePopup";
 import { workBoardOpen } from "@/lib/work-server";
+import Script from "next/script";
 import "./globals.css";
 
 /**
@@ -59,6 +60,13 @@ export default function RootLayout({
           </CartProvider>
         </AuthProvider>
         <WelcomePopup workOpen={workBoardOpen()} />
+        {/* Vercel Web Analytics: page views, no cookies. The script is served by
+            Vercel itself once Analytics is enabled on the project; on a local or
+            staging build it simply 404s. A script tag rather than
+            @vercel/analytics, whose optional framework peers clash with vitest's vite. */}
+        {process.env.VERCEL_ENV === "production" && (
+          <Script src="/_vercel/insights/script.js" strategy="afterInteractive" />
+        )}
       </body>
     </html>
   );
