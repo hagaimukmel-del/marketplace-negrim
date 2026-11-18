@@ -7,6 +7,7 @@ import type { Database } from '@/lib/database.types'
 import { thresholdChange } from '@/lib/quote-rules'
 import { loadOfferForThreshold } from '@/lib/special-price'
 import { mayEditPhoto, productsSoldByOthers } from '@/lib/product-photo-access'
+import { readOfferPrice } from '@/lib/offer-price'
 
 type ProductInsert = Database['public']['Tables']['products']['Insert']
 type ProductUpdate = Database['public']['Tables']['products']['Update']
@@ -33,7 +34,8 @@ function literal(value: string): string {
 }
 
 interface OfferFields {
-  price?: number
+  /** undefined = unchanged, null = no price (carpenters ask for a quote). */
+  price?: number | null
   stock?: number
   sku?: string | null
   packLabel?: string | null
@@ -42,14 +44,14 @@ interface OfferFields {
 }
 
 /** Validate the fields that belong to a supplier's own offer. */
-function readOfferFields(body: Record<string, unknown>, requirePrice: boolean): OfferFields | string {
+function readOfferFields(body: Record<string, unknown>): OfferFields | string {
   const fields: OfferFields = {}
 
-  if (body.price_excl_vat !== undefined || requirePrice) {
-    const price = Number(body.price_excl_vat)
-    if (!Number.isFinite(price) || price <= 0) return 'צריך מחיר גדול מאפס'
-    fields.price = price
-  }
+  // The price is optional (owner, 2026-11-18): empty or missing on a new offer
+  // means no price, and carpenters ask the supplier for a quote.
+  const price = readOfferPrice(body.price_excl_vat)
+  if (price === 'invalid') return 'המחיר צריך להיות גדול מאפס, או להישאר ריק'
+  if (price !== undefined) fields.price = price
 
   if (body.stock_qty !== undefined && body.stock_qty !== '') {
     const stock = Number(body.stock_qty)
@@ -112,7 +114,7 @@ export async function POST(request: NextRequest) {
     // The supplier picked it from the catalogue, so nothing about the product
     // is taken from the request — only their own price, stock and pack.
     if (typeof body.product_id === 'string') {
-      const offerFields = readOfferFields(body, true)
+      const offerFields = readOfferFields(body)
       if (typeof offerFields === 'string') {
         return NextResponse.json({ error: offerFields }, { status: 400 })
       }
@@ -132,7 +134,7 @@ export async function POST(request: NextRequest) {
         .insert({
           product_id: product.id,
           supplier_id: supplier.id,
-          price_excl_vat: offerFields.price as number,
+          price_excl_vat: offerFields.price ?? null,
           stock_qty: offerFields.stock ?? 0,
           supplier_sku: offerFields.sku ?? null,
           pack_label: offerFields.packLabel ?? null,
@@ -167,7 +169,7 @@ export async function POST(request: NextRequest) {
     if (!name) return NextResponse.json({ error: 'צריך שם מוצר' }, { status: 400 })
 
     const baseUnit = isBaseUnit(body.base_unit) ? body.base_unit : 'unit'
-    const offerFields = readOfferFields(body, true)
+    const offerFields = readOfferFields(body)
     if (typeof offerFields === 'string') {
       return NextResponse.json({ error: offerFields }, { status: 400 })
     }
@@ -223,7 +225,7 @@ export async function POST(request: NextRequest) {
     const offerRow: OfferInsert = {
       product_id: productId,
       supplier_id: supplier.id,
-      price_excl_vat: offerFields.price as number,
+      price_excl_vat: offerFields.price ?? null,
       stock_qty: offerFields.stock ?? 0,
       supplier_sku: offerFields.sku ?? null,
       pack_label: offerFields.packLabel ?? null,
@@ -388,7 +390,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ ok: true, restored: true, is_active: marked.active_before_delete ?? true })
     }
 
-    const offerFields = readOfferFields(body, false)
+    const offerFields = readOfferFields(body)
     if (typeof offerFields === 'string') {
       return NextResponse.json({ error: offerFields }, { status: 400 })
     }

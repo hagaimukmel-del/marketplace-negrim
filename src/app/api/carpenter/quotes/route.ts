@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
   // Only a supplier who sells it today, to carpenters, can be asked.
   const { data: offer } = await supabase
     .from('supplier_offers')
-    .select('id, pack_label, pack_qty, min_order_qty, products!inner(name_he, base_unit, is_active), suppliers!inner(company_name, email, status)')
+    .select('id, price_excl_vat, pack_label, pack_qty, min_order_qty, products!inner(name_he, base_unit, is_active), suppliers!inner(company_name, email, status)')
     .eq('product_id', productId)
     .eq('supplier_id', supplierId)
     .eq('is_active', true)
@@ -81,7 +81,8 @@ export async function POST(request: NextRequest) {
   const unit = unitLabel(product.base_unit)
   const [mode, thresholds] = await Promise.all([priceModeOf(supplierId), loadThresholds({ offerIds: [offer.id] })])
   const check = checkQuoteRequest({
-    quoteOnly: mode === 'quote',
+    // A supplier who shows no prices, or this one offer listed without a price.
+    quoteOnly: mode === 'quote' || offer.price_excl_vat == null,
     quantity,
     minOrderQty: Number(offer.min_order_qty),
     packQty,

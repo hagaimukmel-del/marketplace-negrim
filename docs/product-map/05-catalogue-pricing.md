@@ -42,6 +42,12 @@ See CLAUDE.md §6, "The catalogue's shape". Most important:
   prices in `supplier_offers`, but every reader outside its own console leaves them out
   (`price: null`, `quoteOnly: true`) and they never decide the suggested offer. Carpenters ask for
   a quote (`quote_requests`); `/api/orders` orders from such a supplier only at an answered quote.
+- Optional price per offer (owner 2026-11-18, migration `20261118120000_offer_price_optional`):
+  `supplier_offers.price_excl_vat` may be null, meaning "price on request" for that one offer.
+  `isQuoteOffer()` in `lib/catalog.ts` treats it exactly like a quote-only supplier: no price shown,
+  never the suggested offer (`bestOffer()` skips it on price), quote from the product page,
+  `/api/orders` answers `quote_required`. The `/o/[token]` campaign page and the admin campaign
+  picker leave such offers out. Before this, suppliers typed 1 ₪ to get past the form.
 - Quote rules (stage 1 of the 2026-10-12 RFQ plan, `lib/quote-rules.ts`, migration
   `20261012090000_quote_rules`): a request goes to the one supplier chosen. Quote-only supplier:
   from `min_order_qty` up (`kind = 'quote'`); if it also set a threshold, the product page says

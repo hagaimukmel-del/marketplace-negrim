@@ -172,6 +172,8 @@ export async function loadOfferPage(token: string): Promise<OfferPageData | null
         .eq('is_active', true)
         .eq('supplier_offers.is_active', true)
         .eq('supplier_offers.suppliers.status', 'approved')
+        // This page has no quote flow: an offer listed without a price is left out.
+        .not('supplier_offers.price_excl_vat', 'is', null)
     : { data: [] as unknown[] }
 
   const byId = new Map(
@@ -190,6 +192,7 @@ export async function loadOfferPage(token: string): Promise<OfferPageData | null
       .eq('is_active', true)
       .eq('supplier_offers.is_active', true)
       .eq('supplier_offers.suppliers.status', 'approved')
+      .not('supplier_offers.price_excl_vat', 'is', null)
       .neq('id', campaign?.product_id ?? '00000000-0000-0000-0000-000000000000')
       .limit(6)
     // PostgREST cannot order on an embedded column, so the sort is here.

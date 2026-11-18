@@ -8,6 +8,8 @@ const db = vi.hoisted(() => ({
   items: [] as Record<string, unknown>[],
   /** Another attempt of the same send lands between the first look and the insert. */
   raceOnce: false,
+  /** The offer's price; null = listed without a price. */
+  price: 50 as number | null,
 }))
 const notifyNewOrders = vi.hoisted(() => vi.fn(async () => undefined))
 const limit = vi.hoisted(() => ({ reached: false }))
@@ -26,7 +28,7 @@ vi.mock('@/lib/supabase-admin', () => ({
   getSupabaseAdmin: () =>
     fakeSupabase((call: FakeCall) => {
       if (call.table === 'products') {
-        const offer = { id: 'o1', supplier_id: SUPPLIER, supplier_sku: null, price_excl_vat: 50, stock_qty: 100, pack_label: null, pack_qty: null, min_order_qty: 1, lead_time_days: null }
+        const offer = { id: 'o1', supplier_id: SUPPLIER, supplier_sku: null, price_excl_vat: db.price, stock_qty: 100, pack_label: null, pack_qty: null, min_order_qty: 1, lead_time_days: null }
         return { data: [{ id: PRODUCT, name_he: 'דבק', name_en: null, supplier_offers: [offer] }], error: null }
       }
       if (call.table === 'suppliers') return { data: [{ id: SUPPLIER, company_name: 'ספק בדיקה', min_order_value_excl_vat: null, payment_terms: [] }], error: null }
@@ -78,8 +80,19 @@ beforeEach(() => {
   db.orders = []
   db.items = []
   db.raceOnce = false
+  db.price = 50
   limit.reached = false
   notifyNewOrders.mockClear()
+})
+
+describe('POST /api/orders, an offer listed without a price', () => {
+  it('is never ordered at a list price: it needs a quote', async () => {
+    db.price = null
+    const response = await send({ checkout_id: KEY })
+    expect(response.status).toBe(409)
+    expect((await response.json()).code).toBe('quote_required')
+    expect(db.orders).toHaveLength(0)
+  })
 })
 
 describe('POST /api/orders, sent once', () => {

@@ -25,7 +25,8 @@ interface Product {
   brand: string | null
   mpn: string | null
   base_unit: string
-  base_price_excl_vat: number
+  /** Null when the offer was listed without a price (migration 20261118120000). */
+  base_price_excl_vat: number | null
   /** The supplier quotes only and runs its own account: the price is not sent here (T-023). */
   price_hidden?: boolean
   stock_qty: number | null
@@ -166,7 +167,7 @@ function ProductRow({
             </p>
           </div>
           <div className="shrink-0 text-end">
-            <p className="tnum font-bold text-stone-900">{product.price_hidden ? 'הצעת מחיר' : formatIls(price)}</p>
+            <p className="tnum font-bold text-stone-900">{product.price_hidden || product.base_price_excl_vat == null ? 'הצעת מחיר' : formatIls(price)}</p>
             <p className="text-sm text-stone-400">
               ל{unitLabel(product.base_unit)} · {product.stock_qty ?? 0} במלאי
             </p>
@@ -228,7 +229,7 @@ function EditPanel({
     name_he: product.name_he,
     name_en: product.name_en ?? '',
     sku: product.sku ?? '',
-    price: String(product.base_price_excl_vat),
+    price: product.base_price_excl_vat == null ? '' : String(product.base_price_excl_vat),
     stock: String(product.stock_qty ?? 0),
     category_id: product.category_id ?? '',
     description_he: product.description_he ?? '',
@@ -346,6 +347,7 @@ function EditPanel({
               inputMode="decimal"
               value={form.price}
               onChange={(e) => set('price', e.target.value)}
+              placeholder="ריק = מחיר בהצעה"
               className="tnum mt-1 h-11 w-full rounded-lg border border-stone-300 bg-white px-3"
             />
           )}
@@ -651,7 +653,7 @@ function SupplierLinks({
           {offers.map((row) => (
             <li key={row.offer_id} className="flex flex-wrap items-center gap-x-3 py-1.5">
               <span className="font-medium text-stone-900">{row.supplier_name ?? 'ספק'}</span>
-              <span className="tnum text-stone-700">{row.price_hidden ? 'הצעת מחיר' : formatIls(Number(row.base_price_excl_vat))}</span>
+              <span className="tnum text-stone-700">{row.price_hidden || row.base_price_excl_vat == null ? 'הצעת מחיר' : formatIls(Number(row.base_price_excl_vat))}</span>
               <span className="tnum text-sm text-stone-500">מלאי {row.stock_qty ?? 0}</span>
               {!row.is_active && <span className="text-sm text-stone-400">מוסתר</span>}
             </li>

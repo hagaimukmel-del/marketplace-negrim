@@ -106,7 +106,7 @@ export default function ProductForm({
     mpn: shared?.mpn ?? '',
     base_unit: shared?.baseUnit ?? 'unit',
     description_he: shared?.description ?? '',
-    price: product ? String(product.price) : '',
+    price: product?.price != null ? String(product.price) : '',
     stock: product ? String(product.stock) : '',
     sku: product?.sku ?? '',
     pack_label: product?.packLabel ?? '',
@@ -129,6 +129,8 @@ export default function ProductForm({
     setForm((prev) => ({ ...prev, [key]: value }))
 
   const dirty = file !== null || JSON.stringify(form) !== snapshot
+  // Optional: an empty price lists the product with "מחיר בהצעה".
+  const noPrice = form.price.trim() === ''
   const price = Number(form.price)
 
   // Special price for quantity (stage 1 RFQ rules): typed in packs, saved in base units.
@@ -168,7 +170,7 @@ export default function ProductForm({
   const save = async () => {
     setError(null)
     if (!form.name_he.trim()) return setError('צריך שם מוצר')
-    if (!Number.isFinite(price) || price <= 0) return setError('צריך מחיר גדול מאפס')
+    if (!noPrice && (!Number.isFinite(price) || price <= 0)) return setError('המחיר צריך להיות גדול מאפס, או להישאר ריק')
     if (specialPacks != null && (!Number.isInteger(specialPacks) || specialPacks <= 0)) {
       return setError('סף המחיר המיוחד: מספר שלם של אריזות')
     }
@@ -377,12 +379,21 @@ export default function ProductForm({
               </select>
             </Field>
 
-            <Field label="מחיר ללא מע״מ" required hint={Number.isFinite(price) && price > 0 ? `${formatIls(withVat(price))} כולל מע״מ` : undefined}>
+            <Field
+              label="מחיר ללא מע״מ (לא חובה)"
+              hint={
+                noPrice
+                  ? 'בלי מחיר: הנגרים יראו "מחיר בהצעה" ויבקשו ממכם הצעת מחיר.'
+                  : Number.isFinite(price) && price > 0
+                    ? `${formatIls(withVat(price))} כולל מע״מ`
+                    : undefined
+              }
+            >
               <input
                 inputMode="decimal"
                 value={form.price}
                 onChange={(e) => set('price', e.target.value)}
-                placeholder="0.00"
+                placeholder="ריק = מחיר בהצעה"
                 className={`tnum ${INPUT}`}
               />
             </Field>
@@ -479,7 +490,7 @@ export default function ProductForm({
                 label={`מחיר מיוחד ל${unitLabel(form.base_unit)} ללא מע״מ`}
                 hint={
                   specialPrice != null && Number.isFinite(specialPrice) && specialPrice > 0
-                    ? specialPrice >= price
+                    ? !noPrice && specialPrice >= price
                       ? 'שימו לב: המחיר המיוחד לא נמוך מהמחיר הרגיל.'
                       : `נגרייה שמבקשת מהכמות הזו מקבלת מיד הצעה ב־${formatIls(specialPrice)} ל${unitLabel(form.base_unit)}, בתוקף 14 יום.`
                     : 'לא חובה. עם מחיר, בקשה מהכמות הזו נענית מיד במחיר הזה. בלי מחיר, אתם עונים על כל בקשה.'

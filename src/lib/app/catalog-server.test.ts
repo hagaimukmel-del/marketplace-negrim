@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import { fakeSupabase } from '@/test/fake-supabase'
 
-// Two suppliers sell one product: S1 shows prices, S2 answers with quotes only.
-// Both set a special-price threshold.
-const offer = (id: string, supplierId: string, price: number, packQty: number) => ({
+// Three suppliers sell one product: S1 shows prices, S2 answers with quotes
+// only, S3 listed it without a price. S1 and S2 set a special-price threshold.
+const offer = (id: string, supplierId: string, price: number | null, packQty: number) => ({
   id,
   supplier_id: supplierId,
   supplier_sku: null,
@@ -33,7 +33,7 @@ vi.mock('@/lib/supabase-admin', () => ({
                 image_url: null,
                 attributes: null,
                 category_id: null,
-                supplier_offers: [offer('o1', 'S1', 50, 10), offer('o2', 'S2', 40, 10)],
+                supplier_offers: [offer('o1', 'S1', 50, 10), offer('o2', 'S2', 40, 10), offer('o3', 'S3', null, 10)],
               },
             ],
             error: null,
@@ -59,6 +59,12 @@ describe('loadProducts: prices and special-price thresholds', () => {
     expect(s2).toMatchObject({ price: null, quoteOnly: true, specialMinQty: 40, minOrderQty: 10 })
     // The quote-only price does not leak through which offer is suggested either.
     expect(s1.suggested).toBe(true)
+  })
+
+  it('reads an offer listed without a price as quote-only, and never suggests it', async () => {
+    const [product] = await loadProducts({ showPrices: true })
+    const s3 = product.offers.find((o) => o.supplierId === 'S3')!
+    expect(s3).toMatchObject({ price: null, quoteOnly: true, suggested: false })
   })
 
   it('hides every price from a viewer who may not see prices', async () => {

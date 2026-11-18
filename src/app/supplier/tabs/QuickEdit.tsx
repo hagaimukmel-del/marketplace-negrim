@@ -14,26 +14,33 @@ interface Draft {
 }
 
 function draftOf(product: ProductItem): Draft {
-  return { price: String(product.price), stock: String(product.stock), active: product.isActive }
+  return { price: product.price == null ? '' : String(product.price), stock: String(product.stock), active: product.isActive }
 }
 
 /** What changed in one row, as the bulk route takes it, or null when nothing did. */
 function changeOf(product: ProductItem, draft: Draft) {
-  const change: { offer_id: string; price_excl_vat?: number; stock_qty?: number; is_active?: boolean } = {
+  const change: { offer_id: string; price_excl_vat?: number | null; stock_qty?: number; is_active?: boolean } = {
     offer_id: product.offerId,
   }
-  const price = Number(draft.price)
-  if (draft.price.trim() !== '' && price !== product.price) change.price_excl_vat = price
+  // An empty price is "no price": carpenters ask for a quote on this product.
+  const price = draft.price.trim() === '' ? null : Number(draft.price)
+  if (price !== product.price) change.price_excl_vat = price
   const stock = Number(draft.stock)
   if (draft.stock.trim() !== '' && stock !== product.stock) change.stock_qty = stock
   if (draft.active !== product.isActive) change.is_active = draft.active
   return Object.keys(change).length > 1 ? change : null
 }
 
+/** Empty is fine (no price); anything typed has to be a number above zero. */
+function priceInvalid(value: string): boolean {
+  if (value.trim() === '') return false
+  const price = Number(value)
+  return !(Number.isFinite(price) && price > 0)
+}
+
 function invalid(draft: Draft): boolean {
-  const price = Number(draft.price)
   const stock = Number(draft.stock)
-  return !(Number.isFinite(price) && price > 0) || !(Number.isInteger(stock) && stock >= 0)
+  return priceInvalid(draft.price) || !(Number.isInteger(stock) && stock >= 0)
 }
 
 /**
@@ -114,7 +121,7 @@ export default function QuickEdit({ products, notify }: { products: ProductItem[
           const draft = drafts[product.offerId]
           if (!draft) return null
           const changed = changeOf(product, draft) !== null
-          const priceBad = !(Number(draft.price) > 0)
+          const priceBad = priceInvalid(draft.price)
           const stockBad = !(Number.isInteger(Number(draft.stock)) && Number(draft.stock) >= 0)
           return (
             <div
@@ -137,6 +144,7 @@ export default function QuickEdit({ products, notify }: { products: ProductItem[
                   onChange={(e) => set(product.offerId, { price: e.target.value })}
                   inputMode="decimal"
                   dir="ltr"
+                  placeholder="בהצעה"
                   aria-label={`מחיר ${product.name}`}
                   className={`tnum h-11 w-full rounded-lg border bg-white px-2 text-end ${
                     priceBad ? 'border-red-500 ring-1 ring-red-500' : 'border-stone-300'

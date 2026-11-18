@@ -5,7 +5,7 @@ import { unitLabel } from '@/lib/catalog'
 
 interface Row {
   supplier_sku: string | null
-  price_excl_vat: number
+  price_excl_vat: number | null
   stock_qty: number
   pack_label: string | null
   pack_qty: number | null
@@ -56,7 +56,8 @@ export async function GET() {
       const product = row.products!
       return [
         product.name_he,
-        Number(row.price_excl_vat),
+        // Empty for a product listed without a price.
+        row.price_excl_vat == null ? null : Number(row.price_excl_vat),
         row.supplier_sku,
         row.stock_qty,
         unitLabel(product.base_unit),

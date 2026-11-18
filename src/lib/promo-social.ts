@@ -61,7 +61,7 @@ export async function loadPromoDetails(promo: CurrentPromo): Promise<PromoDetail
     brand: product.brand,
     imageUrl: absolute(product.image_url),
     productUrl: `${siteUrl()}/app/product/${promo.productId}`,
-    priceText: promo.showPrice && offer ? money(Number(offer.price_excl_vat)) : null,
+    priceText: promo.showPrice && offer?.price_excl_vat != null ? money(Number(offer.price_excl_vat)) : null,
   }
 }
 

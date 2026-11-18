@@ -92,6 +92,8 @@ export default function PromoTab({
   const [busy, setBusy] = useState(false)
 
   const live = products.filter((product) => product.isActive)
+  // A product listed without a price can be promoted too; its card simply shows no price.
+  const priceless = live.find((product) => product.productId === productId)?.price === null
   const now = currentWeek()
   const mine = new Map(
     promo.weeks.filter((week) => week.status === 'requested' || week.status === 'approved').map((week) => [week.weekStart, week])
@@ -105,7 +107,7 @@ export default function PromoTab({
     if (!picking || !productId) return
     setBusy(true)
     try {
-      await callApi('/api/supplier/promo', jsonInit('POST', { week_start: picking, product_id: productId, show_price: showPrice }))
+      await callApi('/api/supplier/promo', jsonInit('POST', { week_start: picking, product_id: productId, show_price: showPrice && !priceless }))
       notify('הבקשה נשלחה לאישור')
       setPicking(null)
       setProductId('')
@@ -226,14 +228,15 @@ export default function PromoTab({
                   </div>
                   {picking === week && (
                     <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
-                      <label className="flex items-center gap-2 text-base text-stone-700 sm:col-span-3">
+                      <label className={`flex items-center gap-2 text-base sm:col-span-3 ${priceless ? 'text-stone-400' : 'text-stone-700'}`}>
                         <input
                           type="checkbox"
-                          checked={showPrice}
+                          checked={showPrice && !priceless}
+                          disabled={priceless}
                           onChange={(e) => setShowPrice(e.target.checked)}
                           className="h-5 w-5 accent-emerald-700"
                         />
-                        להציג את המחיר שלי בפרסומת
+                        {priceless ? 'למוצר הזה אין מחיר, הפרסומת תוצג בלי מחיר' : 'להציג את המחיר שלי בפרסומת (לא חובה)'}
                       </label>
                       <select
                         value={productId}

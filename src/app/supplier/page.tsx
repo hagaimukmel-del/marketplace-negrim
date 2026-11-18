@@ -32,7 +32,7 @@ interface RawOffer {
   id: string
   product_id: string
   supplier_sku: string | null
-  price_excl_vat: number
+  price_excl_vat: number | null
   stock_qty: number
   pack_label: string | null
   pack_qty: number | null
@@ -221,7 +221,7 @@ export default async function SupplierHome({
         mpn: product.mpn,
         baseUnit: product.base_unit,
         imageUrl: product.image_url,
-        price: Number(offer.price_excl_vat),
+        price: offer.price_excl_vat == null ? null : Number(offer.price_excl_vat),
         stock: offer.stock_qty,
         sku: offer.supplier_sku,
         packLabel: offer.pack_label,

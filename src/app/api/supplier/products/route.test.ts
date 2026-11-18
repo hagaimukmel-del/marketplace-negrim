@@ -76,6 +76,12 @@ describe('PATCH /api/supplier/products: the special-price threshold', () => {
     expect(offerWrites()).toHaveLength(0)
   })
 
+  it('clears the price when it is sent empty', async () => {
+    const response = await send('PATCH', { offer_id: 'o1', price_excl_vat: '' })
+    expect(response.status).toBe(200)
+    expect(offerWrites()[0].payload).toMatchObject({ price_excl_vat: null })
+  })
+
   it('leaves the threshold alone on a price-only edit', async () => {
     const response = await send('PATCH', { offer_id: 'o1', price_excl_vat: '55' })
     expect(response.status).toBe(200)
@@ -98,6 +104,14 @@ describe('POST /api/supplier/products: a new offer', () => {
     await send('POST', { product_id: 'p1', price_excl_vat: '50', special_price_min_qty: '' })
     const payload = state.calls.find((c) => c.op === 'insert')?.payload as Record<string, unknown>
     expect('special_price_min_qty' in payload).toBe(false)
+  })
+
+  it('saves an offer without a price, and refuses a zero price', async () => {
+    const ok = await send('POST', { product_id: 'p1', price_excl_vat: '' })
+    expect(ok.status).toBe(201)
+    expect(state.calls.find((c) => c.op === 'insert')?.payload).toMatchObject({ price_excl_vat: null })
+    const zero = await send('POST', { product_id: 'p1', price_excl_vat: '0' })
+    expect(zero.status).toBe(400)
   })
 })
 
