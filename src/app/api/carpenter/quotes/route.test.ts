@@ -75,6 +75,7 @@ beforeEach(() => {
   db.calls = []
   db.offer = {
     id: 'o1',
+    price_excl_vat: 25,
     pack_label: 'מיכל',
     pack_qty: 10,
     min_order_qty: 10,
@@ -149,6 +150,13 @@ describe('POST /api/carpenter/quotes', () => {
     db.priceMode = 'quote'
     const below = await post({ product_id: PRODUCT, supplier_id: SUPPLIER, quantity: 5 })
     expect((await below.json()).code).toBe('below_min_order')
+    const ok = await post({ product_id: PRODUCT, supplier_id: SUPPLIER, quantity: 10 })
+    expect(ok.status).toBe(201)
+    expect(db.quotes[0]).toMatchObject({ kind: 'quote' })
+  })
+
+  it('lets an offer listed without a price be asked like a quote-only supplier', async () => {
+    db.offer = { ...db.offer, price_excl_vat: null }
     const ok = await post({ product_id: PRODUCT, supplier_id: SUPPLIER, quantity: 10 })
     expect(ok.status).toBe(201)
     expect(db.quotes[0]).toMatchObject({ kind: 'quote' })

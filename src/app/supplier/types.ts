@@ -74,7 +74,8 @@ export interface ProductItem {
   mpn: string | null
   baseUnit: string
   imageUrl: string | null
-  price: number
+  /** Per base unit, excl. VAT; null = listed without a price, carpenters ask for a quote. */
+  price: number | null
   stock: number
   sku: string | null
   packLabel: string | null

@@ -64,6 +64,10 @@ terms and documents. No password needed.
   and quote only, saved on the spot through `PATCH /api/supplier/profile` (`price_mode`). The
   supplier's own screens keep showing its prices; nothing is deleted. Hidden on a database
   without migration 20261011140000.
+- Price is optional (2026-11-18): "מחיר ללא מע״מ (לא חובה)" in the product form and an empty cell
+  in "עריכה מהירה" save the offer without a price; the list shows "מחיר בהצעה". "מוצר השבוע" can be
+  booked for such a product, and "להציג את המחיר שלי בפרסומת" is then off and disabled. Price-list
+  import still requires a price on every row, so a bad cell never clears a price by accident.
 - Special price for quantity (stage 1 RFQ rules): "מחיר מיוחד מכמות (באריזות)" in the product
   form, saved through `PATCH/POST /api/supplier/products` as base units with the pack size.
   Every save that touches the threshold, the pack or the minimum order is checked

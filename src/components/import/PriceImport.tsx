@@ -392,7 +392,7 @@ export default function PriceImport({ supplierId, onClose }: { supplierId?: stri
                   <span className="tnum shrink-0 text-end text-base">
                     {line.before && line.action === 'update' && line.before.price !== line.price ? (
                       <>
-                        <span className="text-stone-400 line-through">{formatIls(line.before.price)}</span>{' '}
+                        <span className="text-stone-400 line-through">{line.before.price == null ? 'בלי מחיר' : formatIls(line.before.price)}</span>{' '}
                         <span className="font-semibold text-stone-900">{formatIls(line.price!)}</span>
                       </>
                     ) : line.price != null ? (

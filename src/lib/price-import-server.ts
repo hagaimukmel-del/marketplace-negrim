@@ -11,7 +11,7 @@ interface OfferRow {
   id: string
   product_id: string
   supplier_sku: string | null
-  price_excl_vat: number
+  price_excl_vat: number | null
   stock_qty: number
   pack_label: string | null
   pack_qty: number | null
@@ -37,7 +37,8 @@ export interface ImportChange {
   offer_id?: string
   product_id?: string
   before?: {
-    price_excl_vat: number
+    /** Null when the offer had no price; undo puts that back. */
+    price_excl_vat: number | null
     stock_qty: number
     pack_label: string | null
     pack_qty: number | null
@@ -179,7 +180,7 @@ async function resolve(supplierId: string, rows: ImportRow[]): Promise<Resolved[
     }
 
     if (offer) {
-      const before = { price: Number(offer.price_excl_vat), stock: offer.stock_qty }
+      const before = { price: offer.price_excl_vat == null ? null : Number(offer.price_excl_vat), stock: offer.stock_qty }
       const changed =
         before.price !== row.price ||
         (row.stock != null && row.stock !== offer.stock_qty) ||
@@ -263,7 +264,7 @@ export async function applyImport({
         type: 'update',
         offer_id: offer.id,
         before: {
-          price_excl_vat: Number(offer.price_excl_vat),
+          price_excl_vat: offer.price_excl_vat == null ? null : Number(offer.price_excl_vat),
           stock_qty: offer.stock_qty,
           pack_label: offer.pack_label,
           pack_qty: offer.pack_qty == null ? null : Number(offer.pack_qty),

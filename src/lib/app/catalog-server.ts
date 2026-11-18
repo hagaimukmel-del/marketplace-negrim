@@ -2,7 +2,7 @@ import 'server-only'
 import { cache } from 'react'
 
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
-import { bestOffer, unitLabel, type Offer } from '@/lib/catalog'
+import { bestOffer, isQuoteOffer, unitLabel, type Offer } from '@/lib/catalog'
 import { deliversTo, loadDelivery, regionsForCity } from '@/lib/delivery'
 import type { RegionKey } from '@/lib/regions'
 import { loadPriceModes } from '@/lib/price-mode'
@@ -121,7 +121,7 @@ export async function loadProducts(opts: { showPrices: boolean; ids?: string[]; 
     const pool = reachable.length ? reachable : row.supplier_offers
     // A quote-only supplier's price never decides which offer leads: that
     // would tell a carpenter it is the cheapest without showing the price.
-    const priced = pool.filter((offer) => !modes.quoteOnly.has(offer.supplier_id))
+    const priced = pool.filter((offer) => !isQuoteOffer(offer, modes.quoteOnly))
     const best = bestOffer({ supplier_offers: priced.length ? priced : pool })
     const category = row.category_id ? byId.get(row.category_id) : undefined
     const topId = category ? (category.parent_category_id && byId.has(category.parent_category_id) ? category.parent_category_id : category.id) : null
@@ -147,9 +147,10 @@ export async function loadProducts(opts: { showPrices: boolean; ids?: string[]; 
         supplierName: offer.suppliers.company_name,
         supplierLogo: offer.suppliers.logo_url,
         supplierRegions: supplierRegions(offer.suppliers.city, delivery.bySupplier.get(offer.supplier_id)?.regions ?? []),
-        // Left out, not hidden, for a supplier who answers with quotes only (T-023).
-        price: opts.showPrices && !modes.quoteOnly.has(offer.supplier_id) ? Number(offer.price_excl_vat) : null,
-        quoteOnly: modes.quoteOnly.has(offer.supplier_id),
+        // Left out, not hidden, for a supplier who answers with quotes only (T-023)
+        // and for an offer listed without a price.
+        price: opts.showPrices && !isQuoteOffer(offer, modes.quoteOnly) ? Number(offer.price_excl_vat) : null,
+        quoteOnly: isQuoteOffer(offer, modes.quoteOnly),
         packLabel: offer.pack_label,
         packQty: offer.pack_qty == null ? null : Number(offer.pack_qty),
         inStock: STOCK_IS_TRACKED ? offer.stock_qty > 0 : true,

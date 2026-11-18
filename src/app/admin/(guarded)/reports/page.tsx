@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { loadPriceModes } from '@/lib/price-mode'
+import { isQuoteOffer } from '@/lib/catalog'
 import ReportsClient, {
   type CategoryReport,
   type Period,
@@ -13,7 +14,7 @@ const PERIODS: Record<Period, number | null> = { '30': 30, '90': 90, '365': 365,
 
 interface OfferRow {
   supplier_id: string
-  price_excl_vat: number
+  price_excl_vat: number | null
   stock_qty: number
   is_active: boolean
 }
@@ -60,7 +61,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   ])
   // A supplier who quotes only (T-023) has no public price, so its list price
   // stays out of every average and index here.
-  const priced = (offer: OfferRow) => offer.is_active && !modes.quoteOnly.has(offer.supplier_id)
+  const priced = (offer: OfferRow) => offer.is_active && !isQuoteOffer(offer, modes.quoteOnly)
 
   const categoryById = new Map((categories ?? []).map((category) => [category.id, category]))
   const topOf = (categoryId: string | null) => {

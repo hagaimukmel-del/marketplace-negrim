@@ -15,7 +15,7 @@ interface RawOffer {
   id: string
   supplier_id: string
   supplier_sku: string | null
-  price_excl_vat: number
+  price_excl_vat: number | null
   stock_qty: number
   pack_label: string | null
   pack_qty: number | null
@@ -92,7 +92,7 @@ export default async function AdminProductsPage() {
       is_active: product.is_active && (offer?.is_active ?? false),
       supplier_name: offer?.suppliers?.company_name ?? null,
       sku: offer?.supplier_sku ?? null,
-      base_price_excl_vat: hidden(offer) ? 0 : Number(offer?.price_excl_vat ?? 0),
+      base_price_excl_vat: hidden(offer) ? 0 : offer?.price_excl_vat == null ? (offer ? null : 0) : Number(offer.price_excl_vat),
       price_hidden: hidden(offer),
       stock_qty: offer?.stock_qty ?? 0,
       pack_label: offer?.pack_label ?? null,
@@ -103,7 +103,7 @@ export default async function AdminProductsPage() {
     }))
     .sort((a, b) => {
       if (a.is_active !== b.is_active) return a.is_active ? -1 : 1
-      return b.base_price_excl_vat - a.base_price_excl_vat
+      return (b.base_price_excl_vat ?? 0) - (a.base_price_excl_vat ?? 0)
     })
 
   return (

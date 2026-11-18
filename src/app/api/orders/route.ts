@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import type { OrderItemInsert } from '@/lib/db'
 import { logEvent, resolveCarpenter } from '@/lib/offer'
-import { bestOffer, OFFER_COLUMNS, type Offer } from '@/lib/catalog'
+import { bestOffer, isQuoteOffer, OFFER_COLUMNS, type Offer } from '@/lib/catalog'
 import { notifyNewOrders } from '@/lib/notify-order'
 import { getSessionCarpenter } from '@/lib/carpenter-auth'
 import { loadPriceModes } from '@/lib/price-mode'
@@ -212,8 +212,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // A supplier who answers with quotes only (T-023) is never ordered from at
-    // its list price: a line from it has to carry an answered quote, and a
+    // A supplier who answers with quotes only (T-023), or an offer listed
+    // without a price, is never ordered from at a list price: a line from it has to carry an answered quote, and a
     // line that names no supplier falls to a priced one.
     const modes = await loadPriceModes()
     const quoteIds = items.map((item) => item.quote_id).filter((id): id is string => Boolean(id))
@@ -263,8 +263,11 @@ export async function POST(request: NextRequest) {
         continue
       }
       const product = byId.get(item.id)!
-      const named = item.supplier_id && modes.quoteOnly.has(item.supplier_id)
-      const priced = product.supplier_offers.some((offer) => !modes.quoteOnly.has(offer.supplier_id))
+      const named =
+        item.supplier_id &&
+        (modes.quoteOnly.has(item.supplier_id) ||
+          product.supplier_offers.some((offer) => offer.supplier_id === item.supplier_id && isQuoteOffer(offer, modes.quoteOnly)))
+      const priced = product.supplier_offers.some((offer) => !isQuoteOffer(offer, modes.quoteOnly))
       if (named || !priced) {
         return NextResponse.json(
           { error: `את ${item.name_he} מזמינים לפי הצעת מחיר מהספק. מבקשים הצעה מדף המוצר.`, code: 'quote_required', productId: item.id },
@@ -294,7 +297,7 @@ export async function POST(request: NextRequest) {
           line_total_excl_vat: Number((unitPrice * item.quantity).toFixed(2)),
         }
       }
-      const orderable = product.supplier_offers.filter((offer) => !modes.quoteOnly.has(offer.supplier_id))
+      const orderable = product.supplier_offers.filter((offer) => !isQuoteOffer(offer, modes.quoteOnly))
       // The carpenter may have chosen another supplier than the suggested one.
       // That choice stands only while that supplier still has a live offer;
       // otherwise the catalogue's own rule decides, as it always did.

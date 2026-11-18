@@ -2076,7 +2076,7 @@ export type Database = {
           min_order_qty: number
           pack_label: string | null
           pack_qty: number | null
-          price_excl_vat: number
+          price_excl_vat: number | null
           product_id: string
           source: string
           special_price_excl_vat: number | null
@@ -2097,7 +2097,7 @@ export type Database = {
           min_order_qty?: number
           pack_label?: string | null
           pack_qty?: number | null
-          price_excl_vat: number
+          price_excl_vat?: number | null
           product_id: string
           source?: string
           special_price_excl_vat?: number | null
@@ -2118,7 +2118,7 @@ export type Database = {
           min_order_qty?: number
           pack_label?: string | null
           pack_qty?: number | null
-          price_excl_vat?: number
+          price_excl_vat?: number | null
           product_id?: string
           source?: string
           special_price_excl_vat?: number | null

@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 interface ProductWithOffers {
   id: string
   name_he: string
-  supplier_offers: { price_excl_vat: number }[]
+  supplier_offers: { price_excl_vat: number | null }[]
 }
 
 export default async function CampaignsPage() {
@@ -17,7 +17,9 @@ export default async function CampaignsPage() {
       .from('products')
       .select('id, name_he, supplier_offers!inner(price_excl_vat)')
       .eq('is_active', true)
-      .eq('supplier_offers.is_active', true),
+      .eq('supplier_offers.is_active', true)
+      // Campaigns sell at a price: offers listed without one are left out.
+      .not('supplier_offers.price_excl_vat', 'is', null),
     supabase
       .from('campaigns')
       .select('id, name, kind, headline_he, is_active, created_at, products(name_he)')

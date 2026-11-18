@@ -185,7 +185,7 @@ export interface PlanLine {
   name: string
   action: PlanAction
   price: number | null
-  before: { price: number; stock: number } | null
+  before: { price: number | null; stock: number } | null
   stock: number | null
   message: string | null
 }

@@ -5,6 +5,7 @@ import { refuseAdminWriteFor } from '@/lib/admin-scope'
 import type { Database } from '@/lib/database.types'
 import { thresholdChange } from '@/lib/quote-rules'
 import { loadOfferForThreshold } from '@/lib/special-price'
+import { readOfferPrice } from '@/lib/offer-price'
 
 type OfferUpdate = Database['public']['Tables']['supplier_offers']['Update']
 
@@ -38,13 +39,10 @@ export async function PATCH(request: NextRequest) {
 
     const update: OfferUpdate = { updated_at: new Date().toISOString() }
 
-    if (body.price_excl_vat !== undefined) {
-      const price = Number(body.price_excl_vat)
-      if (!Number.isFinite(price) || price <= 0) {
-        return NextResponse.json({ error: 'מחיר לא תקין' }, { status: 400 })
-      }
-      update.price_excl_vat = price
-    }
+    // Optional: empty means the offer has no price and carpenters ask for a quote.
+    const price = readOfferPrice(body.price_excl_vat)
+    if (price === 'invalid') return NextResponse.json({ error: 'מחיר לא תקין' }, { status: 400 })
+    if (price !== undefined) update.price_excl_vat = price
 
     if (body.stock_qty !== undefined) {
       const stock = Number(body.stock_qty)
@@ -152,13 +150,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'חסר מזהה הצעה' }, { status: 400 })
       }
       const update: OfferUpdate = { updated_at: now }
-      if (raw.price_excl_vat !== undefined) {
-        const price = Number(raw.price_excl_vat)
-        if (!Number.isFinite(price) || price <= 0) {
-          return NextResponse.json({ error: 'מחיר לא תקין', offer_id: raw.offer_id }, { status: 400 })
-        }
-        update.price_excl_vat = Math.round(price * 100) / 100
-      }
+      const price = readOfferPrice(raw.price_excl_vat)
+      if (price === 'invalid') return NextResponse.json({ error: 'מחיר לא תקין', offer_id: raw.offer_id }, { status: 400 })
+      if (price !== undefined) update.price_excl_vat = price
       if (raw.stock_qty !== undefined) {
         const stock = Number(raw.stock_qty)
         if (!Number.isInteger(stock) || stock < 0) {

@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { isOperatorManaged, logAdminAction, refusedForSelfRun, supplierIsOperatorManaged } from '@/lib/admin-scope'
 import { BASE_UNITS, type BaseUnit } from '@/lib/catalog'
 import type { Database } from '@/lib/database.types'
+import { readOfferPrice } from '@/lib/offer-price'
 
 type ProductUpdate = Database['public']['Tables']['products']['Update']
 type OfferUpdate = Database['public']['Tables']['supplier_offers']['Update']
@@ -255,13 +256,10 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    if (body.base_price_excl_vat !== undefined) {
-      const price = Number(body.base_price_excl_vat)
-      if (!Number.isFinite(price) || price <= 0) {
-        return NextResponse.json({ error: 'מחיר לא תקין' }, { status: 400 })
-      }
-      offer.price_excl_vat = price
-    }
+    // Empty clears the price: carpenters then ask the supplier for a quote.
+    const price = readOfferPrice(body.base_price_excl_vat)
+    if (price === 'invalid') return NextResponse.json({ error: 'מחיר לא תקין' }, { status: 400 })
+    if (price !== undefined) offer.price_excl_vat = price
 
     if (body.stock_qty !== undefined) {
       const stock = Number(body.stock_qty)

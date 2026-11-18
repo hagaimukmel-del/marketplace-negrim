@@ -53,7 +53,7 @@ function ProductRow({ product, onOpen }: { product: ProductItem; onOpen: () => v
         </span>
       </span>
       <span className="shrink-0 text-end">
-        <span className="tnum block font-bold text-stone-900">{formatIls(product.price)}</span>
+        <span className="tnum block font-bold text-stone-900">{product.price == null ? 'מחיר בהצעה' : formatIls(product.price)}</span>
         <span
           className={`block text-sm ${product.stock > 0 ? 'text-stone-500' : 'font-semibold text-red-700'}`}
         >
@@ -127,7 +127,7 @@ function DeletedList({ products, notify }: { products: DeletedProduct[]; notify:
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-bold text-stone-900">{product.name}</span>
                 <span className="block text-base text-stone-500">
-                  נמחק ב-<bdi className="tnum">{deletedOn(product.deletedAt)}</bdi> · <bdi className="tnum">{formatIls(product.price)}</bdi> ל{unitLabel(product.baseUnit)}
+                  נמחק ב-<bdi className="tnum">{deletedOn(product.deletedAt)}</bdi> · {product.price == null ? 'בלי מחיר' : <><bdi className="tnum">{formatIls(product.price)}</bdi> ל{unitLabel(product.baseUnit)}</>}
                 </span>
               </span>
               <span className="flex shrink-0 gap-2">

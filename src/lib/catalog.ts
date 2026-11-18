@@ -27,7 +27,7 @@ export interface Offer {
   id: string
   supplier_id: string
   supplier_sku: string | null
-  price_excl_vat: number
+  price_excl_vat: number | null
   stock_qty: number
   pack_label: string | null
   pack_qty: number | null
@@ -97,8 +97,25 @@ export function bestOffer(product: { supplier_offers?: Offer[] | null }): Offer 
     const bestInStock = best.stock_qty > 0
     const offerInStock = offer.stock_qty > 0
     if (offerInStock !== bestInStock) return offerInStock ? offer : best
+    // An offer without a price never wins on price (migration 20261118120000).
+    if (offer.price_excl_vat == null) return best
+    if (best.price_excl_vat == null) return offer
     return Number(offer.price_excl_vat) < Number(best.price_excl_vat) ? offer : best
   })
+}
+
+/**
+ * An offer a carpenter cannot buy at a list price: its supplier answers with
+ * quotes only (suppliers.price_mode, T-023), or the supplier listed this one
+ * product without a price (supplier_offers.price_excl_vat null, migration
+ * 20261118120000). Both read the same everywhere: no price is shown, the
+ * carpenter asks for a quote, and /api/orders needs an answered quote.
+ */
+export function isQuoteOffer(
+  offer: { supplier_id: string; price_excl_vat: number | string | null },
+  quoteOnly: ReadonlySet<string>
+): boolean {
+  return quoteOnly.has(offer.supplier_id) || offer.price_excl_vat == null
 }
 
 export function priceOf(product: { supplier_offers?: Offer[] | null }): number {
